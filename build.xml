@@ -1,0 +1,23 @@
+<project>
+
+    <path id="classpath">
+        <fileset dir="/Users/Pat/Code/android-sdk-mac_x86/platforms/android-8/" includes="android.jar"/>
+    </path>
+
+    <target name="clean">
+        <delete dir="build"/>
+    </target>
+
+    <target name="compile">
+        <mkdir dir="build/classes"/>
+        <javac srcdir="src" destdir="build/classes" classpathref="classpath" includeantruntime="false" debug="true"/>
+    </target>
+
+    <target name="jar">
+        <jar destfile="build/Carrot.jar" basedir="build/classes">
+            <manifest>
+            </manifest>
+        </jar>
+    </target>
+
+</project>
