@@ -96,7 +96,7 @@ public class Carrot {
    public Carrot(Activity activity, String appId, String appSecret, String hostname, String debugUDID) {
       mAppId = appId;
       mAppSecret = appSecret;
-      mHostname = hostname;
+      mHostname = (hostname != null ? hostname : CARROT_HOSTNAME);
       mStatus = Carrot.StatusUndetermined;
       mDebugUDID = debugUDID;
 
@@ -635,7 +635,7 @@ public class Carrot {
    }
 
    private static final String LOG_TAG = "Carrot";
-   private static final String CARROT_HOSTNAME = "gocarrot.herokuapp.com";
+   private static final String CARROT_HOSTNAME = "gocarrot.com";
 
    private Activity mHostActivity;
    private String mAppId;
