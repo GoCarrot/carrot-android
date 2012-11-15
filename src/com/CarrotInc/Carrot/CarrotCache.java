@@ -56,19 +56,24 @@ class CarrotCache
       }
    }
 
-   public void start() {
-      if(mExecutorService != null) mExecutorService.shutdownNow();
-      mExecutorService = Executors.newSingleThreadExecutor();
+   public boolean isRunning() {
+      return (mExecutorService != null && !mExecutorService.isTerminated());
+   }
 
-      // Load requests from cache
-      List<CarrotCachedRequest> cachedRequests = CarrotCachedRequest.requestsInCache(mDatabase, mCarrot);
-      for(CarrotCachedRequest request : cachedRequests) {
-         mExecutorService.submit(request);
+   public void start() {
+      if(!isRunning()) {
+         mExecutorService = Executors.newSingleThreadExecutor();
+
+         // Load requests from cache
+         List<CarrotCachedRequest> cachedRequests = CarrotCachedRequest.requestsInCache(mDatabase, mCarrot);
+         for(CarrotCachedRequest request : cachedRequests) {
+            mExecutorService.submit(request);
+         }
       }
    }
 
    public void stop() {
-      if(mExecutorService != null) mExecutorService.shutdownNow();
+      if(isRunning()) mExecutorService.shutdownNow();
    }
 
    public boolean addRequest(String endpoint, Map<String, Object> payload) {
