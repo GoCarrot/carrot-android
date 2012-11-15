@@ -287,14 +287,14 @@ public class Carrot {
     * Post an Open Graph action to the Carrot service which will create a new object.
     *
     * @param actionId the Carrot action id.
-    * @param objectTypeId the object id of the Carrot object type to create.
+    * @param objectInstanceId the object instance id of the Carrot object type to create, or <code>null</code> for throwaway objects.
     * @param objectProperties the properties for the new object.
     * @return <code>true if the action was cached successfully and will be sent
     *         to the Carrot service when possible; <code>false</code> otherwise.
     */
-   public boolean postAction(String actionId, String objectTypeId,
+   public boolean postAction(String actionId, String objectInstanceId,
       Map<String, Object> objectProperties) {
-      return postAction(actionId, null, objectTypeId, objectProperties);
+      return postAction(actionId, null, objectInstanceId, objectProperties);
    }
 
    /**
@@ -302,7 +302,7 @@ public class Carrot {
     *
     * @param actionId the Carrot action id.
     * @param actionPropertiesJson the properties to be sent along with the Carrot action encoded to JSON.
-    * @param objectTypeId the object id of the Carrot object type to create.
+    * @param objectInstanceId the object instance id of the Carrot object type to create, or <code>null</code> for throwaway objects.
     * @param objectPropertiesJson the properties for the new object encoded as JSON.
     * @return <code>true if the action was cached successfully and will be sent
     *         to the Carrot service when possible; <code>false</code> otherwise.
@@ -326,19 +326,19 @@ public class Carrot {
     *
     * @param actionId the Carrot action id.
     * @param actionProperties the properties to be sent along with the Carrot action.
-    * @param objectTypeId the object id of the Carrot object type to create.
+    * @param objectInstanceId the object instance id of the Carrot object type to create, or <code>null</code> for throwaway objects.
     * @param objectProperties the properties for the new object.
     * @return <code>true if the action was cached successfully and will be sent
     *         to the Carrot service when possible; <code>false</code> otherwise.
     */
    public boolean postAction(String actionId, Map<String, Object> actionProperties,
-      String objectTypeId, Map<String, Object> objectProperties) {
+      String objectInstanceId, Map<String, Object> objectProperties) {
       if(objectProperties == null) {
-         Log.e(LOG_TAG, "objectProperties must not be null when calling postAction.");
+         Log.e(LOG_TAG, "objectProperties must not be null when calling postAction to create a new object.");
          return false;
       }
 
-      String[] requiredObjectProperties = {"title", "image", "description"};
+      String[] requiredObjectProperties = {"title", "image", "description", "object_type"};
       for(String key : requiredObjectProperties) {
          if(!objectProperties.containsKey(key)) {
             Log.e(LOG_TAG, "objectProperties must contain a value for '" + key + "'");
@@ -347,7 +347,6 @@ public class Carrot {
       }
 
       HashMap<String, Object> fullObjectProperties = new HashMap<String, Object>(objectProperties);
-      fullObjectProperties.put("object_type", objectTypeId);
 
       // TODO (v2): Support image uploading
       fullObjectProperties.put("image_url", fullObjectProperties.remove("image"));
@@ -357,6 +356,9 @@ public class Carrot {
       payload.put("object_properties", fullObjectProperties);
       if(actionProperties != null) {
          payload.put("action_properties", actionProperties);
+      }
+      if(objectInstanceId != null) {
+        payload.put("object_instance_id", objectInstanceId);
       }
       return mCarrotCache.addRequest("/me/actions.json", payload);
    }
