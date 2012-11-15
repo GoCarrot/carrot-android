@@ -193,9 +193,6 @@ public class Carrot {
 
    /**
     * Post an achievement to the Carrot service.
-    * <p>
-    * A user may only earn an achievement once. If an achievement post in the cache exists
-    * for the requested achievement, this method will return <code>false</code>.
     *
     * @param achievementId the Carrot achivement id of the achievement to post.
     * @return <code>true</code> if the achievement was cached successfully and will be sent
