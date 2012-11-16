@@ -105,6 +105,15 @@ public class Carrot {
       setActivity(activity);
    }
 
+   protected void finalize() throws Throwable {
+      try {
+         close();
+      }
+      finally {
+         super.finalize();
+      }
+   }
+
    /**
     * Closes the request cache and stops the request threads for this Carrot instance.
     * <p>
@@ -112,8 +121,10 @@ public class Carrot {
     */
    public void close() {
       mExecutorService.shutdownNow();
-      mCarrotCache.close();
-      mCarrotCache = null;
+      if(mCarrotCache != null) {
+         mCarrotCache.close();
+         mCarrotCache = null;
+      }
    }
 
    public Facebook getFacebook() {

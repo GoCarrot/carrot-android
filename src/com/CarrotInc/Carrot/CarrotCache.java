@@ -37,6 +37,15 @@ class CarrotCache
       mOpenHelper = new CarrotCacheOpenHelper(mCarrot.getHostActivity());
    }
 
+   protected void finalize() throws Throwable {
+      try {
+         close();
+      }
+      finally {
+         super.finalize();
+      }
+   }
+
    public boolean open() {
       boolean ret = false;
       try {
