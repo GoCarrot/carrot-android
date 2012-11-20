@@ -516,7 +516,7 @@ public class Carrot {
             setStatus(StatusReadOnly);
             break;
          }
-         case HttpsURLConnection.HTTP_NOT_FOUND: {
+         case HttpsURLConnection.HTTP_FORBIDDEN: {
             setStatus(StatusNotAuthorized);
             break;
          }
