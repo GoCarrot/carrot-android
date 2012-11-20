@@ -444,7 +444,7 @@ public class Carrot {
             mHostActivity.startActivityForResult(intent, 0);
          }
          catch(Exception e) {
-            e.printStackTrace();
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
             return false;
          }
       }
@@ -488,13 +488,13 @@ public class Carrot {
                   m.invoke(null, callParams);
                }
                catch(Exception e) {
-                  e.printStackTrace();
+                  Log.e(LOG_TAG, Log.getStackTraceString(e));
                }
             }
          });
       }
       catch(Exception e) {
-         e.printStackTrace();
+         Log.e(LOG_TAG, Log.getStackTraceString(e));
       }
    }
 
@@ -605,7 +605,7 @@ public class Carrot {
                }
             }
             catch(Exception e) {
-               e.printStackTrace();
+               Log.e(LOG_TAG, Log.getStackTraceString(e));
                setStatus(StatusUndetermined);
             }
             finally {
@@ -651,7 +651,7 @@ public class Carrot {
                }
             }
             catch(Exception e) {
-               e.printStackTrace();
+               Log.e(LOG_TAG, Log.getStackTraceString(e));
                setStatus(StatusUndetermined);
             }
             finally {
@@ -662,7 +662,7 @@ public class Carrot {
       });
    }
 
-   private static final String LOG_TAG = "Carrot";
+   public static final String LOG_TAG = "Carrot";
    private static final String CARROT_HOSTNAME = "gocarrot.com";
 
    private Activity mHostActivity;

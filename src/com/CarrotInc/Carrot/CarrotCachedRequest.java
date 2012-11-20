@@ -187,7 +187,7 @@ class CarrotCachedRequest implements Runnable {
          rd.close();
 */
          if(!mCarrot.updateAuthenticationStatus(connection.getResponseCode())) {
-            Log.e("Carrot", "Unknown error (" + connection.getResponseCode() + ") submitting Carrot request: " /*+ response.toString()*/);
+            Log.e(Carrot.LOG_TAG, "Unknown error (" + connection.getResponseCode() + ") submitting Carrot request: " /*+ response.toString()*/);
             addRetryInCache();
          }
          else if (mCarrot.getStatus() == Carrot.StatusReady) {
@@ -199,7 +199,7 @@ class CarrotCachedRequest implements Runnable {
          }
       }
       catch(Exception e) {
-         e.printStackTrace();
+         Log.e(Carrot.LOG_TAG, Log.getStackTraceString(e));
       }
       finally {
          connection.disconnect();
@@ -221,7 +221,7 @@ class CarrotCachedRequest implements Runnable {
                requests.add(request);
             }
             catch(Exception e) {
-               e.printStackTrace();
+               Log.e(Carrot.LOG_TAG, Log.getStackTraceString(e));
             }
             cursor.moveToNext();
          }

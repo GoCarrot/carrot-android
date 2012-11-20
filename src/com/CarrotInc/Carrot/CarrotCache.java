@@ -53,7 +53,7 @@ class CarrotCache
          ret = true;
       }
       catch(SQLException e) {
-         e.printStackTrace();
+         Log.e(Carrot.LOG_TAG, Log.getStackTraceString(e));
       }
       return ret;
    }
@@ -93,6 +93,7 @@ class CarrotCache
          if(mExecutorService != null) mExecutorService.submit(request);
       }
       catch(Exception e) {
+         Log.e(Carrot.LOG_TAG, Log.getStackTraceString(e));
       }
       return ret;
    }

@@ -35,7 +35,7 @@ public class CarrotFacebookAuthActivity extends Activity {
       mCarrot.setHandler(new Carrot.Handler() {
          @Override
          public void authenticationStatusChanged(int authStatus) {
-            Log.d("Carrot", "Auth status changed: " + authStatus);
+            Log.d(Carrot.LOG_TAG, "Auth status changed: " + authStatus);
             finish();
          }
       });
