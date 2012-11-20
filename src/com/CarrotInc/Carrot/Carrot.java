@@ -96,7 +96,7 @@ public class Carrot {
    public Carrot(Activity activity, String appId, String appSecret, String hostname, String debugUDID) {
       mAppId = appId;
       mAppSecret = appSecret;
-      mHostname = (hostname != null ? hostname : CARROT_HOSTNAME);
+      mHostname = (hostname != null  && !hostname.isEmpty() ? hostname : CARROT_HOSTNAME);
       mStatus = Carrot.StatusUndetermined;
       mDebugUDID = debugUDID;
 
@@ -237,7 +237,7 @@ public class Carrot {
    public boolean postHighScore(int score, String leaderboardId) {
       HashMap<String, Object> payload = new HashMap<String, Object>();
       payload.put("value", new Integer(score));
-      if(leaderboardId != null) payload.put("leaderboard_id", leaderboardId);
+      if(leaderboardId != null && !leaderboardId.isEmpty()) payload.put("leaderboard_id", leaderboardId);
       return score > 0 && mCarrotCache.addRequest("/me/scores.json", payload);
    }
 
@@ -265,7 +265,7 @@ public class Carrot {
    public boolean postJsonAction(String actionId, String actionPropertiesJson, String objectInstanceId) {
       Map<String, Object> actionProperties = null;
 
-      if(actionPropertiesJson != null && actionPropertiesJson != "") {
+      if(actionPropertiesJson != null && !actionPropertiesJson.isEmpty()) {
          Gson gson = new Gson();
          Type payloadType = new TypeToken<Map<String, Object>>(){}.getType();
          actionProperties = gson.fromJson(actionPropertiesJson, payloadType);
@@ -340,7 +340,7 @@ public class Carrot {
       Gson gson = new Gson();
       Type payloadType = new TypeToken<Map<String, Object>>(){}.getType();
 
-      if(actionPropertiesJson != null && actionPropertiesJson != "") {
+      if(actionPropertiesJson != null && !actionPropertiesJson.isEmpty()) {
          actionProperties = gson.fromJson(actionPropertiesJson, payloadType);
       }
       Map<String, Object> objectProperties = gson.fromJson(objectPropertiesJson, payloadType);
@@ -383,7 +383,7 @@ public class Carrot {
       HashMap<String, Object> payload = new HashMap<String, Object>();
       payload.put("action_id", actionId);
       payload.put("object_properties", fullObjectProperties);
-      if(objectInstanceId != null) {
+      if(objectInstanceId != null && !objectInstanceId.isEmpty()) {
         payload.put("object_instance_id", objectInstanceId);
       }
       if(actionProperties != null) {
@@ -547,7 +547,7 @@ public class Carrot {
    }
 
    String getUDID() {
-      if(mDebugUDID != null) {
+      if(mDebugUDID != null && !mDebugUDID.isEmpty()) {
          return mDebugUDID;
       }
 
@@ -625,7 +625,7 @@ public class Carrot {
                   java.lang.Thread.sleep(10);
                }
 
-               if(mAccessToken != null && mAccessToken.length() > 0)
+               if(mAccessToken != null && !mAccessToken.isEmpty())
                {
                   String postBody = "api_key=" + getUDID() + "&access_token=" + mAccessToken;
 
