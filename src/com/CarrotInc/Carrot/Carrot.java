@@ -506,26 +506,21 @@ public class Carrot {
 
    boolean updateAuthenticationStatus(int httpStatus) {
       boolean ret = true;
-      switch(httpStatus)
-      {
+      switch(httpStatus) {
          case HttpsURLConnection.HTTP_OK:
-         case HttpsURLConnection.HTTP_CREATED:
-         {
+         case HttpsURLConnection.HTTP_CREATED: {
             setStatus(StatusReady);
             break;
          }
-         case HttpsURLConnection.HTTP_UNAUTHORIZED:
-         {
+         case HttpsURLConnection.HTTP_UNAUTHORIZED: {
             setStatus(StatusReadOnly);
             break;
          }
-         case HttpsURLConnection.HTTP_NOT_FOUND:
-         {
+         case HttpsURLConnection.HTTP_NOT_FOUND: {
             setStatus(StatusNotAuthorized);
             break;
          }
-         default:
-         {
+         default: {
             ret = false;
          }
       }
