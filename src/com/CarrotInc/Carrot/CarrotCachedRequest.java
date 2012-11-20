@@ -186,7 +186,11 @@ class CarrotCachedRequest implements Runnable {
          }
          rd.close();
 */
-         if(!mCarrot.updateAuthenticationStatus(connection.getResponseCode())) {
+         if(connection.getResponseCode() == HttpsURLConnection.HTTP_NOT_FOUND) {
+            Log.e(Carrot.LOG_TAG, "Requested resource not found, removing request from cache.");
+            removeFromCache();
+         }
+         else if(!mCarrot.updateAuthenticationStatus(connection.getResponseCode())) {
             Log.e(Carrot.LOG_TAG, "Unknown error (" + connection.getResponseCode() + ") submitting Carrot request: " /*+ response.toString()*/);
             addRetryInCache();
          }
