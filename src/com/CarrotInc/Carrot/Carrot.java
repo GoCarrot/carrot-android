@@ -528,6 +528,7 @@ public class Carrot {
    }
 
    void setStatus(int status) {
+      boolean authStatusChanged = (mStatus != status);
       mStatus = status;
       if(mStatus == StatusReady) {
          mCarrotCache.start();
@@ -536,7 +537,7 @@ public class Carrot {
          mCarrotCache.stop();
       }
 
-      if(mHandler != null) {
+      if(authStatusChanged && mHandler != null) {
          mHandler.authenticationStatusChanged(mStatus);
       }
    }
