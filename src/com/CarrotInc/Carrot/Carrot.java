@@ -43,9 +43,13 @@ import org.OpenUDID.*;
  * will be cached on the client and sent to the Carrot service once authentication has
  * occurred.
  * <ul>
- * <li>{@link #postAchievement(string) postAchievement}
+ * <li>{@link #postAchievement(String) postAchievement}
  * <li>{@link #postHighScore(int) postHighScore}
- * <li>{@link #postAction(string,string) postAction} (and variants)
+ * <li>{@link #postAction(String,String) postAction} (and variants)
+ * <li>{@link #likeGame() likeGame}
+ * <li>{@link #likePublisher() likePublisher}
+ * <li>{@link #likeAchievement(String) likeAchievement}
+ * <li>{@link #likeObject(String) likeObject}
  * </ul>
  * This means that a user may authenticate with Facebook at a much later date
  * and calls made to Carrot will still be transmitted to the server. Each Carrot
@@ -390,6 +394,58 @@ public class Carrot {
          payload.put("action_properties", actionProperties);
       }
       return mCarrotCache.addRequest("/me/actions.json", payload);
+   }
+
+   /**
+    * Post a 'Like' action that likes the Game's Facebook Page.
+    *
+    * @return <code>true</code> if the like was cached successfully and will be sent
+    *         to the Carrot service when possible; <code>false</code> otherwise.
+    */
+   public boolean likeGame() {
+      HashMap<String, Object> payload = new HashMap<String, Object>();
+      payload.put("object", "game");
+      return mCarrotCache.addRequest("/me/like.json", payload);
+   }
+
+   /**
+    * Post a 'Like' action that likes the Publisher's Facebook Page.
+    *
+    * @return <code>true</code> if the like was cached successfully and will be sent
+    *         to the Carrot service when possible; <code>false</code> otherwise.
+    */
+   public boolean likePublisher() {
+      HashMap<String, Object> payload = new HashMap<String, Object>();
+      payload.put("object", "publisher");
+      return mCarrotCache.addRequest("/me/like.json", payload);
+   }
+
+   /**
+    * Post a 'Like' action that likes an achievement.
+    *
+    * @param achievementId the Carrot achivement id of the achievement to like.
+    *
+    * @return <code>true</code> if the like was cached successfully and will be sent
+    *         to the Carrot service when possible; <code>false</code> otherwise.
+    */
+   public boolean likeAchievement(String achievementId) {
+      HashMap<String, Object> payload = new HashMap<String, Object>();
+      payload.put("object", "achievement:" + achievementId);
+      return mCarrotCache.addRequest("/me/like.json", payload);
+   }
+
+   /**
+    * Post a 'Like' action that likes an Open Graph object.
+    *
+    * @param objectInstanceId the instance id of the Carrot object to Like.
+    *
+    * @return <code>true</code> if the like was cached successfully and will be sent
+    *         to the Carrot service when possible; <code>false</code> otherwise.
+    */
+   public boolean likeObject(String objectInstanceId) {
+      HashMap<String, Object> payload = new HashMap<String, Object>();
+      payload.put("object", "object:" + objectInstanceId);
+      return mCarrotCache.addRequest("/me/like.json", payload);
    }
 
    /**
