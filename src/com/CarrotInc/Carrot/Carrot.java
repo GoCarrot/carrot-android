@@ -471,6 +471,8 @@ public class Carrot {
     */
    public void setHandler(Handler handler) {
       mHandler = handler;
+      mLastAuthStatusReported = StatusUndetermined;
+      setStatus(mStatus);
    }
 
    public void setUnityHandler(final String delegateObjectName) {
