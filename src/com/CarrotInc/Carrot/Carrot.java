@@ -170,7 +170,7 @@ public class Carrot {
       }
       else {
          Log.d(LOG_TAG, "Attached to android.app.Activity: " + mHostActivity);
-         checkUDID();
+         validateUser();
       }
    }
 
@@ -187,7 +187,7 @@ public class Carrot {
    public void setAccessToken(String accessToken) {
       mAccessToken = accessToken;
       if(getStatus() != StatusReady) {
-         checkUDID();
+         validateUser();
       }
    }
 
@@ -628,49 +628,7 @@ public class Carrot {
       return mHostActivity;
    }
 
-   private void checkUDID() {
-      mExecutorService.submit(new Runnable() {
-         public void run() {
-            HttpsURLConnection connection = null;
-            try {
-               while(!OpenUDID_manager.isInitialized()) {
-                  java.lang.Thread.sleep(10);
-               }
-
-               URL url = new URL("https", mHostname, "/games/" + mAppId + "/users/" + getUDID() + ".json");
-               Log.e(LOG_TAG, "Checking Carrot UDID " + getUDID());
-               connection = (HttpsURLConnection)url.openConnection();
-               connection.setRequestMethod("GET");
-
-               switch(connection.getResponseCode())
-               {
-                  case HttpsURLConnection.HTTP_NOT_FOUND:
-                  {
-                     addUser();
-                     break;
-                  }
-                  default:
-                  {
-                     if(!updateAuthenticationStatus(connection.getResponseCode())) {
-                        Log.e(LOG_TAG, "Unknown error verifying Carrot user (" + connection.getResponseCode() + ").");
-                        setStatus(StatusUndetermined);
-                     }
-                  }
-               }
-            }
-            catch(Exception e) {
-               Log.e(LOG_TAG, Log.getStackTraceString(e));
-               setStatus(StatusUndetermined);
-            }
-            finally {
-               connection.disconnect();
-               connection = null;
-            }
-         }
-      });
-   }
-
-   private void addUser() {
+   private void validateUser() {
       mExecutorService.submit(new Runnable() {
          public void run() {
             HttpsURLConnection connection = null;
@@ -702,6 +660,10 @@ public class Carrot {
                      Log.e(LOG_TAG, "Unknown error adding Carrot user (" + connection.getResponseCode() + ").");
                      setStatus(StatusUndetermined);
                   }
+               }
+               else
+               {
+                  setStatus(StatusUndetermined);
                }
             }
             catch(Exception e) {
