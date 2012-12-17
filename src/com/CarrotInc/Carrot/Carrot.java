@@ -264,6 +264,24 @@ public class Carrot {
    }
 
    /**
+    * Get a list of high scores for the current Carrot user and their friends.
+    *
+    * @param callback the RequestCallback to notify upon completion of the query.
+    */
+   public void getFriendHighScores(RequestCallback callback) {
+      mExecutorService.submit(new CarrotRequest(this, "GET", "/me/scores.json", null, callback));
+   }
+
+   /**
+    * Get a list of high scores for the current Carrot user and their friends (Unity).
+    *
+    * @param delegateObjectName the name of the Unity Game Object to send UnitySendMessage calls to.
+    */
+   public void getFriendHighScoresUnity(String delegateObjectName) {
+      getFriendHighScores(getUnityRequestCallback(delegateObjectName, "friendHighScoresReceived"));
+   }
+
+   /**
     * Post an Open Graph action with an existing object to the Carrot service.
     *
     * @param actionId the Carrot action id.
