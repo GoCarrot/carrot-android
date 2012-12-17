@@ -137,6 +137,7 @@ class CarrotCachedRequest extends CarrotRequest implements Runnable {
       synchronized(database) {
          Cursor cursor = database.query("cache", kCacheReadColumns,
             null, null, null, null, "retry_count");
+         carrot.getHostActivity().startManagingCursor(cursor);
 
          cursor.moveToFirst();
          while(!cursor.isAfterLast()) {
@@ -149,7 +150,6 @@ class CarrotCachedRequest extends CarrotRequest implements Runnable {
             }
             cursor.moveToNext();
          }
-         cursor.close();
       }
 
       return requests;
