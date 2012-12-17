@@ -220,6 +220,24 @@ public class Carrot {
    }
 
    /**
+    * Get a list of achievements that the current Carrot user has earned.
+    *
+    * @param callback the RequestCallback to notify upon completion of the query.
+    */
+   public void getUserAchievements(RequestCallback callback) {
+      mExecutorService.submit(new CarrotRequest(this, "GET", "/me/achievements.json", null, callback));
+   }
+
+   /**
+    * Get a list of achievements that the current Carrot user has earned (Unity).
+    *
+    * @param delegateObjectName the name of the Unity Game Object to send UnitySendMessage calls to.
+    */
+   public void getUserAchievementsUnity(String delegateObjectName) {
+      getUserAchievements(getUnityRequestCallback(delegateObjectName, "userAchievementListReceived"));
+   }
+
+   /**
     * Post a high score to the Carrot service.
     *
     * @param score the high score value to post.
@@ -516,6 +534,8 @@ public class Carrot {
    public interface Handler {
       /**
        * The authentication status of the user has changed.
+       *
+       * @param authStatus the updated authentication status of the current Carrot user.
        */
       void authenticationStatusChanged(int authStatus);
    }
@@ -529,6 +549,19 @@ public class Carrot {
       mHandler = handler;
       mLastAuthStatusReported = StatusUndetermined;
       setStatus(mStatus);
+   }
+
+   /**
+    * Request callback class for notification of the completion of Carrot requests.
+    */
+   public interface RequestCallback {
+      /**
+       * Called when a Carrot request has been completed.
+       *
+       * @param responseCode the HTTP response code for the request.
+       * @param responseBody the response to the Carrot request.
+       */
+      void requestComplete(int responseCode, String responseBody);
    }
 
    public void setUnityHandler(final String delegateObjectName) {
@@ -554,6 +587,33 @@ public class Carrot {
       catch(Exception e) {
          Log.e(LOG_TAG, Log.getStackTraceString(e));
       }
+   }
+
+   public RequestCallback getUnityRequestCallback(final String delegateObjectName, final String delegetMethodName) {
+      try {
+         // com.unity3d.player.UnityPlayer.UnitySendMessage
+         Class[] params = {String.class, String.class, String.class};
+         Class c = Class.forName("com.unity3d.player.UnityPlayer");
+         final Method m = c.getDeclaredMethod("UnitySendMessage", params);
+
+         return new Carrot.RequestCallback() {
+            @Override
+            public void requestComplete(int responseCode, String responseBody) {
+               Object[] callParams = {delegateObjectName, delegetMethodName, responseBody};
+               try {
+                  m.invoke(null, callParams);
+               }
+               catch(Exception e) {
+                  Log.e(LOG_TAG, Log.getStackTraceString(e));
+               }
+            }
+         };
+      }
+      catch(Exception e) {
+         Log.e(LOG_TAG, Log.getStackTraceString(e));
+      }
+
+      return null;
    }
 
    public void authorizeCallback(int requestCode, int resultCode, Intent data) {
