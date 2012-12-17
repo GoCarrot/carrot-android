@@ -89,7 +89,6 @@ class CarrotRequest implements Runnable {
          requestBody.deleteCharAt(requestBody.length() - 1);
 
          String stringToSign = mMethod + "\n" + mCarrot.getHostname() + "\n" + mEndpoint + "\n" + requestBody.toString();
-
          Mac mac = Mac.getInstance("HmacSHA256");
          mac.init(keySpec);
          byte[] result = mac.doFinal(stringToSign.getBytes());
@@ -106,16 +105,17 @@ class CarrotRequest implements Runnable {
             else {
                valueString = gson.toJson(value);
             }
-            requestBody.append(key + "=" + URLEncoder.encode(valueString, "ISO-8859-1") + "&");
+            requestBody.append(key + "=" + URLEncoder.encode(valueString, "UTF-8") + "&");
          }
-         requestBody.append("sig=" + URLEncoder.encode(Base64.encodeToString(result, Base64.DEFAULT), "ISO-8859-1"));
+         requestBody.append("sig=" + URLEncoder.encode(Base64.encodeToString(result, Base64.NO_WRAP), "UTF-8"));
 
          if(mMethod == "POST") {
             URL url = new URL("https://" + mCarrot.getHostname() + mEndpoint);
             connection = (HttpsURLConnection)url.openConnection();
 
+            connection.setRequestProperty("Accept-Charset", "UTF-8");
+            connection.setUseCaches(false);
             connection.setDoOutput(true);
-            connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
             connection.setRequestProperty("Content-Length",
                "" +  Integer.toString(requestBody.toString().getBytes().length));
@@ -129,9 +129,9 @@ class CarrotRequest implements Runnable {
          else {
             URL url = new URL("https://" + mCarrot.getHostname() + mEndpoint + "?" + requestBody.toString());
             connection = (HttpsURLConnection)url.openConnection();
-            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Accept-Charset", "UTF-8");
+            connection.setUseCaches(false);
          }
-         connection.setUseCaches(false);
 
          // Get Response
          InputStream is = null;
