@@ -135,7 +135,7 @@ class CarrotRequest implements Runnable {
 
          // Get Response
          InputStream is = null;
-         if(connection.getResponseCode() < 300) {
+         if(connection.getResponseCode() < 400) {
             is = connection.getInputStream();
          }
          else {
