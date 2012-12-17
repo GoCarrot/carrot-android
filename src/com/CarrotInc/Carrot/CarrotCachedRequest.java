@@ -43,30 +43,27 @@ import java.util.UUID;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-class CarrotCachedRequest implements Runnable {
+class CarrotCachedRequest extends CarrotRequest implements Runnable {
    private String mRequestId;
    private int mRetryCount;
    private long mCacheId;
    private Date mDateIssued;
-   private String mEndpoint;
-   private Map<String, Object> mPayload;
    private SQLiteDatabase mDatabase;
-   private Carrot mCarrot;
 
    private static final String[] kCacheReadColumns = { "rowid", "request_endpoint", "request_payload", "request_id", "request_date", "retry_count"};
 
    public CarrotCachedRequest(SQLiteDatabase database, Carrot carrot, String endpoint,
       Map<String, Object> payload) throws Exception {
+      super(carrot, "POST", endpoint, payload, null);
+      mCallback = new CarrotCachedRequestCallback();
+
       mDateIssued = new Date();
       mRequestId = UUID.randomUUID().toString();
-      mEndpoint = endpoint;
-      mPayload = payload;
       mDatabase = database;
-      mCarrot = carrot;
       Gson gson = new Gson();
 
       ContentValues values = new ContentValues();
-      values.put("request_endpoint", mEndpoint);
+      values.put("request_endpoint", endpoint);
       values.put("request_payload", gson.toJson(mPayload));
       values.put("request_id", mRequestId);
       values.put("request_date", mDateIssued.getTime());
@@ -75,11 +72,16 @@ class CarrotCachedRequest implements Runnable {
       synchronized(mDatabase) {
          mCacheId = database.insert("cache", null, values);
       }
+
+      mPayload.put("request_id", mRequestId);
+      mPayload.put("request_date", mDateIssued.getTime() / 1000); // Milliseconds -> Seconds
    }
 
-   private CarrotCachedRequest(SQLiteDatabase database, Carrot carrot, Cursor cursor) {
+   private CarrotCachedRequest(SQLiteDatabase database, Carrot carrot, Cursor cursor) throws Exception {
+      super(carrot, "POST", null, null, null);
+      mCallback = new CarrotCachedRequestCallback();
+
       mDatabase = database;
-      mCarrot = carrot;
 
       Gson gson = new Gson();
       Type payloadType = new TypeToken<Map<String, Object>>(){}.getType();
@@ -90,124 +92,42 @@ class CarrotCachedRequest implements Runnable {
       mRequestId = cursor.getString(3);
       mDateIssued = new Date(cursor.getLong(4));
       mRetryCount = cursor.getInt(5);
+
+      mPayload.put("request_id", mRequestId);
+      mPayload.put("request_date", mDateIssued.getTime() / 1000); // Milliseconds -> Seconds
    }
 
-   public void removeFromCache() {
-      synchronized(mDatabase) {
-         mDatabase.delete("cache", "rowid = " + mCacheId, null);
-      }
-   }
-
-   public void addRetryInCache() {
-      ContentValues values = new ContentValues();
-      values.put("retry_count", mRetryCount + 1);
-      synchronized(mDatabase) {
-         mDatabase.update("cache", values, "rowid = " + mCacheId, null);
-      }
-   }
-
-   public void run() {
-      HttpsURLConnection connection = null;
-      SecretKeySpec keySpec = new SecretKeySpec(mCarrot.getAppSecret().getBytes(), "HmacSHA256");
-
-      try {
-         Gson gson = new Gson();
-         HashMap<String, Object> postBodyObject = new HashMap<String, Object>();
-         postBodyObject.putAll(mPayload);
-         postBodyObject.put("api_key", mCarrot.getUDID());
-         postBodyObject.put("game_id", mCarrot.getAppId());
-         postBodyObject.put("request_id", mRequestId);
-         postBodyObject.put("request_date", mDateIssued.getTime() / 1000); // Milliseconds -> Seconds
-
-         ArrayList<String> payloadKeys = new ArrayList<String>(postBodyObject.keySet());
-         Collections.sort(payloadKeys);
-
-         StringBuilder postBody = new StringBuilder();
-         for(String key : payloadKeys) {
-            Object value = postBodyObject.get(key);
-            String valueString = null;
-            if(!Map.class.isInstance(value) &&
-               !Array.class.isInstance(value) &&
-               !List.class.isInstance(value)) {
-               valueString = value.toString();
-            }
-            else {
-               valueString = gson.toJson(value);
-            }
-            postBody.append(key + "=" + valueString + "&");
-         }
-         postBody.deleteCharAt(postBody.length() - 1);
-
-         String stringToSign = "POST\n" + mCarrot.getHostname() + "\n" + mEndpoint + "\n" + postBody.toString();
-
-         Mac mac = Mac.getInstance("HmacSHA256");
-         mac.init(keySpec);
-         byte[] result = mac.doFinal(stringToSign.getBytes());
-
-         postBody = new StringBuilder();
-         for(String key : payloadKeys) {
-            Object value = postBodyObject.get(key);
-            String valueString = null;
-            if(!Map.class.isInstance(value) &&
-               !Array.class.isInstance(value) &&
-               !List.class.isInstance(value)) {
-               valueString = value.toString();
-            }
-            else {
-               valueString = gson.toJson(value);
-            }
-            postBody.append(key + "=" + URLEncoder.encode(valueString, "ISO-8859-1") + "&");
-         }
-         postBody.append("sig=" + URLEncoder.encode(Base64.encodeToString(result, Base64.DEFAULT), "ISO-8859-1"));
-
-         URL url = new URL("https://" + mCarrot.getHostname() + mEndpoint);
-         connection = (HttpsURLConnection)url.openConnection();
-         connection.setRequestMethod("POST");
-         connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-         connection.setRequestProperty("Content-Length",
-            "" +  Integer.toString(postBody.toString().getBytes().length));
-         connection.setUseCaches(false);
-         connection.setDoOutput(true);
-
-         // Send request
-         DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
-         wr.writeBytes(postBody.toString());
-         wr.flush();
-         wr.close();
-/*
-         //Get Response 
-         InputStream is = connection.getInputStream();
-         BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-         String line;
-         StringBuffer response = new StringBuffer();
-         while((line = rd.readLine()) != null) {
-           response.append(line);
-           response.append('\r');
-         }
-         rd.close();
-*/
-         if(connection.getResponseCode() == HttpsURLConnection.HTTP_NOT_FOUND) {
+   class CarrotCachedRequestCallback implements Carrot.RequestCallback {
+      @Override
+      public void requestComplete(int responseCode, String responseBody) {
+         if(responseCode == HttpsURLConnection.HTTP_NOT_FOUND) {
             Log.e(Carrot.LOG_TAG, "Requested resource not found, removing request from cache.");
             removeFromCache();
          }
-         else if(!mCarrot.updateAuthenticationStatus(connection.getResponseCode())) {
-            Log.e(Carrot.LOG_TAG, "Unknown error (" + connection.getResponseCode() + ") submitting Carrot request: " /*+ response.toString()*/);
+         else if(!mCarrot.updateAuthenticationStatus(responseCode)) {
+            Log.e(Carrot.LOG_TAG, "Unknown error (" + responseCode + ") submitting Carrot request: " + responseBody);
             addRetryInCache();
          }
          else if (mCarrot.getStatus() == Carrot.StatusReady) {
             removeFromCache();
          }
          else {
-            mCarrot.setStatus(Carrot.StatusUndetermined);
             addRetryInCache();
          }
       }
-      catch(Exception e) {
-         Log.e(Carrot.LOG_TAG, Log.getStackTraceString(e));
+   }
+
+   void removeFromCache() {
+      synchronized(mDatabase) {
+         mDatabase.delete("cache", "rowid = " + mCacheId, null);
       }
-      finally {
-         connection.disconnect();
-         connection = null;
+   }
+
+   void addRetryInCache() {
+      ContentValues values = new ContentValues();
+      values.put("retry_count", mRetryCount + 1);
+      synchronized(mDatabase) {
+         mDatabase.update("cache", values, "rowid = " + mCacheId, null);
       }
    }
 
