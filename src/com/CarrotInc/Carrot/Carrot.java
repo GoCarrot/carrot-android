@@ -245,21 +245,8 @@ public class Carrot {
     *         to the Carrot service when possible; <code>false</code> otherwise.
     */
    public boolean postHighScore(int score) {
-      return postHighScore(score, null);
-   }
-
-   /**
-    * Post a high score to the Carrot service to a specific leaderboard.
-    *
-    * @param score the high score value to post.
-    * @param leaderboardId the leaderboard to which the score should be posted.
-    * @return <code>true</code> if the score was > 0, cached successfully and will be sent
-    *         to the Carrot service when possible; <code>false</code> otherwise.
-    */
-   public boolean postHighScore(int score, String leaderboardId) {
       HashMap<String, Object> payload = new HashMap<String, Object>();
       payload.put("value", new Integer(score));
-      if(leaderboardId != null && !leaderboardId.isEmpty()) payload.put("leaderboard_id", leaderboardId);
       return score > 0 && mCarrotCache.addRequest("/me/scores.json", payload);
    }
 
