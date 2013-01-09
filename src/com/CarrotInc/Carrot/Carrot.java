@@ -22,7 +22,6 @@ import android.net.NetworkInfo;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.util.Log;
-import com.facebook.android.carrot.*;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.io.DataOutputStream;
@@ -131,13 +130,6 @@ public class Carrot {
       }
    }
 
-   public Facebook getFacebook() {
-      if(mFacebook == null) {
-         mFacebook = new Facebook(mAppId);
-      }
-      return mFacebook;
-   }
-
    /**
     * Get the authentication status of the Carrot user.
     *
@@ -170,11 +162,6 @@ public class Carrot {
       }
       else {
          Log.d(LOG_TAG, "Attached to android.app.Activity: " + mHostActivity);
-
-         // Resume session if it exists
-         if(getFacebook().getAccessToken() != null) {
-            setAccessToken(getFacebook().getAccessToken());
-         }
       }
    }
 
@@ -513,31 +500,6 @@ public class Carrot {
    }
 
    /**
-    * Perform the Facebook authentication needed for Carrot.
-    *
-    * @return <code>true</code> if the Facebook authentication has been started successfully;
-    *         <code>false</code> otherwise.
-    */
-   public boolean doFacebookAuth() {
-      if(!getFacebook().isSessionValid()) {
-         try {
-            Intent intent = new Intent(mHostActivity, CarrotFacebookAuthActivity.class);
-            intent.putExtra("appId", mAppId);
-            intent.putExtra("appSecret", mAppSecret);
-            mHostActivity.startActivityForResult(intent, 0);
-         }
-         catch(Exception e) {
-            Log.e(LOG_TAG, Log.getStackTraceString(e));
-            return false;
-         }
-      }
-      else {
-         setAccessToken(getFacebook().getAccessToken());
-      }
-      return true;
-   }
-
-   /**
     * Handler class for notification of Carrot events.
     */
    public interface Handler {
@@ -623,12 +585,6 @@ public class Carrot {
       }
 
       return null;
-   }
-
-   public void authorizeCallback(int requestCode, int resultCode, Intent data) {
-      if(mFacebook != null) {
-         mFacebook.authorizeCallback(requestCode, resultCode, data);
-      }
    }
 
    boolean updateAuthenticationStatus(int httpStatus) {
@@ -761,5 +717,4 @@ public class Carrot {
    private CarrotCache mCarrotCache;
    private ExecutorService mExecutorService;
    private Handler mHandler;
-   private Facebook mFacebook;
 }
