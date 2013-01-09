@@ -170,7 +170,11 @@ public class Carrot {
       }
       else {
          Log.d(LOG_TAG, "Attached to android.app.Activity: " + mHostActivity);
-         validateUser();
+
+         // Resume session if it exists
+         if(getFacebook().getAccessToken() != null) {
+            setAccessToken(getFacebook().getAccessToken());
+         }
       }
    }
 
