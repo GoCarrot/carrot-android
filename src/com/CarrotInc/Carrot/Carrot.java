@@ -25,6 +25,7 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.lang.reflect.*;
 import javax.net.ssl.HttpsURLConnection;
 import java.net.MalformedURLException;
@@ -34,6 +35,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.HashMap;
 import java.util.Map;
 import org.OpenUDID.*;
+
+import com.facebook.*;
 
 /**
  * Allows you to interact with the Carrot service from your Android application.
@@ -106,6 +109,14 @@ public class Carrot {
       mExecutorService = Executors.newSingleThreadExecutor();
 
       setActivity(activity);
+   }
+
+   public static Carrot getActiveInstance() {
+      return mActiveInstance;
+   }
+
+   public static void setActiveInstance(Carrot activeInstance) {
+      mActiveInstance = activeInstance;
    }
 
    protected void finalize() throws Throwable {
@@ -589,6 +600,36 @@ public class Carrot {
       return null;
    }
 
+   public boolean doFacebookAuth(boolean allowLoginUI, int authType) {
+      if(getActiveInstance() != this) {
+         setActiveInstance(this);
+      }
+
+      try {
+         // Set static context and app id
+         Session.setStaticApplicationId(mAppId);
+         Session tempSession = new Session(mHostActivity);
+      }
+      catch(Exception e) {
+         Log.e(LOG_TAG, "In order to have Carrot manage Facebook Authorization you must be using the Carrot modified version of the Facebook SDK.");
+         return false;
+      }
+
+      Bundle b = new Bundle();
+      b.putInt("authType", authType);
+
+      try {
+         Intent intent = new Intent(mHostActivity, CarrotLoginActivity.class);
+         intent.putExtras(b);
+         mHostActivity.startActivity(intent);
+         return true;
+      }
+      catch(Exception e) {
+         Log.e(LOG_TAG, Log.getStackTraceString(e));
+         return false;
+      }
+   }
+
    boolean updateAuthenticationStatus(int httpStatus) {
       boolean ret = true;
       switch(httpStatus) {
@@ -719,4 +760,6 @@ public class Carrot {
    private CarrotCache mCarrotCache;
    private ExecutorService mExecutorService;
    private Handler mHandler;
+
+   private static Carrot mActiveInstance;
 }
