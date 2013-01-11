@@ -151,17 +151,19 @@ public class Carrot {
    public void setActivity(Activity activity) {
       mHostActivity = activity;
       OpenUDID_manager.sync(activity);
-      mCarrotCache = new CarrotCache(this);
 
       if(!hasRequiredPermissions(activity)) {
          Log.e(LOG_TAG, "Carrot in offline mode until require permissions are added.");
       }
 
-      if(!mCarrotCache.open()) {
-         Log.e(LOG_TAG, "Failed to create Carrot cache.");
-      }
-      else {
-         Log.d(LOG_TAG, "Attached to android.app.Activity: " + mHostActivity);
+      if(mCarrotCache == null) {
+         mCarrotCache = new CarrotCache(this);
+         if(!mCarrotCache.open()) {
+            Log.e(LOG_TAG, "Failed to create Carrot cache.");
+         }
+         else {
+            Log.d(LOG_TAG, "Attached to android.app.Activity: " + mHostActivity);
+         }
       }
    }
 
