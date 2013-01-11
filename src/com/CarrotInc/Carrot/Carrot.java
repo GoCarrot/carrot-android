@@ -734,6 +734,13 @@ public class Carrot {
                   setStatus(StatusUndetermined);
                }
             }
+            catch(IOException e) {
+               // This is probably a 401
+               if(!updateAuthenticationStatus(401)) {
+                  Log.e(LOG_TAG, Log.getStackTraceString(e));
+                  setStatus(StatusUndetermined);
+               }
+            }
             catch(Exception e) {
                Log.e(LOG_TAG, Log.getStackTraceString(e));
                setStatus(StatusUndetermined);
