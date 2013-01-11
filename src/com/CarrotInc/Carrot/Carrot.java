@@ -22,10 +22,10 @@ import android.net.NetworkInfo;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.util.Log;
-import com.facebook.android.carrot.*;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.lang.reflect.*;
 import javax.net.ssl.HttpsURLConnection;
 import java.net.MalformedURLException;
@@ -35,6 +35,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.HashMap;
 import java.util.Map;
 import org.OpenUDID.*;
+
+import com.facebook.*;
 
 /**
  * Allows you to interact with the Carrot service from your Android application.
@@ -109,6 +111,14 @@ public class Carrot {
       setActivity(activity);
    }
 
+   public static Carrot getActiveInstance() {
+      return mActiveInstance;
+   }
+
+   public static void setActiveInstance(Carrot activeInstance) {
+      mActiveInstance = activeInstance;
+   }
+
    protected void finalize() throws Throwable {
       try {
          close();
@@ -129,13 +139,6 @@ public class Carrot {
          mCarrotCache.close();
          mCarrotCache = null;
       }
-   }
-
-   public Facebook getFacebook() {
-      if(mFacebook == null) {
-         mFacebook = new Facebook(mAppId);
-      }
-      return mFacebook;
    }
 
    /**
@@ -159,21 +162,18 @@ public class Carrot {
    public void setActivity(Activity activity) {
       mHostActivity = activity;
       OpenUDID_manager.sync(activity);
-      mCarrotCache = new CarrotCache(this);
 
       if(!hasRequiredPermissions(activity)) {
          Log.e(LOG_TAG, "Carrot in offline mode until require permissions are added.");
       }
 
-      if(!mCarrotCache.open()) {
-         Log.e(LOG_TAG, "Failed to create Carrot cache.");
-      }
-      else {
-         Log.d(LOG_TAG, "Attached to android.app.Activity: " + mHostActivity);
-
-         // Resume session if it exists
-         if(getFacebook().getAccessToken() != null) {
-            setAccessToken(getFacebook().getAccessToken());
+      if(mCarrotCache == null) {
+         mCarrotCache = new CarrotCache(this);
+         if(!mCarrotCache.open()) {
+            Log.e(LOG_TAG, "Failed to create Carrot cache.");
+         }
+         else {
+            Log.d(LOG_TAG, "Attached to android.app.Activity: " + mHostActivity);
          }
       }
    }
@@ -513,31 +513,6 @@ public class Carrot {
    }
 
    /**
-    * Perform the Facebook authentication needed for Carrot.
-    *
-    * @return <code>true</code> if the Facebook authentication has been started successfully;
-    *         <code>false</code> otherwise.
-    */
-   public boolean doFacebookAuth() {
-      if(!getFacebook().isSessionValid()) {
-         try {
-            Intent intent = new Intent(mHostActivity, CarrotFacebookAuthActivity.class);
-            intent.putExtra("appId", mAppId);
-            intent.putExtra("appSecret", mAppSecret);
-            mHostActivity.startActivityForResult(intent, 0);
-         }
-         catch(Exception e) {
-            Log.e(LOG_TAG, Log.getStackTraceString(e));
-            return false;
-         }
-      }
-      else {
-         setAccessToken(getFacebook().getAccessToken());
-      }
-      return true;
-   }
-
-   /**
     * Handler class for notification of Carrot events.
     */
    public interface Handler {
@@ -625,9 +600,33 @@ public class Carrot {
       return null;
    }
 
-   public void authorizeCallback(int requestCode, int resultCode, Intent data) {
-      if(mFacebook != null) {
-         mFacebook.authorizeCallback(requestCode, resultCode, data);
+   public boolean doFacebookAuth(boolean allowLoginUI, int authType) {
+      if(getActiveInstance() != this) {
+         setActiveInstance(this);
+      }
+
+      try {
+         // Set static context and app id
+         Session.setStaticApplicationId(mAppId);
+         Session tempSession = new Session(mHostActivity);
+      }
+      catch(Exception e) {
+         Log.e(LOG_TAG, "In order to have Carrot manage Facebook Authorization you must be using the Carrot modified version of the Facebook SDK.");
+         return false;
+      }
+
+      Bundle b = new Bundle();
+      b.putInt("authType", authType);
+
+      try {
+         Intent intent = new Intent(mHostActivity, CarrotLoginActivity.class);
+         intent.putExtras(b);
+         mHostActivity.startActivity(intent);
+         return true;
+      }
+      catch(Exception e) {
+         Log.e(LOG_TAG, Log.getStackTraceString(e));
+         return false;
       }
    }
 
@@ -735,6 +734,13 @@ public class Carrot {
                   setStatus(StatusUndetermined);
                }
             }
+            catch(IOException e) {
+               // This is probably a 401
+               if(!updateAuthenticationStatus(401)) {
+                  Log.e(LOG_TAG, Log.getStackTraceString(e));
+                  setStatus(StatusUndetermined);
+               }
+            }
             catch(Exception e) {
                Log.e(LOG_TAG, Log.getStackTraceString(e));
                setStatus(StatusUndetermined);
@@ -761,5 +767,6 @@ public class Carrot {
    private CarrotCache mCarrotCache;
    private ExecutorService mExecutorService;
    private Handler mHandler;
-   private Facebook mFacebook;
+
+   private static Carrot mActiveInstance;
 }
