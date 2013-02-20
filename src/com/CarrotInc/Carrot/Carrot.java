@@ -224,24 +224,6 @@ public class Carrot {
    }
 
    /**
-    * Get a list of achievements that the current Carrot user has earned.
-    *
-    * @param callback the RequestCallback to notify upon completion of the query.
-    */
-   public void getUserAchievements(RequestCallback callback) {
-      mExecutorService.submit(new CarrotRequest(this, "GET", "/me/achievements.json", null, callback));
-   }
-
-   /**
-    * Get a list of achievements that the current Carrot user has earned (Unity).
-    *
-    * @param delegateObjectName the name of the Unity Game Object to send UnitySendMessage calls to.
-    */
-   public void getUserAchievementsUnity(String delegateObjectName) {
-      getUserAchievements(getUnityRequestCallback(delegateObjectName, "userAchievementListReceived"));
-   }
-
-   /**
     * Post a high score to the Carrot service.
     *
     * @param score the high score value to post.
@@ -252,24 +234,6 @@ public class Carrot {
       HashMap<String, Object> payload = new HashMap<String, Object>();
       payload.put("value", new Integer(score));
       return score > 0 && mCarrotCache.addRequest("/me/scores.json", payload);
-   }
-
-   /**
-    * Get a list of high scores for the current Carrot user and their friends.
-    *
-    * @param callback the RequestCallback to notify upon completion of the query.
-    */
-   public void getFriendHighScores(RequestCallback callback) {
-      mExecutorService.submit(new CarrotRequest(this, "GET", "/me/scores.json", null, callback));
-   }
-
-   /**
-    * Get a list of high scores for the current Carrot user and their friends (Unity).
-    *
-    * @param delegateObjectName the name of the Unity Game Object to send UnitySendMessage calls to.
-    */
-   public void getFriendHighScoresUnity(String delegateObjectName) {
-      getFriendHighScores(getUnityRequestCallback(delegateObjectName, "friendHighScoresReceived"));
    }
 
    /**
