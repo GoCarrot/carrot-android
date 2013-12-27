@@ -384,58 +384,6 @@ public class Carrot {
    }
 
    /**
-    * Post a 'Like' action that likes the Game's Facebook Page.
-    *
-    * @return <code>true</code> if the like was cached successfully and will be sent
-    *         to the Carrot service when possible; <code>false</code> otherwise.
-    */
-   public boolean likeGame() {
-      HashMap<String, Object> payload = new HashMap<String, Object>();
-      payload.put("object", "game");
-      return mCarrotCache.addRequest("/me/like.json", payload);
-   }
-
-   /**
-    * Post a 'Like' action that likes the Publisher's Facebook Page.
-    *
-    * @return <code>true</code> if the like was cached successfully and will be sent
-    *         to the Carrot service when possible; <code>false</code> otherwise.
-    */
-   public boolean likePublisher() {
-      HashMap<String, Object> payload = new HashMap<String, Object>();
-      payload.put("object", "publisher");
-      return mCarrotCache.addRequest("/me/like.json", payload);
-   }
-
-   /**
-    * Post a 'Like' action that likes an achievement.
-    *
-    * @param achievementId the Carrot achivement id of the achievement to like.
-    *
-    * @return <code>true</code> if the like was cached successfully and will be sent
-    *         to the Carrot service when possible; <code>false</code> otherwise.
-    */
-   public boolean likeAchievement(String achievementId) {
-      HashMap<String, Object> payload = new HashMap<String, Object>();
-      payload.put("object", "achievement:" + achievementId);
-      return mCarrotCache.addRequest("/me/like.json", payload);
-   }
-
-   /**
-    * Post a 'Like' action that likes an Open Graph object.
-    *
-    * @param objectInstanceId the instance id of the Carrot object to Like.
-    *
-    * @return <code>true</code> if the like was cached successfully and will be sent
-    *         to the Carrot service when possible; <code>false</code> otherwise.
-    */
-   public boolean likeObject(String objectInstanceId) {
-      HashMap<String, Object> payload = new HashMap<String, Object>();
-      payload.put("object", "object:" + objectInstanceId);
-      return mCarrotCache.addRequest("/me/like.json", payload);
-   }
-
-   /**
     * Check to see if your {@link Activity} has the permissions required by Carrot.
     * <p>
     * {@link Carrot} requires the {@link android.Manifest.permission.INTERNET} permission.
