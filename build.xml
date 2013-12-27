@@ -6,9 +6,7 @@
     <property environment="env"/>
 
     <path id="classpath">
-        <fileset dir="${env.ANDROID_SDK}/platforms/android-8/" includes="android.jar"/>
-        <fileset dir="../facebook-android-sdk/facebook/bin" includes="facebooksdk.jar"/>
-        <fileset dir="../facebook-android-sdk/facebook/libs" includes="android-support-v4.jar"/>
+        <fileset dir="${env.ANDROID_SDK}/platforms/android-19/" includes="android.jar"/>
     </path>
 
     <target name="clean">

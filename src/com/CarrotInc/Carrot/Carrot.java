@@ -16,8 +16,6 @@ package com.CarrotInc.Carrot;
 
 import android.app.Activity;
 import android.content.pm.PackageManager;
-import android.content.Context;
-import android.content.Intent;
 import android.net.NetworkInfo;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
@@ -35,8 +33,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.HashMap;
 import java.util.Map;
 import org.OpenUDID.*;
-
-import com.facebook.*;
 
 /**
  * Allows you to interact with the Carrot service from your Android application.
@@ -510,88 +506,6 @@ public class Carrot {
        * @param responseBody the response to the Carrot request.
        */
       void requestComplete(int responseCode, String responseBody);
-   }
-
-   public void setUnityHandler(final String delegateObjectName) {
-      try {
-         // com.unity3d.player.UnityPlayer.UnitySendMessage
-         Class[] params = {String.class, String.class, String.class};
-         Class c = Class.forName("com.unity3d.player.UnityPlayer");
-         final Method m = c.getDeclaredMethod("UnitySendMessage", params);
-
-         setHandler(new Carrot.Handler() {
-            @Override
-            public void authenticationStatusChanged(int authStatus) {
-               Object[] callParams = {delegateObjectName, "authenticationStatusChanged", Integer.toString(authStatus)};
-               try {
-                  m.invoke(null, callParams);
-               }
-               catch(Exception e) {
-                  Log.e(LOG_TAG, Log.getStackTraceString(e));
-               }
-            }
-         });
-      }
-      catch(Exception e) {
-         Log.e(LOG_TAG, Log.getStackTraceString(e));
-      }
-   }
-
-   public RequestCallback getUnityRequestCallback(final String delegateObjectName, final String delegetMethodName) {
-      try {
-         // com.unity3d.player.UnityPlayer.UnitySendMessage
-         Class[] params = {String.class, String.class, String.class};
-         Class c = Class.forName("com.unity3d.player.UnityPlayer");
-         final Method m = c.getDeclaredMethod("UnitySendMessage", params);
-
-         return new Carrot.RequestCallback() {
-            @Override
-            public void requestComplete(int responseCode, String responseBody) {
-               Object[] callParams = {delegateObjectName, delegetMethodName, responseBody};
-               try {
-                  m.invoke(null, callParams);
-               }
-               catch(Exception e) {
-                  Log.e(LOG_TAG, Log.getStackTraceString(e));
-               }
-            }
-         };
-      }
-      catch(Exception e) {
-         Log.e(LOG_TAG, Log.getStackTraceString(e));
-      }
-
-      return null;
-   }
-
-   public boolean doFacebookAuth(boolean allowLoginUI, int authType) {
-      if(getActiveInstance() != this) {
-         setActiveInstance(this);
-      }
-
-      try {
-         // Set static context and app id
-         Session.setStaticApplicationId(mAppId);
-         Session tempSession = new Session(mHostActivity);
-      }
-      catch(Exception e) {
-         Log.e(LOG_TAG, "In order to have Carrot manage Facebook Authorization you must be using the Carrot modified version of the Facebook SDK.");
-         return false;
-      }
-
-      Bundle b = new Bundle();
-      b.putInt("authType", authType);
-
-      try {
-         Intent intent = new Intent(mHostActivity, CarrotLoginActivity.class);
-         intent.putExtras(b);
-         mHostActivity.startActivity(intent);
-         return true;
-      }
-      catch(Exception e) {
-         Log.e(LOG_TAG, Log.getStackTraceString(e));
-         return false;
-      }
    }
 
    boolean updateAuthenticationStatus(int httpStatus) {
