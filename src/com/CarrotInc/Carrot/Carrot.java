@@ -506,7 +506,12 @@ public class Carrot {
       return ret;
    }
 
-   String getHostname() {
+   String getHostname(String endpoint) {
+      // Temporary hack until services discovery re-write
+      if(endpoint.equals("/install.json")) {
+         return "parsnip." + mHostname;
+      }
+
       return mHostname;
    }
 

@@ -15,6 +15,7 @@
 package com.CarrotInc.Carrot;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -23,6 +24,7 @@ import java.net.URL;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 class CarrotCache
@@ -50,6 +52,12 @@ class CarrotCache
       boolean ret = false;
       try {
          mDatabase = mOpenHelper.getWritableDatabase();
+
+         if(!mOpenHelper.mInstallMetricSent) {
+            HashMap<String, Object> payload = new HashMap<String, Object>();
+            payload.put("install_date", mOpenHelper.mInstallDate);
+            mOpenHelper.mInstallMetricSent = addRequest("/install.json", payload);
+         }
          ret = true;
       }
       catch(SQLException e) {
@@ -104,6 +112,12 @@ class CarrotCache
 
       private static final String kCacheCreateSQL = "CREATE TABLE IF NOT EXISTS cache(request_endpoint TEXT, request_payload TEXT, request_id TEXT, request_date INTEGER, retry_count INTEGER)";
 
+      private static final String kInstallTableCreateSQL = "CREATE TABLE IF NOT EXISTS install_tracking(install_date REAL, metric_sent INTEGER)";
+      private final String[] kInstallTableReadColumns = { "install_date", "metric_sent" };
+
+      public double mInstallDate;
+      public boolean mInstallMetricSent;
+
       public CarrotCacheOpenHelper(Context context) {
          super(context, kDatabaseName, null, kDatabaseVersion);
       }
@@ -111,6 +125,18 @@ class CarrotCache
       @Override
       public void onCreate(SQLiteDatabase database) {
          database.execSQL(kCacheCreateSQL);
+         database.execSQL(kInstallTableCreateSQL);
+
+         Cursor cursor = database.query("install_tracking", kInstallTableReadColumns,
+            null, null, null, null, "install_date");
+
+         mInstallMetricSent = false;
+         mInstallDate = System.currentTimeMillis() / 1000.0;
+         if(cursor.getCount() > 0) {
+            mInstallDate = cursor.getDouble(0);
+            mInstallMetricSent = (cursor.getInt(1) > 0);
+         }
+         cursor.close();
       }
 
       @Override

@@ -88,7 +88,7 @@ class CarrotRequest implements Runnable {
          }
          requestBody.deleteCharAt(requestBody.length() - 1);
 
-         String stringToSign = mMethod + "\n" + mCarrot.getHostname() + "\n" + mEndpoint + "\n" + requestBody.toString();
+         String stringToSign = mMethod + "\n" + mCarrot.getHostname(mEndpoint) + "\n" + mEndpoint + "\n" + requestBody.toString();
          Mac mac = Mac.getInstance("HmacSHA256");
          mac.init(keySpec);
          byte[] result = mac.doFinal(stringToSign.getBytes());
@@ -110,7 +110,7 @@ class CarrotRequest implements Runnable {
          requestBody.append("sig=" + URLEncoder.encode(Base64.encodeToString(result, Base64.NO_WRAP), "UTF-8"));
 
          if(mMethod == "POST") {
-            URL url = new URL("https://" + mCarrot.getHostname() + mEndpoint);
+            URL url = new URL("https://" + mCarrot.getHostname(mEndpoint) + mEndpoint);
             connection = (HttpsURLConnection)url.openConnection();
 
             connection.setRequestProperty("Accept-Charset", "UTF-8");
@@ -127,7 +127,7 @@ class CarrotRequest implements Runnable {
             wr.close();
          }
          else {
-            URL url = new URL("https://" + mCarrot.getHostname() + mEndpoint + "?" + requestBody.toString());
+            URL url = new URL("https://" + mCarrot.getHostname(mEndpoint) + mEndpoint + "?" + requestBody.toString());
             connection = (HttpsURLConnection)url.openConnection();
             connection.setRequestProperty("Accept-Charset", "UTF-8");
             connection.setUseCaches(false);
