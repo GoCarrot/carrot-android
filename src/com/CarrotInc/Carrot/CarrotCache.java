@@ -32,6 +32,7 @@ class CarrotCache
    private SQLiteDatabase mDatabase;
    private CarrotCacheOpenHelper mOpenHelper;
    private ExecutorService mExecutorService;
+   private ExecutorService mInstallExecutorService;
    private Carrot mCarrot;
 
    public CarrotCache(Carrot carrot) {
@@ -53,11 +54,26 @@ class CarrotCache
       try {
          mDatabase = mOpenHelper.getWritableDatabase();
 
+         // Send install metric if needed
          if(!mOpenHelper.mInstallMetricSent) {
             HashMap<String, Object> payload = new HashMap<String, Object>();
             payload.put("install_date", mOpenHelper.mInstallDate);
-            mOpenHelper.mInstallMetricSent = addRequest("/install.json", payload);
+
+            mInstallExecutorService = Executors.newSingleThreadExecutor();
+            CarrotRequest installReportRequest = new CarrotRequest(mCarrot, "POST", "/install.json", payload, new Carrot.RequestCallback() {
+               @Override
+               public void requestComplete(int responseCode, String responseBody) {
+                  synchronized(mDatabase) {
+                     mDatabase.execSQL("UPDATE install_tracking SET metric_sent=1");
+                  }
+                  mOpenHelper.mInstallMetricSent = true;
+
+                  mInstallExecutorService.shutdown();
+               }
+            });
+            mInstallExecutorService.submit(installReportRequest);
          }
+
          ret = true;
       }
       catch(SQLException e) {
@@ -126,16 +142,27 @@ class CarrotCache
       public void onCreate(SQLiteDatabase database) {
          database.execSQL(kCacheCreateSQL);
          database.execSQL(kInstallTableCreateSQL);
+      }
 
+      @Override
+      public void onOpen(SQLiteDatabase database) {
+         // Install tracking
+         database.execSQL(kInstallTableCreateSQL);
          Cursor cursor = database.query("install_tracking", kInstallTableReadColumns,
             null, null, null, null, "install_date");
 
          mInstallMetricSent = false;
          mInstallDate = System.currentTimeMillis() / 1000.0;
+
          if(cursor.getCount() > 0) {
+            cursor.moveToFirst();
             mInstallDate = cursor.getDouble(0);
             mInstallMetricSent = (cursor.getInt(1) > 0);
          }
+         else {
+            database.execSQL("INSERT INTO install_tracking (install_date, metric_sent) VALUES (" + mInstallDate +", 0)");
+         }
+
          cursor.close();
       }
 
