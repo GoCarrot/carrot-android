@@ -44,10 +44,6 @@ import org.OpenUDID.*;
  * <li>{@link #postAchievement(String) postAchievement}
  * <li>{@link #postHighScore(int) postHighScore}
  * <li>{@link #postAction(String,String) postAction} (and variants)
- * <li>{@link #likeGame() likeGame}
- * <li>{@link #likePublisher() likePublisher}
- * <li>{@link #likeAchievement(String) likeAchievement}
- * <li>{@link #likeObject(String) likeObject}
  * </ul>
  * This means that a user may authenticate with Facebook at a much later date
  * and calls made to Carrot will still be transmitted to the server. Each Carrot
