@@ -103,23 +103,10 @@ public class Carrot {
 
    protected void finalize() throws Throwable {
       try {
-         close();
+         deactivateApp(null);
       }
       finally {
          super.finalize();
-      }
-   }
-
-   /**
-    * Closes the request cache and stops the request threads for this Carrot instance.
-    * <p>
-    * Once this method has been called, you should make no further calls to the instance.
-    */
-   public void close() {
-      mExecutorService.shutdownNow();
-      if(mCarrotCache != null) {
-         mCarrotCache.close();
-         mCarrotCache = null;
       }
    }
 
@@ -133,21 +120,20 @@ public class Carrot {
    }
 
    /**
-    * Change the {@link Activity} assigned to this instance.
+    * Activate Carrot and attach the {@link Activity} to this instance.
     * <p>
-    * The <code>Activity</code> passed in to the Carrot constructor is assigned
-    * to the instance upon creation. If the <code>Activity</code> changes, call this function
-    * to update the instance.
+    * Call this function from the <code>onResume()</code> function of your activity.
     *
     * @param activity the new <code>Activity</code> to which this instance should attach.
     */
-   public void setActivity(Activity activity) {
+   public void activateApp(Activity activity) {
+      if(mExecutorService != null) {
+        mExecutorService.shutdownNow();
+      }
+      mExecutorService = Executors.newSingleThreadExecutor();
+
       mHostActivity = activity;
       OpenUDID_manager.sync(activity);
-
-      if(!hasRequiredPermissions(activity)) {
-         Log.e(LOG_TAG, "Carrot in offline mode until require permissions are added.");
-      }
 
       if(mCarrotCache == null) {
          mCarrotCache = new CarrotCache(this);
@@ -157,6 +143,28 @@ public class Carrot {
          else {
             Log.d(LOG_TAG, "Attached to android.app.Activity: " + mHostActivity);
          }
+      }
+
+      if(!hasRequiredPermissions(activity)) {
+         Log.e(LOG_TAG, "Carrot in offline mode until require permissions are added.");
+      }
+   }
+
+   /**
+    * Closes the request cache and stops the request threads for this Carrot instance.
+    * <p>
+    * Call this function from the <code>onPause()</code> function of your activity.
+    *
+    * @param activity the new <code>Activity</code> to which this instance should detach.
+    */
+   public void deactivateApp(Activity activity) {
+      if(mExecutorService != null) {
+        mExecutorService.shutdownNow();
+        mExecutorService = null;
+      }
+      if(mCarrotCache != null) {
+         mCarrotCache.close();
+         mCarrotCache = null;
       }
    }
 
