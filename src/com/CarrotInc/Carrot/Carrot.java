@@ -41,8 +41,6 @@ import org.OpenUDID.*;
  * will be cached on the client and sent to the Carrot service once authentication has
  * occurred.
  * <ul>
- * <li>{@link #postAchievement(String) postAchievement}
- * <li>{@link #postHighScore(int) postHighScore}
  * <li>{@link #postAction(String,String) postAction} (and variants)
  * </ul>
  * This means that a user may authenticate with Facebook at a much later date
@@ -200,32 +198,6 @@ public class Carrot {
       payload.put("push_key", devicePushKey);
       payload.put("device_type", "android");
       mCarrotCache.addRequest("/me/devices.json", payload);
-   }
-
-   /**
-    * Post an achievement to the Carrot service.
-    *
-    * @param achievementId the Carrot achivement id of the achievement to post.
-    * @return <code>true</code> if the achievement was cached successfully and will be sent
-    *         to the Carrot service when possible; <code>false</code> otherwise.
-    */
-   public boolean postAchievement(String achievementId) {
-      HashMap<String, Object> payload = new HashMap<String, Object>();
-      payload.put("achievement_id", achievementId);
-      return mCarrotCache.addRequest("/me/achievements.json", payload);
-   }
-
-   /**
-    * Post a high score to the Carrot service.
-    *
-    * @param score the high score value to post.
-    * @return <code>true</code> if the score was > 0, cached successfully and will be sent
-    *         to the Carrot service when possible; <code>false</code> otherwise.
-    */
-   public boolean postHighScore(int score) {
-      HashMap<String, Object> payload = new HashMap<String, Object>();
-      payload.put("value", new Integer(score));
-      return score > 0 && mCarrotCache.addRequest("/me/scores.json", payload);
    }
 
    /**
