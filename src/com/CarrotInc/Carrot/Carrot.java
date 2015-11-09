@@ -24,10 +24,14 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
 import java.lang.reflect.*;
 import javax.net.ssl.HttpsURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.HashMap;
@@ -57,6 +61,7 @@ public class Carrot {
    public static final int StatusReadOnly = 1;
    public static final int StatusReady = 2;
 
+   public static final String SDKVersion = "1.1";
 
    /**
     * Constructor for a new Carrot instance.
@@ -116,6 +121,9 @@ public class Carrot {
 
       if(!hasRequiredPermissions(activity)) {
          Log.e(LOG_TAG, "Carrot in offline mode until require permissions are added.");
+      }
+      else {
+         servicesDiscovery();
       }
    }
 
@@ -440,12 +448,14 @@ public class Carrot {
    }
 
    String getHostname(String endpoint) {
-      // Temporary hack until services discovery re-write
       if(endpoint.equals("/install.json")) {
-         return "parsnip." + mHostname;
+         return mMetricsHostname;
+      }
+      else if(endpoint.equals("/users.json")) {
+         return mAuthHostname;
       }
 
-      return mHostname;
+      return mPostHostname;
    }
 
    String getAppId() {
@@ -458,6 +468,70 @@ public class Carrot {
 
    Activity getHostActivity() {
       return mHostActivity;
+   }
+
+   private void servicesDiscovery() {
+      mExecutorService.submit(new Runnable() {
+         public void run() {
+            HttpsURLConnection connection = null;
+            try {
+               Gson gson = new Gson();
+               String versionName = mHostActivity.getPackageManager().getPackageInfo(mHostActivity.getPackageName(), 0).versionName;
+               String queryString = "?sdk_version=" + URLEncoder.encode(SDKVersion, "UTF-8") +
+                  "&sdk_platform=" + URLEncoder.encode("android_" + android.os.Build.VERSION.RELEASE, "UTF-8") +
+                  "&game_id=" + URLEncoder.encode(mAppId, "UTF-8") +
+                  "&app_version=" + URLEncoder.encode(versionName, "UTF-8");
+               URL url = new URL("https", CARROT_SERVICES_HOSTNAME, "/services.json" + queryString);
+               connection = (HttpsURLConnection)url.openConnection();
+               connection.setRequestProperty("Accept-Charset", "UTF-8");
+               connection.setUseCaches(false);
+
+               // Get Response
+               InputStream is = null;
+               if(connection.getResponseCode() < 400) {
+                  is = connection.getInputStream();
+               }
+               else {
+                  is = connection.getErrorStream();
+               }
+               BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+               String line;
+               StringBuffer response = new StringBuffer();
+               while((line = rd.readLine()) != null) {
+                 response.append(line);
+                 response.append('\r');
+               }
+               rd.close();
+
+               Log.d(LOG_TAG, response.toString());
+
+               // Read the JSON
+               if(connection.getResponseCode() < 400) {
+                  Type payloadType = new TypeToken<Map<String, String>>(){}.getType();
+                  Map<String, String> services = gson.fromJson(response.toString(), payloadType);
+
+                  mAuthHostname = services.get("auth");
+                  mMetricsHostname = services.get("metrics");
+                  mPostHostname = services.get("post");
+
+                  Log.d(LOG_TAG, services.get("auth"));
+                  Log.d(LOG_TAG, services.get("post"));
+                  Log.d(LOG_TAG, services.get("metrics"));
+               }
+               else {
+                  // Error
+               }
+            }
+            catch(Exception e) {
+               Log.e(LOG_TAG, Log.getStackTraceString(e));
+            }
+
+            finally {
+               connection.disconnect();
+               connection = null;
+            }
+         }
+      });
    }
 
    private void validateUser() {
@@ -473,13 +547,13 @@ public class Carrot {
                {
                   String postBody = "api_key=" + getUDID() + "&access_token=" + mAccessToken;
 
-                  URL url = new URL("https", mHostname, "/games/" + mAppId + "/users.json");
+                  URL url = new URL("https", getHostname("/users.json"), "/games/" + mAppId + "/users.json");
                   connection = (HttpsURLConnection)url.openConnection();
                   connection.setRequestMethod("POST");
                   connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
                   connection.setRequestProperty("Content-Length",
                      "" +  Integer.toString(postBody.getBytes().length));
-                  connection.setUseCaches (false);
+                  connection.setUseCaches(false);
                   connection.setDoOutput(true);
 
                   // Send request
@@ -518,11 +592,15 @@ public class Carrot {
    }
 
    public static final String LOG_TAG = "Carrot";
+   private static final String CARROT_SERVICES_HOSTNAME = "services.gocarrot.com";
 
    private Activity mHostActivity;
    private String mAppId;
    private String mAppSecret;
    private String mAccessToken;
+   private String mAuthHostname;
+   private String mPostHostname;
+   private String mMetricsHostname;
    private int mStatus;
    private int mLastAuthStatusReported;
    private CarrotCache mCarrotCache;
