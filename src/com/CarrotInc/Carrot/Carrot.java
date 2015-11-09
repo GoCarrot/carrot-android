@@ -101,14 +101,6 @@ public class Carrot {
       setActivity(activity);
    }
 
-   public static Carrot getActiveInstance() {
-      return mActiveInstance;
-   }
-
-   public static void setActiveInstance(Carrot activeInstance) {
-      mActiveInstance = activeInstance;
-   }
-
    protected void finalize() throws Throwable {
       try {
          close();
@@ -566,6 +558,4 @@ public class Carrot {
    private CarrotCache mCarrotCache;
    private ExecutorService mExecutorService;
    private Handler mHandler;
-
-   private static Carrot mActiveInstance;
 }
