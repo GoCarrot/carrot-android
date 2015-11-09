@@ -57,48 +57,17 @@ public class Carrot {
    public static final int StatusReadOnly = 1;
    public static final int StatusReady = 2;
 
-   /**
-    * Constructor for a new Carrot instance that uses the default Carrot server hostname.
-    *
-    * @param activity   the {@link Activity} to which this Carrot instance is attached.
-    * @param appId      the Facebook Application Id for your application.
-    * @param appSecret  the Carrot Application Secret for your application.
-    */
-   public Carrot(Activity activity, String appId, String appSecret) {
-      this(activity, appId, appSecret, null);
-   }
 
    /**
-    * Constructor for a new Carrot instance specifying a Carrot server hostname.
+    * Constructor for a new Carrot instance.
     *
-    * @param activity   the {@link Activity} to which this Carrot instance is attached.
     * @param appId      the Facebook Application Id for your application.
     * @param appSecret  the Carrot Application Secret for your application.
-    * @param hostname   the hostname for the Carrot server.
     */
-   public Carrot(Activity activity, String appId, String appSecret, String hostname) {
-      this(activity, appId, appSecret, null, null);
-   }
-
-   /**
-    * Constructor for a new Carrot instance specifying a Carrot server hostname and debug UDID.
-    *
-    * @param activity   the {@link Activity} to which this Carrot instance is attached.
-    * @param appId      the Facebook Application Id for your application.
-    * @param appSecret  the Carrot Application Secret for your application.
-    * @param hostname   the hostname for the Carrot server, or null for default.
-    * @param debugUDID  the debug UDID to assign, or null for normal functionality.
-    */
-   public Carrot(Activity activity, String appId, String appSecret, String hostname, String debugUDID) {
+   public Carrot(String appId, String appSecret) {
       mAppId = appId;
       mAppSecret = appSecret;
-      mHostname = (hostname != null  && !hostname.isEmpty() ? hostname : CARROT_HOSTNAME);
       mStatus = Carrot.StatusUndetermined;
-      mDebugUDID = debugUDID;
-
-      mExecutorService = Executors.newSingleThreadExecutor();
-
-      setActivity(activity);
    }
 
    protected void finalize() throws Throwable {
@@ -463,10 +432,6 @@ public class Carrot {
    }
 
    String getUDID() {
-      if(mDebugUDID != null && !mDebugUDID.isEmpty()) {
-         return mDebugUDID;
-      }
-
       String ret = "";
       if(OpenUDID_manager.isInitialized()) {
          ret = OpenUDID_manager.getOpenUDID();
@@ -553,14 +518,11 @@ public class Carrot {
    }
 
    public static final String LOG_TAG = "Carrot";
-   private static final String CARROT_HOSTNAME = "gocarrot.com";
 
    private Activity mHostActivity;
    private String mAppId;
    private String mAppSecret;
-   private String mHostname;
    private String mAccessToken;
-   private String mDebugUDID;
    private int mStatus;
    private int mLastAuthStatusReported;
    private CarrotCache mCarrotCache;
