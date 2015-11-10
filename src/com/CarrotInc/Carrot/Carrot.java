@@ -36,7 +36,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.HashMap;
 import java.util.Map;
-import org.OpenUDID.*;
 
 /**
  * Allows you to interact with the Carrot service from your Android application.
@@ -68,11 +67,13 @@ public class Carrot {
     *
     * @param appId      the Facebook Application Id for your application.
     * @param appSecret  the Carrot Application Secret for your application.
+    * @param userId     the active user id.
     */
-   public Carrot(String appId, String appSecret) {
+   public Carrot(String appId, String appSecret, String userId) {
       mAppId = appId;
       mAppSecret = appSecret;
       mStatus = Carrot.StatusUndetermined;
+      mUserId = userId;
    }
 
    /**
@@ -98,7 +99,6 @@ public class Carrot {
       mExecutorService = Executors.newSingleThreadExecutor();
 
       mHostActivity = activity;
-      OpenUDID_manager.sync(activity);
 
       if(mCarrotCache == null) {
          mCarrotCache = new CarrotCache(this);
@@ -432,12 +432,8 @@ public class Carrot {
       }
    }
 
-   String getUDID() {
-      String ret = "";
-      if(OpenUDID_manager.isInitialized()) {
-         ret = OpenUDID_manager.getOpenUDID();
-      }
-      return ret;
+   String getUserId() {
+      return mUserId;
    }
 
    String getHostname(String endpoint) {
@@ -532,13 +528,9 @@ public class Carrot {
          public void run() {
             HttpsURLConnection connection = null;
             try {
-               while(!OpenUDID_manager.isInitialized()) {
-                  java.lang.Thread.sleep(10);
-               }
-
                if(mAccessToken != null && !mAccessToken.isEmpty())
                {
-                  String postBody = "api_key=" + getUDID() + "&access_token=" + mAccessToken;
+                  String postBody = "api_key=" + getUserId() + "&access_token=" + mAccessToken;
 
                   URL url = new URL("https", getHostname("/users.json"), "/games/" + mAppId + "/users.json");
                   connection = (HttpsURLConnection)url.openConnection();
@@ -589,6 +581,7 @@ public class Carrot {
 
    private Activity mHostActivity;
    private String mAppId;
+   private String mUserId;
    private String mAppSecret;
    private String mAccessToken;
    private String mAuthHostname;

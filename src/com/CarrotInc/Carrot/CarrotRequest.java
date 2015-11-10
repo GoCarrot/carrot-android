@@ -66,7 +66,7 @@ class CarrotRequest implements Runnable {
          if(mPayload != null) {
             requestBodyObject.putAll(mPayload);
          }
-         requestBodyObject.put("api_key", mCarrot.getUDID());
+         requestBodyObject.put("api_key", mCarrot.getUserId());
          requestBodyObject.put("game_id", mCarrot.getAppId());
 
          ArrayList<String> payloadKeys = new ArrayList<String>(requestBodyObject.keySet());
