@@ -506,9 +506,12 @@ public class Carrot {
                   Log.d(LOG_TAG, services.get("auth"));
                   Log.d(LOG_TAG, services.get("post"));
                   Log.d(LOG_TAG, services.get("metrics"));
+
+                  // Ready. Do validateUser()
+                  validateUser();
                }
                else {
-                  // Error
+                  Log.e(LOG_TAG, "Error performing services discovery: " + connection.getResponseCode());
                }
             }
             catch(Exception e) {
@@ -528,32 +531,25 @@ public class Carrot {
          public void run() {
             HttpsURLConnection connection = null;
             try {
-               if(mAccessToken != null && !mAccessToken.isEmpty())
-               {
-                  String postBody = "api_key=" + getUserId() + "&access_token=" + mAccessToken;
+               String postBody = "api_key=" + getUserId() + "&access_token=" + mAccessToken;
 
-                  URL url = new URL("https", getHostname("/users.json"), "/games/" + mAppId + "/users.json");
-                  connection = (HttpsURLConnection)url.openConnection();
-                  connection.setRequestMethod("POST");
-                  connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                  connection.setRequestProperty("Content-Length",
-                     "" +  Integer.toString(postBody.getBytes().length));
-                  connection.setUseCaches(false);
-                  connection.setDoOutput(true);
+               URL url = new URL("https", getHostname("/users.json"), "/games/" + mAppId + "/users.json");
+               connection = (HttpsURLConnection)url.openConnection();
+               connection.setRequestMethod("POST");
+               connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+               connection.setRequestProperty("Content-Length",
+                  "" +  Integer.toString(postBody.getBytes().length));
+               connection.setUseCaches(false);
+               connection.setDoOutput(true);
 
-                  // Send request
-                  DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
-                  wr.writeBytes(postBody);
-                  wr.flush();
-                  wr.close();
+               // Send request
+               DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
+               wr.writeBytes(postBody);
+               wr.flush();
+               wr.close();
 
-                  if(!updateAuthenticationStatus(connection.getResponseCode())) {
-                     Log.e(LOG_TAG, "Unknown error adding Carrot user (" + connection.getResponseCode() + ").");
-                     setStatus(StatusUndetermined);
-                  }
-               }
-               else
-               {
+               if(!updateAuthenticationStatus(connection.getResponseCode())) {
+                  Log.e(LOG_TAG, "Unknown error adding Carrot user (" + connection.getResponseCode() + ").");
                   setStatus(StatusUndetermined);
                }
             }
