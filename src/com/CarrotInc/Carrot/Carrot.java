@@ -75,15 +75,6 @@ public class Carrot {
       mStatus = Carrot.StatusUndetermined;
    }
 
-   protected void finalize() throws Throwable {
-      try {
-         deactivateApp(null);
-      }
-      finally {
-         super.finalize();
-      }
-   }
-
    /**
     * Get the authentication status of the Carrot user.
     *
@@ -388,17 +379,19 @@ public class Carrot {
       setStatus(mStatus);
    }
 
-   /**
-    * Request callback class for notification of the completion of Carrot requests.
-    */
-   public interface RequestCallback {
-      /**
-       * Called when a Carrot request has been completed.
-       *
-       * @param responseCode the HTTP response code for the request.
-       * @param responseBody the response to the Carrot request.
-       */
+   /**************************************************************************/
+
+   protected interface RequestCallback {
       void requestComplete(int responseCode, String responseBody);
+   }
+
+   protected void finalize() throws Throwable {
+      try {
+         deactivateApp(null);
+      }
+      finally {
+         super.finalize();
+      }
    }
 
    boolean updateAuthenticationStatus(int httpStatus) {
