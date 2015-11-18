@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.CarrotInc.Carrot;
+package com.carrot.sdk;
 
 import android.app.Activity;
 import android.content.pm.PackageManager;
@@ -39,6 +39,9 @@ import java.util.Map;
 
 /**
  * Allows you to interact with the Carrot service from your Android application.
+ * <p>
+ * Add a meta-data element to the application element in your Android Manifest:
+ * {@code <meta-data android:name="com.carrot.sdk.APIKey" android:value="mykey123" /> }
  * <p>
  * Once a Carrot instance has been constructed, any calls to the following methods will
  * will be cached on the client and sent to the Carrot service once authentication has
@@ -107,6 +110,8 @@ public class Carrot {
          }
          else {
             Log.d(LOG_TAG, "Attached to android.app.Activity: " + mHostActivity);
+
+            // Session start?
          }
       }
 
