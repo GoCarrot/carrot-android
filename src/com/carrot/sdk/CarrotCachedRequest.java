@@ -52,9 +52,8 @@ class CarrotCachedRequest extends CarrotRequest implements Runnable {
 
    private static final String[] kCacheReadColumns = { "rowid", "request_endpoint", "request_payload", "request_id", "request_date", "retry_count"};
 
-   public CarrotCachedRequest(SQLiteDatabase database, Carrot carrot, String endpoint,
-      Map<String, Object> payload) throws Exception {
-      super(carrot, "POST", endpoint, payload, null);
+   public CarrotCachedRequest(SQLiteDatabase database, String endpoint, Map<String, Object> payload) throws Exception {
+      super("POST", endpoint, payload, null);
       mCallback = new CarrotCachedRequestCallback();
 
       mDateIssued = new Date();
@@ -77,8 +76,8 @@ class CarrotCachedRequest extends CarrotRequest implements Runnable {
       mPayload.put("request_date", mDateIssued.getTime() / 1000); // Milliseconds -> Seconds
    }
 
-   private CarrotCachedRequest(SQLiteDatabase database, Carrot carrot, Cursor cursor) throws Exception {
-      super(carrot, "POST", null, null, null);
+   private CarrotCachedRequest(SQLiteDatabase database, Cursor cursor) throws Exception {
+      super("POST", null, null, null);
       mCallback = new CarrotCachedRequestCallback();
 
       mDatabase = database;
@@ -104,11 +103,11 @@ class CarrotCachedRequest extends CarrotRequest implements Runnable {
             Log.e(Carrot.LOG_TAG, "Requested resource not found, removing request from cache.");
             removeFromCache();
          }
-         else if(!mCarrot.updateAuthenticationStatus(responseCode)) {
+         else if(!Carrot.updateAuthenticationStatus(responseCode)) {
             Log.e(Carrot.LOG_TAG, "Unknown error (" + responseCode + ") submitting Carrot request: " + responseBody);
             addRetryInCache();
          }
-         else if (mCarrot.getStatus() == Carrot.StatusReady) {
+         else if(Carrot.getStatus() == Carrot.StatusReady) {
             removeFromCache();
          }
          else {
@@ -131,18 +130,18 @@ class CarrotCachedRequest extends CarrotRequest implements Runnable {
       }
    }
 
-   public static List<CarrotCachedRequest> requestsInCache(SQLiteDatabase database, Carrot carrot) {
+   public static List<CarrotCachedRequest> requestsInCache(SQLiteDatabase database) {
       List<CarrotCachedRequest> requests = new ArrayList<CarrotCachedRequest>();
 
       synchronized(database) {
          Cursor cursor = database.query("cache", kCacheReadColumns,
             null, null, null, null, "retry_count");
-         carrot.getHostActivity().startManagingCursor(cursor);
+         Carrot.getHostActivity().startManagingCursor(cursor);
 
          cursor.moveToFirst();
          while(!cursor.isAfterLast()) {
             try {
-               CarrotCachedRequest request = new CarrotCachedRequest(database, carrot, cursor);
+               CarrotCachedRequest request = new CarrotCachedRequest(database, cursor);
                requests.add(request);
             }
             catch(Exception e) {

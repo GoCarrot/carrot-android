@@ -33,11 +33,9 @@ class CarrotCache
    private CarrotCacheOpenHelper mOpenHelper;
    private ExecutorService mExecutorService;
    private ExecutorService mInstallExecutorService;
-   private Carrot mCarrot;
 
-   public CarrotCache(Carrot carrot) {
-      mCarrot = carrot;
-      mOpenHelper = new CarrotCacheOpenHelper(mCarrot.getHostActivity());
+   public CarrotCache() {
+      mOpenHelper = new CarrotCacheOpenHelper(Carrot.getHostActivity());
    }
 
    protected void finalize() throws Throwable {
@@ -60,7 +58,7 @@ class CarrotCache
             payload.put("install_date", mOpenHelper.mInstallDate);
 
             mInstallExecutorService = Executors.newSingleThreadExecutor();
-            CarrotRequest installReportRequest = new CarrotRequest(mCarrot, "POST", "/install.json", payload, new Carrot.RequestCallback() {
+            CarrotRequest installReportRequest = new CarrotRequest("POST", "/install.json", payload, new Carrot.RequestCallback() {
                @Override
                public void requestComplete(int responseCode, String responseBody) {
                   synchronized(mDatabase) {
@@ -98,7 +96,7 @@ class CarrotCache
          mExecutorService = Executors.newSingleThreadExecutor();
 
          // Load requests from cache
-         List<CarrotCachedRequest> cachedRequests = CarrotCachedRequest.requestsInCache(mDatabase, mCarrot);
+         List<CarrotCachedRequest> cachedRequests = CarrotCachedRequest.requestsInCache(mDatabase);
          for(CarrotCachedRequest request : cachedRequests) {
             mExecutorService.submit(request);
          }
@@ -112,7 +110,7 @@ class CarrotCache
    public boolean addRequest(String endpoint, Map<String, Object> payload) {
       boolean ret = false;
       try {
-         CarrotCachedRequest request = new CarrotCachedRequest(mDatabase, mCarrot, endpoint, payload);
+         CarrotCachedRequest request = new CarrotCachedRequest(mDatabase, endpoint, payload);
          ret = true;
          if(mExecutorService != null) mExecutorService.submit(request);
       }

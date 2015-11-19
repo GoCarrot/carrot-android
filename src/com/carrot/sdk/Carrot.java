@@ -16,6 +16,8 @@ package com.carrot.sdk;
 
 import android.app.Activity;
 import android.content.pm.PackageManager;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.NetworkInfo;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
@@ -63,28 +65,14 @@ public class Carrot {
    public static final int StatusReadOnly = 1;
    public static final int StatusReady = 2;
 
-   public static final String SDKVersion = "1.1";
-
-   /**
-    * Constructor for a new Carrot instance.
-    *
-    * @param appId      the Facebook Application Id for your application.
-    * @param appSecret  the Carrot Application Secret for your application.
-    * @param userId     the active user id.
-    */
-   public Carrot(String appId, String appSecret, String userId) {
-      mAppId = appId;
-      mAppSecret = appSecret;
-      mStatus = Carrot.StatusUndetermined;
-      mUserId = userId;
-   }
+   public static final String SDKVersion = "1.2";
 
    /**
     * Get the authentication status of the Carrot user.
     *
     * @return the authentication status of the Carrot user.
     */
-   public int getStatus() {
+   public static int getStatus() {
       return mStatus;
    }
 
@@ -95,16 +83,28 @@ public class Carrot {
     *
     * @param activity the new <code>Activity</code> to which this instance should attach.
     */
-   public void activateApp(Activity activity) {
+   public static void activateApp(Activity activity) {
+      mHostActivity = activity;
+
+      try {
+         ApplicationInfo ai = mHostActivity.getPackageManager().getApplicationInfo(activity.getPackageName(), PackageManager.GET_META_DATA);
+         Bundle bundle = ai.metaData;
+         String carrotApiKey = bundle.getString(CARROT_API_KEY);
+      }
+      catch(NameNotFoundException e) {
+         Log.e(LOG_TAG, "Failed to load meta-data, NameNotFound: " + e.getMessage());
+      }
+      catch(NullPointerException e) {
+         Log.e(LOG_TAG, "Failed to load meta-data, NullPointer: " + e.getMessage());
+      }
+
       if(mExecutorService != null) {
         mExecutorService.shutdownNow();
       }
       mExecutorService = Executors.newSingleThreadExecutor();
 
-      mHostActivity = activity;
-
       if(mCarrotCache == null) {
-         mCarrotCache = new CarrotCache(this);
+         mCarrotCache = new CarrotCache();
          if(!mCarrotCache.open()) {
             Log.e(LOG_TAG, "Failed to create Carrot cache.");
          }
@@ -130,7 +130,7 @@ public class Carrot {
     *
     * @param activity the new <code>Activity</code> to which this instance should detach.
     */
-   public void deactivateApp(Activity activity) {
+   public static void deactivateApp(Activity activity) {
       if(mExecutorService != null) {
         mExecutorService.shutdownNow();
         mExecutorService = null;
@@ -151,7 +151,7 @@ public class Carrot {
     *
     * @param accessToken the Facebook access token for the current user.
     */
-   public void setAccessToken(String accessToken) {
+   public static void setAccessToken(String accessToken) {
       mAccessToken = accessToken;
       if(getStatus() != StatusReady) {
          validateUser();
@@ -166,7 +166,7 @@ public class Carrot {
     *
     * @param devicePushKey the push notification key for the current device.
     */
-   public void setDevicePushKey(String devicePushKey) {
+   public static void setDevicePushKey(String devicePushKey) {
       HashMap<String, Object> payload = new HashMap<String, Object>();
       payload.put("push_key", devicePushKey);
       payload.put("device_type", "android");
@@ -181,7 +181,7 @@ public class Carrot {
     * @return <code>true if the action was cached successfully and will be sent
     *         to the Carrot service when possible; <code>false</code> otherwise.
     */
-   public boolean postAction(String actionId, String objectInstanceId) {
+   public static boolean postAction(String actionId, String objectInstanceId) {
       return postAction(actionId, null, objectInstanceId);
    }
 
@@ -194,7 +194,7 @@ public class Carrot {
     * @return <code>true if the action was cached successfully and will be sent
     *         to the Carrot service when possible; <code>false</code> otherwise.
     */
-   public boolean postJsonAction(String actionId, String actionPropertiesJson, String objectInstanceId) {
+   public static boolean postJsonAction(String actionId, String actionPropertiesJson, String objectInstanceId) {
       Map<String, Object> actionProperties = null;
 
       if(actionPropertiesJson != null && !actionPropertiesJson.isEmpty()) {
@@ -215,7 +215,7 @@ public class Carrot {
     * @return <code>true if the action was cached successfully and will be sent
     *         to the Carrot service when possible; <code>false</code> otherwise.
     */
-   public boolean postAction(String actionId, Map<String, Object> actionProperties,
+   public static boolean postAction(String actionId, Map<String, Object> actionProperties,
       String objectInstanceId) {
       HashMap<String, Object> payload = new HashMap<String, Object>();
       payload.put("action_id", actionId);
@@ -235,7 +235,7 @@ public class Carrot {
     * @return <code>true if the action was cached successfully and will be sent
     *         to the Carrot service when possible; <code>false</code> otherwise.
     */
-   public boolean postAction(String actionId, String objectTypeId,
+   public static boolean postAction(String actionId, String objectTypeId,
       Map<String, Object> objectProperties) {
       return postAction(actionId, null, objectTypeId, objectProperties, null);
    }
@@ -250,7 +250,7 @@ public class Carrot {
     * @return <code>true if the action was cached successfully and will be sent
     *         to the Carrot service when possible; <code>false</code> otherwise.
     */
-   public boolean postAction(String actionId, String objectTypeId,
+   public static boolean postAction(String actionId, String objectTypeId,
       Map<String, Object> objectProperties, String objectInstanceId) {
       return postAction(actionId, null, objectTypeId, objectProperties, objectInstanceId);
    }
@@ -266,7 +266,7 @@ public class Carrot {
     * @return <code>true if the action was cached successfully and will be sent
     *         to the Carrot service when possible; <code>false</code> otherwise.
     */
-   public boolean postJsonAction(String actionId, String actionPropertiesJson, String objectTypeId,
+   public static boolean postJsonAction(String actionId, String actionPropertiesJson, String objectTypeId,
       String objectPropertiesJson, String objectInstanceId) {
       Map<String, Object> actionProperties = null;
       Gson gson = new Gson();
@@ -291,7 +291,7 @@ public class Carrot {
     * @return <code>true if the action was cached successfully and will be sent
     *         to the Carrot service when possible; <code>false</code> otherwise.
     */
-   public boolean postAction(String actionId, Map<String, Object> actionProperties,
+   public static boolean postAction(String actionId, Map<String, Object> actionProperties,
       String objectTypeId, Map<String, Object> objectProperties, String objectInstanceId) {
       if(objectProperties == null) {
          Log.e(LOG_TAG, "objectProperties must not be null when calling postAction to create a new object.");
@@ -378,7 +378,7 @@ public class Carrot {
     *
     * @param handler the handler you wish to be notified when Carrot events occur.
     */
-   public void setHandler(Handler handler) {
+   public static void setHandler(Handler handler) {
       mHandler = handler;
       mLastAuthStatusReported = StatusUndetermined;
       setStatus(mStatus);
@@ -390,16 +390,7 @@ public class Carrot {
       void requestComplete(int responseCode, String responseBody);
    }
 
-   protected void finalize() throws Throwable {
-      try {
-         deactivateApp(null);
-      }
-      finally {
-         super.finalize();
-      }
-   }
-
-   boolean updateAuthenticationStatus(int httpStatus) {
+   static boolean updateAuthenticationStatus(int httpStatus) {
       boolean ret = true;
       switch(httpStatus) {
          case HttpsURLConnection.HTTP_OK:
@@ -422,7 +413,7 @@ public class Carrot {
       return ret;
    }
 
-   void setStatus(int status) {
+   static void setStatus(int status) {
       mStatus = status;
       if(mStatus == StatusReady) {
          mCarrotCache.start();
@@ -437,11 +428,11 @@ public class Carrot {
       }
    }
 
-   String getUserId() {
+   static String getUserId() {
       return mUserId;
    }
 
-   String getHostname(String endpoint) {
+   static String getHostname(String endpoint) {
       if(endpoint.equals("/install.json")) {
          return mMetricsHostname;
       }
@@ -452,19 +443,19 @@ public class Carrot {
       return mPostHostname;
    }
 
-   String getAppId() {
+   static String getAppId() {
       return mAppId;
    }
 
-   String getAppSecret() {
+   static String getAppSecret() {
       return mAppSecret;
    }
 
-   Activity getHostActivity() {
+   static Activity getHostActivity() {
       return mHostActivity;
    }
 
-   private void servicesDiscovery() {
+   private static void servicesDiscovery() {
       mExecutorService.submit(new Runnable() {
          public void run() {
             HttpsURLConnection connection = null;
@@ -531,7 +522,7 @@ public class Carrot {
       });
    }
 
-   private void validateUser() {
+   private static void validateUser() {
       mExecutorService.submit(new Runnable() {
          public void run() {
             HttpsURLConnection connection = null;
@@ -579,18 +570,19 @@ public class Carrot {
 
    public static final String LOG_TAG = "Carrot";
    private static final String CARROT_SERVICES_HOSTNAME = "services.gocarrot.com";
+   private static final String CARROT_API_KEY = "com.carrot.sdk.APIKey";
 
-   private Activity mHostActivity;
-   private String mAppId;
-   private String mUserId;
-   private String mAppSecret;
-   private String mAccessToken;
-   private String mAuthHostname;
-   private String mPostHostname;
-   private String mMetricsHostname;
-   private int mStatus;
-   private int mLastAuthStatusReported;
-   private CarrotCache mCarrotCache;
-   private ExecutorService mExecutorService;
-   private Handler mHandler;
+   private static Activity mHostActivity;
+   private static String mAppId;
+   private static String mUserId;
+   private static String mAppSecret;
+   private static String mAccessToken;
+   private static String mAuthHostname;
+   private static String mPostHostname;
+   private static String mMetricsHostname;
+   private static int mStatus = Carrot.StatusUndetermined;
+   private static int mLastAuthStatusReported;
+   private static CarrotCache mCarrotCache;
+   private static ExecutorService mExecutorService;
+   private static Handler mHandler;
 }

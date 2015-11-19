@@ -44,21 +44,19 @@ class CarrotRequest implements Runnable {
    protected String mEndpoint;
    protected String mMethod;
    protected Map<String, Object> mPayload;
-   protected Carrot mCarrot;
    protected Carrot.RequestCallback mCallback;
 
-   public CarrotRequest(Carrot carrot, String method, String endpoint,
+   public CarrotRequest(String method, String endpoint,
       Map<String, Object> payload, Carrot.RequestCallback callback) {
       mEndpoint = endpoint;
       mPayload = payload;
-      mCarrot = carrot;
       mMethod = method;
       mCallback = callback;
    }
 
    public void run() {
       HttpsURLConnection connection = null;
-      SecretKeySpec keySpec = new SecretKeySpec(mCarrot.getAppSecret().getBytes(), "HmacSHA256");
+      SecretKeySpec keySpec = new SecretKeySpec(Carrot.getAppSecret().getBytes(), "HmacSHA256");
 
       try {
          Gson gson = new Gson();
@@ -66,8 +64,8 @@ class CarrotRequest implements Runnable {
          if(mPayload != null) {
             requestBodyObject.putAll(mPayload);
          }
-         requestBodyObject.put("api_key", mCarrot.getUserId());
-         requestBodyObject.put("game_id", mCarrot.getAppId());
+         requestBodyObject.put("api_key", Carrot.getUserId());
+         requestBodyObject.put("game_id", Carrot.getAppId());
 
          ArrayList<String> payloadKeys = new ArrayList<String>(requestBodyObject.keySet());
          Collections.sort(payloadKeys);
@@ -88,7 +86,7 @@ class CarrotRequest implements Runnable {
          }
          requestBody.deleteCharAt(requestBody.length() - 1);
 
-         String stringToSign = mMethod + "\n" + mCarrot.getHostname(mEndpoint) + "\n" + mEndpoint + "\n" + requestBody.toString();
+         String stringToSign = mMethod + "\n" + Carrot.getHostname(mEndpoint) + "\n" + mEndpoint + "\n" + requestBody.toString();
          Mac mac = Mac.getInstance("HmacSHA256");
          mac.init(keySpec);
          byte[] result = mac.doFinal(stringToSign.getBytes());
@@ -110,7 +108,7 @@ class CarrotRequest implements Runnable {
          requestBody.append("sig=" + URLEncoder.encode(Base64.encodeToString(result, Base64.NO_WRAP), "UTF-8"));
 
          if(mMethod == "POST") {
-            URL url = new URL("https://" + mCarrot.getHostname(mEndpoint) + mEndpoint);
+            URL url = new URL("https://" + Carrot.getHostname(mEndpoint) + mEndpoint);
             connection = (HttpsURLConnection)url.openConnection();
 
             connection.setRequestProperty("Accept-Charset", "UTF-8");
@@ -127,7 +125,7 @@ class CarrotRequest implements Runnable {
             wr.close();
          }
          else {
-            URL url = new URL("https://" + mCarrot.getHostname(mEndpoint) + mEndpoint + "?" + requestBody.toString());
+            URL url = new URL("https://" + Carrot.getHostname(mEndpoint) + mEndpoint + "?" + requestBody.toString());
             connection = (HttpsURLConnection)url.openConnection();
             connection.setRequestProperty("Accept-Charset", "UTF-8");
             connection.setUseCaches(false);
