@@ -550,7 +550,7 @@ public class Carrot {
       mExecutorService.submit(mServicesDiscoveryFuture);
    }
 
-   private static void internal_validateUser(String accessToken) {
+   private static void internal_validateUser(final String accessToken) {
       try {
          if(mServicesDiscoveryFuture.get() == Boolean.FALSE) {
             Log.e(LOG_TAG, "Services discovery failed.");
