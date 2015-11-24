@@ -38,6 +38,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.Callable;
 
 /**
  * Allows you to interact with the Carrot service from your Android application.
@@ -84,24 +86,53 @@ public class Carrot {
     * @param activity the new <code>Activity</code> to which this instance should attach.
     */
    public static void activateApp(Activity activity) {
+      if(!hasRequiredPermissions(activity)) {
+         Log.e(LOG_TAG, "Carrot in offline mode until require permissions are added.");
+      }
+
       mHostActivity = activity;
 
-      try {
-         ApplicationInfo ai = mHostActivity.getPackageManager().getApplicationInfo(activity.getPackageName(), PackageManager.GET_META_DATA);
-         Bundle bundle = ai.metaData;
-         String carrotApiKey = bundle.getString(CARROT_API_KEY);
-      }
-      catch(NameNotFoundException e) {
-         Log.e(LOG_TAG, "Failed to load meta-data, NameNotFound: " + e.getMessage());
-      }
-      catch(NullPointerException e) {
-         Log.e(LOG_TAG, "Failed to load meta-data, NullPointer: " + e.getMessage());
+      // Get the API Key
+      // TODO: Need better error on this.
+      if(mAPIKey == null) {
+         try {
+            ApplicationInfo ai = mHostActivity.getPackageManager().getApplicationInfo(activity.getPackageName(), PackageManager.GET_META_DATA);
+            Bundle bundle = ai.metaData;
+            mAPIKey = bundle.getString(CARROT_API_KEY);
+         }
+         catch(NameNotFoundException e) {
+            Log.e(LOG_TAG, "Failed to load meta-data, NameNotFound: " + e.getMessage());
+         }
+         catch(NullPointerException e) {
+            Log.e(LOG_TAG, "Failed to load meta-data, NullPointer: " + e.getMessage());
+         }
       }
 
-      if(mExecutorService != null) {
-        mExecutorService.shutdownNow();
+      // Get the App Id from either Facebook or Carrot
+      if(mAppId == null) {
+         try {
+            ApplicationInfo ai = mHostActivity.getPackageManager().getApplicationInfo(activity.getPackageName(), PackageManager.GET_META_DATA);
+            Bundle bundle = ai.metaData;
+            mAppId = bundle.getString(FACEBOOK_APP_ID);
+         }
+         catch(Exception ex) {
+            try {
+               ApplicationInfo ai = mHostActivity.getPackageManager().getApplicationInfo(activity.getPackageName(), PackageManager.GET_META_DATA);
+               Bundle bundle = ai.metaData;
+               mAppId = bundle.getString(CARROT_APP_ID);
+            }
+            catch(NameNotFoundException e) {
+               Log.e(LOG_TAG, "Failed to load meta-data, NameNotFound: " + e.getMessage());
+            }
+            catch(NullPointerException e) {
+               Log.e(LOG_TAG, "Failed to load meta-data, NullPointer: " + e.getMessage());
+            }
+         }
       }
-      mExecutorService = Executors.newSingleThreadExecutor();
+
+      if(mExecutorService == null) {
+        mExecutorService = Executors.newSingleThreadExecutor();
+      }
 
       if(mCarrotCache == null) {
          mCarrotCache = new CarrotCache();
@@ -110,17 +141,11 @@ public class Carrot {
          }
          else {
             Log.d(LOG_TAG, "Attached to android.app.Activity: " + mHostActivity);
-
-            // Session start?
          }
       }
 
-      if(!hasRequiredPermissions(activity)) {
-         Log.e(LOG_TAG, "Carrot in offline mode until require permissions are added.");
-      }
-      else {
-         servicesDiscovery();
-      }
+      // Services discovery
+      servicesDiscovery();
    }
 
    /**
@@ -152,10 +177,17 @@ public class Carrot {
     * @param accessToken the Facebook access token for the current user.
     */
    public static void setAccessToken(String accessToken) {
-      mAccessToken = accessToken;
-      if(getStatus() != StatusReady) {
-         validateUser();
-      }
+      internal_validateUser(accessToken);
+   }
+
+   /**
+    * Validate the current user.
+    *
+    * @param userId the unique id for the current user.
+    */
+   public static void validateUser(String userId) {
+      mUserId = userId;
+      internal_validateUser(null);
    }
 
    /**
@@ -447,8 +479,8 @@ public class Carrot {
       return mAppId;
    }
 
-   static String getAppSecret() {
-      return mAppSecret;
+   static String getAPIKey() {
+      return mAPIKey;
    }
 
    static Activity getHostActivity() {
@@ -456,78 +488,86 @@ public class Carrot {
    }
 
    private static void servicesDiscovery() {
-      mExecutorService.submit(new Runnable() {
-         public void run() {
+      mServicesDiscoveryFuture = new FutureTask<Boolean>(new Callable<Boolean>() {
+         @Override
+         public Boolean call() throws Exception {
             HttpsURLConnection connection = null;
-            try {
-               Gson gson = new Gson();
-               String versionName = mHostActivity.getPackageManager().getPackageInfo(mHostActivity.getPackageName(), 0).versionName;
-               String queryString = "?sdk_version=" + URLEncoder.encode(SDKVersion, "UTF-8") +
-                  "&sdk_platform=" + URLEncoder.encode("android_" + android.os.Build.VERSION.RELEASE, "UTF-8") +
-                  "&game_id=" + URLEncoder.encode(mAppId, "UTF-8") +
-                  "&app_version=" + URLEncoder.encode(versionName, "UTF-8");
-               URL url = new URL("https", CARROT_SERVICES_HOSTNAME, "/services.json" + queryString);
-               connection = (HttpsURLConnection)url.openConnection();
-               connection.setRequestProperty("Accept-Charset", "UTF-8");
-               connection.setUseCaches(false);
+            Boolean ret = Boolean.FALSE;
 
-               // Get Response
-               InputStream is = null;
-               if(connection.getResponseCode() < 400) {
-                  is = connection.getInputStream();
-               }
-               else {
-                  is = connection.getErrorStream();
-               }
-               BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-               String line;
-               StringBuffer response = new StringBuffer();
-               while((line = rd.readLine()) != null) {
-                 response.append(line);
-                 response.append('\r');
-               }
-               rd.close();
+            Gson gson = new Gson();
+            String versionName = mHostActivity.getPackageManager().getPackageInfo(mHostActivity.getPackageName(), 0).versionName;
+            String queryString = "?sdk_version=" + URLEncoder.encode(SDKVersion, "UTF-8") +
+               "&sdk_platform=" + URLEncoder.encode("android_" + android.os.Build.VERSION.RELEASE, "UTF-8") +
+               "&game_id=" + URLEncoder.encode(mAppId, "UTF-8") +
+               "&app_version=" + URLEncoder.encode(versionName, "UTF-8");
+            URL url = new URL("https", CARROT_SERVICES_HOSTNAME, "/services.json" + queryString);
+            connection = (HttpsURLConnection)url.openConnection();
+            connection.setRequestProperty("Accept-Charset", "UTF-8");
+            connection.setUseCaches(false);
 
-               Log.d(LOG_TAG, response.toString());
-
-               // Read the JSON
-               if(connection.getResponseCode() < 400) {
-                  Type payloadType = new TypeToken<Map<String, String>>(){}.getType();
-                  Map<String, String> services = gson.fromJson(response.toString(), payloadType);
-
-                  mAuthHostname = services.get("auth");
-                  mMetricsHostname = services.get("metrics");
-                  mPostHostname = services.get("post");
-
-                  Log.d(LOG_TAG, services.get("auth"));
-                  Log.d(LOG_TAG, services.get("post"));
-                  Log.d(LOG_TAG, services.get("metrics"));
-
-                  // Ready. Do validateUser()
-                  validateUser();
-               }
-               else {
-                  Log.e(LOG_TAG, "Error performing services discovery: " + connection.getResponseCode());
-               }
+            // Get Response
+            InputStream is = null;
+            if(connection.getResponseCode() < 400) {
+               is = connection.getInputStream();
             }
-            catch(Exception e) {
-               Log.e(LOG_TAG, Log.getStackTraceString(e));
+            else {
+               is = connection.getErrorStream();
             }
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+            String line;
+            StringBuffer response = new StringBuffer();
+            while((line = rd.readLine()) != null) {
+              response.append(line);
+              response.append('\r');
+            }
+            rd.close();
 
-            finally {
-               connection.disconnect();
-               connection = null;
+            Log.d(LOG_TAG, response.toString());
+
+            // Read the JSON
+            if(connection.getResponseCode() < 400) {
+               Type payloadType = new TypeToken<Map<String, String>>(){}.getType();
+               Map<String, String> services = gson.fromJson(response.toString(), payloadType);
+
+               mAuthHostname = services.get("auth");
+               mMetricsHostname = services.get("metrics");
+               mPostHostname = services.get("post");
+
+               Log.d(LOG_TAG, services.get("auth"));
+               Log.d(LOG_TAG, services.get("post"));
+               Log.d(LOG_TAG, services.get("metrics"));
+               ret = Boolean.TRUE;
             }
+            else {
+               throw new Exception("Error performing services discovery: " + connection.getResponseCode());
+            }
+            connection.disconnect();
+            connection = null;
+
+            return ret;
          }
       });
+      mExecutorService.submit(mServicesDiscoveryFuture);
    }
 
-   private static void validateUser() {
+   private static void internal_validateUser(String accessToken) {
+      try {
+         if(mServicesDiscoveryFuture.get() == Boolean.FALSE) {
+            Log.e(LOG_TAG, "Services discovery failed.");
+         }
+      }
+      catch(Exception e) {
+         Log.e(LOG_TAG, "Services discovery failed.");
+      }
+
       mExecutorService.submit(new Runnable() {
          public void run() {
             HttpsURLConnection connection = null;
             try {
-               String postBody = "api_key=" + getUserId() + "&access_token=" + mAccessToken;
+               String postBody = "api_key=" + getUserId();
+               if(accessToken != null) {
+                   postBody += "&access_token=" + accessToken;
+               }
 
                URL url = new URL("https", getHostname("/users.json"), "/games/" + mAppId + "/users.json");
                connection = (HttpsURLConnection)url.openConnection();
@@ -571,15 +611,17 @@ public class Carrot {
    public static final String LOG_TAG = "Carrot";
    private static final String CARROT_SERVICES_HOSTNAME = "services.gocarrot.com";
    private static final String CARROT_API_KEY = "com.carrot.sdk.APIKey";
+   private static final String CARROT_APP_ID = "com.carrot.sdk.AppId";
+   private static final String FACEBOOK_APP_ID = "com.facebook.sdk.ApplicationId";
 
    private static Activity mHostActivity;
    private static String mAppId;
    private static String mUserId;
-   private static String mAppSecret;
-   private static String mAccessToken;
+   private static String mAPIKey;
    private static String mAuthHostname;
    private static String mPostHostname;
    private static String mMetricsHostname;
+   private static FutureTask<Boolean> mServicesDiscoveryFuture;
    private static int mStatus = Carrot.StatusUndetermined;
    private static int mLastAuthStatusReported;
    private static CarrotCache mCarrotCache;

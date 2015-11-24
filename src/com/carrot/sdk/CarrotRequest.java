@@ -56,7 +56,7 @@ class CarrotRequest implements Runnable {
 
    public void run() {
       HttpsURLConnection connection = null;
-      SecretKeySpec keySpec = new SecretKeySpec(Carrot.getAppSecret().getBytes(), "HmacSHA256");
+      SecretKeySpec keySpec = new SecretKeySpec(Carrot.getAPIKey().getBytes(), "HmacSHA256");
 
       try {
          Gson gson = new Gson();
