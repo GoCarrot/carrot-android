@@ -9,6 +9,10 @@ buildscript {
 
 apply plugin: 'com.android.library'
 
+repositories {
+    mavenCentral()
+}
+
 android {
     compileSdkVersion 19
     buildToolsVersion "20"
@@ -22,6 +26,7 @@ android {
 }
 
 dependencies {
+    compile 'com.google.code.gson:gson:2.3.1'
     compile fileTree(dir: 'libs', include: ['*.jar'])
 }
 
