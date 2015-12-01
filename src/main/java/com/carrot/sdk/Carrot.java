@@ -17,11 +17,6 @@ package com.carrot.sdk;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager.NameNotFoundException;
-import android.net.NetworkInfo;
-import android.net.ConnectivityManager;
-import android.os.Bundle;
 import android.util.Log;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -32,7 +27,6 @@ import java.io.InputStreamReader;
 import java.io.BufferedReader;
 import java.lang.reflect.*;
 import javax.net.ssl.HttpsURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.concurrent.Executors;
@@ -98,7 +92,7 @@ public class Carrot {
       if(mAPIKey == null) {
          mAPIKey = (String)getBuildConfigValue(mHostActivity, CARROT_API_KEY);
          if(mAPIKey == null) {
-            throw new Exception("Failed to find BuildConfig." + CARROT_API_KEY);
+            Log.e(LOG_TAG, "Failed to find BuildConfig." + CARROT_API_KEY);
          }
       }
 
@@ -106,7 +100,7 @@ public class Carrot {
       if(mAppId == null) {
          mAppId = (String)getBuildConfigValue(mHostActivity, CARROT_APP_ID);
          if(mAppId == null) {
-            throw new Exception("Failed to find BuildConfig." + CARROT_APP_ID);
+            Log.e(LOG_TAG, "Failed to find BuildConfig." + CARROT_APP_ID);
          }
       }
 
@@ -513,9 +507,6 @@ public class Carrot {
                mMetricsHostname = services.get("metrics");
                mPostHostname = services.get("post");
 
-               Log.d(LOG_TAG, services.get("auth"));
-               Log.d(LOG_TAG, services.get("post"));
-               Log.d(LOG_TAG, services.get("metrics"));
                ret = Boolean.TRUE;
             }
             else {
