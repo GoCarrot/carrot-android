@@ -18,19 +18,15 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.util.Log;
-
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.BufferedReader;
 import java.lang.reflect.*;
-
 import javax.net.ssl.HttpsURLConnection;
-
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.concurrent.Executors;
@@ -39,6 +35,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.Callable;
+import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
+import java.util.Date;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 
 /**
  * Allows you to interact with the Teak service from your Android application.
@@ -186,6 +187,31 @@ public class Teak {
         payload.put("push_key", devicePushKey);
         payload.put("device_type", "android");
         mTeakCache.addRequest("/me/devices.json", payload);
+    }
+
+    /**
+     * Report a purchase event.
+     *
+     * @param amount           Amount spent on product.
+     * @param currencyCode     ISO 4217 currency code for amount.
+     * @param purchaseId       Purchase receipt id.
+     * @param purchaseTime     The time the product was purchased, in milliseconds since the epoch (Jan 1, 1970).
+     */
+    public static void trackPurchase(float amount, String currencyCode, String purchaseId, long purchaseTime) {
+        HashMap<String, Object> payload = new HashMap<String, Object>();
+
+        // Parsnip requests user app_id/user_id not game_id/api_key
+        payload.put("app_id", getAppId());
+        payload.put("user_id", getUserId());
+
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
+        df.setTimeZone(TimeZone.getTimeZone("UTC"));
+        payload.put("happened_at", df.format(new Date(purchaseTime)));
+
+        payload.put("amount", new Integer((int)(amount * 100)));
+        payload.put("currency_code", currencyCode);
+        payload.put("platform_id", purchaseId);
+        mTeakCache.addRequest("/purchase.json", payload);
     }
 
     /**
@@ -449,7 +475,7 @@ public class Teak {
     }
 
     static String getHostname(String endpoint) {
-        if (endpoint.equals("/install.json")) {
+        if (endpoint.equals("/install.json") || endpoint.equals("/purchase.json")) {
             return mMetricsHostname;
         } else if (endpoint.equals("/users.json")) {
             return mAuthHostname;
