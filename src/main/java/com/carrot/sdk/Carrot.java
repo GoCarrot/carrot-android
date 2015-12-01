@@ -15,6 +15,7 @@
 package com.carrot.sdk;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -95,38 +96,17 @@ public class Carrot {
       // Get the API Key
       // TODO: Need better error on this.
       if(mAPIKey == null) {
-         try {
-            ApplicationInfo ai = mHostActivity.getPackageManager().getApplicationInfo(activity.getPackageName(), PackageManager.GET_META_DATA);
-            Bundle bundle = ai.metaData;
-            mAPIKey = bundle.getString(CARROT_API_KEY);
-         }
-         catch(NameNotFoundException e) {
-            Log.e(LOG_TAG, "Failed to load meta-data, NameNotFound: " + e.getMessage());
-         }
-         catch(NullPointerException e) {
-            Log.e(LOG_TAG, "Failed to load meta-data, NullPointer: " + e.getMessage());
+         mAPIKey = (String)getBuildConfigValue(mHostActivity, CARROT_API_KEY);
+         if(mAPIKey == null) {
+            throw new Exception("Failed to find BuildConfig." + CARROT_API_KEY);
          }
       }
 
       // Get the App Id from either Facebook or Carrot
       if(mAppId == null) {
-         try {
-            ApplicationInfo ai = mHostActivity.getPackageManager().getApplicationInfo(activity.getPackageName(), PackageManager.GET_META_DATA);
-            Bundle bundle = ai.metaData;
-            mAppId = bundle.getString(FACEBOOK_APP_ID);
-         }
-         catch(Exception ex) {
-            try {
-               ApplicationInfo ai = mHostActivity.getPackageManager().getApplicationInfo(activity.getPackageName(), PackageManager.GET_META_DATA);
-               Bundle bundle = ai.metaData;
-               mAppId = bundle.getString(CARROT_APP_ID);
-            }
-            catch(NameNotFoundException e) {
-               Log.e(LOG_TAG, "Failed to load meta-data, NameNotFound: " + e.getMessage());
-            }
-            catch(NullPointerException e) {
-               Log.e(LOG_TAG, "Failed to load meta-data, NullPointer: " + e.getMessage());
-            }
+         mAppId = (String)getBuildConfigValue(mHostActivity, CARROT_APP_ID);
+         if(mAppId == null) {
+            throw new Exception("Failed to find BuildConfig." + CARROT_APP_ID);
          }
       }
 
@@ -608,10 +588,28 @@ public class Carrot {
       });
    }
 
+   protected static Object getBuildConfigValue(Context context, String fieldName) {
+      try {
+         Class<?> clazz = Class.forName(context.getPackageName() + ".BuildConfig");
+         Field field = clazz.getField(fieldName);
+         return field.get(null);
+       }
+       catch(ClassNotFoundException e) {
+         e.printStackTrace();
+       }
+       catch(NoSuchFieldException e) {
+         e.printStackTrace();
+       }
+       catch (IllegalAccessException e) {
+         e.printStackTrace();
+       }
+       return null;
+   }
+
    public static final String LOG_TAG = "Carrot";
    private static final String CARROT_SERVICES_HOSTNAME = "services.gocarrot.com";
-   private static final String CARROT_API_KEY = "com.carrot.sdk.APIKey";
-   private static final String CARROT_APP_ID = "com.carrot.sdk.AppId";
+   private static final String CARROT_API_KEY = "CARROT_API_KEY";
+   private static final String CARROT_APP_ID = "CARROT_APP_ID";
    private static final String FACEBOOK_APP_ID = "com.facebook.sdk.ApplicationId";
 
    private static Activity mHostActivity;
