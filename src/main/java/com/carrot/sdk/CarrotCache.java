@@ -1,4 +1,4 @@
-/* Carrot -- Copyright (C) 2012 GoCarrot Inc.
+/* Teak -- Copyright (C) 2016 GoCarrot Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.carrot.sdk;
+package io.teak.sdk;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -27,15 +27,15 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 
-class CarrotCache
+class TeakCache
 {
    private SQLiteDatabase mDatabase;
-   private CarrotCacheOpenHelper mOpenHelper;
+   private TeakCacheOpenHelper mOpenHelper;
    private ExecutorService mExecutorService;
    private ExecutorService mInstallExecutorService;
 
-   public CarrotCache() {
-      mOpenHelper = new CarrotCacheOpenHelper(Carrot.getHostActivity());
+   public TeakCache() {
+      mOpenHelper = new TeakCacheOpenHelper(Teak.getHostActivity());
    }
 
    protected void finalize() throws Throwable {
@@ -58,7 +58,7 @@ class CarrotCache
             payload.put("install_date", mOpenHelper.mInstallDate);
 
             mInstallExecutorService = Executors.newSingleThreadExecutor();
-            CarrotRequest installReportRequest = new CarrotRequest("POST", "/install.json", payload, new Carrot.RequestCallback() {
+            TeakRequest installReportRequest = new TeakRequest("POST", "/install.json", payload, new Teak.RequestCallback() {
                @Override
                public void requestComplete(int responseCode, String responseBody) {
                   synchronized(mDatabase) {
@@ -75,7 +75,7 @@ class CarrotCache
          ret = true;
       }
       catch(SQLException e) {
-         Log.e(Carrot.LOG_TAG, Log.getStackTraceString(e));
+         Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
       }
       return ret;
    }
@@ -96,8 +96,8 @@ class CarrotCache
          mExecutorService = Executors.newSingleThreadExecutor();
 
          // Load requests from cache
-         List<CarrotCachedRequest> cachedRequests = CarrotCachedRequest.requestsInCache(mDatabase);
-         for(CarrotCachedRequest request : cachedRequests) {
+         List<TeakCachedRequest> cachedRequests = TeakCachedRequest.requestsInCache(mDatabase);
+         for(TeakCachedRequest request : cachedRequests) {
             mExecutorService.submit(request);
          }
       }
@@ -110,18 +110,18 @@ class CarrotCache
    public boolean addRequest(String endpoint, Map<String, Object> payload) {
       boolean ret = false;
       try {
-         CarrotCachedRequest request = new CarrotCachedRequest(mDatabase, endpoint, payload);
+         TeakCachedRequest request = new TeakCachedRequest(mDatabase, endpoint, payload);
          ret = true;
          if(mExecutorService != null) mExecutorService.submit(request);
       }
       catch(Exception e) {
-         Log.e(Carrot.LOG_TAG, Log.getStackTraceString(e));
+         Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
       }
       return ret;
    }
 
-   class CarrotCacheOpenHelper extends SQLiteOpenHelper {
-      private static final String kDatabaseName = "carrot.db";
+   class TeakCacheOpenHelper extends SQLiteOpenHelper {
+      private static final String kDatabaseName = "teak.db";
       private static final int kDatabaseVersion = 1;
 
       private static final String kCacheCreateSQL = "CREATE TABLE IF NOT EXISTS cache(request_endpoint TEXT, request_payload TEXT, request_id TEXT, request_date INTEGER, retry_count INTEGER)";
@@ -132,7 +132,7 @@ class CarrotCache
       public double mInstallDate;
       public boolean mInstallMetricSent;
 
-      public CarrotCacheOpenHelper(Context context) {
+      public TeakCacheOpenHelper(Context context) {
          super(context, kDatabaseName, null, kDatabaseVersion);
       }
 

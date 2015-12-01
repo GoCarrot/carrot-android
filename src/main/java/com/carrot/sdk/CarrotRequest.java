@@ -1,4 +1,4 @@
-/* Carrot -- Copyright (C) 2012 GoCarrot Inc.
+/* Teak -- Copyright (C) 2016 GoCarrot Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.carrot.sdk;
+package io.teak.sdk;
 
 import android.content.ContentValues;
 import android.util.Base64;
@@ -40,14 +40,14 @@ import java.util.UUID;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-class CarrotRequest implements Runnable {
+class TeakRequest implements Runnable {
    protected String mEndpoint;
    protected String mMethod;
    protected Map<String, Object> mPayload;
-   protected Carrot.RequestCallback mCallback;
+   protected Teak.RequestCallback mCallback;
 
-   public CarrotRequest(String method, String endpoint,
-      Map<String, Object> payload, Carrot.RequestCallback callback) {
+   public TeakRequest(String method, String endpoint,
+      Map<String, Object> payload, Teak.RequestCallback callback) {
       mEndpoint = endpoint;
       mPayload = payload;
       mMethod = method;
@@ -56,7 +56,7 @@ class CarrotRequest implements Runnable {
 
    public void run() {
       HttpsURLConnection connection = null;
-      SecretKeySpec keySpec = new SecretKeySpec(Carrot.getAPIKey().getBytes(), "HmacSHA256");
+      SecretKeySpec keySpec = new SecretKeySpec(Teak.getAPIKey().getBytes(), "HmacSHA256");
 
       try {
          Gson gson = new Gson();
@@ -64,8 +64,8 @@ class CarrotRequest implements Runnable {
          if(mPayload != null) {
             requestBodyObject.putAll(mPayload);
          }
-         requestBodyObject.put("api_key", Carrot.getUserId());
-         requestBodyObject.put("game_id", Carrot.getAppId());
+         requestBodyObject.put("api_key", Teak.getUserId());
+         requestBodyObject.put("game_id", Teak.getAppId());
 
          ArrayList<String> payloadKeys = new ArrayList<String>(requestBodyObject.keySet());
          Collections.sort(payloadKeys);
@@ -86,7 +86,7 @@ class CarrotRequest implements Runnable {
          }
          requestBody.deleteCharAt(requestBody.length() - 1);
 
-         String stringToSign = mMethod + "\n" + Carrot.getHostname(mEndpoint) + "\n" + mEndpoint + "\n" + requestBody.toString();
+         String stringToSign = mMethod + "\n" + Teak.getHostname(mEndpoint) + "\n" + mEndpoint + "\n" + requestBody.toString();
          Mac mac = Mac.getInstance("HmacSHA256");
          mac.init(keySpec);
          byte[] result = mac.doFinal(stringToSign.getBytes());
@@ -108,7 +108,7 @@ class CarrotRequest implements Runnable {
          requestBody.append("sig=" + URLEncoder.encode(Base64.encodeToString(result, Base64.NO_WRAP), "UTF-8"));
 
          if(mMethod == "POST") {
-            URL url = new URL("https://" + Carrot.getHostname(mEndpoint) + mEndpoint);
+            URL url = new URL("https://" + Teak.getHostname(mEndpoint) + mEndpoint);
             connection = (HttpsURLConnection)url.openConnection();
 
             connection.setRequestProperty("Accept-Charset", "UTF-8");
@@ -125,7 +125,7 @@ class CarrotRequest implements Runnable {
             wr.close();
          }
          else {
-            URL url = new URL("https://" + Carrot.getHostname(mEndpoint) + mEndpoint + "?" + requestBody.toString());
+            URL url = new URL("https://" + Teak.getHostname(mEndpoint) + mEndpoint + "?" + requestBody.toString());
             connection = (HttpsURLConnection)url.openConnection();
             connection.setRequestProperty("Accept-Charset", "UTF-8");
             connection.setUseCaches(false);
@@ -154,7 +154,7 @@ class CarrotRequest implements Runnable {
          }
       }
       catch(Exception e) {
-         Log.e(Carrot.LOG_TAG, Log.getStackTraceString(e));
+         Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
       }
       finally {
          connection.disconnect();
