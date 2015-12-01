@@ -61,13 +61,13 @@ public class Teak {
     }
 
     /**
-     * Activate Teak and attach the {@link Activity} to this instance.
+     * Initialize Teak and attach the {@link Activity}.
      * <p/>
-     * Call this function from the <code>onResume()</code> function of your activity.
+     * Call this function from the <code>onCreate()</code> function of your activity.
      *
-     * @param activity the new <code>Activity</code> to which this instance should attach.
+     * @param <code>Activity</code> of your app.
      */
-    public static void activateApp(Activity activity) {
+    public static void createApp(Activity activity) {
         if (!hasRequiredPermissions(activity)) {
             Log.e(LOG_TAG, "Teak in offline mode until require permissions are added.");
         }
@@ -75,7 +75,6 @@ public class Teak {
         mHostActivity = activity;
 
         // Get the API Key
-        // TODO: Need better error on this.
         if (mAPIKey == null) {
             mAPIKey = (String) getBuildConfigValue(mHostActivity, TEAK_API_KEY);
             if (mAPIKey == null) {
@@ -91,35 +90,64 @@ public class Teak {
             }
         }
 
-        if (mExecutorService == null) {
-            mExecutorService = Executors.newSingleThreadExecutor();
-        }
-
         if (mTeakCache == null) {
             mTeakCache = new TeakCache();
             if (!mTeakCache.open()) {
                 Log.e(LOG_TAG, "Failed to create Teak cache.");
-            } else {
-                Log.d(LOG_TAG, "Attached to android.app.Activity: " + mHostActivity);
             }
         }
 
-        // Services discovery
-        servicesDiscovery();
+        // Activate
+        activateApp(mHostActivity);
+
+        // Happy-path logging
+        Boolean isDebug = (Boolean)getBuildConfigValue(mHostActivity, "DEBUG");
+        mIsDebug = (isDebug == Boolean.TRUE);
+        if(mIsDebug) {
+            Log.d(LOG_TAG, "Teak attached to android.app.Activity: " + mHostActivity);
+        }
     }
 
     /**
-     * Closes the request cache and stops the request threads for this Teak instance.
+     * Signify that the app is active.
+     * <p/>
+     * Call this function from the <code>onResume()</code> function of your activity.
+     *
+     * @param <code>Activity</code> of your app.
+     */
+    public static void activateApp(Activity activity) {
+        if (mExecutorService == null) {
+            mExecutorService = Executors.newSingleThreadExecutor();
+        }
+
+        // Services discovery
+        if(mAuthHostname == null || mPostHostname == null || mMetricsHostname == null) {
+            servicesDiscovery();
+        }
+    }
+
+    /**
+     * Stops the request threads for this Teak instance.
      * <p/>
      * Call this function from the <code>onPause()</code> function of your activity.
      *
-     * @param activity the new <code>Activity</code> to which this instance should detach.
+     * @param <code>Activity</code> of your app.
      */
     public static void deactivateApp(Activity activity) {
         if (mExecutorService != null) {
             mExecutorService.shutdownNow();
             mExecutorService = null;
         }
+    }
+
+    /**
+     * Shutdown Teak.
+     * <p/>
+     * Call this function from the <code>onDestroy()</code> function of your activity.
+     *
+     * @param <code>Activity</code> of your app.
+     */
+    public static void destroyApp(Activity activity) {
         if (mTeakCache != null) {
             mTeakCache.close();
             mTeakCache = null;
@@ -442,6 +470,10 @@ public class Teak {
         return mHostActivity;
     }
 
+    static boolean isDebug() {
+        return mIsDebug;
+    }
+
     private static void servicesDiscovery() {
         mServicesDiscoveryFuture = new FutureTask<Boolean>(new Callable<Boolean>() {
             @Override
@@ -514,9 +546,15 @@ public class Teak {
             public void run() {
                 HttpsURLConnection connection = null;
                 try {
-                    String postBody = "api_key=" + getUserId();
+                    String versionName = mHostActivity.getPackageManager().getPackageInfo(mHostActivity.getPackageName(), 0).versionName;
+                    String postBody = "api_key=" + URLEncoder.encode(getUserId(), "UTF-8")  +
+                        "&sdk_version=" + URLEncoder.encode(SDKVersion, "UTF-8") +
+                        "&sdk_platform=" + URLEncoder.encode("android_" + android.os.Build.VERSION.RELEASE, "UTF-8") +
+                        "&game_id=" + URLEncoder.encode(mAppId, "UTF-8") +
+                        "&app_version=" + URLEncoder.encode(versionName, "UTF-8");
+
                     if (accessToken != null) {
-                        postBody += "&access_token=" + accessToken;
+                        postBody += "&access_token=" + URLEncoder.encode(accessToken, "UTF-8");
                     }
 
                     URL url = new URL("https", getHostname("/users.json"), "/games/" + mAppId + "/users.json");
@@ -582,6 +620,7 @@ public class Teak {
     private static String mAuthHostname;
     private static String mPostHostname;
     private static String mMetricsHostname;
+    private static boolean mIsDebug;
     private static FutureTask<Boolean> mServicesDiscoveryFuture;
     private static int mStatus = Teak.StatusUndetermined;
     private static int mLastAuthStatusReported;
