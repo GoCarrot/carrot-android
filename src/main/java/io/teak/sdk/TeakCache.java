@@ -20,6 +20,7 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
+
 import java.net.URL;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
@@ -27,147 +28,142 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 
-class TeakCache
-{
-   private SQLiteDatabase mDatabase;
-   private TeakCacheOpenHelper mOpenHelper;
-   private ExecutorService mExecutorService;
-   private ExecutorService mInstallExecutorService;
+class TeakCache {
+    private SQLiteDatabase mDatabase;
+    private TeakCacheOpenHelper mOpenHelper;
+    private ExecutorService mExecutorService;
+    private ExecutorService mInstallExecutorService;
 
-   public TeakCache() {
-      mOpenHelper = new TeakCacheOpenHelper(Teak.getHostActivity());
-   }
+    public TeakCache() {
+        mOpenHelper = new TeakCacheOpenHelper(Teak.getHostActivity());
+    }
 
-   protected void finalize() throws Throwable {
-      try {
-         close();
-      }
-      finally {
-         super.finalize();
-      }
-   }
+    protected void finalize() throws Throwable {
+        try {
+            close();
+        } finally {
+            super.finalize();
+        }
+    }
 
-   public boolean open() {
-      boolean ret = false;
-      try {
-         mDatabase = mOpenHelper.getWritableDatabase();
+    public boolean open() {
+        boolean ret = false;
+        try {
+            mDatabase = mOpenHelper.getWritableDatabase();
 
-         // Send install metric if needed
-         if(!mOpenHelper.mInstallMetricSent) {
-            HashMap<String, Object> payload = new HashMap<String, Object>();
-            payload.put("install_date", mOpenHelper.mInstallDate);
+            // Send install metric if needed
+            if (!mOpenHelper.mInstallMetricSent) {
+                HashMap<String, Object> payload = new HashMap<String, Object>();
+                payload.put("install_date", mOpenHelper.mInstallDate);
 
-            mInstallExecutorService = Executors.newSingleThreadExecutor();
-            TeakRequest installReportRequest = new TeakRequest("POST", "/install.json", payload, new Teak.RequestCallback() {
-               @Override
-               public void requestComplete(int responseCode, String responseBody) {
-                  synchronized(mDatabase) {
-                     mDatabase.execSQL("UPDATE install_tracking SET metric_sent=1");
-                  }
-                  mOpenHelper.mInstallMetricSent = true;
+                mInstallExecutorService = Executors.newSingleThreadExecutor();
+                TeakRequest installReportRequest = new TeakRequest("POST", "/install.json", payload, new Teak.RequestCallback() {
+                    @Override
+                    public void requestComplete(int responseCode, String responseBody) {
+                        synchronized (mDatabase) {
+                            mDatabase.execSQL("UPDATE install_tracking SET metric_sent=1");
+                        }
+                        mOpenHelper.mInstallMetricSent = true;
 
-                  mInstallExecutorService.shutdown();
-               }
-            });
-            mInstallExecutorService.submit(installReportRequest);
-         }
+                        mInstallExecutorService.shutdown();
+                    }
+                });
+                mInstallExecutorService.submit(installReportRequest);
+            }
 
-         ret = true;
-      }
-      catch(SQLException e) {
-         Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
-      }
-      return ret;
-   }
+            ret = true;
+        } catch (SQLException e) {
+            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+        }
+        return ret;
+    }
 
-   public void close() {
-      stop();
-      synchronized(mDatabase) {
-         mOpenHelper.close();
-      }
-   }
+    public void close() {
+        stop();
+        synchronized (mDatabase) {
+            mOpenHelper.close();
+        }
+    }
 
-   public boolean isRunning() {
-      return (mExecutorService != null && !mExecutorService.isTerminated());
-   }
+    public boolean isRunning() {
+        return (mExecutorService != null && !mExecutorService.isTerminated());
+    }
 
-   public void start() {
-      if(!isRunning()) {
-         mExecutorService = Executors.newSingleThreadExecutor();
+    public void start() {
+        if (!isRunning()) {
+            mExecutorService = Executors.newSingleThreadExecutor();
 
-         // Load requests from cache
-         List<TeakCachedRequest> cachedRequests = TeakCachedRequest.requestsInCache(mDatabase);
-         for(TeakCachedRequest request : cachedRequests) {
-            mExecutorService.submit(request);
-         }
-      }
-   }
+            // Load requests from cache
+            List<TeakCachedRequest> cachedRequests = TeakCachedRequest.requestsInCache(mDatabase);
+            for (TeakCachedRequest request : cachedRequests) {
+                mExecutorService.submit(request);
+            }
+        }
+    }
 
-   public void stop() {
-      if(isRunning()) mExecutorService.shutdownNow();
-   }
+    public void stop() {
+        if (isRunning()) mExecutorService.shutdownNow();
+    }
 
-   public boolean addRequest(String endpoint, Map<String, Object> payload) {
-      boolean ret = false;
-      try {
-         TeakCachedRequest request = new TeakCachedRequest(mDatabase, endpoint, payload);
-         ret = true;
-         if(mExecutorService != null) mExecutorService.submit(request);
-      }
-      catch(Exception e) {
-         Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
-      }
-      return ret;
-   }
+    public boolean addRequest(String endpoint, Map<String, Object> payload) {
+        boolean ret = false;
+        try {
+            TeakCachedRequest request = new TeakCachedRequest(mDatabase, endpoint, payload);
+            ret = true;
+            if (mExecutorService != null) mExecutorService.submit(request);
+        } catch (Exception e) {
+            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+        }
+        return ret;
+    }
 
-   class TeakCacheOpenHelper extends SQLiteOpenHelper {
-      private static final String kDatabaseName = "teak.db";
-      private static final int kDatabaseVersion = 1;
+    class TeakCacheOpenHelper extends SQLiteOpenHelper {
+        private static final String kDatabaseName = "teak.db";
+        private static final int kDatabaseVersion = 1;
 
-      private static final String kCacheCreateSQL = "CREATE TABLE IF NOT EXISTS cache(request_endpoint TEXT, request_payload TEXT, request_id TEXT, request_date INTEGER, retry_count INTEGER)";
+        private static final String kCacheCreateSQL = "CREATE TABLE IF NOT EXISTS cache(request_endpoint TEXT, request_payload TEXT, request_id TEXT, request_date INTEGER, retry_count INTEGER)";
 
-      private static final String kInstallTableCreateSQL = "CREATE TABLE IF NOT EXISTS install_tracking(install_date REAL, metric_sent INTEGER)";
-      private final String[] kInstallTableReadColumns = { "install_date", "metric_sent" };
+        private static final String kInstallTableCreateSQL = "CREATE TABLE IF NOT EXISTS install_tracking(install_date REAL, metric_sent INTEGER)";
+        private final String[] kInstallTableReadColumns = {"install_date", "metric_sent"};
 
-      public double mInstallDate;
-      public boolean mInstallMetricSent;
+        public double mInstallDate;
+        public boolean mInstallMetricSent;
 
-      public TeakCacheOpenHelper(Context context) {
-         super(context, kDatabaseName, null, kDatabaseVersion);
-      }
+        public TeakCacheOpenHelper(Context context) {
+            super(context, kDatabaseName, null, kDatabaseVersion);
+        }
 
-      @Override
-      public void onCreate(SQLiteDatabase database) {
-         database.execSQL(kCacheCreateSQL);
-         database.execSQL(kInstallTableCreateSQL);
-      }
+        @Override
+        public void onCreate(SQLiteDatabase database) {
+            database.execSQL(kCacheCreateSQL);
+            database.execSQL(kInstallTableCreateSQL);
+        }
 
-      @Override
-      public void onOpen(SQLiteDatabase database) {
-         // Install tracking
-         database.execSQL(kInstallTableCreateSQL);
-         Cursor cursor = database.query("install_tracking", kInstallTableReadColumns,
-            null, null, null, null, "install_date");
+        @Override
+        public void onOpen(SQLiteDatabase database) {
+            // Install tracking
+            database.execSQL(kInstallTableCreateSQL);
+            Cursor cursor = database.query("install_tracking", kInstallTableReadColumns,
+                    null, null, null, null, "install_date");
 
-         mInstallMetricSent = false;
-         mInstallDate = System.currentTimeMillis() / 1000.0;
+            mInstallMetricSent = false;
+            mInstallDate = System.currentTimeMillis() / 1000.0;
 
-         if(cursor.getCount() > 0) {
-            cursor.moveToFirst();
-            mInstallDate = cursor.getDouble(0);
-            mInstallMetricSent = (cursor.getInt(1) > 0);
-         }
-         else {
-            database.execSQL("INSERT INTO install_tracking (install_date, metric_sent) VALUES (" + mInstallDate +", 0)");
-         }
+            if (cursor.getCount() > 0) {
+                cursor.moveToFirst();
+                mInstallDate = cursor.getDouble(0);
+                mInstallMetricSent = (cursor.getInt(1) > 0);
+            } else {
+                database.execSQL("INSERT INTO install_tracking (install_date, metric_sent) VALUES (" + mInstallDate + ", 0)");
+            }
 
-         cursor.close();
-      }
+            cursor.close();
+        }
 
-      @Override
-      public void onUpgrade(SQLiteDatabase database, int oldVersion, int newVersion) {
-         database.execSQL("DROP TABLE IF EXISTS cache");
-         onCreate(database);
-      }
-   }
+        @Override
+        public void onUpgrade(SQLiteDatabase database, int oldVersion, int newVersion) {
+            database.execSQL("DROP TABLE IF EXISTS cache");
+            onCreate(database);
+        }
+    }
 }
