@@ -600,10 +600,6 @@ public class Teak {
                     payload.put("android_limit_ad_tracking", mLimitAdTracking);
                 }
 
-                if (mGCMRegistrationId != null) {
-                    payload.put("gcm_registration_id", mGCMRegistrationId);
-                }
-
                 if (accessToken != null) {
                     payload.put("access_token", accessToken);
                 }
