@@ -217,7 +217,7 @@ public class Teak {
         payload.put("happened_at", df.format(new Date(purchaseTime)));
 
         payload.put("amount", new Integer((int) (amount * 100)));
-        payload.put("currency_code", currencyCode);
+        payload.put("currency_code", currencyCode.toUpperCase());
         payload.put("platform_id", purchaseId);
         mTeakCache.addRequest("/purchase.json", payload);
     }
