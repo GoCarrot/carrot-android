@@ -70,14 +70,14 @@ public class Teak {
      * @param <code>Activity</code> of your app.
      */
     public static void createApp(Activity activity) {
+        mHostActivity = activity;
+
         Boolean isDebug = (Boolean) getBuildConfigValue(mHostActivity, "DEBUG");
         mIsDebug = (isDebug == Boolean.TRUE);
 
         if (!hasRequiredPermissions(activity)) {
             Log.e(LOG_TAG, "Teak in offline mode until require permissions are added.");
         }
-
-        mHostActivity = activity;
 
         try {
             mAppVersionCode = mHostActivity.getPackageManager().getPackageInfo(mHostActivity.getPackageName(), 0).versionCode;
@@ -129,6 +129,9 @@ public class Teak {
         collectAdvertisingIdEtc();
 
         if (isOnline()) {
+            if (mIsDebug) {
+                Log.d(LOG_TAG, "Online, performing services discovery.");
+            }
             // Services discovery
             if (mAuthHostname == null || mPostHostname == null || mMetricsHostname == null) {
                 servicesDiscovery();
@@ -473,6 +476,10 @@ public class Teak {
                             cursor.close();
                         }
                     }
+
+                    if (mIsDebug) {
+                        Log.d(LOG_TAG, "Facebook Attribution Id: " + mFbAttributionId);
+                    }
                 } catch (Exception e) {
                     Log.e(LOG_TAG, "Couldn't get FB Attribution Id.");
                     if (mIsDebug) {
@@ -551,6 +558,12 @@ public class Teak {
                         mAuthHostname = services.get("auth");
                         mMetricsHostname = services.get("metrics");
                         mPostHostname = services.get("post");
+
+                        if (mIsDebug) {
+                            Log.d(LOG_TAG, "Using auth host: " + mAuthHostname);
+                            Log.d(LOG_TAG, "Using metrics host: " + mMetricsHostname);
+                            Log.d(LOG_TAG, "Using post host: " + mPostHostname);
+                        }
                     } else {
                         Log.e(LOG_TAG, "Error performing services discovery: " + connection.getResponseCode());
                     }
@@ -572,6 +585,11 @@ public class Teak {
                 long foo = TimeUnit.HOURS.convert(TimeZone.getDefault().getRawOffset(), TimeUnit.MILLISECONDS);
                 String tzOffset = (new Long(foo)).toString();
                 payload.put("timezone", tzOffset);
+
+                if (mIsDebug) {
+                    Log.d(LOG_TAG, "Valdiating user: " + getUserId());
+                    Log.d(LOG_TAG, "   Timezone:     " + tzOffset);
+                }
 
                 if (mFbAttributionId != null) {
                     payload.put("fb_attribution_id", mFbAttributionId);
