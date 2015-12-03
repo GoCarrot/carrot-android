@@ -130,13 +130,17 @@ public class Teak {
 
         if (isOnline()) {
             if (mIsDebug) {
-                Log.d(LOG_TAG, "Online, performing services discovery.");
+                Log.d(LOG_TAG, "Online mode.");
             }
             // Services discovery
             if (mAuthHostname == null || mPostHostname == null || mMetricsHostname == null) {
                 servicesDiscovery();
             }
             mTeakCache.start();
+        } else {
+            if (mIsDebug) {
+                Log.d(LOG_TAG, "Offline mode.");
+            }
         }
     }
 
@@ -560,6 +564,7 @@ public class Teak {
                         mPostHostname = services.get("post");
 
                         if (mIsDebug) {
+                            Log.d(LOG_TAG, "Services discovery complete.");
                             Log.d(LOG_TAG, "Using auth host: " + mAuthHostname);
                             Log.d(LOG_TAG, "Using metrics host: " + mMetricsHostname);
                             Log.d(LOG_TAG, "Using post host: " + mPostHostname);
