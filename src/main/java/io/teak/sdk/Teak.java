@@ -101,6 +101,11 @@ public class Teak {
             }
         }
 
+        mExecutorService = Executors.newSingleThreadExecutor();
+
+        // Grab the advertising id and such
+        collectAdvertisingIdEtc();
+
         mTeakCache = new TeakCache();
         if (!mTeakCache.open()) {
             Log.e(LOG_TAG, "Failed to create Teak cache.");
@@ -110,12 +115,6 @@ public class Teak {
         if (mIsDebug) {
             Log.d(LOG_TAG, "Teak attached to android.app.Activity: " + mHostActivity);
         }
-
-        // We need this here to get IDFA etc
-        mExecutorService = Executors.newSingleThreadExecutor();
-
-        // Grab the advertising id and such
-        collectAdvertisingIdEtc();
     }
 
     /**
@@ -126,9 +125,8 @@ public class Teak {
      * @param <code>Activity</code> of your app.
      */
     public static void activateApp(Activity activity) {
-        if (mExecutorService == null) {
-            mExecutorService = Executors.newSingleThreadExecutor();
-        }
+        // Re-check the advertising id and such
+        collectAdvertisingIdEtc();
 
         if (isOnline()) {
             // Services discovery
@@ -150,11 +148,6 @@ public class Teak {
         if (mTeakCache != null) {
             mTeakCache.stop();
         }
-
-        if (mExecutorService != null) {
-            mExecutorService.shutdownNow();
-            mExecutorService = null;
-        }
     }
 
     /**
@@ -165,19 +158,15 @@ public class Teak {
      * @param <code>Activity</code> of your app.
      */
     public static void destroyApp(Activity activity) {
+        if (mExecutorService != null) {
+            mExecutorService.shutdownNow();
+            mExecutorService = null;
+        }
+
         if (mTeakCache != null) {
             mTeakCache.close();
             mTeakCache = null;
         }
-    }
-
-    /**
-     * Assign a Facebook user token to the current user.
-     *
-     * @param accessToken the Facebook access token for the current user.
-     */
-    public static void setAccessToken(String accessToken) {
-        internal_validateUser(accessToken);
     }
 
     /**
@@ -188,6 +177,17 @@ public class Teak {
     public static void validateUser(String userId) {
         mUserId = userId;
         internal_validateUser(null);
+    }
+
+    /**
+     * Validate the current user with a Facebook Access Token.
+     *
+     * @param userId        the unique id for the current user.
+     * @param fbAccessToken the Facebook access token for the current user.
+     */
+    public static void validateUser(String userId, String fbAccessToken) {
+        mUserId = userId;
+        internal_validateUser(fbAccessToken);
     }
 
     /**
