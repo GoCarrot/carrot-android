@@ -70,6 +70,9 @@ public class Teak {
      * @param <code>Activity</code> of your app.
      */
     public static void createApp(Activity activity) {
+        Boolean isDebug = (Boolean) getBuildConfigValue(mHostActivity, "DEBUG");
+        mIsDebug = (isDebug == Boolean.TRUE);
+
         if (!hasRequiredPermissions(activity)) {
             Log.e(LOG_TAG, "Teak in offline mode until require permissions are added.");
         }
@@ -77,16 +80,16 @@ public class Teak {
         mHostActivity = activity;
 
         try {
-            mAppVersionName = mHostActivity.getPackageManager().getPackageInfo(mHostActivity.getPackageName(), 0).versionName;
+            mAppVersionCode = mHostActivity.getPackageManager().getPackageInfo(mHostActivity.getPackageName(), 0).versionCode;
         } catch (Exception e) {
-            mAppVersionName = "unknown";
+            throw new RuntimeException("Could not get version code: " + e);
         }
 
         // Get the API Key
         if (mAPIKey == null) {
             mAPIKey = (String) getBuildConfigValue(mHostActivity, TEAK_API_KEY);
             if (mAPIKey == null) {
-                Log.e(LOG_TAG, "Failed to find BuildConfig." + TEAK_API_KEY);
+                throw new RuntimeException("Failed to find BuildConfig." + TEAK_API_KEY);
             }
         }
 
@@ -94,20 +97,16 @@ public class Teak {
         if (mAppId == null) {
             mAppId = (String) getBuildConfigValue(mHostActivity, TEAK_APP_ID);
             if (mAppId == null) {
-                Log.e(LOG_TAG, "Failed to find BuildConfig." + TEAK_APP_ID);
+                throw new RuntimeException("Failed to find BuildConfig." + TEAK_APP_ID);
             }
         }
 
-        if (mTeakCache == null) {
-            mTeakCache = new TeakCache();
-            if (!mTeakCache.open()) {
-                Log.e(LOG_TAG, "Failed to create Teak cache.");
-            }
+        mTeakCache = new TeakCache();
+        if (!mTeakCache.open()) {
+            Log.e(LOG_TAG, "Failed to create Teak cache.");
         }
 
         // Happy-path logging
-        Boolean isDebug = (Boolean) getBuildConfigValue(mHostActivity, "DEBUG");
-        mIsDebug = (isDebug == Boolean.TRUE);
         if (mIsDebug) {
             Log.d(LOG_TAG, "Teak attached to android.app.Activity: " + mHostActivity);
         }
@@ -148,7 +147,10 @@ public class Teak {
      * @param <code>Activity</code> of your app.
      */
     public static void deactivateApp(Activity activity) {
-        mTeakCache.stop();
+        if (mTeakCache != null) {
+            mTeakCache.stop();
+        }
+
         if (mExecutorService != null) {
             mExecutorService.shutdownNow();
             mExecutorService = null;
@@ -442,8 +444,8 @@ public class Teak {
         return mHostActivity;
     }
 
-    static String getAppVersionName() {
-        return mAppVersionName;
+    static int getAppVersion() {
+        return mAppVersionCode;
     }
 
     static boolean isDebug() {
@@ -492,7 +494,7 @@ public class Teak {
 
                         // Happy path
                         if (mIsDebug) {
-                            Log.d(LOG_TAG, "Google PlatyAdvertising Id: " + mGooglePlayAdId);
+                            Log.d(LOG_TAG, "Google Play Advertising Id: " + mGooglePlayAdId);
                             Log.d(LOG_TAG, String.format("Ad tracking limited: %b", mLimitAdTracking));
                         }
                     } catch (Exception e) {
@@ -513,11 +515,10 @@ public class Teak {
 
                 try {
                     Gson gson = new Gson();
-                    String versionName = mHostActivity.getPackageManager().getPackageInfo(mHostActivity.getPackageName(), 0).versionName;
                     String queryString = "?sdk_version=" + URLEncoder.encode(SDKVersion, "UTF-8") +
                             "&sdk_platform=" + URLEncoder.encode("android_" + android.os.Build.VERSION.RELEASE, "UTF-8") +
                             "&game_id=" + URLEncoder.encode(mAppId, "UTF-8") +
-                            "&app_version=" + URLEncoder.encode(versionName, "UTF-8");
+                            "&app_version=" + URLEncoder.encode(String.valueOf(mAppVersionCode), "UTF-8");
                     URL url = new URL("https", TEAK_SERVICES_HOSTNAME, "/services.json" + queryString);
                     connection = (HttpsURLConnection) url.openConnection();
                     connection.setRequestProperty("Accept-Charset", "UTF-8");
@@ -564,26 +565,34 @@ public class Teak {
     }
 
     private static void internal_validateUser(final String accessToken) {
-        HashMap<String, Object> payload = new HashMap<String, Object>();
+        mExecutorService.submit(new Runnable() {
+            public void run() {
+                HashMap<String, Object> payload = new HashMap<String, Object>();
 
-        long foo = TimeUnit.HOURS.convert(TimeZone.getDefault().getRawOffset(), TimeUnit.MILLISECONDS);
-        String tzOffset = (new Long(foo)).toString();
-        payload.put("timezone", tzOffset);
+                long foo = TimeUnit.HOURS.convert(TimeZone.getDefault().getRawOffset(), TimeUnit.MILLISECONDS);
+                String tzOffset = (new Long(foo)).toString();
+                payload.put("timezone", tzOffset);
 
-        if (mFbAttributionId != null) {
-            payload.put("fb_attribution_id", mFbAttributionId);
-        }
+                if (mFbAttributionId != null) {
+                    payload.put("fb_attribution_id", mFbAttributionId);
+                }
 
-        if (mGooglePlayAdId != null) {
-            payload.put("android_ad_id", mGooglePlayAdId);
-            payload.put("android_limit_ad_tracking", mLimitAdTracking);
-        }
+                if (mGooglePlayAdId != null) {
+                    payload.put("android_ad_id", mGooglePlayAdId);
+                    payload.put("android_limit_ad_tracking", mLimitAdTracking);
+                }
 
-        if (accessToken != null) {
-            payload.put("access_token", accessToken);
-        }
+                if (mGCMRegistrationId != null) {
+                    payload.put("gcm_registration_id", mGCMRegistrationId);
+                }
 
-        mTeakCache.addRequest("/games/" + mAppId + "/users.json", payload);
+                if (accessToken != null) {
+                    payload.put("access_token", accessToken);
+                }
+
+                mTeakCache.addRequest("/games/" + mAppId + "/users.json", payload);
+            }
+        });
     }
 
     protected static Object getBuildConfigValue(Context context, String fieldName) {
@@ -615,7 +624,7 @@ public class Teak {
     private static String mMetricsHostname;
     private static String mFbAttributionId;
     private static String mGooglePlayAdId;
-    private static String mAppVersionName;
+    private static int mAppVersionCode;
     private static Boolean mLimitAdTracking;
     private static boolean mIsDebug;
     private static TeakCache mTeakCache;

@@ -73,7 +73,7 @@ class TeakRequest implements Runnable {
             requestBodyObject.put("game_id", Teak.getAppId());
             requestBodyObject.put("sdk_version", Teak.SDKVersion);
             requestBodyObject.put("sdk_platform", "android_" + android.os.Build.VERSION.RELEASE);
-            requestBodyObject.put("app_version", Teak.getAppVersionName());
+            requestBodyObject.put("app_version", String.valueOf(Teak.getAppVersion()));
 
             ArrayList<String> payloadKeys = new ArrayList<String>(requestBodyObject.keySet());
             Collections.sort(payloadKeys);
