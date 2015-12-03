@@ -18,15 +18,19 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.util.Log;
+
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.BufferedReader;
 import java.lang.reflect.*;
+
 import javax.net.ssl.HttpsURLConnection;
+
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.concurrent.Executors;
@@ -41,25 +45,22 @@ import java.util.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.ads.identifier.AdvertisingIdClient;
+import com.google.android.gms.ads.identifier.AdvertisingIdClient.Info;
+
+import android.net.Uri;
+import android.content.ContentResolver;
+import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+
 /**
  * Allows you to interact with the Teak service from your Android application.
  */
 public class Teak {
-    public static final int StatusNotAuthorized = -1;
-    public static final int StatusUndetermined = 0;
-    public static final int StatusReadOnly = 1;
-    public static final int StatusReady = 2;
-
     public static final String SDKVersion = "1.2";
-
-    /**
-     * Get the authentication status of the Teak user.
-     *
-     * @return the authentication status of the Teak user.
-     */
-    public static int getStatus() {
-        return mStatus;
-    }
 
     /**
      * Initialize Teak and attach the {@link Activity}.
@@ -74,6 +75,12 @@ public class Teak {
         }
 
         mHostActivity = activity;
+
+        try {
+            mAppVersionName = mHostActivity.getPackageManager().getPackageInfo(mHostActivity.getPackageName(), 0).versionName;
+        } catch (Exception e) {
+            mAppVersionName = "unknown";
+        }
 
         // Get the API Key
         if (mAPIKey == null) {
@@ -98,15 +105,18 @@ public class Teak {
             }
         }
 
-        // Activate
-        activateApp(mHostActivity);
-
         // Happy-path logging
-        Boolean isDebug = (Boolean)getBuildConfigValue(mHostActivity, "DEBUG");
+        Boolean isDebug = (Boolean) getBuildConfigValue(mHostActivity, "DEBUG");
         mIsDebug = (isDebug == Boolean.TRUE);
-        if(mIsDebug) {
+        if (mIsDebug) {
             Log.d(LOG_TAG, "Teak attached to android.app.Activity: " + mHostActivity);
         }
+
+        // We need this here to get IDFA etc
+        mExecutorService = Executors.newSingleThreadExecutor();
+
+        // Grab the advertising id and such
+        collectAdvertisingIdEtc();
     }
 
     /**
@@ -121,9 +131,12 @@ public class Teak {
             mExecutorService = Executors.newSingleThreadExecutor();
         }
 
-        // Services discovery
-        if(mAuthHostname == null || mPostHostname == null || mMetricsHostname == null) {
-            servicesDiscovery();
+        if (isOnline()) {
+            // Services discovery
+            if (mAuthHostname == null || mPostHostname == null || mMetricsHostname == null) {
+                servicesDiscovery();
+            }
+            mTeakCache.start();
         }
     }
 
@@ -135,6 +148,7 @@ public class Teak {
      * @param <code>Activity</code> of your app.
      */
     public static void deactivateApp(Activity activity) {
+        mTeakCache.stop();
         if (mExecutorService != null) {
             mExecutorService.shutdownNow();
             mExecutorService = null;
@@ -175,27 +189,12 @@ public class Teak {
     }
 
     /**
-     * Assign a push notification key to the current Teak user.
-     * <p/>
-     * For Urban Airship, the device key can be obtained with:
-     * <code>PushManager.shared().getPreferences().getPushId()</code>
-     *
-     * @param devicePushKey the push notification key for the current device.
-     */
-    public static void setDevicePushKey(String devicePushKey) {
-        HashMap<String, Object> payload = new HashMap<String, Object>();
-        payload.put("push_key", devicePushKey);
-        payload.put("device_type", "android");
-        mTeakCache.addRequest("/me/devices.json", payload);
-    }
-
-    /**
      * Report a purchase event.
      *
-     * @param amount           Amount spent on product.
-     * @param currencyCode     ISO 4217 currency code for amount.
-     * @param purchaseId       Purchase receipt id.
-     * @param purchaseTime     The time the product was purchased, in milliseconds since the epoch (Jan 1, 1970).
+     * @param amount       Amount spent on product.
+     * @param currencyCode ISO 4217 currency code for amount.
+     * @param purchaseId   Purchase receipt id.
+     * @param purchaseTime The time the product was purchased, in milliseconds since the epoch (Jan 1, 1970).
      */
     public static void trackPurchase(float amount, String currencyCode, String purchaseId, long purchaseTime) {
         HashMap<String, Object> payload = new HashMap<String, Object>();
@@ -208,7 +207,7 @@ public class Teak {
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         payload.put("happened_at", df.format(new Date(purchaseTime)));
 
-        payload.put("amount", new Integer((int)(amount * 100)));
+        payload.put("amount", new Integer((int) (amount * 100)));
         payload.put("currency_code", currencyCode);
         payload.put("platform_id", purchaseId);
         mTeakCache.addRequest("/purchase.json", payload);
@@ -383,6 +382,7 @@ public class Teak {
 
         String[] requiredRermissions = {
                 android.Manifest.permission.INTERNET,
+                android.Manifest.permission.ACCESS_NETWORK_STATE,
         };
 
         String[] suggestedPermissions = {
@@ -404,70 +404,10 @@ public class Teak {
         return ret;
     }
 
-    /**
-     * Handler class for notification of Teak events.
-     */
-    public interface Handler {
-        /**
-         * The authentication status of the user has changed.
-         *
-         * @param authStatus the updated authentication status of the current Teak user.
-         */
-        void authenticationStatusChanged(int authStatus);
-    }
-
-    /**
-     * Assign a handler for Teak events.
-     *
-     * @param handler the handler you wish to be notified when Teak events occur.
-     */
-    public static void setHandler(Handler handler) {
-        mHandler = handler;
-        mLastAuthStatusReported = StatusUndetermined;
-        setStatus(mStatus);
-    }
-
     /**************************************************************************/
 
     protected interface RequestCallback {
         void requestComplete(int responseCode, String responseBody);
-    }
-
-    static boolean updateAuthenticationStatus(int httpStatus) {
-        boolean ret = true;
-        switch (httpStatus) {
-            case HttpsURLConnection.HTTP_OK:
-            case HttpsURLConnection.HTTP_CREATED: {
-                setStatus(StatusReady);
-                break;
-            }
-            case HttpsURLConnection.HTTP_UNAUTHORIZED: {
-                setStatus(StatusReadOnly);
-                break;
-            }
-            case HttpsURLConnection.HTTP_BAD_METHOD: {
-                setStatus(StatusNotAuthorized);
-                break;
-            }
-            default: {
-                ret = false;
-            }
-        }
-        return ret;
-    }
-
-    static void setStatus(int status) {
-        mStatus = status;
-        if (mStatus == StatusReady) {
-            mTeakCache.start();
-        } else {
-            mTeakCache.stop();
-        }
-
-        if (mLastAuthStatusReported != mStatus && mHandler != null) {
-            mLastAuthStatusReported = mStatus;
-            mHandler.authenticationStatusChanged(mStatus);
-        }
     }
 
     static String getUserId() {
@@ -475,13 +415,19 @@ public class Teak {
     }
 
     static String getHostname(String endpoint) {
-        if (endpoint.equals("/install.json") || endpoint.equals("/purchase.json")) {
+        if (endpoint.equals("/purchase.json")) {
             return mMetricsHostname;
-        } else if (endpoint.equals("/users.json")) {
+        } else if (endpoint.endsWith("/users.json")) {
             return mAuthHostname;
         }
 
         return mPostHostname;
+    }
+
+    static boolean isOnline() {
+        ConnectivityManager cm = (ConnectivityManager) mHostActivity.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        return netInfo != null && netInfo.isConnectedOrConnecting();
     }
 
     static String getAppId() {
@@ -496,127 +442,148 @@ public class Teak {
         return mHostActivity;
     }
 
+    static String getAppVersionName() {
+        return mAppVersionName;
+    }
+
     static boolean isDebug() {
         return mIsDebug;
     }
 
-    private static void servicesDiscovery() {
-        mServicesDiscoveryFuture = new FutureTask<Boolean>(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                HttpsURLConnection connection = null;
-                Boolean ret = Boolean.FALSE;
+    private static void collectAdvertisingIdEtc() {
+        int googlePlayStatus = GooglePlayServicesUtil.isGooglePlayServicesAvailable(mHostActivity);
 
-                Gson gson = new Gson();
-                String versionName = mHostActivity.getPackageManager().getPackageInfo(mHostActivity.getPackageName(), 0).versionName;
-                String queryString = "?sdk_version=" + URLEncoder.encode(SDKVersion, "UTF-8") +
-                        "&sdk_platform=" + URLEncoder.encode("android_" + android.os.Build.VERSION.RELEASE, "UTF-8") +
-                        "&game_id=" + URLEncoder.encode(mAppId, "UTF-8") +
-                        "&app_version=" + URLEncoder.encode(versionName, "UTF-8");
-                URL url = new URL("https", TEAK_SERVICES_HOSTNAME, "/services.json" + queryString);
-                connection = (HttpsURLConnection) url.openConnection();
-                connection.setRequestProperty("Accept-Charset", "UTF-8");
-                connection.setUseCaches(false);
+        // Facebook Attribution Id
+        mExecutorService.submit(new Runnable() {
+            public void run() {
+                try {
+                    ContentResolver contentResolver = mHostActivity.getContentResolver();
+                    Uri uri = Uri.parse("content://com.facebook.katana.provider.AttributionIdProvider");
+                    String columnName = "aid";
+                    String[] projection = {columnName};
+                    Cursor cursor = contentResolver.query(uri, projection, null, null, null);
 
-                // Get Response
-                InputStream is = null;
-                if (connection.getResponseCode() < 400) {
-                    is = connection.getInputStream();
-                } else {
-                    is = connection.getErrorStream();
+                    if (cursor != null) {
+                        if (!cursor.moveToFirst()) {
+                            cursor.close();
+                        } else {
+                            mFbAttributionId = cursor.getString(cursor.getColumnIndex(columnName));
+                            cursor.close();
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.e(LOG_TAG, "Couldn't get FB Attribution Id.");
+                    if (mIsDebug) {
+                        e.printStackTrace();
+                    }
                 }
-                BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-                String line;
-                StringBuffer response = new StringBuffer();
-                while ((line = rd.readLine()) != null) {
-                    response.append(line);
-                    response.append('\r');
-                }
-                rd.close();
-
-                Log.d(LOG_TAG, response.toString());
-
-                // Read the JSON
-                if (connection.getResponseCode() < 400) {
-                    Type payloadType = new TypeToken<Map<String, String>>() {
-                    }.getType();
-                    Map<String, String> services = gson.fromJson(response.toString(), payloadType);
-
-                    mAuthHostname = services.get("auth");
-                    mMetricsHostname = services.get("metrics");
-                    mPostHostname = services.get("post");
-
-                    ret = Boolean.TRUE;
-                } else {
-                    throw new Exception("Error performing services discovery: " + connection.getResponseCode());
-                }
-                connection.disconnect();
-                connection = null;
-
-                return ret;
             }
         });
-        mExecutorService.submit(mServicesDiscoveryFuture);
+
+
+        // Google Play Advertising Id
+        if (googlePlayStatus == ConnectionResult.SUCCESS) {
+            mExecutorService.submit(new Runnable() {
+                public void run() {
+                    try {
+                        Info adInfo = AdvertisingIdClient.getAdvertisingIdInfo(mHostActivity);
+                        mGooglePlayAdId = adInfo.getId();
+                        mLimitAdTracking = adInfo.isLimitAdTrackingEnabled();
+
+                        // Happy path
+                        if (mIsDebug) {
+                            Log.d(LOG_TAG, "Google PlatyAdvertising Id: " + mGooglePlayAdId);
+                            Log.d(LOG_TAG, String.format("Ad tracking limited: %b", mLimitAdTracking));
+                        }
+                    } catch (Exception e) {
+                        Log.e(LOG_TAG, "Couldn't get Google Play Advertising Id.");
+                        if (mIsDebug) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            });
+        }
     }
 
-    private static void internal_validateUser(final String accessToken) {
-        try {
-            if (mServicesDiscoveryFuture.get() == Boolean.FALSE) {
-                Log.e(LOG_TAG, "Services discovery failed.");
-            }
-        } catch (Exception e) {
-            Log.e(LOG_TAG, "Services discovery failed.");
-        }
-
+    private static void servicesDiscovery() {
         mExecutorService.submit(new Runnable() {
             public void run() {
                 HttpsURLConnection connection = null;
+
                 try {
+                    Gson gson = new Gson();
                     String versionName = mHostActivity.getPackageManager().getPackageInfo(mHostActivity.getPackageName(), 0).versionName;
-                    String postBody = "api_key=" + URLEncoder.encode(getUserId(), "UTF-8")  +
-                        "&sdk_version=" + URLEncoder.encode(SDKVersion, "UTF-8") +
-                        "&sdk_platform=" + URLEncoder.encode("android_" + android.os.Build.VERSION.RELEASE, "UTF-8") +
-                        "&game_id=" + URLEncoder.encode(mAppId, "UTF-8") +
-                        "&app_version=" + URLEncoder.encode(versionName, "UTF-8");
-
-                    if (accessToken != null) {
-                        postBody += "&access_token=" + URLEncoder.encode(accessToken, "UTF-8");
-                    }
-
-                    URL url = new URL("https", getHostname("/users.json"), "/games/" + mAppId + "/users.json");
+                    String queryString = "?sdk_version=" + URLEncoder.encode(SDKVersion, "UTF-8") +
+                            "&sdk_platform=" + URLEncoder.encode("android_" + android.os.Build.VERSION.RELEASE, "UTF-8") +
+                            "&game_id=" + URLEncoder.encode(mAppId, "UTF-8") +
+                            "&app_version=" + URLEncoder.encode(versionName, "UTF-8");
+                    URL url = new URL("https", TEAK_SERVICES_HOSTNAME, "/services.json" + queryString);
                     connection = (HttpsURLConnection) url.openConnection();
-                    connection.setRequestMethod("POST");
-                    connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                    connection.setRequestProperty("Content-Length",
-                            "" + Integer.toString(postBody.getBytes().length));
+                    connection.setRequestProperty("Accept-Charset", "UTF-8");
                     connection.setUseCaches(false);
-                    connection.setDoOutput(true);
 
-                    // Send request
-                    DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
-                    wr.writeBytes(postBody);
-                    wr.flush();
-                    wr.close();
-
-                    if (!updateAuthenticationStatus(connection.getResponseCode())) {
-                        Log.e(LOG_TAG, "Unknown error adding Teak user (" + connection.getResponseCode() + ").");
-                        setStatus(StatusUndetermined);
+                    // Get Response
+                    InputStream is = null;
+                    if (connection.getResponseCode() < 400) {
+                        is = connection.getInputStream();
+                    } else {
+                        is = connection.getErrorStream();
                     }
-                } catch (IOException e) {
-                    // This is probably a 401
-                    if (!updateAuthenticationStatus(401)) {
-                        Log.e(LOG_TAG, Log.getStackTraceString(e));
-                        setStatus(StatusUndetermined);
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+                    String line;
+                    StringBuffer response = new StringBuffer();
+                    while ((line = rd.readLine()) != null) {
+                        response.append(line);
+                        response.append('\r');
+                    }
+                    rd.close();
+
+                    Log.d(LOG_TAG, response.toString());
+
+                    // Read the JSON
+                    if (connection.getResponseCode() < 400) {
+                        Type payloadType = new TypeToken<Map<String, String>>() {
+                        }.getType();
+                        Map<String, String> services = gson.fromJson(response.toString(), payloadType);
+
+                        mAuthHostname = services.get("auth");
+                        mMetricsHostname = services.get("metrics");
+                        mPostHostname = services.get("post");
+                    } else {
+                        Log.e(LOG_TAG, "Error performing services discovery: " + connection.getResponseCode());
                     }
                 } catch (Exception e) {
-                    Log.e(LOG_TAG, Log.getStackTraceString(e));
-                    setStatus(StatusUndetermined);
+
                 } finally {
                     connection.disconnect();
                     connection = null;
                 }
             }
         });
+    }
+
+    private static void internal_validateUser(final String accessToken) {
+        HashMap<String, Object> payload = new HashMap<String, Object>();
+
+        long foo = TimeUnit.HOURS.convert(TimeZone.getDefault().getRawOffset(), TimeUnit.MILLISECONDS);
+        String tzOffset = (new Long(foo)).toString();
+        payload.put("timezone", tzOffset);
+
+        if (mFbAttributionId != null) {
+            payload.put("fb_attribution_id", mFbAttributionId);
+        }
+
+        if (mGooglePlayAdId != null) {
+            payload.put("android_ad_id", mGooglePlayAdId);
+            payload.put("android_limit_ad_tracking", mLimitAdTracking);
+        }
+
+        if (accessToken != null) {
+            payload.put("access_token", accessToken);
+        }
+
+        mTeakCache.addRequest("/games/" + mAppId + "/users.json", payload);
     }
 
     protected static Object getBuildConfigValue(Context context, String fieldName) {
@@ -646,11 +613,11 @@ public class Teak {
     private static String mAuthHostname;
     private static String mPostHostname;
     private static String mMetricsHostname;
+    private static String mFbAttributionId;
+    private static String mGooglePlayAdId;
+    private static String mAppVersionName;
+    private static Boolean mLimitAdTracking;
     private static boolean mIsDebug;
-    private static FutureTask<Boolean> mServicesDiscoveryFuture;
-    private static int mStatus = Teak.StatusUndetermined;
-    private static int mLastAuthStatusReported;
     private static TeakCache mTeakCache;
     private static ExecutorService mExecutorService;
-    private static Handler mHandler;
 }

@@ -32,7 +32,6 @@ class TeakCache {
     private SQLiteDatabase mDatabase;
     private TeakCacheOpenHelper mOpenHelper;
     private ExecutorService mExecutorService;
-    private ExecutorService mInstallExecutorService;
 
     public TeakCache() {
         mOpenHelper = new TeakCacheOpenHelper(Teak.getHostActivity());
@@ -50,27 +49,6 @@ class TeakCache {
         boolean ret = false;
         try {
             mDatabase = mOpenHelper.getWritableDatabase();
-
-            // Send install metric if needed
-            if (!mOpenHelper.mInstallMetricSent) {
-                HashMap<String, Object> payload = new HashMap<String, Object>();
-                payload.put("install_date", mOpenHelper.mInstallDate);
-
-                mInstallExecutorService = Executors.newSingleThreadExecutor();
-                TeakRequest installReportRequest = new TeakRequest("POST", "/install.json", payload, new Teak.RequestCallback() {
-                    @Override
-                    public void requestComplete(int responseCode, String responseBody) {
-                        synchronized (mDatabase) {
-                            mDatabase.execSQL("UPDATE install_tracking SET metric_sent=1");
-                        }
-                        mOpenHelper.mInstallMetricSent = true;
-
-                        mInstallExecutorService.shutdown();
-                    }
-                });
-                mInstallExecutorService.submit(installReportRequest);
-            }
-
             ret = true;
         } catch (SQLException e) {
             Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
@@ -123,12 +101,6 @@ class TeakCache {
 
         private static final String kCacheCreateSQL = "CREATE TABLE IF NOT EXISTS cache(request_endpoint TEXT, request_payload TEXT, request_id TEXT, request_date INTEGER, retry_count INTEGER)";
 
-        private static final String kInstallTableCreateSQL = "CREATE TABLE IF NOT EXISTS install_tracking(install_date REAL, metric_sent INTEGER)";
-        private final String[] kInstallTableReadColumns = {"install_date", "metric_sent"};
-
-        public double mInstallDate;
-        public boolean mInstallMetricSent;
-
         public TeakCacheOpenHelper(Context context) {
             super(context, kDatabaseName, null, kDatabaseVersion);
         }
@@ -136,28 +108,6 @@ class TeakCache {
         @Override
         public void onCreate(SQLiteDatabase database) {
             database.execSQL(kCacheCreateSQL);
-            database.execSQL(kInstallTableCreateSQL);
-        }
-
-        @Override
-        public void onOpen(SQLiteDatabase database) {
-            // Install tracking
-            database.execSQL(kInstallTableCreateSQL);
-            Cursor cursor = database.query("install_tracking", kInstallTableReadColumns,
-                    null, null, null, null, "install_date");
-
-            mInstallMetricSent = false;
-            mInstallDate = System.currentTimeMillis() / 1000.0;
-
-            if (cursor.getCount() > 0) {
-                cursor.moveToFirst();
-                mInstallDate = cursor.getDouble(0);
-                mInstallMetricSent = (cursor.getInt(1) > 0);
-            } else {
-                database.execSQL("INSERT INTO install_tracking (install_date, metric_sent) VALUES (" + mInstallDate + ", 0)");
-            }
-
-            cursor.close();
         }
 
         @Override

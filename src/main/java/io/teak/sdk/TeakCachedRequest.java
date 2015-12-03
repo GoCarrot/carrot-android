@@ -108,13 +108,8 @@ class TeakCachedRequest extends TeakRequest implements Runnable {
             if (responseCode == HttpsURLConnection.HTTP_NOT_FOUND) {
                 Log.e(Teak.LOG_TAG, "Requested resource not found, removing request from cache.");
                 removeFromCache();
-            } else if (!Teak.updateAuthenticationStatus(responseCode)) {
-                Log.e(Teak.LOG_TAG, "Unknown error (" + responseCode + ") submitting Teak request: " + responseBody);
-                addRetryInCache();
-            } else if (Teak.getStatus() == Teak.StatusReady) {
-                removeFromCache();
             } else {
-                addRetryInCache();
+                removeFromCache();
             }
         }
     }
