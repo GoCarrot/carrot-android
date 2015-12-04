@@ -37,10 +37,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.Callable;
+import java.util.UUID;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -152,6 +152,10 @@ public class Teak {
         if (mTeakCache != null) {
             mTeakCache.stop();
         }
+        if (mHeartbeatService != null) {
+            mHeartbeatService.shutdownNow();
+            mHeartbeatService = null;
+        }
     }
 
     /**
@@ -190,8 +194,38 @@ public class Teak {
      */
     public static void validateUser(String userId, String fbAccessToken) {
         mUserId = userId;
+
         if (isOnline()) {
             mTeakCache.start();
+
+            mHeartbeatService = Executors.newSingleThreadScheduledExecutor();
+            mHeartbeatService.scheduleAtFixedRate(new Runnable() {
+                public void run() {
+                    HttpsURLConnection connection = null;
+
+                    try {
+                        String queryString = "game_id=" + URLEncoder.encode(mAppId, "UTF-8") +
+                                "&api_key=" + URLEncoder.encode(getUserId(), "UTF-8") +
+                                "&sdk_version=" + URLEncoder.encode(Teak.SDKVersion, "UTF-8") +
+                                "&sdk_platform=" + URLEncoder.encode("android_" + android.os.Build.VERSION.RELEASE, "UTF-8") +
+                                "&app_version=" + URLEncoder.encode(String.valueOf(Teak.getAppVersion()), "UTF-8") +
+                                "&buster=" + URLEncoder.encode(UUID.randomUUID().toString(), "UTF-8");
+                        URL url = new URL("https://iroko.gocarrot.com/ping?" + queryString);
+                        connection = (HttpsURLConnection) url.openConnection();
+                        connection.setRequestProperty("Accept-Charset", "UTF-8");
+                        connection.setUseCaches(false);
+
+                        if (connection.getResponseCode() >= 400) {
+                            Log.d(LOG_TAG, "Heartbeat error.");
+                        }
+                    } catch (Exception e) {
+
+                    } finally {
+                        connection.disconnect();
+                        connection = null;
+                    }
+                }
+            }, 0, 1, TimeUnit.MINUTES);
         }
         internal_validateUser(fbAccessToken);
     }
@@ -550,8 +584,6 @@ public class Teak {
                     }
                     rd.close();
 
-                    Log.d(LOG_TAG, response.toString());
-
                     // Read the JSON
                     if (connection.getResponseCode() < 400) {
                         Type payloadType = new TypeToken<Map<String, String>>() {
@@ -652,4 +684,5 @@ public class Teak {
     private static boolean mIsDebug;
     private static TeakCache mTeakCache;
     private static ExecutorService mExecutorService;
+    private static ScheduledExecutorService mHeartbeatService;
 }
