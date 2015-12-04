@@ -587,8 +587,13 @@ public class Teak {
             public void run() {
                 HashMap<String, Object> payload = new HashMap<String, Object>();
 
-                long foo = TimeUnit.HOURS.convert(TimeZone.getDefault().getRawOffset(), TimeUnit.MILLISECONDS);
-                String tzOffset = (new Long(foo)).toString();
+                TimeZone tz = TimeZone.getDefault();
+                long rawTz = tz.getRawOffset();
+                if (tz.inDaylightTime(new Date())) {
+                    rawTz += tz.getDSTSavings();
+                }
+                long minutes = TimeUnit.MINUTES.convert(rawTz, TimeUnit.MILLISECONDS);
+                String tzOffset = String.format("%f", minutes / 60.0f);
                 payload.put("timezone", tzOffset);
 
                 if (mIsDebug) {
