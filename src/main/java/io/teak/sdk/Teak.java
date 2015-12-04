@@ -132,11 +132,8 @@ public class Teak {
             if (mIsDebug) {
                 Log.d(LOG_TAG, "Online mode.");
             }
-            // Services discovery
-            if (mAuthHostname == null || mPostHostname == null || mMetricsHostname == null) {
-                servicesDiscovery();
-            }
-            mTeakCache.start();
+
+            servicesDiscovery();
         } else {
             if (mIsDebug) {
                 Log.d(LOG_TAG, "Offline mode.");
@@ -182,8 +179,7 @@ public class Teak {
      * @param userId the unique id for the current user.
      */
     public static void validateUser(String userId) {
-        mUserId = userId;
-        internal_validateUser(null);
+        validateUser(userId, null);
     }
 
     /**
@@ -194,6 +190,9 @@ public class Teak {
      */
     public static void validateUser(String userId, String fbAccessToken) {
         mUserId = userId;
+        if (isOnline()) {
+            mTeakCache.start();
+        }
         internal_validateUser(fbAccessToken);
     }
 
