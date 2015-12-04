@@ -81,15 +81,19 @@ class TeakRequest implements Runnable {
             StringBuilder requestBody = new StringBuilder();
             for (String key : payloadKeys) {
                 Object value = requestBodyObject.get(key);
-                String valueString = null;
-                if (!Map.class.isInstance(value) &&
-                        !Array.class.isInstance(value) &&
-                        !List.class.isInstance(value)) {
-                    valueString = value.toString();
+                if (value != null) {
+                    String valueString = null;
+                    if (!Map.class.isInstance(value) &&
+                            !Array.class.isInstance(value) &&
+                            !List.class.isInstance(value)) {
+                        valueString = value.toString();
+                    } else {
+                        valueString = gson.toJson(value);
+                    }
+                    requestBody.append(key + "=" + valueString + "&");
                 } else {
-                    valueString = gson.toJson(value);
+                    Log.e(Teak.LOG_TAG, "Value for key: " + key + " is NULL.");
                 }
-                requestBody.append(key + "=" + valueString + "&");
             }
             requestBody.deleteCharAt(requestBody.length() - 1);
 
