@@ -51,6 +51,7 @@ import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient.Info;
 
 import android.net.Uri;
+import android.content.Intent;
 import android.content.ContentResolver;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
@@ -156,6 +157,7 @@ public class Teak {
             mHeartbeatService.shutdownNow();
             mHeartbeatService = null;
         }
+        mUserIdentified = false;
     }
 
     /**
@@ -178,12 +180,12 @@ public class Teak {
     }
 
     /**
-     * Validate the current user.
+     * Identify the current user.
      *
      * @param userId the unique id for the current user.
      */
-    public static void validateUser(String userId) {
-        validateUser(userId, null);
+    public static void identifyUser(String userId) {
+        identifyUser(userId, null);
     }
 
     /**
@@ -192,8 +194,9 @@ public class Teak {
      * @param userId        the unique id for the current user.
      * @param fbAccessToken the Facebook access token for the current user.
      */
-    public static void validateUser(String userId, String fbAccessToken) {
+    public static void identifyUser(String userId, String fbAccessToken) {
         mUserId = userId;
+        mFbAccessToken = fbAccessToken;
 
         if (isOnline()) {
             mTeakCache.start();
@@ -227,7 +230,7 @@ public class Teak {
                 }
             }, 0, 1, TimeUnit.MINUTES);
         }
-        internal_validateUser(fbAccessToken);
+        internal_identifyUser();
     }
 
     /**
@@ -253,6 +256,18 @@ public class Teak {
         payload.put("currency_code", currencyCode.toUpperCase());
         payload.put("platform_id", purchaseId);
         mTeakCache.addRequest("/purchase.json", payload);
+    }
+
+    /**
+     * Assign a GCM push notification Id to the current user.
+     *
+     * @param gcmId GCM push id for the user.
+     */
+    public static void setGcmId(String gcmId) {
+        mGcmId = gcmId;
+        if (mHeartbeatService != null && mGcmId != null && !mGcmId.isEmpty()) {
+            internal_identifyUser();
+        }
     }
 
     /**
@@ -613,7 +628,7 @@ public class Teak {
         });
     }
 
-    private static void internal_validateUser(final String accessToken) {
+    private static void internal_identifyUser() {
         mExecutorService.submit(new Runnable() {
             public void run() {
                 HashMap<String, Object> payload = new HashMap<String, Object>();
@@ -628,7 +643,7 @@ public class Teak {
                 payload.put("timezone", tzOffset);
 
                 if (mIsDebug) {
-                    Log.d(LOG_TAG, "Valdiating user: " + getUserId());
+                    Log.d(LOG_TAG, "Identifying user: " + getUserId());
                     Log.d(LOG_TAG, "   Timezone:     " + tzOffset);
                 }
 
@@ -641,9 +656,18 @@ public class Teak {
                     payload.put("android_limit_ad_tracking", mLimitAdTracking);
                 }
 
-                if (accessToken != null) {
-                    payload.put("access_token", accessToken);
+                if (mFbAccessToken != null) {
+                    payload.put("access_token", mFbAccessToken);
                 }
+
+                if (mGcmId != null) {
+                    payload.put("gcm_push_key", mGcmId);
+                }
+
+                if (mUserIdentified) {
+                    payload.put("do_not_track_event", Boolean.TRUE);
+                }
+                mUserIdentified = true;
 
                 mTeakCache.addRequest("/games/" + mAppId + "/users.json", payload);
             }
@@ -678,10 +702,13 @@ public class Teak {
     private static String mPostHostname;
     private static String mMetricsHostname;
     private static String mFbAttributionId;
+    private static String mFbAccessToken;
     private static String mGooglePlayAdId;
+    private static String mGcmId;
     private static int mAppVersionCode;
     private static Boolean mLimitAdTracking;
     private static boolean mIsDebug;
+    private static boolean mUserIdentified;
     private static TeakCache mTeakCache;
     private static ExecutorService mExecutorService;
     private static ScheduledExecutorService mHeartbeatService;
