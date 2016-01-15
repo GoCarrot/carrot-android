@@ -642,10 +642,8 @@ public class Teak {
                 String tzOffset = String.format("%f", minutes / 60.0f);
                 payload.put("timezone", tzOffset);
 
-                if (mIsDebug) {
-                    Log.d(LOG_TAG, "Identifying user: " + getUserId());
-                    Log.d(LOG_TAG, "   Timezone:     " + tzOffset);
-                }
+                Log.d(LOG_TAG, "Identifying user: " + getUserId());
+                Log.d(LOG_TAG, "        Timezone: " + tzOffset);
 
                 if (mFbAttributionId != null) {
                     payload.put("fb_attribution_id", mFbAttributionId);
