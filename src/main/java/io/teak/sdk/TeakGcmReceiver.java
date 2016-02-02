@@ -22,10 +22,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.content.pm.PackageManager;
-import android.content.pm.ApplicationInfo;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationManagerCompat;
+
 import android.util.Log;
 
 public final class TeakGcmReceiver extends BroadcastReceiver {
@@ -61,10 +58,11 @@ public final class TeakGcmReceiver extends BroadcastReceiver {
             // Send push opened metric
             return TEAK_PUSH_OPENED;
         } else if (GCM_RECEIVE_INTENT_ACTION.equals(action)) {
-            if (true) { // Test for if we should handle all messages or just Teak ones
+            if (TeakNotification.containsTeakNotification(context, intent)) { // Test for if we should handle all messages or just Teak ones
                 new AsyncTask<Void, String, Void>() {
                     @Override
                     protected Void doInBackground(Void... params) {
+
                         // <debug>
                         Bundle bundle = intent.getExtras();
                         if (bundle != null && !bundle.isEmpty()) {
@@ -75,53 +73,13 @@ public final class TeakGcmReceiver extends BroadcastReceiver {
                         }
                         // </debug>
 
-                        Intent pushReceivedIntent = new Intent(context.getPackageName() + TEAK_PUSH_RECEIVED_INTENT_ACTION_SUFFIX);
+                        TeakNotification notification = TeakNotification.notificationFromIntent(context, intent);
 
-                        if (true) { // TODO: Filter out data messages
-                            Intent pushOpenedIntent = new Intent(context.getPackageName() + TEAK_PUSH_OPENED_INTENT_ACTION_SUFFIX);
+                        // Otherwise 
+                        if (notification != null) {
 
-                            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
-                            NotificationCompat.Builder builder = new NotificationCompat.Builder(context).setAutoCancel(true);
-
-                            PackageManager pm = context.getPackageManager();
-                            try {
-                                ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
-                                builder.setSmallIcon(ai.icon);
-                            } catch (Exception e) {
-                                Log.e(Teak.LOG_TAG, "Unable to get icon resource id for GCM notification.");
-                            }
-
-                            int messageId = 0;
-                            if (bundle != null) {
-                                builder.setContentTitle(bundle.getString("title"));
-                                builder.setContentText(bundle.getString("message"));
-                                builder.setTicker(bundle.getString("tickerText"));
-                                try {
-                                    messageId = Integer.parseInt(bundle.getString("message_id"));
-                                } catch (Exception e) {
-                                    messageId = 0;
-                                }
-                            }
-
-                            pushReceivedIntent.putExtras(bundle);
-                            pushOpenedIntent.putExtras(bundle);
-
-                            PendingIntent pushOpenedPendingIntent = PendingIntent.getBroadcast(context, messageId, pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
-                            builder.setContentIntent(pushOpenedPendingIntent);
-
-                            context.sendBroadcast(pushReceivedIntent);
-
-                            notificationManager.notify("TEAK", messageId, builder.build());
-
-                            // Wake the screen
-                            PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-                            PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, Teak.LOG_TAG);
-                            wakeLock.acquire();
-                            wakeLock.release();
-                        } else {
-                            pushReceivedIntent.putExtras(bundle);
-                            context.sendBroadcast(pushReceivedIntent);
                         }
+
 
                         return null;
                     }
