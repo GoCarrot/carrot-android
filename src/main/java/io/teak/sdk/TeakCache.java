@@ -15,6 +15,7 @@
 package io.teak.sdk;
 
 import android.content.Context;
+import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
@@ -27,6 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ArrayList;
 
 class TeakCache {
     private SQLiteDatabase mDatabase;
@@ -95,11 +97,61 @@ class TeakCache {
         return ret;
     }
 
+    public boolean cacheNotification(TeakNotification notification) {
+        boolean ret = false;
+        try {
+            ContentValues values = new ContentValues();
+            values.put("notification_id", notification.teakNotifId);
+            values.put("android_id", notification.platformId);
+            values.put("notification_payload", notification.toJson());
+
+            synchronized (mDatabase) {
+                mDatabase.insert("inbox", null, values);
+            }
+            ret = true;
+        } catch (Exception e) {
+            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+        }
+        return ret;
+    }
+
+    public List<TeakNotification> notificationInbox() {
+        List<TeakNotification> inbox = new ArrayList<TeakNotification>();
+        String[] inboxReadColumns = {"notification_payload"};
+
+        synchronized (mDatabase) {
+            Cursor cursor = mDatabase.query("inbox", inboxReadColumns,
+                    null, null, null, null, null);
+
+            cursor.moveToFirst();
+            while (!cursor.isAfterLast()) {
+                try {
+                    TeakNotification notif = new TeakNotification(cursor.getString(0));
+                    inbox.add(notif);
+                } catch (Exception e) {
+                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                }
+                cursor.moveToNext();
+            }
+            cursor.close();
+        }
+
+        return inbox;
+    }
+
+    public boolean uncacheNotification(long teakNotifId) {
+        synchronized (mDatabase) {
+            mDatabase.delete("inbox", "notification_id = " + teakNotifId, null);
+        }
+        return true;
+    }
+
     class TeakCacheOpenHelper extends SQLiteOpenHelper {
         private static final String kDatabaseName = "teak.db";
         private static final int kDatabaseVersion = 1;
 
         private static final String kCacheCreateSQL = "CREATE TABLE IF NOT EXISTS cache(request_endpoint TEXT, request_payload TEXT, request_id TEXT, request_date INTEGER, retry_count INTEGER)";
+        private static final String kInboxCreateSQL = "CREATE TABLE IF NOT EXISTS inbox(notification_id INTEGER, android_id INTEGER, notification_payload TEXT)";
 
         public TeakCacheOpenHelper(Context context) {
             super(context, kDatabaseName, null, kDatabaseVersion);
@@ -108,11 +160,13 @@ class TeakCache {
         @Override
         public void onCreate(SQLiteDatabase database) {
             database.execSQL(kCacheCreateSQL);
+            database.execSQL(kInboxCreateSQL);
         }
 
         @Override
         public void onUpgrade(SQLiteDatabase database, int oldVersion, int newVersion) {
             database.execSQL("DROP TABLE IF EXISTS cache");
+            database.execSQL("DROP TABLE IF EXISTS inbox");
             onCreate(database);
         }
     }

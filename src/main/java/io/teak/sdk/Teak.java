@@ -247,6 +247,7 @@ public class Teak {
         // Parsnip requests user app_id/user_id not game_id/api_key
         payload.put("app_id", getAppId());
         payload.put("user_id", getUserId());
+        payload.put("network_id", new Integer(2));
 
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -471,6 +472,26 @@ public class Teak {
         return mUserId;
     }
 
+    static void launchedFromTeakNotifId(long teakNotifId) {
+        mLaunchedFromTeakNotifId = teakNotifId;
+    }
+
+    static void trackNotificationReceived(int notificationId) {
+        HashMap<String, Object> payload = new HashMap<String, Object>();
+
+        // Parsnip requests user app_id/user_id not game_id/api_key
+        payload.put("app_id", getAppId());
+        payload.put("user_id", getUserId());
+        payload.put("network_id", new Integer(2));
+
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
+        df.setTimeZone(TimeZone.getTimeZone("UTC"));
+        payload.put("happened_at", df.format(new Date()));
+
+        payload.put("platform_id", new Integer(notificationId));
+        mTeakCache.addRequest("/notification_impression.json", payload);
+    }
+
     static String getHostname(String endpoint) {
         if (endpoint.equals("/purchase.json")) {
             return mMetricsHostname;
@@ -505,6 +526,10 @@ public class Teak {
 
     static boolean isDebug() {
         return mIsDebug;
+    }
+
+    static TeakCache getTeakCache() {
+        return mTeakCache;
     }
 
     private static void collectAdvertisingIdEtc() {
@@ -658,8 +683,15 @@ public class Teak {
                     payload.put("access_token", mFbAccessToken);
                 }
 
+                if (mLaunchedFromTeakNotifId > 0) {
+                    payload.put("teak_notif_id", new Long(mLaunchedFromTeakNotifId));
+                    Log.d(LOG_TAG, "   Teak Notif Id: " + mLaunchedFromTeakNotifId);
+                    mLaunchedFromTeakNotifId = 0;
+                }
+
                 if (mGcmId != null) {
                     payload.put("gcm_push_key", mGcmId);
+                    Log.d(LOG_TAG, "          GCM Id: " + mGcmId);
                 }
 
                 if (mUserIdentified) {
@@ -710,4 +742,5 @@ public class Teak {
     private static TeakCache mTeakCache;
     private static ExecutorService mExecutorService;
     private static ScheduledExecutorService mHeartbeatService;
+    private static long mLaunchedFromTeakNotifId;
 }

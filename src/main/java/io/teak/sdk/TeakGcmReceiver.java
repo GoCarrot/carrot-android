@@ -31,18 +31,20 @@ public final class TeakGcmReceiver extends BroadcastReceiver {
 
     public static final String TEAK_PUSH_RECEIVED_INTENT_ACTION_SUFFIX = ".intent.TEAK_PUSH_RECEIVED";
     public static final String TEAK_PUSH_OPENED_INTENT_ACTION_SUFFIX = ".intent.TEAK_PUSH_OPENED";
+    public static final String TEAK_TEAK_NEW_NOTIFICATION_ACTION_SUFFIX = ".intent.TEAK_NEW_NOTIFICATION";
 
     public static final int TEAK_PUSH_RECEIVED = 0;
     public static final int TEAK_PUSH_OPENED = 1;
-    public static final int TEAK_UNKNOWN = -1;
+    public static final int TEAK_NOT_HANDLED = -1;
     public static final int TEAK_GCM_RECEIVED = 2;
+    public static final int TEAK_NEW_NOTIFICATION = 3;
 
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
 
         if (GCM_REGISTRATION_INTENT_ACTION.equals(action)) {
-            //
+            // TODO: Register here?
         } else if (GCM_RECEIVE_INTENT_ACTION.equals(action)) {
             processIntent(context, intent);
         }
@@ -52,14 +54,31 @@ public final class TeakGcmReceiver extends BroadcastReceiver {
         String action = intent.getAction();
 
         if (action.endsWith(TEAK_PUSH_RECEIVED_INTENT_ACTION_SUFFIX)) {
-            // Send push received metric
+            Bundle bundle = intent.getExtras();
+            int messageId = 0;
+            if (bundle != null && !bundle.isEmpty()) {
+                try {
+                    messageId = Integer.parseInt(bundle.getString("messageId"));
+                } catch (Exception e) {}
+            }
+            Teak.trackNotificationReceived(messageId);
             return TEAK_PUSH_RECEIVED;
         } else if (action.endsWith(TEAK_PUSH_OPENED_INTENT_ACTION_SUFFIX)) {
-            // Send push opened metric
+            Bundle bundle = intent.getExtras();
+            long teakNotifId = 0;
+            try {
+                teakNotifId = Long.parseLong(bundle.getString("teakNotifId"));
+            } catch (Exception e) {
+                teakNotifId = 0;
+            }
+            Teak.launchedFromTeakNotifId(teakNotifId);
             return TEAK_PUSH_OPENED;
-        } else if (GCM_RECEIVE_INTENT_ACTION.equals(action)) {
+        } else if (action.endsWith(TEAK_TEAK_NEW_NOTIFICATION_ACTION_SUFFIX)) {
+            // Let the app check the inbox
+            return TEAK_NEW_NOTIFICATION;
+        }else if (GCM_RECEIVE_INTENT_ACTION.equals(action)) {
             if (TeakNotification.containsTeakNotification(context, intent)) { // Test for if we should handle all messages or just Teak ones
-                new AsyncTask<Void, String, Void>() {
+                new AsyncTask<Void, Void, Void>() {
                     @Override
                     protected Void doInBackground(Void... params) {
 
@@ -75,11 +94,11 @@ public final class TeakGcmReceiver extends BroadcastReceiver {
 
                         TeakNotification notification = TeakNotification.notificationFromIntent(context, intent);
 
-                        // Otherwise 
                         if (notification != null) {
-
+                            // Broadcast that there is a new inbox item available
+                            Intent newInboxItemIntent = new Intent(context.getPackageName() + TeakGcmReceiver.TEAK_TEAK_NEW_NOTIFICATION_ACTION_SUFFIX);
+                            context.sendBroadcast(newInboxItemIntent);
                         }
-
 
                         return null;
                     }
@@ -88,6 +107,6 @@ public final class TeakGcmReceiver extends BroadcastReceiver {
             }
         }
 
-        return TEAK_UNKNOWN;
+        return TEAK_NOT_HANDLED;
     }
 }
