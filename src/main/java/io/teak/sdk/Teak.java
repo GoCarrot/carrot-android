@@ -536,6 +536,7 @@ public class Teak {
         int googlePlayStatus = GooglePlayServicesUtil.isGooglePlayServicesAvailable(mHostActivity);
 
         // Facebook Attribution Id
+        // From https://developers.facebook.com/docs/marketing-api/playbook-code-samples (See measurement)
         mExecutorService.submit(new Runnable() {
             public void run() {
                 try {
