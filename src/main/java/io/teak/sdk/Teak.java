@@ -71,8 +71,12 @@ public class Teak {
      * @param <code>Activity</code> of your app.
      */
     public static void createApp(Activity activity) {
+        // TEST
+        TeakNew.onCreate(activity);
+
         mHostActivity = activity;
 
+        // Check for debug build
         Boolean isDebug = (Boolean) getBuildConfigValue(mHostActivity, "DEBUG");
         mIsDebug = (isDebug == Boolean.TRUE);
 
@@ -80,6 +84,7 @@ public class Teak {
             Log.e(LOG_TAG, "Teak in offline mode until require permissions are added.");
         }
 
+        // Get package version id
         try {
             mAppVersionCode = mHostActivity.getPackageManager().getPackageInfo(mHostActivity.getPackageName(), 0).versionCode;
         } catch (Exception e) {
@@ -272,159 +277,6 @@ public class Teak {
     }
 
     /**
-     * Post an Open Graph action with an existing object to the Teak service.
-     *
-     * @param actionId         the Teak action id.
-     * @param objectInstanceId the instance id of the Teak object.
-     * @return <code>true if the action was cached successfully and will be sent
-     * to the Teak service when possible; <code>false</code> otherwise.
-     */
-    public static boolean postAction(String actionId, String objectInstanceId) {
-        return postAction(actionId, null, objectInstanceId);
-    }
-
-    /**
-     * Post an Open Graph action with an existing object to the Teak service.
-     *
-     * @param actionId             the Teak action id.
-     * @param actionPropertiesJson the properties to be sent along with the Teak action encoded to JSON.
-     * @param objectInstanceId     the instance id of the Teak object.
-     * @return <code>true if the action was cached successfully and will be sent
-     * to the Teak service when possible; <code>false</code> otherwise.
-     */
-    public static boolean postJsonAction(String actionId, String actionPropertiesJson, String objectInstanceId) {
-        Map<String, Object> actionProperties = null;
-
-        if (actionPropertiesJson != null && !actionPropertiesJson.isEmpty()) {
-            Gson gson = new Gson();
-            Type payloadType = new TypeToken<Map<String, Object>>() {
-            }.getType();
-            actionProperties = gson.fromJson(actionPropertiesJson, payloadType);
-        }
-
-        return postAction(actionId, actionProperties, objectInstanceId);
-    }
-
-    /**
-     * Post an Open Graph action with an existing object to the Teak service.
-     *
-     * @param actionId         the Teak action id.
-     * @param actionProperties the properties to be sent along with the Teak action.
-     * @param objectInstanceId the instance id of the Teak object.
-     * @return <code>true if the action was cached successfully and will be sent
-     * to the Teak service when possible; <code>false</code> otherwise.
-     */
-    public static boolean postAction(String actionId, Map<String, Object> actionProperties,
-                                     String objectInstanceId) {
-        HashMap<String, Object> payload = new HashMap<String, Object>();
-        payload.put("action_id", actionId);
-        payload.put("object_instance_id", objectInstanceId);
-        if (actionProperties != null) {
-            payload.put("action_properties", actionProperties);
-        }
-        return mTeakCache.addRequest("/me/actions.json", payload);
-    }
-
-    /**
-     * Post an Open Graph action to the Teak service which will create a new object.
-     *
-     * @param actionId         the Teak action id.
-     * @param objectTypeId     the object id of the Teak object type to create.
-     * @param objectProperties the properties for the new object.
-     * @return <code>true if the action was cached successfully and will be sent
-     * to the Teak service when possible; <code>false</code> otherwise.
-     */
-    public static boolean postAction(String actionId, String objectTypeId,
-                                     Map<String, Object> objectProperties) {
-        return postAction(actionId, null, objectTypeId, objectProperties, null);
-    }
-
-    /**
-     * Post an Open Graph action to the Teak service which will create a new object or reuse an existing created object.
-     *
-     * @param actionId         the Teak action id.
-     * @param objectTypeId     the object id of the Teak object type to create.
-     * @param objectProperties the properties for the new object.
-     * @param objectInstanceId the object instance id of the Teak object to create or re-use.
-     * @return <code>true if the action was cached successfully and will be sent
-     * to the Teak service when possible; <code>false</code> otherwise.
-     */
-    public static boolean postAction(String actionId, String objectTypeId,
-                                     Map<String, Object> objectProperties, String objectInstanceId) {
-        return postAction(actionId, null, objectTypeId, objectProperties, objectInstanceId);
-    }
-
-    /**
-     * Post an Open Graph action to the Teak service which will create a new object or reuse an existing created object.
-     *
-     * @param actionId             the Teak action id.
-     * @param actionPropertiesJson the properties to be sent along with the Teak action encoded to JSON.
-     * @param objectTypeId         the object id of the Teak object type to create.
-     * @param objectPropertiesJson the properties for the new object encoded as JSON.
-     * @param objectInstanceId     the object instance id of the Teak object to create or re-use.
-     * @return <code>true if the action was cached successfully and will be sent
-     * to the Teak service when possible; <code>false</code> otherwise.
-     */
-    public static boolean postJsonAction(String actionId, String actionPropertiesJson, String objectTypeId,
-                                         String objectPropertiesJson, String objectInstanceId) {
-        Map<String, Object> actionProperties = null;
-        Gson gson = new Gson();
-        Type payloadType = new TypeToken<Map<String, Object>>() {
-        }.getType();
-
-        if (actionPropertiesJson != null && !actionPropertiesJson.isEmpty()) {
-            actionProperties = gson.fromJson(actionPropertiesJson, payloadType);
-        }
-        Map<String, Object> objectProperties = gson.fromJson(objectPropertiesJson, payloadType);
-
-        return postAction(actionId, actionProperties, objectTypeId, objectProperties, objectInstanceId);
-    }
-
-    /**
-     * Post an Open Graph action to the Teak service which will create a new object or reuse an existing created object.
-     *
-     * @param actionId         the Teak action id.
-     * @param actionProperties the properties to be sent along with the Teak action.
-     * @param objectTypeId     the object id of the Teak object type to create.
-     * @param objectProperties the properties for the new object.
-     * @param objectInstanceId the object instance id of the Teak object to create or re-use.
-     * @return <code>true if the action was cached successfully and will be sent
-     * to the Teak service when possible; <code>false</code> otherwise.
-     */
-    public static boolean postAction(String actionId, Map<String, Object> actionProperties,
-                                     String objectTypeId, Map<String, Object> objectProperties, String objectInstanceId) {
-        if (objectProperties == null) {
-            Log.e(LOG_TAG, "objectProperties must not be null when calling postAction to create a new object.");
-            return false;
-        }
-
-        String[] requiredObjectProperties = {"title", "image", "description"};
-        for (String key : requiredObjectProperties) {
-            if (!objectProperties.containsKey(key)) {
-                Log.e(LOG_TAG, "objectProperties must contain a value for '" + key + "'");
-                return false;
-            }
-        }
-
-        HashMap<String, Object> fullObjectProperties = new HashMap<String, Object>(objectProperties);
-        fullObjectProperties.put("object_type", objectTypeId);
-
-        // TODO (v2): Support image uploading
-        fullObjectProperties.put("image_url", fullObjectProperties.remove("image"));
-
-        HashMap<String, Object> payload = new HashMap<String, Object>();
-        payload.put("action_id", actionId);
-        payload.put("object_properties", fullObjectProperties);
-        if (objectInstanceId != null && !objectInstanceId.isEmpty()) {
-            payload.put("object_instance_id", objectInstanceId);
-        }
-        if (actionProperties != null) {
-            payload.put("action_properties", actionProperties);
-        }
-        return mTeakCache.addRequest("/me/actions.json", payload);
-    }
-
-    /**
      * Check to see if your {@link Activity} has the permissions required by Teak.
      * <p/>
      * {@link Teak} requires the {@link android.Manifest.permission.INTERNET} permission.
@@ -441,6 +293,9 @@ public class Teak {
         String[] requiredRermissions = {
                 android.Manifest.permission.INTERNET,
                 android.Manifest.permission.ACCESS_NETWORK_STATE,
+                android.Manifest.permission.GET_ACCOUNTS,
+                android.Manifest.permission.WAKE_LOCK,
+                //com.google.android.c2dm.permission.RECEIVE
         };
 
         String[] suggestedPermissions = {
@@ -476,7 +331,7 @@ public class Teak {
         mLaunchedFromTeakNotifId = teakNotifId;
     }
 
-    static void trackNotificationReceived(int notificationId) {
+    static void trackNotificationReceived(long teakNotifId) {
         HashMap<String, Object> payload = new HashMap<String, Object>();
 
         // Parsnip requests user app_id/user_id not game_id/api_key
@@ -488,12 +343,12 @@ public class Teak {
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         payload.put("happened_at", df.format(new Date()));
 
-        payload.put("platform_id", new Integer(notificationId));
+        payload.put("platform_id", new Long(teakNotifId));
         mTeakCache.addRequest("/notification_impression.json", payload);
     }
 
     static String getHostname(String endpoint) {
-        if (endpoint.equals("/purchase.json")) {
+        if (endpoint.equals("/purchase.json") || endpoint.equals("/notification_impression.json")) {
             return mMetricsHostname;
         } else if (endpoint.endsWith("/users.json")) {
             return mAuthHostname;
@@ -667,6 +522,9 @@ public class Teak {
                 long minutes = TimeUnit.MINUTES.convert(rawTz, TimeUnit.MILLISECONDS);
                 String tzOffset = String.format("%f", minutes / 60.0f);
                 payload.put("timezone", tzOffset);
+
+                // TODO: NEED LOCALE HERE
+                //       (What Facebook does)
 
                 Log.d(LOG_TAG, "Identifying user: " + getUserId());
                 Log.d(LOG_TAG, "        Timezone: " + tzOffset);

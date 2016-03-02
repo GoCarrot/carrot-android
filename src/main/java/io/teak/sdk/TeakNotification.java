@@ -163,7 +163,7 @@ public class TeakNotification {
     }
 
     static boolean containsTeakNotification(Context context, Intent intent) {
-        return true; // TODO: Actually check this
+        return true; // TODO: Actually check this, check for teak notification id
     }
 
     static TeakNotification notificationFromIntent(Context context, Intent intent) {

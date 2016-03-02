@@ -55,13 +55,13 @@ public final class TeakGcmReceiver extends BroadcastReceiver {
 
         if (action.endsWith(TEAK_PUSH_RECEIVED_INTENT_ACTION_SUFFIX)) {
             Bundle bundle = intent.getExtras();
-            int messageId = 0;
+            long teakNotifId = 0;
             if (bundle != null && !bundle.isEmpty()) {
                 try {
-                    messageId = Integer.parseInt(bundle.getString("messageId"));
+                    teakNotifId = Long.parseLong(bundle.getString("teakNotifId"));
                 } catch (Exception e) {}
             }
-            Teak.trackNotificationReceived(messageId);
+            Teak.trackNotificationReceived(teakNotifId);
             return TEAK_PUSH_RECEIVED;
         } else if (action.endsWith(TEAK_PUSH_OPENED_INTENT_ACTION_SUFFIX)) {
             Bundle bundle = intent.getExtras();
