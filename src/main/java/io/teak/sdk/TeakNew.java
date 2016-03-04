@@ -98,7 +98,7 @@ public class TeakNew extends BroadcastReceiver {
     static ArrayBlockingQueue<String> mUserIdQueue;
     static ArrayBlockingQueue<String> mGcmIdQueue;
     static ExecutorService mFutureExecutor;
-    static FacebookMagic facebookMagic;
+    static FacebookAccessTokenBroadcast facebookAccessTokenBroadcast;
 
     static final String LOG_TAG = "Teak2";
 
@@ -147,8 +147,8 @@ public class TeakNew extends BroadcastReceiver {
                 }
             }
 
-            // Facebook magic
-            facebookMagic = new FacebookMagic(activity);
+            // Facebook Access Token Broadcaster
+            facebookAccessTokenBroadcast = new FacebookAccessTokenBroadcast(activity);
 
             // Future executor and queues
             mFutureExecutor = Executors.newCachedThreadPool();
@@ -187,7 +187,7 @@ public class TeakNew extends BroadcastReceiver {
             if(activity != mMainActivity) return;
 
             Log.d(LOG_TAG, "onActivityDestroyed");
-            facebookMagic.unregister(activity);
+            facebookAccessTokenBroadcast.unregister(activity);
             activity.getApplication().unregisterActivityLifecycleCallbacks(this);
         }
 
