@@ -150,7 +150,7 @@ public class TeakNew extends BroadcastReceiver {
             // Facebook Access Token Broadcaster
             facebookAccessTokenBroadcast = new FacebookAccessTokenBroadcast(activity);
 
-            // Future executor and queues
+            // Producer/Consumer Queues
             mFutureExecutor = Executors.newCachedThreadPool();
             mGcmIdQueue = new ArrayBlockingQueue<String>(1);
             mUserIdQueue = new ArrayBlockingQueue<String>(1);
@@ -195,12 +195,21 @@ public class TeakNew extends BroadcastReceiver {
         public void onActivityPaused(Activity activity) {
             if(activity != mMainActivity) return;
             Log.d(LOG_TAG, "onActivityPaused");
+
+            if(mFutureExecutor != null) {
+                mFutureExecutor.shutdownNow();
+                mFutureExecutor = null;
+            }
         }
 
         @Override
         public void onActivityResumed(final Activity activity) {
             if(activity != mMainActivity) return;
             Log.d(LOG_TAG, "onActivityResumed");
+
+            if(mFutureExecutor == null) {
+                mFutureExecutor = Executors.newCachedThreadPool();
+            }
 
             // Services config
             mServiceConfig = new FutureTask(new Callable() {

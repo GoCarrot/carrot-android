@@ -233,6 +233,4 @@ class FacebookAccessTokenBroadcast {
     void unregister(Context context) {
         LocalBroadcastManager.getInstance(context).unregisterReceiver(broadcastReceiver);
     }
-
-    // TODO: Unregister broadcast manager
 }
