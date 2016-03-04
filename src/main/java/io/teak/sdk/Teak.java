@@ -190,6 +190,7 @@ public class Teak {
      * @param userId the unique id for the current user.
      */
     public static void identifyUser(String userId) {
+        TeakNew.identifyUser(userId);
         identifyUser(userId, null);
     }
 
