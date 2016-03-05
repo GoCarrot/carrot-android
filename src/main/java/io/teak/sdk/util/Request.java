@@ -31,6 +31,7 @@ import java.lang.reflect.Array;
 
 import java.net.URL;
 import java.net.URLEncoder;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,6 +39,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.UUID;
+import java.util.Arrays;
 
 import org.json.JSONObject;
 import org.json.JSONArray;
@@ -76,6 +78,11 @@ class Request implements Runnable {
             // Add common fields
             addCommonPayload(requestBodyObject);
 
+            if(Teak.isDebug) {
+                Log.d(Teak.LOG_TAG, "Submitting request to: " + this.endpoint);
+                Log.d(Teak.LOG_TAG, "Data: " + new JSONObject(requestBodyObject).toString(2));
+            }
+
             ArrayList<String> payloadKeys = new ArrayList<String>(requestBodyObject.keySet());
             Collections.sort(payloadKeys);
 
@@ -87,7 +94,7 @@ class Request implements Runnable {
                     if (value instanceof Map) {
                         valueString = new JSONObject((Map)value).toString();
                     } else if (value instanceof Array) {
-                        valueString = new JSONArray(value).toString();
+                        valueString = new JSONArray(Arrays.asList(value)).toString();
                     } else if (value instanceof Collection) {
                         valueString = new JSONArray((Collection)value).toString();
                     } else {
@@ -112,7 +119,7 @@ class Request implements Runnable {
                 if (value instanceof Map) {
                     valueString = new JSONObject((Map)value).toString();
                 } else if (value instanceof Array) {
-                    valueString = new JSONArray(value).toString();
+                    valueString = new JSONArray(Arrays.asList(value)).toString();
                 } else if (value instanceof Collection) {
                     valueString = new JSONArray((Collection)value).toString();
                 } else {
