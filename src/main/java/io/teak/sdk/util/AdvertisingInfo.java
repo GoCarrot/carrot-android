@@ -21,11 +21,11 @@ class AdvertisingInfo {
     public Boolean limitAdTracking;
 
     public AdvertisingInfo(AdvertisingIdClient.Info adInfo) {
-        adId = adInfo.getId();
-        limitAdTracking = adInfo.isLimitAdTrackingEnabled();
+        this.adId = adInfo.getId();
+        this.limitAdTracking = adInfo.isLimitAdTrackingEnabled();
     }
 
     public String toString() {
-        return "{\n\tAd Id: " + adId + "\n\t" + String.format("limitAdTracking: %b", limitAdTracking) + "\n}";
+        return "{\n\tAd Id: " + this.adId + "\n\t" + String.format("limitAdTracking: %b", this.limitAdTracking) + "\n}";
     }
 }

@@ -20,10 +20,10 @@ class ServiceConfig {
     public String hostname;
 
     public ServiceConfig(JSONObject json) {
-        hostname = json.optString("auth", "gocarrot.com");
+        this.hostname = json.optString("auth", "gocarrot.com");
     }
 
     public String toString() {
-        return "{\n\tHostname: " + hostname + "\n}";
+        return "{\n\tHostname: " + this.hostname + "\n}";
     }
 }

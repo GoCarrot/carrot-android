@@ -45,16 +45,6 @@ class FacebookAccessTokenBroadcast {
                 Log.d(Teak.LOG_TAG, "Facebook Broadcast received: " + action);
             }
 
-            // <debug>
-            Bundle dbundle = intent.getExtras();
-            if (dbundle != null && !dbundle.isEmpty()) {
-                for (String key : dbundle.keySet()) {
-                    Object value = dbundle.get(key);
-                    Log.d(Teak.LOG_TAG, String.format("    %s %s (%s)", key, value.toString(), value.getClass().getName()));
-                }
-            }
-            // </debug>
-
             String accessTokenString = null;
             if(facebook_3_x_BroadcastAction.equals(action)) {
                 try {
@@ -92,7 +82,7 @@ class FacebookAccessTokenBroadcast {
     private static final String FACEBOOK_4_x_NEW_ACCESS_TOKEN_KEY = "com.facebook.sdk.EXTRA_NEW_ACCESS_TOKEN";
 
     public FacebookAccessTokenBroadcast(Context context) {
-        broadcastManager = LocalBroadcastManager.getInstance(context);
+        this.broadcastManager = LocalBroadcastManager.getInstance(context);
 
         // Get the Facebook SDK Version string
         Class<?> com_facebook_FacebookSdkVersion = null;
@@ -143,17 +133,17 @@ class FacebookAccessTokenBroadcast {
                             Log.d(Teak.LOG_TAG, "Found " + com_facebook_Session.toString());
                         }
 
-                        com_facebook_Session_getActiveSession = com_facebook_Session.getMethod("getActiveSession");
+                        this.com_facebook_Session_getActiveSession = com_facebook_Session.getMethod("getActiveSession");
                         try {
-                            com_facebook_Session_getAccessToken = com_facebook_Session.getMethod("getAccessToken");
+                            this.com_facebook_Session_getAccessToken = com_facebook_Session.getMethod("getAccessToken");
                         } catch(NoSuchMethodException e) {
                             Log.e(Teak.LOG_TAG, FACEBOOK_3_x_SESSION_CLASS_NAME + ".getAccessToken() not found: " + e.toString());
                         }
 
                         Field f = com_facebook_Session.getDeclaredField(FACEBOOK_3_x_BROADCAST_ACTION_FIELD);
-                        facebook_3_x_BroadcastAction = (String)f.get(null);
+                        this.facebook_3_x_BroadcastAction = (String)f.get(null);
                         if(Teak.isDebug) {
-                            Log.d(Teak.LOG_TAG, "Found broadcast action: " + facebook_3_x_BroadcastAction);
+                            Log.d(Teak.LOG_TAG, "Found broadcast action: " + this.facebook_3_x_BroadcastAction);
                         }
                     } catch(ClassNotFoundException e) {
                         Log.e(Teak.LOG_TAG, FACEBOOK_3_x_SESSION_CLASS_NAME + " not found.");
@@ -163,13 +153,13 @@ class FacebookAccessTokenBroadcast {
                         Log.e(Teak.LOG_TAG, "Error occured working with reflected Facebook SDK: " + e.toString());
                     }
 
-                    if(com_facebook_Session_getActiveSession != null &&
-                       com_facebook_Session_getAccessToken != null &&
-                       facebook_3_x_BroadcastAction != null) {
+                    if(this.com_facebook_Session_getActiveSession != null &&
+                       this.com_facebook_Session_getAccessToken != null &&
+                       this.facebook_3_x_BroadcastAction != null) {
                         IntentFilter filter = new IntentFilter();
-                        filter.addAction(facebook_3_x_BroadcastAction);
+                        filter.addAction(this.facebook_3_x_BroadcastAction);
 
-                        broadcastManager.registerReceiver(broadcastReceiver, filter);
+                        this.broadcastManager.registerReceiver(this.broadcastReceiver, filter);
                     }
                 }
                 break;
@@ -182,7 +172,7 @@ class FacebookAccessTokenBroadcast {
                             Log.d(Teak.LOG_TAG, "Found " + com_facebook_AccessToken.toString());
                         }
 
-                        com_facebook_AccessToken_getToken = com_facebook_AccessToken.getMethod("getToken");
+                        this.com_facebook_AccessToken_getToken = com_facebook_AccessToken.getMethod("getToken");
                     } catch(ClassNotFoundException e) {
                         Log.e(Teak.LOG_TAG, FACEBOOK_4_x_ACCESS_TOKEN_CLASS_NAME + " not found.");
                     } catch(NoSuchMethodException e) {
@@ -199,9 +189,9 @@ class FacebookAccessTokenBroadcast {
                         }
 
                         Field f = com_facebook_AccessTokenManager.getDeclaredField(FACEBOOK_4_x_BROADCAST_ACTION_FIELD);
-                        facebook_4_x_BroadcastAction = (String)f.get(null);
+                        this.facebook_4_x_BroadcastAction = (String)f.get(null);
                         if(Teak.isDebug) {
-                            Log.d(Teak.LOG_TAG, "Found broadcast action: " + facebook_4_x_BroadcastAction);
+                            Log.d(Teak.LOG_TAG, "Found broadcast action: " + this.facebook_4_x_BroadcastAction);
                         }
                     } catch(ClassNotFoundException e) {
                         Log.e(Teak.LOG_TAG, FACEBOOK_4_x_ACCESS_TOKEN_MANAGER_CLASS_NAME + " not found.");
@@ -209,12 +199,12 @@ class FacebookAccessTokenBroadcast {
                         Log.e(Teak.LOG_TAG, "Error occured working with reflected Facebook SDK: " + e.toString());
                     }
 
-                    if(com_facebook_AccessToken_getToken != null &&
-                       facebook_4_x_BroadcastAction != null) {
+                    if(this.com_facebook_AccessToken_getToken != null &&
+                       this.facebook_4_x_BroadcastAction != null) {
                         IntentFilter filter = new IntentFilter();
-                        filter.addAction(facebook_4_x_BroadcastAction);
+                        filter.addAction(this.facebook_4_x_BroadcastAction);
 
-                        broadcastManager.registerReceiver(broadcastReceiver, filter);
+                        this.broadcastManager.registerReceiver(this.broadcastReceiver, filter);
                     }
                 }
                 break;
@@ -227,6 +217,6 @@ class FacebookAccessTokenBroadcast {
     }
 
     void unregister(Context context) {
-        LocalBroadcastManager.getInstance(context).unregisterReceiver(broadcastReceiver);
+        LocalBroadcastManager.getInstance(context).unregisterReceiver(this.broadcastReceiver);
     }
 }
