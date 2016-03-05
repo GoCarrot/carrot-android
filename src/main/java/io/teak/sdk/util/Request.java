@@ -32,11 +32,15 @@ import java.lang.reflect.Array;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.UUID;
+
+import org.json.JSONObject;
+import org.json.JSONArray;
 
 import java.util.concurrent.ExecutionException;
 
@@ -80,13 +84,14 @@ class Request implements Runnable {
                 Object value = requestBodyObject.get(key);
                 if (value != null) {
                     String valueString = null;
-                    if (!Map.class.isInstance(value) &&
-                        !Array.class.isInstance(value) &&
-                        !List.class.isInstance(value)) {
-                        valueString = value.toString();
+                    if (value instanceof Map) {
+                        valueString = new JSONObject((Map)value).toString();
+                    } else if (value instanceof Array) {
+                        valueString = new JSONArray(value).toString();
+                    } else if (value instanceof Collection) {
+                        valueString = new JSONArray((Collection)value).toString();
                     } else {
-                        throw new RuntimeException("Strangeness converting JSON: " + value.toString());
-                        //valueString = gson.toJson(value);  // TODO: Fix this if needed
+                        valueString = value.toString();
                     }
                     requestBody.append(key + "=" + valueString + "&");
                 } else {
@@ -104,12 +109,14 @@ class Request implements Runnable {
             for (String key : payloadKeys) {
                 Object value = requestBodyObject.get(key);
                 String valueString = null;
-                if (!Map.class.isInstance(value) &&
-                        !Array.class.isInstance(value) &&
-                        !List.class.isInstance(value)) {
-                    valueString = value.toString();
+                if (value instanceof Map) {
+                    valueString = new JSONObject((Map)value).toString();
+                } else if (value instanceof Array) {
+                    valueString = new JSONArray(value).toString();
+                } else if (value instanceof Collection) {
+                    valueString = new JSONArray((Collection)value).toString();
                 } else {
-                    // valueString = gson.toJson(value); // TODO: Fix this if needed
+                    valueString = value.toString();
                 }
                 requestBody.append(key + "=" + URLEncoder.encode(valueString, "UTF-8") + "&");
             }

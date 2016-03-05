@@ -51,7 +51,7 @@ class FacebookAccessTokenBroadcast {
                     Object session = com_facebook_Session_getActiveSession.invoke(null);
                     accessTokenString = (String)com_facebook_Session_getAccessToken.invoke(session);
                 } catch(Exception e) {
-                    Log.e(Teak.LOG_TAG, "Failed to get Facebook Access Token, error: " + e.toString());
+                    Log.e(Teak.LOG_TAG, "Failed to get Facebook Access Token, error: " + Log.getStackTraceString(e));
                 }
             } else if(facebook_4_x_BroadcastAction.equals(action)) {
                 Object accessToken = intent.getParcelableExtra(FACEBOOK_4_x_NEW_ACCESS_TOKEN_KEY);
@@ -59,7 +59,7 @@ class FacebookAccessTokenBroadcast {
                 try {
                     accessTokenString = (String)com_facebook_AccessToken_getToken.invoke(accessToken);
                 } catch(Exception e) {
-                    Log.e(Teak.LOG_TAG, "Failed to get Facebook Access Token, error: " + e.toString());
+                    Log.e(Teak.LOG_TAG, "Failed to get Facebook Access Token, error: " + Log.getStackTraceString(e));
                 }
             }
 
@@ -137,7 +137,7 @@ class FacebookAccessTokenBroadcast {
                         try {
                             this.com_facebook_Session_getAccessToken = com_facebook_Session.getMethod("getAccessToken");
                         } catch(NoSuchMethodException e) {
-                            Log.e(Teak.LOG_TAG, FACEBOOK_3_x_SESSION_CLASS_NAME + ".getAccessToken() not found: " + e.toString());
+                            Log.e(Teak.LOG_TAG, FACEBOOK_3_x_SESSION_CLASS_NAME + ".getAccessToken() not found: " + Log.getStackTraceString(e));
                         }
 
                         Field f = com_facebook_Session.getDeclaredField(FACEBOOK_3_x_BROADCAST_ACTION_FIELD);
@@ -148,9 +148,9 @@ class FacebookAccessTokenBroadcast {
                     } catch(ClassNotFoundException e) {
                         Log.e(Teak.LOG_TAG, FACEBOOK_3_x_SESSION_CLASS_NAME + " not found.");
                     } catch(NoSuchMethodException e) {
-                        Log.e(Teak.LOG_TAG, FACEBOOK_3_x_SESSION_CLASS_NAME + ".getActiveSession() not found: " + e.toString());
+                        Log.e(Teak.LOG_TAG, FACEBOOK_3_x_SESSION_CLASS_NAME + ".getActiveSession() not found: " + Log.getStackTraceString(e));
                     } catch(Exception e) {
-                        Log.e(Teak.LOG_TAG, "Error occured working with reflected Facebook SDK: " + e.toString());
+                        Log.e(Teak.LOG_TAG, "Error occured working with reflected Facebook SDK: " + Log.getStackTraceString(e));
                     }
 
                     if(this.com_facebook_Session_getActiveSession != null &&
@@ -176,9 +176,9 @@ class FacebookAccessTokenBroadcast {
                     } catch(ClassNotFoundException e) {
                         Log.e(Teak.LOG_TAG, FACEBOOK_4_x_ACCESS_TOKEN_CLASS_NAME + " not found.");
                     } catch(NoSuchMethodException e) {
-                        Log.e(Teak.LOG_TAG, FACEBOOK_4_x_ACCESS_TOKEN_CLASS_NAME + ".getToken() not found: " + e.toString());
+                        Log.e(Teak.LOG_TAG, FACEBOOK_4_x_ACCESS_TOKEN_CLASS_NAME + ".getToken() not found: " + Log.getStackTraceString(e));
                     } catch(Exception e) {
-                        Log.e(Teak.LOG_TAG, "Error occured working with reflected Facebook SDK: " + e.toString());
+                        Log.e(Teak.LOG_TAG, "Error occured working with reflected Facebook SDK: " + Log.getStackTraceString(e));
                     }
 
                     try {
@@ -196,7 +196,7 @@ class FacebookAccessTokenBroadcast {
                     } catch(ClassNotFoundException e) {
                         Log.e(Teak.LOG_TAG, FACEBOOK_4_x_ACCESS_TOKEN_MANAGER_CLASS_NAME + " not found.");
                     } catch(Exception e) {
-                        Log.e(Teak.LOG_TAG, "Error occured working with reflected Facebook SDK: " + e.toString());
+                        Log.e(Teak.LOG_TAG, "Error occured working with reflected Facebook SDK: " + Log.getStackTraceString(e));
                     }
 
                     if(this.com_facebook_AccessToken_getToken != null &&
