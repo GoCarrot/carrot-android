@@ -327,6 +327,8 @@ public class Teak extends BroadcastReceiver {
         public void onActivityStopped(Activity activity) {}
     }
 
+    static String getHostname(String foo) { return "gocarrot.com"; } // TODO: Properly do this
+
     private static void identifyUser() {
         asyncExecutor.submit(new Runnable() {
             public void run() {
