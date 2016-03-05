@@ -40,10 +40,10 @@ class CachedRequest extends Request implements Runnable {
     static final String REQUEST_CACHE_CREATE_SQL = "CREATE TABLE IF NOT EXISTS cache(request_endpoint TEXT, request_payload TEXT, request_id TEXT, request_date INTEGER, retry_count INTEGER)";
     private static final String[] REQUEST_CACHE_READ_COLUMNS = {"rowid", "request_endpoint", "request_payload", "request_id", "request_date", "retry_count"};
 
-    public CachedRequest(String endpoint, Map<String, Object> payload) throws Exception {
+    public CachedRequest(String endpoint, Map<String, Object> payload, Date dateIssued) {
         super("POST", endpoint, payload);
 
-        this.dateIssued = new Date();
+        this.dateIssued = dateIssued;
         this.requestId = UUID.randomUUID().toString();
 
         ContentValues values = new ContentValues();
