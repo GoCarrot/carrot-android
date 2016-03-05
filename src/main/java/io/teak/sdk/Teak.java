@@ -46,12 +46,22 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+
+import java.util.Date;
+import java.util.Locale;
+import java.util.HashMap;
+import java.util.TimeZone;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 
 public class Teak extends BroadcastReceiver {
 
@@ -244,7 +254,7 @@ public class Teak extends BroadcastReceiver {
                         if (connection.getResponseCode() < 400) {
                             JSONObject json = new JSONObject(response.toString());
                             if (isDebug) {
-                                Log.d(LOG_TAG, "Services configuration returned: \n" + json);
+                                Log.d(LOG_TAG, "Services configuration returned: " + json.toString(2));
                             }
 
                             ret = new ServiceConfig(json);
@@ -323,6 +333,9 @@ public class Teak extends BroadcastReceiver {
                 });
             }
             Teak.asyncExecutor.submit(Teak.adInfo);
+
+            // Add executor task that waits on userId and other Futures
+            identifyUser();
         }
 
         @Override
@@ -336,10 +349,18 @@ public class Teak extends BroadcastReceiver {
     static String getHostname(String foo) { return "gocarrot.com"; } // TODO: Properly do this
 
     private static void identifyUser() {
+        final Date dateIssued = new Date();
+
         Teak.asyncExecutor.submit(new Runnable() {
             public void run() {
-                //String Teak.userId.get()
-                /*
+                String userId = null;
+                try {
+                    userId = Teak.userId.get();
+                } catch(Exception e) {
+                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                    return;
+                }
+
                 HashMap<String, Object> payload = new HashMap<String, Object>();
 
                 TimeZone tz = TimeZone.getDefault();
@@ -351,43 +372,52 @@ public class Teak extends BroadcastReceiver {
                 String tzOffset = String.format("%f", minutes / 60.0f);
                 payload.put("timezone", tzOffset);
 
-                // TODO: NEED LOCALE HERE
-                //       (What Facebook does)
-
-                Log.d(LOG_TAG, "Identifying user: " + getUserId());
-                Log.d(LOG_TAG, "        Timezone: " + tzOffset);
-
+                String locale = Locale.getDefault().toString();
+                payload.put("locale", locale);
+/*
+                // TODO: Make sure I can kill this, ask Alex
                 if (mFbAttributionId != null) {
                     payload.put("fb_attribution_id", mFbAttributionId);
                 }
-
-                if (mGooglePlayAdId != null) {
-                    payload.put("android_ad_id", mGooglePlayAdId);
-                    payload.put("android_limit_ad_tracking", mLimitAdTracking);
-                }
-
+*/
+                try {
+                    AdvertisingInfo adInfo = Teak.adInfo.get(2L, TimeUnit.SECONDS);
+                    if(adInfo != null) {
+                        payload.put("android_ad_id", adInfo.adId);
+                        payload.put("android_limit_ad_tracking", adInfo.limitAdTracking);
+                    }
+                } catch(Exception e) {}
+/*
+                // TODO: Future for this
                 if (mFbAccessToken != null) {
                     payload.put("access_token", mFbAccessToken);
                 }
-
+*/
+/*
+                // TODO: Notification functionality
                 if (mLaunchedFromTeakNotifId > 0) {
                     payload.put("teak_notif_id", new Long(mLaunchedFromTeakNotifId));
                     Log.d(LOG_TAG, "   Teak Notif Id: " + mLaunchedFromTeakNotifId);
                     mLaunchedFromTeakNotifId = 0;
                 }
-
-                if (mGcmId != null) {
-                    payload.put("gcm_push_key", mGcmId);
-                    Log.d(LOG_TAG, "          GCM Id: " + mGcmId);
-                }
-
+*/
+                try {
+                    String gcmId = Teak.gcmId.get(2L, TimeUnit.SECONDS);
+                    if(gcmId != null) {
+                        payload.put("gcm_push_key", gcmId);
+                    }
+                } catch(Exception e) {}
+/*
                 if (mUserIdentified) {
                     payload.put("do_not_track_event", Boolean.TRUE);
                 }
                 mUserIdentified = true;
-
-                mTeakCache.addRequest("/games/" + mAppId + "/users.json", payload);
                 */
+                Log.d(LOG_TAG, "Identifying user: " + userId);
+                Log.d(LOG_TAG, "        Timezone: " + tzOffset);
+                Log.d(LOG_TAG, "          Locale: " + locale);
+
+                Teak.asyncExecutor.submit(new CachedRequest("/games/" + Teak.appId + "/users.json", payload, dateIssued));
             }
         });
     }

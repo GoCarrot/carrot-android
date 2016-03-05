@@ -67,6 +67,8 @@ class FacebookAccessTokenBroadcast {
                 if(Teak.isDebug) {
                     Log.d(Teak.LOG_TAG, "Facebook Access Token: " + accessTokenString);
                 }
+
+                // TODO: Send to Teak
             }
         }
     };
