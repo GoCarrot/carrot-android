@@ -26,6 +26,6 @@ class AdvertisingInfo {
     }
 
     public String toString() {
-        return "{\n\tAd Id: " + this.adId + "\n\t" + String.format("limitAdTracking: %b", this.limitAdTracking) + "\n}";
+        return "{\n  Ad Id: " + this.adId + "\n  " + String.format("limitAdTracking: %b", this.limitAdTracking) + "\n}";
     }
 }

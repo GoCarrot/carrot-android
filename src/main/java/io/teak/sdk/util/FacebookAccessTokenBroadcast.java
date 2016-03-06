@@ -36,6 +36,8 @@ class FacebookAccessTokenBroadcast {
     String facebook_3_x_BroadcastAction;
     String facebook_4_x_BroadcastAction;
 
+    static final String UPDATED_ACCESS_TOKEN_INTENT_ACTION = "io.teak.sdk.FacebookAccessTokenBroadcast.UpdatedAccessToken";
+
     BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -68,7 +70,12 @@ class FacebookAccessTokenBroadcast {
                     Log.d(Teak.LOG_TAG, "Facebook Access Token: " + accessTokenString);
                 }
 
-                // TODO: Send to Teak
+                // If this is updating an existing access token, re-run the task
+                if(Teak.facebookAccessToken.isDone()) {
+                    broadcastManager.sendBroadcast(new Intent(UPDATED_ACCESS_TOKEN_INTENT_ACTION));
+                }
+
+                Teak.facebookAccessTokenQueue.offer(accessTokenString);
             }
         }
     };

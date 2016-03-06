@@ -19,9 +19,12 @@ import android.app.Application.ActivityLifecycleCallbacks;
 
 import android.content.Intent;
 import android.content.Context;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.BroadcastReceiver;
 import android.content.pm.PackageManager;
+
+import android.support.v4.content.LocalBroadcastManager;
 
 import android.os.Bundle;
 import android.os.Handler;
@@ -96,9 +99,11 @@ public class Teak extends BroadcastReceiver {
     static FutureTask<AdvertisingInfo> adInfo;
     static FutureTask<ServiceConfig> serviceConfig;
     static FutureTask<String> userId;
+    static FutureTask<String> facebookAccessToken;
     static Activity mainActivity;
     static ArrayBlockingQueue<String> userIdQueue;
     static ArrayBlockingQueue<String> gcmIdQueue;
+    static ArrayBlockingQueue<String> facebookAccessTokenQueue;
     static ExecutorService asyncExecutor;
     static FacebookAccessTokenBroadcast facebookAccessTokenBroadcast;
     static CacheOpenHelper cacheOpenHelper;
@@ -119,7 +124,7 @@ public class Teak extends BroadcastReceiver {
 
     static class TeakActivityLifecycleCallbacks implements ActivityLifecycleCallbacks {
         @Override
-        public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+        public void onActivityCreated(final Activity activity, Bundle savedInstanceState) {
             if(activity != Teak.mainActivity) return;
 
              // Check for debug build
@@ -152,10 +157,16 @@ public class Teak extends BroadcastReceiver {
             // Facebook Access Token Broadcaster
             Teak.facebookAccessTokenBroadcast = new FacebookAccessTokenBroadcast(activity);
 
+            // Register for local broadcasts
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(FacebookAccessTokenBroadcast.UPDATED_ACCESS_TOKEN_INTENT_ACTION);
+            LocalBroadcastManager.getInstance(activity).registerReceiver(Teak.localBroadcastReceiver, filter);
+
             // Producer/Consumer Queues
             Teak.asyncExecutor = Executors.newCachedThreadPool();
             Teak.gcmIdQueue = new ArrayBlockingQueue<String>(1);
             Teak.userIdQueue = new ArrayBlockingQueue<String>(1);
+            Teak.facebookAccessTokenQueue = new ArrayBlockingQueue<String>(1);
 
             // User Id
             Teak.userId = new FutureTask<String>(new Callable<String>() {
@@ -173,6 +184,65 @@ public class Teak extends BroadcastReceiver {
                 }
             });
             Teak.asyncExecutor.submit(Teak.userId);
+
+            // Facebook Access Token
+            createFacebookAccessTokenFuture();
+
+            // Check for valid GCM Id
+            SharedPreferences preferences = activity.getSharedPreferences(TEAK_PREFERENCES_FILE, Context.MODE_PRIVATE);
+            int storedAppVersion = preferences.getInt(TEAK_PREFERENCE_APP_VERSION, 0);
+            String storedGcmId = preferences.getString(TEAK_PREFERENCE_GCM_ID, null);
+            if(storedAppVersion == Teak.appVersion && storedGcmId != null) {
+                // No need to get a new one, so put it on the blocking queue
+                if (isDebug) {
+                    Log.d(LOG_TAG, "GCM Id found in cache: " + storedGcmId);
+                }
+                Teak.gcmIdQueue.offer(storedGcmId);
+            }
+
+            Teak.gcmId = new FutureTask<String>(new Callable<String>() {
+                public String call() {
+                    try {
+                        String ret = Teak.gcmIdQueue.take();
+                        return ret;
+                    } catch(InterruptedException e) {
+                        Log.e(LOG_TAG, Log.getStackTraceString(e));
+                    }
+                    return null;
+                }
+            });
+            Teak.asyncExecutor.submit(Teak.gcmId);
+
+            // Google Play Advertising Id
+            int googlePlayStatus = GooglePlayServicesUtil.isGooglePlayServicesAvailable(activity);
+            if (googlePlayStatus == ConnectionResult.SUCCESS) {
+                Teak.adInfo = new FutureTask<AdvertisingInfo>(new Callable<AdvertisingInfo>() {
+                    public AdvertisingInfo call() {
+                        AdvertisingInfo ret = null;
+                        try {
+                            ret = new AdvertisingInfo(AdvertisingIdClient.getAdvertisingIdInfo(activity));
+
+                            if (Teak.isDebug) {
+                                Log.d(LOG_TAG, "Google Play Advertising Info loaded: " + ret.toString());
+                            }
+                        } catch (Exception e) {
+                            Log.e(LOG_TAG, "Couldn't get Google Play Advertising Id.");
+                            if (Teak.isDebug) {
+                                e.printStackTrace();
+                            }
+                        }
+                        return ret;
+                    }
+                });
+            } else {
+                Teak.adInfo = new FutureTask<AdvertisingInfo>(new Callable<AdvertisingInfo>() {
+                    public AdvertisingInfo call() {
+                        Log.e(LOG_TAG, "Google Play Services not available, can't get advertising id.");
+                        return null;
+                    }
+                });
+            }
+            Teak.asyncExecutor.submit(Teak.adInfo);
 
             // Cache
             Teak.cacheOpenHelper = new CacheOpenHelper(activity);
@@ -195,6 +265,7 @@ public class Teak extends BroadcastReceiver {
             Log.d(LOG_TAG, "onActivityDestroyed");
             Teak.cacheOpenHelper.close();
             Teak.facebookAccessTokenBroadcast.unregister(activity);
+            LocalBroadcastManager.getInstance(activity).unregisterReceiver(Teak.localBroadcastReceiver);
             activity.getApplication().unregisterActivityLifecycleCallbacks(this);
         }
 
@@ -210,7 +281,7 @@ public class Teak extends BroadcastReceiver {
         }
 
         @Override
-        public void onActivityResumed(final Activity activity) {
+        public void onActivityResumed(Activity activity) {
             if(activity != Teak.mainActivity) return;
             Log.d(LOG_TAG, "onActivityResumed");
 
@@ -277,64 +348,7 @@ public class Teak extends BroadcastReceiver {
             });
             Teak.asyncExecutor.execute(Teak.serviceConfig);
 
-            // Check for valid GCM Id
-            SharedPreferences preferences = activity.getSharedPreferences(TEAK_PREFERENCES_FILE, Context.MODE_PRIVATE);
-            int storedAppVersion = preferences.getInt(TEAK_PREFERENCE_APP_VERSION, 0);
-            String storedGcmId = preferences.getString(TEAK_PREFERENCE_GCM_ID, null);
-
-            Teak.gcmId = new FutureTask<String>(new Callable<String>() {
-                public String call() {
-                    try {
-                        String ret = Teak.gcmIdQueue.take();
-                        return ret;
-                    } catch(InterruptedException e) {
-                        Log.e(LOG_TAG, Log.getStackTraceString(e));
-                    }
-                    return null;
-                }
-            });
-            Teak.asyncExecutor.submit(Teak.gcmId);
-
-            // No need to get a new one, so put it on the blocking queue
-            if(storedAppVersion == Teak.appVersion && storedGcmId != null) {
-                if (isDebug) {
-                    Log.d(LOG_TAG, "GCM Id found in cache: " + storedGcmId);
-                }
-                Teak.gcmIdQueue.offer(storedGcmId);
-            }
-
-            // Google Play Advertising Id
-            int googlePlayStatus = GooglePlayServicesUtil.isGooglePlayServicesAvailable(activity);
-            if (googlePlayStatus == ConnectionResult.SUCCESS) {
-                Teak.adInfo = new FutureTask<AdvertisingInfo>(new Callable<AdvertisingInfo>() {
-                    public AdvertisingInfo call() {
-                        AdvertisingInfo ret = null;
-                        try {
-                            ret = new AdvertisingInfo(AdvertisingIdClient.getAdvertisingIdInfo(activity));
-
-                            if (Teak.isDebug) {
-                                Log.d(LOG_TAG, "Google Play Advertising Info loaded: " + ret.toString());
-                            }
-                        } catch (Exception e) {
-                            Log.e(LOG_TAG, "Couldn't get Google Play Advertising Id.");
-                            if (Teak.isDebug) {
-                                e.printStackTrace();
-                            }
-                        }
-                        return ret;
-                    }
-                });
-            } else {
-                Teak.adInfo = new FutureTask<AdvertisingInfo>(new Callable<AdvertisingInfo>() {
-                    public AdvertisingInfo call() {
-                        Log.e(LOG_TAG, "Google Play Services not available, can't get advertising id.");
-                        return null;
-                    }
-                });
-            }
-            Teak.asyncExecutor.submit(Teak.adInfo);
-
-            // Add executor task that waits on userId and other Futures
+            // Adds executor task that waits on userId and other Futures
             identifyUser();
         }
 
@@ -387,12 +401,13 @@ public class Teak extends BroadcastReceiver {
                         payload.put("android_limit_ad_tracking", adInfo.limitAdTracking);
                     }
                 } catch(Exception e) {}
-/*
-                // TODO: Future for this
-                if (mFbAccessToken != null) {
-                    payload.put("access_token", mFbAccessToken);
-                }
-*/
+
+                try {
+                    String accessToken = Teak.facebookAccessToken.get(2L, TimeUnit.SECONDS);
+                    if(accessToken != null) {
+                        payload.put("access_token", accessToken);
+                    }
+                } catch(Exception e) {}
 /*
                 // TODO: Notification functionality
                 if (mLaunchedFromTeakNotifId > 0) {
@@ -421,6 +436,19 @@ public class Teak extends BroadcastReceiver {
             }
         });
     }
+
+    static BroadcastReceiver localBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+                    String action = intent.getAction();
+            if (FacebookAccessTokenBroadcast.UPDATED_ACCESS_TOKEN_INTENT_ACTION.equals(action)) {
+                if(isDebug) {
+                    Log.d(LOG_TAG, "Facebook Access Token updated.");
+                }
+                createFacebookAccessTokenFuture();
+            }
+        }
+    };
 
     /**************************************************************************/
     private static final String GCM_RECEIVE_INTENT_ACTION = "com.google.android.c2dm.intent.RECEIVE";
@@ -463,6 +491,21 @@ public class Teak extends BroadcastReceiver {
         } else if(GCM_RECEIVE_INTENT_ACTION.equals(action)) {
             // TODO: Check for presence of 'teakNotifId'
         }
+    }
+
+    static void createFacebookAccessTokenFuture() {
+        Teak.facebookAccessToken = new FutureTask<String>(new Callable<String>() {
+            public String call() {
+                try {
+                    String ret = Teak.facebookAccessTokenQueue.take();
+                    return ret;
+                } catch(InterruptedException e) {
+                    Log.e(LOG_TAG, Log.getStackTraceString(e));
+                }
+                return null;
+            }
+        });
+        Teak.asyncExecutor.submit(Teak.facebookAccessToken);
     }
 
     /**************************************************************************/
@@ -508,15 +551,47 @@ public class Teak extends BroadcastReceiver {
                 // Successful purchase
                 if(isDebug) {
                     Log.d(LOG_TAG, "Purchase activity has succeeded.");
-                    Log.d(LOG_TAG, "Purchase data: " + purchaseData);
-                    Log.d(LOG_TAG, "Data signature: " + dataSignature);
-                    Log.d(LOG_TAG, "Extras: " + data.getExtras());
                 }
 
                 // TODO: Tell Teak about the purchase
             } else {
-                // TODO: Tell Teak about the error
+                if(isDebug) {
+                    Log.d(LOG_TAG, "Purchase activity has failed.");
+                }
             }
+
+            if(isDebug) {
+                try {
+                    Log.d(LOG_TAG, "Purchase data: " + new JSONObject(purchaseData).toString(2));
+                } catch(Exception e) {
+                    Log.d(LOG_TAG, "Purchase data: " + purchaseData);
+                }
+                Log.d(LOG_TAG, "Data signature: " + dataSignature);
+            }
+
+            // Send request
+            /*
+            Teak.asyncExecutor.submit(new Runnable() {
+                public void run() {
+                    HashMap<String, Object> payload = new HashMap<String, Object>();
+                    String userId = null;
+                    try {
+                        userId = Teak.userId.get();
+                    } catch(Exception e) {
+                        Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                        return;
+                    }
+
+                    payload.put("app_id", Teak.appId);
+                    payload.put("user_id", userId);
+                    payload.put("network_id", new Integer(2));
+                    payload.put("happened_at", dateIssued);
+                    payload.put("platfom_id", dunno);
+
+                    Teak.asyncExecutor.submit(new CachedRequest("/purchase.json", payload, dateIssued));
+                }
+            });
+            */
         }
     }
 }
