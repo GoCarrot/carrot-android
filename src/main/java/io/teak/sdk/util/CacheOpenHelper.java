@@ -32,6 +32,7 @@ class CacheOpenHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase database) {
         database.execSQL(CachedRequest.REQUEST_CACHE_CREATE_SQL);
+        database.execSQL(TeakNotification.INBOX_CACHE_CREATE_SQL);
     }
 
     @Override
@@ -41,6 +42,7 @@ class CacheOpenHelper extends SQLiteOpenHelper {
         }
 
         database.execSQL("DROP TABLE IF EXISTS cache");
+        database.execSQL("DROP TABLE IF EXISTS inbox");
         onCreate(database);
     }
 }

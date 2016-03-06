@@ -253,8 +253,7 @@ public class Teak extends BroadcastReceiver {
             // Cache
             Teak.cacheOpenHelper = new CacheOpenHelper(activity);
             CachedRequest.init();
-
-            // TODO: ConnectivityManager listener?
+            TeakNotification.init();
 
             if(Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityCreated");
@@ -557,7 +556,9 @@ public class Teak extends BroadcastReceiver {
                 Log.e(LOG_TAG, "Error storing GCM Id from " + GCM_REGISTRATION_INTENT_ACTION + ":\n" + Log.getStackTraceString(e));
             }
         } else if(GCM_RECEIVE_INTENT_ACTION.equals(action)) {
-            TeakNotification.notificationFromIntent(context, intent);
+            TeakNotification notif = TeakNotification.notificationFromIntent(context, intent);
+
+            // TODO: Send out inbox event
         } else if(action.endsWith(TeakNotification.TEAK_PUSH_OPENED_INTENT_ACTION_SUFFIX)) {
             Bundle bundle = intent.getExtras();
 
