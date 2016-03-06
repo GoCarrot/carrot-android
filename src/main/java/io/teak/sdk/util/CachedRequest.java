@@ -15,6 +15,7 @@
 package io.teak.sdk;
 
 import android.content.ContentValues;
+
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
@@ -53,8 +54,8 @@ class CachedRequest extends Request implements Runnable {
         values.put("request_date", this.dateIssued.getTime());
         values.put("retry_count", 0);
 
-        if(database != null) {
-            this.cacheId = database.insert("cache", null, values);
+        if(CachedRequest.database != null) {
+            this.cacheId = CachedRequest.database.insert("cache", null, values);
         }
 
         // These parts of the payload should not be inserted into the database
@@ -64,7 +65,7 @@ class CachedRequest extends Request implements Runnable {
 
     public static void init() {
         try {
-            database = Teak.cacheOpenHelper.getWritableDatabase();
+            CachedRequest.database = Teak.cacheOpenHelper.getWritableDatabase();
         } catch (SQLException e) {
             Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
         }
@@ -86,18 +87,18 @@ class CachedRequest extends Request implements Runnable {
 
     @Override
     protected void done(int responseCode, String responseBody) {
-        database.delete("cache", "rowid = " + this.cacheId, null);
+        CachedRequest.database.delete("cache", "rowid = " + this.cacheId, null);
 
         // TODO: Is there any reason we should retry?
         /*ContentValues values = new ContentValues();
         values.put("retry_count", mRetryCount + 1);
-        database.update("cache", values, "rowid = " + mCacheId, null);*/
+        CachedRequest.database.update("cache", values, "rowid = " + mCacheId, null);*/
     }
 
     public static List<CachedRequest> requestsInCache() {
         List<CachedRequest> requests = new ArrayList<CachedRequest>();
 
-        Cursor cursor = database.query("cache", REQUEST_CACHE_READ_COLUMNS, null, null, null, null, "retry_count");
+        Cursor cursor = CachedRequest.database.query("cache", REQUEST_CACHE_READ_COLUMNS, null, null, null, null, "retry_count");
 
         cursor.moveToFirst();
         while (!cursor.isAfterLast()) {
