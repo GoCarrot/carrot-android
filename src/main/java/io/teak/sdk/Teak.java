@@ -112,6 +112,7 @@ public class Teak extends BroadcastReceiver {
     static CacheOpenHelper cacheOpenHelper;
     static String launchedFromTeakNotifId;
     static ScheduledExecutorService heartbeatService;
+    static boolean userIdentifiedThisSession;
 
     static final String LOG_TAG = "Teak";
 
@@ -299,6 +300,7 @@ public class Teak extends BroadcastReceiver {
             }
 
             Teak.launchedFromTeakNotifId = null;
+            Teak.userIdentifiedThisSession = false;
         }
 
         @Override
@@ -445,6 +447,11 @@ public class Teak extends BroadcastReceiver {
 
                 HashMap<String, Object> payload = new HashMap<String, Object>();
 
+                if(Teak.userIdentifiedThisSession) {
+                    payload.put("do_not_track_event", Boolean.TRUE);
+                }
+                Teak.userIdentifiedThisSession = true;
+
                 TimeZone tz = TimeZone.getDefault();
                 long rawTz = tz.getRawOffset();
                 if (tz.inDaylightTime(new Date())) {
@@ -487,12 +494,7 @@ public class Teak extends BroadcastReceiver {
                         payload.put("gcm_push_key", gcmId);
                     }
                 } catch(Exception e) {}
-/*
-                if (mUserIdentified) {
-                    payload.put("do_not_track_event", Boolean.TRUE);
-                }
-                mUserIdentified = true;
-                */
+
                 Log.d(LOG_TAG, "Identifying user: " + userId);
                 Log.d(LOG_TAG, "        Timezone: " + tzOffset);
                 Log.d(LOG_TAG, "          Locale: " + locale);
