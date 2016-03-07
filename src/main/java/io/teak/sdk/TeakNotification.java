@@ -68,6 +68,7 @@ import org.json.JSONException;
  *   message        : string  - the body text of the notification,
  *   title          : string  - the title of the notification,
  *   tickerText     : string  - text for the ticker at the top of the screen,
+ *   [extras]       : string  - JSON encoded extra data
  * }
  * }
  * </pre>
@@ -77,6 +78,11 @@ public class TeakNotification {
     /** The 'tag' specified by Teak to the {@link NotificationCompat} */
     public static final String NOTIFICATION_TAG = "io.teak.sdk.TeakNotification";
 
+    /**
+     * The {@link Intent} action sent by Teak when a notification has been opened by the user.
+     *
+     * This allows you to take special actions, it is not required that you listen for it.
+     */
     public static final String TEAK_PUSH_OPENED_INTENT_ACTION_SUFFIX = ".intent.TEAK_PUSH_OPENED";
 
     /**
@@ -89,6 +95,17 @@ public class TeakNotification {
     }
 
     /**
+     * Get optional extra data associated with this notification.
+     *
+     * @return {@link JSONObject} containing extra data sent by the server.
+     */
+    public JSONObject getExtras() {
+        return this.extras;
+    }
+
+    /**
+     * Gets all of the pending notifications.
+     *
      * @return A {@link List} containing all pending notifications.
      */
     public static List<TeakNotification> inbox() {
@@ -111,10 +128,6 @@ public class TeakNotification {
         cursor.close();
 
         return inbox;
-    }
-
-    public void removeFromCache() {
-        TeakNotification.database.delete("inbox", "notification_id = " + this.teakNotifId, null);
     }
 
     public class Reward {
@@ -203,12 +216,24 @@ public class TeakNotification {
         private static final String INVALID_POST_STRING = "invalid_post";
     }
 
-    public Future<Reward> claimReward() {
-
+    /**
+     * Consumes the notification, removing it from the Inbox, and returns a {@link Reward}.
+     *
+     * <p>The <code>Reward</code> will be <code>null</code> if there is no reward associated
+     * with the notification.</p>
+     *
+     * @return A {@link Future} which will contain the reward that should be granted, or <code>null</code> if there is no associated reward.
+     */
+    public Future<Reward> consumeNotification() {
         final TeakNotification notif = this;
-        // https://rewards.gocarrot.com/<<teak_reward_id>>/clicks?clicking_user_id=<<your_user_id>>
+
         FutureTask<Reward> ret = new FutureTask<Reward>(new Callable<Reward>() {
             public Reward call() {
+                if(!notif.hasReward()) {
+                    notif.removeFromCache();
+                    return null;
+                }
+
                 HttpsURLConnection connection = null;
                 String userId = null;
                 try {
@@ -223,6 +248,7 @@ public class TeakNotification {
                 }
 
                 try {
+                    // https://rewards.gocarrot.com/<<teak_reward_id>>/clicks?clicking_user_id=<<your_user_id>>
                     String requestBody = "clicking_user_id=" + URLEncoder.encode(userId, "UTF-8");
 
                     URL url = new URL("https://rewards.gocarrot.com/" + notif.teakRewardId + "/clicks");
@@ -265,6 +291,8 @@ public class TeakNotification {
                         Log.d(Teak.LOG_TAG, "Reward claim response: " + responseJson.toString(2));
                     }
 
+                    notif.removeFromCache();
+
                     return reward;
                 } catch (Exception e) {
                     Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
@@ -302,12 +330,19 @@ public class TeakNotification {
     String teakRewardId;
     int platformId;
     long teakNotifId;
+    JSONObject extras;
 
     private TeakNotification(Bundle bundle) {
         this.title = bundle.getString("title");
         this.message = bundle.getString("message");
         this.tickerText = bundle.getString("tickerText");
         this.teakRewardId = bundle.getString("teakRewardId");
+        try {
+            this.extras = bundle.getString("extras") == null ? null : new JSONObject(bundle.getString("extras"));
+        } catch(JSONException e) {
+            this.extras = null;
+        }
+
         try {
             this.teakNotifId = Long.parseLong(bundle.getString("teakNotifId"));
         } catch (Exception e) {
@@ -335,6 +370,7 @@ public class TeakNotification {
         teakRewardId = contents.getString("teakRewardId");
         platformId = contents.getInt("platformId");
         teakNotifId = contents.getLong("teakNotifId");
+        this.extras = contents.optJSONObject("extras");
     }
 
     private String toJson() {
@@ -346,10 +382,15 @@ public class TeakNotification {
             json.put("teakRewardId", teakRewardId);
             json.put("platformId", Integer.valueOf(platformId));
             json.put("teakNotifId", Long.valueOf(teakNotifId));
+            if(this.extras != null) { json.put("extras", this.extras); }
         } catch(JSONException e) {
             Log.e(Teak.LOG_TAG, "Error converting TeakNotification to JSON: " + Log.getStackTraceString(e));
         }
         return json.toString();
+    }
+
+    private void removeFromCache() {
+        TeakNotification.database.delete("inbox", "teak_notification_id = " + this.teakNotifId, null);
     }
 
     static TeakNotification notificationFromIntent(Context context, Intent intent) {
