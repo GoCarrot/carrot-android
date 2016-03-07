@@ -318,12 +318,12 @@ public class Teak extends BroadcastReceiver {
             }
 
             if(Teak.asyncExecutor != null) {
-                Teak.asyncExecutor.shutdownNow();
+                Teak.asyncExecutor.shutdown();
                 Teak.asyncExecutor = null;
             }
 
             if(Teak.heartbeatService != null) {
-                Teak.heartbeatService.shutdownNow();
+                Teak.heartbeatService.shutdown();
                 Teak.heartbeatService = null;
             }
 
