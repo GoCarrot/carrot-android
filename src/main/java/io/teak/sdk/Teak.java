@@ -123,9 +123,6 @@ public class Teak extends BroadcastReceiver {
 
     /**************************************************************************/
 
-    // This is just a placeholder to supress javadoc from listing the default constructor
-    Teak() {}
-
     static int appVersion;
     static boolean isDebug;
     static FutureTask<String> gcmId;
