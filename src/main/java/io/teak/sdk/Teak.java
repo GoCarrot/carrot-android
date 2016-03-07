@@ -501,7 +501,7 @@ public class Teak extends BroadcastReceiver {
                 }
 */
                 try {
-                    AdvertisingInfo adInfo = Teak.adInfo.get(2L, TimeUnit.SECONDS);
+                    AdvertisingInfo adInfo = Teak.adInfo.get(5L, TimeUnit.SECONDS);
                     if(adInfo != null) {
                         payload.put("android_ad_id", adInfo.adId);
                         payload.put("android_limit_ad_tracking", adInfo.limitAdTracking);
@@ -509,7 +509,7 @@ public class Teak extends BroadcastReceiver {
                 } catch(Exception e) {}
 
                 try {
-                    String accessToken = Teak.facebookAccessToken.get(2L, TimeUnit.SECONDS);
+                    String accessToken = Teak.facebookAccessToken.get(5L, TimeUnit.SECONDS);
                     if(accessToken != null) {
                         payload.put("access_token", accessToken);
                     }
@@ -520,7 +520,7 @@ public class Teak extends BroadcastReceiver {
                 }
 
                 try {
-                    String gcmId = Teak.gcmId.get(2L, TimeUnit.SECONDS);
+                    String gcmId = Teak.gcmId.get(5L, TimeUnit.SECONDS);
                     if(gcmId != null) {
                         payload.put("gcm_push_key", gcmId);
                     }
