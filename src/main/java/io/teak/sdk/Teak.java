@@ -582,8 +582,6 @@ public class Teak extends BroadcastReceiver {
                     Log.d(LOG_TAG, "GCM Id received from registration intent: " + registration);
                 }
                 Teak.gcmIdQueue.offer(registration);
-
-                // TODO: runAndReset() the future?
             } catch(Exception e) {
                 Log.e(LOG_TAG, "Error storing GCM Id from " + GCM_REGISTRATION_INTENT_ACTION + ":\n" + Log.getStackTraceString(e));
             }
