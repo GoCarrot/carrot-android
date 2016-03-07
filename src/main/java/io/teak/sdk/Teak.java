@@ -407,6 +407,11 @@ public class Teak extends BroadcastReceiver {
 
             // Adds executor task that waits on userId and other Futures
             identifyUser();
+
+            // Check for pending inbox messages, and notify app if they exist
+            if(TeakNotification.inboxCount() > 0) {
+                LocalBroadcastManager.getInstance(Teak.mainActivity).sendBroadcast(new Intent(TeakNotification.TEAK_INBOX_HAS_NOTIFICATIONS_INTENT));
+            }
         }
 
         @Override
@@ -585,7 +590,8 @@ public class Teak extends BroadcastReceiver {
         } else if(GCM_RECEIVE_INTENT_ACTION.equals(action)) {
             TeakNotification notif = TeakNotification.notificationFromIntent(context, intent);
 
-            // TODO: Send out inbox event
+            // Send out inbox broadcast
+            LocalBroadcastManager.getInstance(Teak.mainActivity).sendBroadcast(new Intent(TeakNotification.TEAK_INBOX_HAS_NOTIFICATIONS_INTENT));
         } else if(action.endsWith(TeakNotification.TEAK_PUSH_OPENED_INTENT_ACTION_SUFFIX)) {
             Bundle bundle = intent.getExtras();
 

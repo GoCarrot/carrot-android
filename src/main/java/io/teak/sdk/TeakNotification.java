@@ -25,6 +25,7 @@ import android.content.pm.ApplicationInfo;
 
 import android.database.Cursor;
 import android.database.SQLException;
+import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 
 import android.app.PendingIntent;
@@ -86,6 +87,20 @@ public class TeakNotification {
     public static final String TEAK_PUSH_OPENED_INTENT_ACTION_SUFFIX = ".intent.TEAK_PUSH_OPENED";
 
     /**
+     * Intent action used by Teak to notify you that there are pending inbox notifications.
+     *
+     * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
+     * <pre>
+     * {@code
+     *     IntentFilter filter = new IntentFilter();
+     *     filter.addAction(TeakNotification.TEAK_INBOX_HAS_NOTIFICATIONS_INTENT);
+     *     LocalBroadcastManager.getInstance(context).registerReceiver(yourBroadcastListener, filter);
+     * }
+     * </pre>
+     */
+    public static final String TEAK_INBOX_HAS_NOTIFICATIONS_INTENT = "io.teak.sdk.TeakNotification.intent.INBOX_HAS_NOTIFICATIONS";
+
+    /**
      * Check to see if this notification has a reward attached to it.
      *
      * @return <code>true</code> if this notification has a reward attached to it.
@@ -128,6 +143,15 @@ public class TeakNotification {
         cursor.close();
 
         return inbox;
+    }
+
+    /**
+     * Get the number of pending notifications.
+     *
+     * @return The number of pending notifications.
+     */
+    public static long inboxCount() {
+        return DatabaseUtils.queryNumEntries(TeakNotification.database, "inbox", null);
     }
 
     public class Reward {
