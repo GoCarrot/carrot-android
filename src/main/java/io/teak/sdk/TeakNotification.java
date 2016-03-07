@@ -56,6 +56,11 @@ import org.json.JSONObject;
 import org.json.JSONException;
 
 /**
+ * An app-to-user notification received from Teak via GCM.
+ *
+ * The following parameters from the GCM payload are used to create a <code>TeakNotification</code>.
+ * <pre>
+ * {@code
  * {
  *   [noAutolaunch] : boolean - automatically launch the app when a push notification is 'opened',
  *   [teakRewardId] : string  - associated Teak Reward Id,
@@ -64,17 +69,28 @@ import org.json.JSONException;
  *   title          : string  - the title of the notification,
  *   tickerText     : string  - text for the ticker at the top of the screen,
  * }
+ * }
+ * </pre>
  */
 public class TeakNotification {
 
+    /** The 'tag' specified by Teak to the {@link NotificationCompat} */
     public static final String NOTIFICATION_TAG = "io.teak.sdk.TeakNotification";
 
     public static final String TEAK_PUSH_OPENED_INTENT_ACTION_SUFFIX = ".intent.TEAK_PUSH_OPENED";
 
+    /**
+     * Check to see if this notification has a reward attached to it.
+     *
+     * @return <code>true</code> if this notification has a reward attached to it.
+     */
     public boolean hasReward() {
-        return (teakRewardId != null);
+        return (this.teakRewardId != null);
     }
 
+    /**
+     * @return A {@link List} containing all pending notifications.
+     */
     public static List<TeakNotification> inbox() {
         List<TeakNotification> inbox = new ArrayList<TeakNotification>();
         String[] inboxReadColumns = {"notification_payload"};
@@ -143,6 +159,16 @@ public class TeakNotification {
          * If status is {@link Reward#GRANT_REWARD}, the 'reward' field will contain the reward that should be granted.
          */
         public int status;
+
+        /**
+         * The reward(s) to grant, or <code>null</code>.
+         *
+         * <p>The reward(s) contained are in the format:
+         * <code>{
+         *   “internal_id” : quantity,
+         *   “another_internal_id” : anotherQuantity
+         * }</code></p>
+         */
         public JSONObject reward;
 
         Reward(JSONObject json) {

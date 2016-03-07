@@ -68,15 +68,36 @@ import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 
+/**
+ * 
+ */
 public class Teak extends BroadcastReceiver {
 
+    /** Version of the Teak SDK. */
     public static final String SDKVersion = "2.0";
 
+    /**
+     * Initialize Teak and tell it to listen to the lifecycle events of {@link Activity}.
+     *
+     * <p>Call this function from the {@link Activity#onCreate} function of your <code>Activity</code>
+     * <b>before</b> the call to <code>super.onCreate()</code></p>
+     *
+     * @param activity The main <code>Activity</code> of your app.
+     */
     public static void onCreate(Activity activity) {
         Teak.mainActivity = activity;
         activity.getApplication().registerActivityLifecycleCallbacks(Teak.lifecycleCallbacks);
     }
 
+    /**
+     * Tell Teak about the result of an {@link Activity} started by your app.
+     *
+     * <p>This allows Teak to automatically get the results of In-App Purchase events.</p>
+     *
+     * @param requestCode The <code>requestCode</code> parameter received from {@link Activity#onActivityResult}
+     * @param resultCode The <code>resultCode</code> parameter received from {@link Activity#onActivityResult}
+     * @param data The <code>data</code> parameter received from {@link Activity#onActivityResult}
+     */
     public static void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (Teak.isDebug) {
             Log.d(LOG_TAG, "Lifecycle - onActivityResult");
@@ -87,6 +108,13 @@ public class Teak extends BroadcastReceiver {
         }
     }
 
+    /**
+     * Tell Teak how it should identify the current user.
+     *
+     * <p>This should be the same way you identify the user in your backend.</p>
+     *
+     * @param userIdentifier An identifier which is unique for the current user.
+     */
     public static void identifyUser(String userIdentifier) {
         if(!Teak.userId.isDone()) {
             Teak.userIdQueue.offer(userIdentifier);
@@ -94,6 +122,10 @@ public class Teak extends BroadcastReceiver {
     }
 
     /**************************************************************************/
+
+    // This is just a placeholder to supress javadoc from listing the default constructor
+    Teak() {}
+
     static int appVersion;
     static boolean isDebug;
     static FutureTask<String> gcmId;
