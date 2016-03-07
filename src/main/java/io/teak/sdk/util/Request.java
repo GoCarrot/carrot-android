@@ -70,6 +70,8 @@ class Request implements Runnable {
         SecretKeySpec keySpec = new SecretKeySpec(Teak.apiKey.getBytes(), "HmacSHA256");
 
         try {
+            ServiceConfig serviceConfig = Teak.serviceConfig.get();
+
             HashMap<String, Object> requestBodyObject = new HashMap<String, Object>();
             if (this.payload != null) {
                 requestBodyObject.putAll(this.payload);
@@ -107,7 +109,7 @@ class Request implements Runnable {
             }
             requestBody.deleteCharAt(requestBody.length() - 1);
 
-            String stringToSign = this.method + "\n" + Teak.getHostname(this.endpoint) + "\n" + this.endpoint + "\n" + requestBody.toString();
+            String stringToSign = this.method + "\n" + serviceConfig.getHostname(this.endpoint) + "\n" + this.endpoint + "\n" + requestBody.toString();
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(keySpec);
             byte[] result = mac.doFinal(stringToSign.getBytes());
@@ -130,7 +132,7 @@ class Request implements Runnable {
             requestBody.append("sig=" + URLEncoder.encode(Base64.encodeToString(result, Base64.NO_WRAP), "UTF-8"));
 
             if (this.method == "POST") {
-                URL url = new URL("https://" + Teak.getHostname(this.endpoint) + this.endpoint);
+                URL url = new URL("https://" + serviceConfig.getHostname(this.endpoint) + this.endpoint);
                 connection = (HttpsURLConnection) url.openConnection();
 
                 connection.setRequestProperty("Accept-Charset", "UTF-8");
@@ -146,7 +148,7 @@ class Request implements Runnable {
                 wr.flush();
                 wr.close();
             } else {
-                URL url = new URL("https://" + Teak.getHostname(this.endpoint) + this.endpoint + "?" + requestBody.toString());
+                URL url = new URL("https://" + serviceConfig.getHostname(this.endpoint) + this.endpoint + "?" + requestBody.toString());
                 connection = (HttpsURLConnection) url.openConnection();
                 connection.setRequestProperty("Accept-Charset", "UTF-8");
                 connection.setUseCaches(false);

@@ -26,4 +26,8 @@ class ServiceConfig {
     public String toString() {
         return "{\n  Hostname: " + this.hostname + "\n}";
     }
+
+    public String getHostname(String endpoint) {
+        return this.hostname;
+    }
 }
