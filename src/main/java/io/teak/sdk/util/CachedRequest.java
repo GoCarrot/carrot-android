@@ -95,12 +95,13 @@ class CachedRequest extends Request implements Runnable {
 
     @Override
     protected void done(int responseCode, String responseBody) {
-        CachedRequest.database.delete("cache", "rowid = " + this.cacheId, null);
-
-        // TODO: Is there any reason we should retry?
-        /*ContentValues values = new ContentValues();
-        values.put("retry_count", mRetryCount + 1);
-        CachedRequest.database.update("cache", values, "rowid = " + mCacheId, null);*/
+        if(responseCode < 500) {
+            CachedRequest.database.delete("cache", "rowid = " + this.cacheId, null);
+        } else {
+            ContentValues values = new ContentValues();
+            values.put("retry_count", this.retryCount + 1);
+            CachedRequest.database.update("cache", values, "rowid = " + this.cacheId, null);
+        }
     }
 
     public static List<CachedRequest> requestsInCache() {
