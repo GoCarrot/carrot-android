@@ -381,6 +381,9 @@ public class Teak extends BroadcastReceiver {
 
                         // Heartbeat will block on userId Future, which is fine
                         startHeartbeat();
+
+                        // Submit cached requests
+                        CachedRequest.submitCachedRequests();
                     } catch(Exception ignored) {}
                 }
             }, config);

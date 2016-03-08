@@ -73,6 +73,13 @@ class CachedRequest extends Request implements Runnable {
         }
     }
 
+    public static void submitCachedRequests() {
+        List<CachedRequest> requests = CachedRequest.requestsInCache();
+        for(CachedRequest request : requests) {
+            Teak.asyncExecutor.submit(request);
+        }
+    }
+
     private CachedRequest(Cursor cursor) throws Exception {
         super("POST", null, null);
 
@@ -104,7 +111,7 @@ class CachedRequest extends Request implements Runnable {
         }
     }
 
-    public static List<CachedRequest> requestsInCache() {
+    private static List<CachedRequest> requestsInCache() {
         List<CachedRequest> requests = new ArrayList<CachedRequest>();
 
         Cursor cursor = CachedRequest.database.query("cache", REQUEST_CACHE_READ_COLUMNS, null, null, null, null, "retry_count");
