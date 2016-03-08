@@ -28,6 +28,8 @@ import java.util.UUID;
 import java.util.List;
 import java.util.ArrayList;
 
+import java.util.concurrent.ExecutionException;
+
 import org.json.JSONObject;
 
 class CachedRequest extends Request implements Runnable {
@@ -83,6 +85,12 @@ class CachedRequest extends Request implements Runnable {
 
         this.payload.put("request_id", this.requestId);
         this.payload.put("request_date", this.dateIssued.getTime() / 1000); // Milliseconds -> Seconds
+    }
+
+    @Override
+    protected void addCommonPayload(Map<String, Object> payload) throws InterruptedException, ExecutionException {
+        payload.put("api_key", Teak.userId.get());
+        super.addCommonPayload(payload);
     }
 
     @Override

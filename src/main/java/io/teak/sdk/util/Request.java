@@ -50,15 +50,20 @@ class Request implements Runnable {
     protected String endpoint;
     protected String method;
     protected Map<String, Object> payload;
+    private String hostname;
 
     public Request(String method, String endpoint, Map<String, Object> payload) {
+        this(method, null, endpoint, payload);
+    }
+
+    public Request(String method, String hostname, String endpoint, Map<String, Object> payload) {
+        this.method = method;
+        this.hostname = hostname;
         this.endpoint = endpoint;
         this.payload = payload;
-        this.method = method;
     }
 
     protected void addCommonPayload(Map<String, Object> payload) throws InterruptedException, ExecutionException {
-        payload.put("api_key", Teak.userId.get());
         payload.put("game_id", Teak.appId);
         payload.put("sdk_version", Teak.SDKVersion);
         payload.put("sdk_platform", "android_" + android.os.Build.VERSION.RELEASE);
@@ -70,7 +75,11 @@ class Request implements Runnable {
         SecretKeySpec keySpec = new SecretKeySpec(Teak.apiKey.getBytes(), "HmacSHA256");
 
         try {
-            ServiceConfig serviceConfig = Teak.serviceConfig.get();
+            String hostname = this.hostname;
+            if(hostname == null) {
+                ServiceConfig serviceConfig = Teak.serviceConfig.get();
+                hostname = serviceConfig.getHostname(this.endpoint);
+            }
 
             HashMap<String, Object> requestBodyObject = new HashMap<String, Object>();
             if (this.payload != null) {
@@ -109,7 +118,7 @@ class Request implements Runnable {
             }
             requestBody.deleteCharAt(requestBody.length() - 1);
 
-            String stringToSign = this.method + "\n" + serviceConfig.getHostname(this.endpoint) + "\n" + this.endpoint + "\n" + requestBody.toString();
+            String stringToSign = this.method + "\n" + hostname + "\n" + this.endpoint + "\n" + requestBody.toString();
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(keySpec);
             byte[] result = mac.doFinal(stringToSign.getBytes());
@@ -132,7 +141,7 @@ class Request implements Runnable {
             requestBody.append("sig=" + URLEncoder.encode(Base64.encodeToString(result, Base64.NO_WRAP), "UTF-8"));
 
             if (this.method == "POST") {
-                URL url = new URL("https://" + serviceConfig.getHostname(this.endpoint) + this.endpoint);
+                URL url = new URL("https://" + hostname + this.endpoint);
                 connection = (HttpsURLConnection) url.openConnection();
 
                 connection.setRequestProperty("Accept-Charset", "UTF-8");
@@ -148,7 +157,7 @@ class Request implements Runnable {
                 wr.flush();
                 wr.close();
             } else {
-                URL url = new URL("https://" + serviceConfig.getHostname(this.endpoint) + this.endpoint + "?" + requestBody.toString());
+                URL url = new URL("https://" + hostname + this.endpoint + "?" + requestBody.toString());
                 connection = (HttpsURLConnection) url.openConnection();
                 connection.setRequestProperty("Accept-Charset", "UTF-8");
                 connection.setUseCaches(false);

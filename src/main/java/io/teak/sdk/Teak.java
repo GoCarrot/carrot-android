@@ -284,6 +284,26 @@ public class Teak extends BroadcastReceiver {
             CachedRequest.init();
             TeakNotification.init();
 
+            // Validate the app id/key via "/games/#{@appId}/validate_sig.json"
+            if(Teak.isDebug) {
+                HashMap<String, Object> payload = new HashMap<String, Object>();
+                payload.put("id", Teak.appId);
+                Teak.asyncExecutor.execute(new Request("POST", "gocarrot.com", "/games/" + Teak.appId + "/validate_sig.json", payload) {
+                    @Override
+                    protected void done(int responseCode, String responseBody) {
+                        try {
+                            JSONObject response = new JSONObject(responseBody);
+                            if(response.has("error")) {
+                                JSONObject error = response.getJSONObject("error");
+                                Log.e(LOG_TAG, "Error in Teak configuration: " + error.getString("message"));
+                            } else {
+                                Log.d(LOG_TAG, "Teak configuration valid for: " + response.getString("name"));
+                            }
+                        } catch(Exception ignored) {}
+                    }
+                });
+            }
+
             if(Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityCreated");
                 Log.d(LOG_TAG, "        App Id: " + Teak.appId);
