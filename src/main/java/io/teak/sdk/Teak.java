@@ -142,6 +142,7 @@ public class Teak extends BroadcastReceiver {
     static String launchedFromTeakNotifId;
     static ScheduledExecutorService heartbeatService;
     static boolean userIdentifiedThisSession;
+    static Date lastSessionEndedAt;
 
     static final String LOG_TAG = "Teak";
 
@@ -153,6 +154,8 @@ public class Teak extends BroadcastReceiver {
     private static final String TEAK_PREFERENCE_APP_VERSION = "io.teak.sdk.Preferences.AppVersion";
 
     private static final String TEAK_SERVICES_HOSTNAME = "services.gocarrot.com";
+
+    private static final long SAME_SESSION_TIME_DELTA = 120000;
 
     /**************************************************************************/
     private static final TeakActivityLifecycleCallbacks lifecycleCallbacks = new TeakActivityLifecycleCallbacks();
@@ -349,6 +352,7 @@ public class Teak extends BroadcastReceiver {
 
             Teak.launchedFromTeakNotifId = null;
             Teak.userIdentifiedThisSession = false;
+            Teak.lastSessionEndedAt = new Date();
         }
 
         @Override
@@ -390,7 +394,9 @@ public class Teak extends BroadcastReceiver {
             Teak.asyncExecutor.execute(Teak.serviceConfig);
 
             // Adds executor task that waits on userId and other Futures
-            identifyUser();
+            if(Teak.lastSessionEndedAt == null || new Date().getTime() - Teak.lastSessionEndedAt.getTime() > SAME_SESSION_TIME_DELTA) {
+                identifyUser();
+            }
 
             // Check for pending inbox messages, and notify app if they exist
             if(TeakNotification.inboxCount() > 0) {
