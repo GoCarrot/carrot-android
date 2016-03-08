@@ -17,8 +17,6 @@ package io.teak.sdk;
 import android.content.ContentValues;
 
 import android.database.Cursor;
-import android.database.SQLException;
-import android.database.sqlite.SQLiteDatabase;
 
 import android.util.Log;
 
@@ -38,8 +36,6 @@ class CachedRequest extends Request implements Runnable {
     private long cacheId;
     private Date dateIssued;
 
-    private static SQLiteDatabase database;
-
     static final String REQUEST_CACHE_CREATE_SQL = "CREATE TABLE IF NOT EXISTS cache(request_endpoint TEXT, request_payload TEXT, request_id TEXT, request_date INTEGER, retry_count INTEGER)";
     private static final String[] REQUEST_CACHE_READ_COLUMNS = {"rowid", "request_endpoint", "request_payload", "request_id", "request_date", "retry_count"};
 
@@ -56,21 +52,13 @@ class CachedRequest extends Request implements Runnable {
         values.put("request_date", this.dateIssued.getTime());
         values.put("retry_count", 0);
 
-        if(CachedRequest.database != null) {
-            this.cacheId = CachedRequest.database.insert("cache", null, values);
+        if(Teak.database != null) {
+            this.cacheId = Teak.database.insert("cache", null, values);
         }
 
         // These parts of the payload should not be inserted into the database
         this.payload.put("request_id", this.requestId);
         this.payload.put("request_date", this.dateIssued.getTime() / 1000); // Milliseconds -> Seconds
-    }
-
-    public static void init() {
-        try {
-            CachedRequest.database = Teak.cacheOpenHelper.getWritableDatabase();
-        } catch (SQLException e) {
-            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
-        }
     }
 
     public static void submitCachedRequests() {
@@ -102,31 +90,34 @@ class CachedRequest extends Request implements Runnable {
 
     @Override
     protected void done(int responseCode, String responseBody) {
-        if(responseCode < 500) {
-            CachedRequest.database.delete("cache", "rowid = " + this.cacheId, null);
-        } else {
-            ContentValues values = new ContentValues();
-            values.put("retry_count", this.retryCount + 1);
-            CachedRequest.database.update("cache", values, "rowid = " + this.cacheId, null);
+        if(Teak.database != null) {
+            if(responseCode < 500) {
+                Teak.database.delete("cache", "rowid = " + this.cacheId, null);
+            } else {
+                ContentValues values = new ContentValues();
+                values.put("retry_count", this.retryCount + 1);
+                Teak.database.update("cache", values, "rowid = " + this.cacheId, null);
+            }
         }
     }
 
     private static List<CachedRequest> requestsInCache() {
         List<CachedRequest> requests = new ArrayList<CachedRequest>();
 
-        Cursor cursor = CachedRequest.database.query("cache", REQUEST_CACHE_READ_COLUMNS, null, null, null, null, "retry_count");
-
-        cursor.moveToFirst();
-        while (!cursor.isAfterLast()) {
-            try {
-                CachedRequest request = new CachedRequest(cursor);
-                requests.add(request);
-            } catch (Exception e) {
-                Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+        if(Teak.database != null) {
+            Cursor cursor = Teak.database.query("cache", REQUEST_CACHE_READ_COLUMNS, null, null, null, null, "retry_count");
+            cursor.moveToFirst();
+            while (!cursor.isAfterLast()) {
+                try {
+                    CachedRequest request = new CachedRequest(cursor);
+                    requests.add(request);
+                } catch (Exception e) {
+                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                }
+                cursor.moveToNext();
             }
-            cursor.moveToNext();
+            cursor.close();
         }
-        cursor.close();
 
         return requests;
     }

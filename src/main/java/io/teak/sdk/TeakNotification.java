@@ -24,9 +24,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ApplicationInfo;
 
 import android.database.Cursor;
-import android.database.SQLException;
 import android.database.DatabaseUtils;
-import android.database.sqlite.SQLiteDatabase;
 
 import android.app.PendingIntent;
 
@@ -127,20 +125,22 @@ public class TeakNotification {
         List<TeakNotification> inbox = new ArrayList<TeakNotification>();
         String[] inboxReadColumns = {"notification_payload"};
 
-        Cursor cursor = TeakNotification.database.query("inbox", inboxReadColumns,
-                null, null, null, null, null);
+        if(Teak.database != null) {
+            Cursor cursor = Teak.database.query("inbox", inboxReadColumns,
+                    null, null, null, null, null);
 
-        cursor.moveToFirst();
-        while (!cursor.isAfterLast()) {
-            try {
-                TeakNotification notif = new TeakNotification(cursor.getString(0));
-                inbox.add(notif);
-            } catch (Exception e) {
-                Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+            cursor.moveToFirst();
+            while (!cursor.isAfterLast()) {
+                try {
+                    TeakNotification notif = new TeakNotification(cursor.getString(0));
+                    inbox.add(notif);
+                } catch (Exception e) {
+                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                }
+                cursor.moveToNext();
             }
-            cursor.moveToNext();
+            cursor.close();
         }
-        cursor.close();
 
         return inbox;
     }
@@ -151,7 +151,11 @@ public class TeakNotification {
      * @return The number of pending notifications.
      */
     public static long inboxCount() {
-        return DatabaseUtils.queryNumEntries(TeakNotification.database, "inbox", null);
+        if(Teak.database != null) {
+            return DatabaseUtils.queryNumEntries(Teak.database, "inbox", null);
+        } else {
+            return 0;
+        }
     }
 
     public class Reward {
@@ -336,16 +340,6 @@ public class TeakNotification {
 
     /**************************************************************************/
 
-    static void init() {
-        try {
-            database = Teak.cacheOpenHelper.getWritableDatabase();
-        } catch (SQLException e) {
-            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
-        }
-    }
-
-    private static SQLiteDatabase database;
-
     static final String INBOX_CACHE_CREATE_SQL = "CREATE TABLE IF NOT EXISTS inbox(teak_notification_id INTEGER, android_id INTEGER, notification_payload TEXT)";
 
     String title;
@@ -380,8 +374,8 @@ public class TeakNotification {
         values.put("android_id", this.platformId);
         values.put("notification_payload", this.toJson());
 
-        if(TeakNotification.database != null) {
-            TeakNotification.database.insert("inbox", null, values);
+        if(Teak.database != null) {
+            Teak.database.insert("inbox", null, values);
         }
     }
 
@@ -414,7 +408,9 @@ public class TeakNotification {
     }
 
     private void removeFromCache() {
-        TeakNotification.database.delete("inbox", "teak_notification_id = " + this.teakNotifId, null);
+        if(Teak.database != null) {
+            Teak.database.delete("inbox", "teak_notification_id = " + this.teakNotifId, null);
+        }
     }
 
     static TeakNotification notificationFromIntent(Context context, Intent intent) {

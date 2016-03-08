@@ -29,6 +29,9 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.os.Bundle;
 import android.os.Handler;
 
+import android.database.SQLException;
+import android.database.sqlite.SQLiteDatabase;
+
 import android.util.Log;
 
 import org.json.JSONObject;
@@ -143,6 +146,7 @@ public class Teak extends BroadcastReceiver {
     static ScheduledExecutorService heartbeatService;
     static boolean userIdentifiedThisSession;
     static Date lastSessionEndedAt;
+    static SQLiteDatabase database;
 
     static final String LOG_TAG = "Teak";
 
@@ -284,8 +288,11 @@ public class Teak extends BroadcastReceiver {
 
             // Cache
             Teak.cacheOpenHelper = new CacheOpenHelper(activity);
-            CachedRequest.init();
-            TeakNotification.init();
+            try {
+                Teak.database = Teak.cacheOpenHelper.getWritableDatabase();
+            } catch (SQLException e) {
+                Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+            }
 
             // Validate the app id/key via "/games/#{@appId}/validate_sig.json"
             if(Teak.isDebug) {
@@ -326,6 +333,7 @@ public class Teak extends BroadcastReceiver {
                 Log.d(LOG_TAG, "Lifecycle - onActivityDestroyed");
             }
 
+            Teak.database.close();
             Teak.cacheOpenHelper.close();
             Teak.facebookAccessTokenBroadcast.unregister(activity);
             LocalBroadcastManager.getInstance(activity).unregisterReceiver(Teak.localBroadcastReceiver);
