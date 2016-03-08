@@ -19,7 +19,7 @@ import org.json.JSONObject;
 class ServiceConfig {
     public String hostname;
 
-    public ServiceConfig(JSONObject json) {
+    public void setConfig(JSONObject json) {
         this.hostname = json.optString("auth", "gocarrot.com");
     }
 

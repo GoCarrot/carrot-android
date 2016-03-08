@@ -363,66 +363,27 @@ public class Teak extends BroadcastReceiver {
                 Teak.asyncExecutor = Executors.newCachedThreadPool();
             }
 
-            // Services config
-            Teak.serviceConfig = new FutureTask<ServiceConfig>(new Callable<ServiceConfig>() {
-                public ServiceConfig call() {
-                    ServiceConfig ret = null;
-
-                    HttpsURLConnection connection = null;
+            // Service config
+            final ServiceConfig config = new ServiceConfig();
+            HashMap<String, Object> payload = new HashMap<String, Object>();
+            payload.put("id", Teak.appId);
+            Teak.serviceConfig = new FutureTask<ServiceConfig>(new Request("POST", "gocarrot.com", "/games/" + Teak.appId + "/settings.json", payload) {
+                @Override
+                protected void done(int responseCode, String responseBody) {
                     try {
-                        String queryString = "?sdk_version=" + URLEncoder.encode(Teak.SDKVersion, "UTF-8") +
-                                "&sdk_platform=" + URLEncoder.encode("android_" + android.os.Build.VERSION.RELEASE, "UTF-8") +
-                                "&game_id=" + URLEncoder.encode(Teak.appId, "UTF-8") +
-                                "&app_version=" + Teak.appVersion;
-                        URL url = new URL("https", TEAK_SERVICES_HOSTNAME, "/services.json" + queryString);
-                        connection = (HttpsURLConnection) url.openConnection();
-                        connection.setRequestProperty("Accept-Charset", "UTF-8");
-                        connection.setUseCaches(false);
+                        JSONObject response = new JSONObject(responseBody);
+                        config.setConfig(response);
 
-                        // Get Response
-                        InputStream is = null;
-                        if (connection.getResponseCode() < 400) {
-                            is = connection.getInputStream();
-                        } else {
-                            is = connection.getErrorStream();
+                        if(Teak.isDebug) {
+                            Log.d(LOG_TAG, "Services response (" + responseCode + "): " + response.toString(2));
+                            Log.d(LOG_TAG, "Service Config " + config.toString());
                         }
-                        BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-                        String line;
-                        StringBuffer response = new StringBuffer();
-                        while ((line = rd.readLine()) != null) {
-                            response.append(line);
-                            response.append('\r');
-                        }
-                        rd.close();
 
-                        // Read the JSON
-                        if (connection.getResponseCode() < 400) {
-                            JSONObject json = new JSONObject(response.toString());
-                            if (Teak.isDebug) {
-                                Log.d(LOG_TAG, "Services configuration returned: " + json.toString(2));
-                            }
-
-                            ret = new ServiceConfig(json);
-
-                            if (Teak.isDebug) {
-                                Log.d(LOG_TAG, "Service configuration complete: " + ret.toString());
-                            }
-
-                            // Heartbeat will block on userId Future, which is fine
-                            startHeartbeat();
-                        } else {
-                            Log.e(LOG_TAG, "Error performing service configuration: " + connection.getResponseCode());
-                        }
-                    } catch (Exception e) {
-
-                    } finally {
-                        connection.disconnect();
-                        connection = null;
-                    }
-
-                    return ret;
+                        // Heartbeat will block on userId Future, which is fine
+                        startHeartbeat();
+                    } catch(Exception ignored) {}
                 }
-            });
+            }, config);
             Teak.asyncExecutor.execute(Teak.serviceConfig);
 
             // Adds executor task that waits on userId and other Futures
