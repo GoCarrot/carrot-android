@@ -476,6 +476,8 @@ public class Teak extends BroadcastReceiver {
 
                 HashMap<String, Object> payload = new HashMap<String, Object>();
 
+                payload.put("happened_at", dateIssued.getTime() / 1000); // Milliseconds -> Seconds
+
                 if(Teak.userIdentifiedThisSession) {
                     payload.put("do_not_track_event", Boolean.TRUE);
                 }
