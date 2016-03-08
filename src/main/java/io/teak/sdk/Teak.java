@@ -32,6 +32,8 @@ import android.os.Handler;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 
+import android.telephony.TelephonyManager;
+
 import android.util.Log;
 
 import org.json.JSONObject;
@@ -147,6 +149,7 @@ public class Teak extends BroadcastReceiver {
     static boolean userIdentifiedThisSession;
     static Date lastSessionEndedAt;
     static SQLiteDatabase database;
+    static String deviceId;
 
     static final String LOG_TAG = "Teak";
 
@@ -168,6 +171,15 @@ public class Teak extends BroadcastReceiver {
         @Override
         public void onActivityCreated(final Activity activity, Bundle savedInstanceState) {
             if(activity != Teak.mainActivity) return;
+
+            // Unique device id
+            final TelephonyManager tm = (TelephonyManager)activity.getBaseContext().getSystemService(Context.TELEPHONY_SERVICE);
+            final String tmDevice, tmSerial, androidId;
+            tmDevice = "" + tm.getDeviceId();
+            tmSerial = "" + tm.getSimSerialNumber();
+            androidId = "" + android.provider.Settings.Secure.getString(activity.getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
+            UUID deviceUuid = new UUID(androidId.hashCode(), ((long)tmDevice.hashCode() << 32) | tmSerial.hashCode());
+            Teak.deviceId = deviceUuid.toString();
 
              // Check for debug build
             Teak.isDebug = ((Boolean) Helpers.getBuildConfigValue(activity, "DEBUG")) == Boolean.TRUE;
@@ -477,6 +489,8 @@ public class Teak extends BroadcastReceiver {
                 HashMap<String, Object> payload = new HashMap<String, Object>();
 
                 payload.put("happened_at", dateIssued.getTime() / 1000); // Milliseconds -> Seconds
+
+                payload.put("device_id", Teak.deviceId);
 
                 if(Teak.userIdentifiedThisSession) {
                     payload.put("do_not_track_event", Boolean.TRUE);
