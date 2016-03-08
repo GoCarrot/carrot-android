@@ -484,12 +484,7 @@ public class Teak extends BroadcastReceiver {
 
                 String locale = Locale.getDefault().toString();
                 payload.put("locale", locale);
-/*
-                // TODO: Make sure I can kill this, ask Alex
-                if (mFbAttributionId != null) {
-                    payload.put("fb_attribution_id", mFbAttributionId);
-                }
-*/
+
                 try {
                     AdvertisingInfo adInfo = Teak.adInfo.get(5L, TimeUnit.SECONDS);
                     if(adInfo != null) {
