@@ -153,8 +153,8 @@ public class Teak extends BroadcastReceiver {
 
     static final String LOG_TAG = "Teak";
 
-    private static final String TEAK_API_KEY = "TEAK_API_KEY";
-    private static final String TEAK_APP_ID = "TEAK_APP_ID";
+    private static final String TEAK_API_KEY = "io_teak_api_key";
+    private static final String TEAK_APP_ID = "io_teak_app_id";
 
     private static final String TEAK_PREFERENCES_FILE = "io.teak.sdk.Preferences";
     private static final String TEAK_PREFERENCE_GCM_ID = "io.teak.sdk.Preferences.GcmId";
@@ -194,17 +194,17 @@ public class Teak extends BroadcastReceiver {
 
             // Get the API Key
             if (Teak.apiKey == null) {
-                Teak.apiKey = (String) Helpers.getBuildConfigValue(activity, TEAK_API_KEY);
+                Teak.apiKey = Helpers.getStringResourceByName(TEAK_API_KEY, activity);
                 if (Teak.apiKey == null) {
-                    throw new RuntimeException("Failed to find BuildConfig." + TEAK_API_KEY);
+                    throw new RuntimeException("Failed to find R.string." + TEAK_API_KEY);
                 }
             }
 
             // Get the App Id
             if (Teak.appId == null) {
-                Teak.appId = (String) Helpers.getBuildConfigValue(activity, TEAK_APP_ID);
+                Teak.appId = Helpers.getStringResourceByName(TEAK_APP_ID, activity);
                 if (Teak.appId == null) {
-                    throw new RuntimeException("Failed to find BuildConfig." + TEAK_APP_ID);
+                    throw new RuntimeException("Failed to find R.string." + TEAK_APP_ID);
                 }
             }
 

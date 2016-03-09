@@ -30,6 +30,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 class Helpers {
+    static String getStringResourceByName(String name, Context context) {
+      String packageName = context.getPackageName();
+      int resId = context.getResources().getIdentifier(name, "string", packageName);
+      return context.getString(resId);
+    }
+
     static Object getBuildConfigValue(Context context, String fieldName) {
         try {
             Class<?> clazz = Class.forName(context.getPackageName() + ".BuildConfig");
