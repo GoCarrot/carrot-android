@@ -15,7 +15,6 @@
 package io.teak.sdk;
 
 import android.os.Bundle;
-import android.os.PowerManager;
 
 import android.content.Intent;
 import android.content.Context;
@@ -452,12 +451,6 @@ public class TeakNotification {
         PendingIntent pushOpenedPendingIntent = PendingIntent.getBroadcast(context, ret.platformId, pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
         builder.setContentIntent(pushOpenedPendingIntent);
         notificationManager.notify(NOTIFICATION_TAG, ret.platformId, builder.build());
-
-        // Wake the screen
-        PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-        PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, Teak.LOG_TAG);
-        wakeLock.acquire();
-        wakeLock.release();
 
         return ret;
     }
