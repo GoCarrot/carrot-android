@@ -99,6 +99,7 @@ class CachedRequest extends Request implements Runnable {
                 Teak.database.update("cache", values, "rowid = " + this.cacheId, null);
             }
         }
+        super.done(responseCode, responseBody);
     }
 
     private static List<CachedRequest> requestsInCache() {

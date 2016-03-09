@@ -322,6 +322,7 @@ public class Teak extends BroadcastReceiver {
                                 Log.d(LOG_TAG, "Teak configuration valid for: " + response.getString("name"));
                             }
                         } catch(Exception ignored) {}
+                        super.done(responseCode, responseBody);
                     }
                 });
             }
@@ -530,7 +531,22 @@ public class Teak extends BroadcastReceiver {
                 Log.d(LOG_TAG, "        Timezone: " + tzOffset);
                 Log.d(LOG_TAG, "          Locale: " + locale);
 
-                Teak.asyncExecutor.submit(new CachedRequest("/games/" + Teak.appId + "/users.json", payload, dateIssued));
+                Teak.asyncExecutor.submit(new CachedRequest("/games/" + Teak.appId + "/users.json", payload, dateIssued) {
+                    @Override
+                    protected void done(int responseCode, String responseBody) {
+                        try {
+                            JSONObject response = new JSONObject(responseBody);
+
+                            // TODO: Grab 'id' and 'game_id' from response and store for Parsnip
+
+                            if(Teak.isDebug) {
+                                Log.d(LOG_TAG, "identifyUser response: " + response.toString(2));
+                            }
+                        } catch(Exception ignored) {}
+
+                        super.done(responseCode, responseBody);
+                    }
+                });
             }
         });
     }
