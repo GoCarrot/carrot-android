@@ -16,14 +16,18 @@
 -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="io.teak.sdk"
-    android:versionCode="1"
-    android:versionName="1.0" >
+    package="io.teak.sdk">
 
-    <uses-sdk
-        android:minSdkVersion="14"
-        android:targetSdkVersion="19" />
-
-    <application android:allowBackup="true">
+    <application>
+        <receiver android:name="io.teak.sdk.Teak"
+                  android:exported="true"
+                  android:permission="com.google.android.c2dm.permission.SEND">
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+                <action android:name="com.google.android.c2dm.intent.REGISTRATION" />
+                <action android:name="com.mavenhut.solitaire.intent.TEAK_PUSH_OPENED" />
+                <category android:name="com.mavenhut.solitaire" /> <!-- Hax -->
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

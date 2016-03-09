@@ -597,12 +597,17 @@ public class Teak extends BroadcastReceiver {
         } else if(GCM_RECEIVE_INTENT_ACTION.equals(action)) {
             TeakNotification notif = TeakNotification.notificationFromIntent(context, intent);
 
+            // TODO: Send Notification Received Metric
+
             // Send out inbox broadcast
             LocalBroadcastManager.getInstance(Teak.mainActivity).sendBroadcast(new Intent(TeakNotification.TEAK_INBOX_HAS_NOTIFICATIONS_INTENT));
+
+            // Hax
+            if(notif != null) {
+                notif.consumeNotification();
+            }
         } else if(action.endsWith(TeakNotification.TEAK_PUSH_OPENED_INTENT_ACTION_SUFFIX)) {
             Bundle bundle = intent.getExtras();
-
-            // TODO: Send opened metric (remember the app may not be active)
 
             // Set the notification id
             Teak.launchedFromTeakNotifId = bundle.getString("teakNotifId");
@@ -686,11 +691,13 @@ public class Teak extends BroadcastReceiver {
                     Log.d(LOG_TAG, "Purchase activity has succeeded.");
                 }
 
-                // TODO: Tell Teak about the purchase
+                // TODO: Payload
             } else {
                 if(Teak.isDebug) {
                     Log.d(LOG_TAG, "Purchase activity has failed.");
                 }
+
+                // TODO: Payload
             }
 
             if(Teak.isDebug) {
@@ -702,7 +709,7 @@ public class Teak extends BroadcastReceiver {
                 Log.d(LOG_TAG, "Data signature: " + dataSignature);
             }
 
-            // Send request
+            // TODO: Send request
             /*
             Teak.asyncExecutor.submit(new Runnable() {
                 public void run() {
