@@ -573,17 +573,6 @@ public class Teak extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
 
-            // <debug>
-            Log.d(LOG_TAG, "Intent received: " + action);
-            Bundle dbundle = intent.getExtras();
-            if (dbundle != null && !dbundle.isEmpty()) {
-                for (String key : dbundle.keySet()) {
-                    Object value = dbundle.get(key);
-                    Log.d(LOG_TAG, String.format("    %s %s (%s)", key, value.toString(), value.getClass().getName()));
-                }
-            }
-            // </debug>
-
         if(GCM_REGISTRATION_INTENT_ACTION.equals(action)) {
             // Store off the GCM Id and app version
             try {
