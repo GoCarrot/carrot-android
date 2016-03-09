@@ -360,11 +360,6 @@ public class Teak extends BroadcastReceiver {
                 Log.d(LOG_TAG, "Lifecycle - onActivityPaused");
             }
 
-            if(Teak.asyncExecutor != null) {
-                Teak.asyncExecutor.shutdown();
-                Teak.asyncExecutor = null;
-            }
-
             if(Teak.heartbeatService != null) {
                 Teak.heartbeatService.shutdown();
                 Teak.heartbeatService = null;
@@ -381,10 +376,6 @@ public class Teak extends BroadcastReceiver {
 
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityResumed");
-            }
-
-            if(Teak.asyncExecutor == null) {
-                Teak.asyncExecutor = Executors.newCachedThreadPool();
             }
 
             // Service config
