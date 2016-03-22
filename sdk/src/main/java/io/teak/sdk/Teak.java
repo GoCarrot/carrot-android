@@ -455,7 +455,9 @@ public class Teak extends BroadcastReceiver {
             Teak.asyncExecutor.execute(Teak.serviceConfig);
 
             // Adds executor task that waits on userId and other Futures
-            if(Teak.lastSessionEndedAt == null || new Date().getTime() - Teak.lastSessionEndedAt.getTime() > SAME_SESSION_TIME_DELTA) {
+            if(Teak.launchedFromTeakNotifId != null ||
+                Teak.lastSessionEndedAt == null ||
+                new Date().getTime() - Teak.lastSessionEndedAt.getTime() > SAME_SESSION_TIME_DELTA) {
                 identifyUser();
             }
 
@@ -603,7 +605,7 @@ public class Teak extends BroadcastReceiver {
     static BroadcastReceiver localBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-                    String action = intent.getAction();
+            String action = intent.getAction();
             if (FacebookAccessTokenBroadcast.UPDATED_ACCESS_TOKEN_INTENT_ACTION.equals(action)) {
                 if(Teak.isDebug) {
                     Log.d(LOG_TAG, "Facebook Access Token updated.");
