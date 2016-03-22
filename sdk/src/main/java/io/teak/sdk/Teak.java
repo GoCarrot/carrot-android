@@ -28,6 +28,7 @@ import android.support.v4.content.LocalBroadcastManager;
 
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.AsyncTask;
 
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
@@ -155,6 +156,7 @@ public class Teak extends BroadcastReceiver {
 
     private static final String TEAK_API_KEY = "io_teak_api_key";
     private static final String TEAK_APP_ID = "io_teak_app_id";
+    private static final String TEAK_GCM_SENDER_ID = "io_teak_gcm_sender_id";
 
     private static final String TEAK_PREFERENCES_FILE = "io.teak.sdk.Preferences";
     private static final String TEAK_PREFERENCE_GCM_ID = "io.teak.sdk.Preferences.GcmId";
@@ -252,6 +254,29 @@ public class Teak extends BroadcastReceiver {
                     Log.d(LOG_TAG, "GCM Id found in cache: " + storedGcmId);
                 }
                 Teak.gcmIdQueue.offer(storedGcmId);
+            } else {
+                // If io_teak_gcm_sender_id is available, do the registration ourselves.
+                try {
+                    final String senderId = Helpers.getStringResourceByName(TEAK_GCM_SENDER_ID, activity);
+                    if (senderId != null) {
+                        if (Teak.isDebug) {
+                            Log.d(LOG_TAG, "Registering for GCM with sender id: " + senderId);
+                        }
+
+                        // Register for GCM in the background
+                        Teak.asyncExecutor.submit(new Runnable() {
+                            public void run() {
+                                try {
+                                    GoogleCloudMessaging gcm = GoogleCloudMessaging.getInstance(activity);
+                                    gcm.register(senderId);
+                                } catch (Exception ex) {
+                                    Log.e(LOG_TAG, ex.toString());
+                                    // TODO: exponential back-off, re-register
+                                }
+                            }
+                        });
+                    }
+                } catch(Exception ignored) {}
             }
 
             Teak.gcmId = new FutureTask<String>(new Callable<String>() {
