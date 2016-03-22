@@ -87,6 +87,12 @@ import java.text.SimpleDateFormat;
  * }</pre>
  * Your Teak App Id and API Key can be found in the Settings for your app on the Teak dashboard.
  *
+ * You may also provide a GCM sender id to Teak, in which case Teak will take care of
+ * registering for a GCM key.
+ * <pre>{@code
+ * <string name="io_teak_gcm_sender_id">YOUR GCM SENDER ID</string>
+ * }</pre>
+ *
  * Next, add Teak to your gradle build.
  *
  * For Unity, open settings.gradle and add the line:
