@@ -75,7 +75,31 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 
 /**
- * 
+ * Working with Teak on Android.
+ *
+ * Firstly, add a <code>teak.xml</code> file into your res/values folder.
+ * <pre>{@code
+ * <?xml version="1.0" encoding="utf-8"?>
+ * <resources>
+ *   <string name="io_teak_app_id">YOUR TEAK APP ID</string>
+ *   <string name="io_teak_api_key">YOUR TEAK API KEY</string>
+ * </resources>
+ * }</pre>
+ * Your Teak App Id and API Key can be found in the Settings for your app on the Teak dashboard.
+ *
+ * Next, add Teak to your gradle build.
+ *
+ * For Unity, open settings.gradle and add the line:
+ * <pre>{@code project(':teak').projectDir=new File('teak-android/sdk') }</pre>
+ *
+ * And then open app/build.gradle and add the following line to dependencies:
+ * <pre>{@code compile project(':teak') }</pre>
+ *
+ * Add the following as the <i>first line</i> of onCreate function of UnityPlayerNativeActivity:
+ * <pre>{@code Teak.onCreate(this); }</pre>
+ *
+ * Add the following as the <i>first line</i> of onActivityResult function of UnityPlayerNativeActivity:
+ * <pre>{@code Teak.onActivityResult(requestCode, resultCode, data); }</pre>
  */
 public class Teak extends BroadcastReceiver {
 
