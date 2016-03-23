@@ -144,6 +144,18 @@ public class Teak extends BroadcastReceiver {
         }
     }
 
+    public static void onNewIntent(Intent intent) {
+        Bundle bundle = intent.getExtras();
+        if(Teak.isDebug) {
+            Log.d(LOG_TAG, "Lifecycle - onNewIntent");
+        }
+
+        if(bundle != null) {
+            // Set the notification id
+            Teak.launchedFromTeakNotifId = bundle.getString("teakNotifId");
+        }
+    }
+
     /**
      * Tell Teak how it should identify the current user.
      *
@@ -662,24 +674,30 @@ public class Teak extends BroadcastReceiver {
         } else if(action.endsWith(TeakNotification.TEAK_PUSH_OPENED_INTENT_ACTION_SUFFIX)) {
             Bundle bundle = intent.getExtras();
 
-            // Set the notification id
-            Teak.launchedFromTeakNotifId = bundle.getString("teakNotifId");
+            // Cancel the update
+            TeakNotification.cancel(context, bundle.getInt("platformId"));
+            Log.d(LOG_TAG, "Bundle: " + bundle.toString());
 
             // Launch the app
             if(!bundle.getBoolean("noAutolaunch")) {
                 if(Teak.isDebug) {
-                    Log.d(LOG_TAG, "Notification (" + Teak.launchedFromTeakNotifId + ") opened, auto-launching app.");
+                    Log.d(LOG_TAG, "Notification (" + bundle.getString("teakNotifId") + ") opened, auto-launching app.");
                 }
                 Intent launchIntent  = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
                 launchIntent.addCategory("android.intent.category.LAUNCHER");
-                launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+                launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 launchIntent.putExtras(bundle);
                 context.startActivity(launchIntent);
             } else {
                 if(Teak.isDebug) {
-                    Log.d(LOG_TAG, "Notification (" + Teak.launchedFromTeakNotifId + ") opened, NOT auto-launching app (noAutoLaunch flag present, and set to true).");
+                    Log.d(LOG_TAG, "Notification (" + bundle.getString("teakNotifId") + ") opened, NOT auto-launching app (noAutoLaunch flag present, and set to true).");
                 }
             }
+        } else if(action.endsWith(TeakNotification.TEAK_PUSH_CLEARED_INTENT_ACTION_SUFFIX)) {
+            Bundle bundle = intent.getExtras();
+            TeakNotification.cancel(context, bundle.getInt("platformId"));
+
+            // TODO: Metric?
         }
     }
 

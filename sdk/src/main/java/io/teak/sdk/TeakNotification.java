@@ -15,6 +15,7 @@
 package io.teak.sdk;
 
 import android.os.Bundle;
+import android.os.SystemClock;
 
 import android.content.Intent;
 import android.content.Context;
@@ -25,12 +26,16 @@ import android.content.pm.ApplicationInfo;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 
+import android.app.Notification;
 import android.app.PendingIntent;
+
+import android.widget.RemoteViews;
 
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 
 import android.util.Log;
+import android.util.SparseArray;
 
 import java.util.List;
 import java.util.Random;
@@ -66,6 +71,7 @@ import org.json.JSONException;
  *   message        : string  - the body text of the notification,
  *   title          : string  - the title of the notification,
  *   tickerText     : string  - text for the ticker at the top of the screen,
+ *   longText       : string  - text displayed when the notification is expanded,
  *   [extras]       : string  - JSON encoded extra data
  * }
  * }
@@ -82,6 +88,8 @@ public class TeakNotification {
      * This allows you to take special actions, it is not required that you listen for it.
      */
     public static final String TEAK_PUSH_OPENED_INTENT_ACTION_SUFFIX = ".intent.TEAK_PUSH_OPENED";
+
+    public static final String TEAK_PUSH_CLEARED_INTENT_ACTION_SUFFIX = ".intent.TEAK_PUSH_CLEARED";
 
     /**
      * Intent action used by Teak to notify you that there are pending inbox notifications.
@@ -344,15 +352,19 @@ public class TeakNotification {
     String title;
     String message;
     String tickerText;
+    String longText;
     String teakRewardId;
     int platformId;
     long teakNotifId;
     JSONObject extras;
 
+    static SparseArray<Thread> notificationUpdateThread = new SparseArray<Thread>();
+
     private TeakNotification(Bundle bundle) {
         this.title = bundle.getString("title");
         this.message = bundle.getString("message");
         this.tickerText = bundle.getString("tickerText");
+        this.longText = bundle.getString("longText");
         this.teakRewardId = bundle.getString("teakRewardId");
         try {
             this.extras = bundle.getString("extras") == null ? null : new JSONObject(bundle.getString("extras"));
@@ -381,24 +393,26 @@ public class TeakNotification {
     private TeakNotification(String json) throws JSONException {
         JSONObject contents = new JSONObject(json);
 
-        title = contents.getString("title");
-        message = contents.getString("message");
-        tickerText = contents.getString("tickerText");
-        teakRewardId = contents.getString("teakRewardId");
-        platformId = contents.getInt("platformId");
-        teakNotifId = contents.getLong("teakNotifId");
+        this.title = contents.getString("title");
+        this.message = contents.getString("message");
+        this.tickerText = contents.getString("tickerText");
+        this.longText = contents.getString("longText");
+        this.teakRewardId = contents.getString("teakRewardId");
+        this.platformId = contents.getInt("platformId");
+        this.teakNotifId = contents.getLong("teakNotifId");
         this.extras = contents.optJSONObject("extras");
     }
 
     private String toJson() {
         JSONObject json = new JSONObject();
         try {
-            json.put("title", title);
-            json.put("message", message);
-            json.put("tickerText", tickerText);
-            json.put("teakRewardId", teakRewardId);
-            json.put("platformId", Integer.valueOf(platformId));
-            json.put("teakNotifId", Long.valueOf(teakNotifId));
+            json.put("title", this.title);
+            json.put("message", this.message);
+            json.put("tickerText", this.tickerText);
+            json.put("longText", this.longText);
+            json.put("teakRewardId", this.teakRewardId);
+            json.put("platformId", Integer.valueOf(this.platformId));
+            json.put("teakNotifId", Long.valueOf(this.teakNotifId));
             if(this.extras != null) { json.put("extras", this.extras); }
         } catch(JSONException e) {
             Log.e(Teak.LOG_TAG, "Error converting TeakNotification to JSON: " + Log.getStackTraceString(e));
@@ -412,6 +426,7 @@ public class TeakNotification {
         }
     }
 
+    static NotificationManagerCompat notificationManager;
     static TeakNotification notificationFromIntent(Context context, Intent intent) {
         Bundle bundle = intent.getExtras();
 
@@ -419,19 +434,23 @@ public class TeakNotification {
             return null;
         }
 
-        TeakNotification ret = new TeakNotification(bundle);
-
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
-
-        // TODO: If auto-dismiss
-        if (true) {
-            builder.setAutoCancel(true);
+        if(notificationManager == null) {
+            notificationManager = NotificationManagerCompat.from(context);
         }
 
+        final TeakNotification ret = new TeakNotification(bundle);
+
+        // Add platformId to bundle
+        Log.d(Teak.LOG_TAG, "Bundle before: " + bundle);
+        bundle.putInt("platformId", ret.platformId);
+        Log.d(Teak.LOG_TAG, "Bundle after: " + bundle);
+        Log.d(Teak.LOG_TAG, "platformId: " + ret.platformId);
+        //final NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
+        final NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
+
         // TODO: Custom icon resource support
-        PackageManager pm = context.getPackageManager();
         try {
+            PackageManager pm = context.getPackageManager();
             ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
             builder.setSmallIcon(ai.icon);
         } catch (Exception e) {
@@ -441,17 +460,54 @@ public class TeakNotification {
         // Configure notification content
         builder.setContentTitle(ret.title);
         builder.setContentText(ret.message);
-        builder.setTicker(ret.tickerText);
+        if(ret.tickerText != null) {
+            builder.setTicker(ret.tickerText);
+        } else {
+            builder.setTicker(ret.message);
+        }
+        if(ret.longText != null) {
+            builder.setStyle(new NotificationCompat.BigTextStyle().bigText(ret.longText));
+        } else {
+            builder.setStyle(new NotificationCompat.BigTextStyle().bigText(ret.message));
+        }
+
+        // Configue notification behavior
+        builder.setPriority(NotificationCompat.PRIORITY_MAX);
+        builder.setDefaults(NotificationCompat.DEFAULT_ALL);
+        builder.setOnlyAlertOnce(true);
+        builder.setAutoCancel(true);
+
+        // Create intent to fire if/when notification is cleared
+        Intent pushClearedIntent = new Intent(context.getPackageName() + TEAK_PUSH_CLEARED_INTENT_ACTION_SUFFIX);
+        pushClearedIntent.putExtras(bundle);
+        PendingIntent pushClearedPendingIntent = PendingIntent.getBroadcast(context, 0, pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
+        builder.setDeleteIntent(pushClearedPendingIntent);
 
         // Create intent to fire if/when notification is opened, attach bundle info
         Intent pushOpenedIntent = new Intent(context.getPackageName() + TEAK_PUSH_OPENED_INTENT_ACTION_SUFFIX);
         pushOpenedIntent.putExtras(bundle);
-
-        // Send out the actual notification, with the push-opened intent
-        PendingIntent pushOpenedPendingIntent = PendingIntent.getBroadcast(context, ret.platformId, pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
+        PendingIntent pushOpenedPendingIntent = PendingIntent.getBroadcast(context, 0, pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
         builder.setContentIntent(pushOpenedPendingIntent);
+
+        // Send it out
+        if(Teak.isDebug) {
+            Log.d(Teak.LOG_TAG, "Showing notification id: " + ret.platformId);
+            Log.d(Teak.LOG_TAG, "Showing teak notification id: " + ret.teakNotifId);
+        }
         notificationManager.notify(NOTIFICATION_TAG, ret.platformId, builder.build());
 
         return ret;
+    }
+
+    static void cancel(Context context, int platformId) {
+        if(Teak.isDebug) {
+            Log.d(Teak.LOG_TAG, "Canceling notification id: " + platformId);
+        }
+
+        notificationManager.cancel(NOTIFICATION_TAG, platformId);
+        Thread updateThread = TeakNotification.notificationUpdateThread.get(platformId);
+        if(updateThread != null) {
+            updateThread.interrupt();
+        }
     }
 }
