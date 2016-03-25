@@ -123,7 +123,8 @@ class FacebookAccessTokenBroadcast {
         }
 
         if(fbSdkVersion != null) {
-            String[] versionStrings = fbSdkVersion.split("\\.");
+            String[] fbSDKs = fbSdkVersion.split("/");
+            String[] versionStrings = fbSDKs[0].split("\\.");
             int[] versionInts = new int[versionStrings.length];
             for(int i = 0; i < versionStrings.length; i++) {
                 versionInts[i] = Integer.parseInt(versionStrings[i]);
