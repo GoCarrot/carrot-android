@@ -52,7 +52,7 @@ class CachedRequest extends Request implements Runnable {
         values.put("request_date", this.dateIssued.getTime());
         values.put("retry_count", 0);
 
-        if(Teak.database != null) {
+        if (Teak.database != null) {
             this.cacheId = Teak.database.insert("cache", null, values);
         }
 
@@ -63,7 +63,7 @@ class CachedRequest extends Request implements Runnable {
 
     public static void submitCachedRequests() {
         List<CachedRequest> requests = CachedRequest.requestsInCache();
-        for(CachedRequest request : requests) {
+        for (CachedRequest request : requests) {
             Teak.asyncExecutor.submit(request);
         }
     }
@@ -90,8 +90,8 @@ class CachedRequest extends Request implements Runnable {
 
     @Override
     protected void done(int responseCode, String responseBody) {
-        if(Teak.database != null) {
-            if(responseCode < 500) {
+        if (Teak.database != null) {
+            if (responseCode < 500) {
                 Teak.database.delete("cache", "rowid = " + this.cacheId, null);
             } else {
                 ContentValues values = new ContentValues();
@@ -105,7 +105,7 @@ class CachedRequest extends Request implements Runnable {
     private static List<CachedRequest> requestsInCache() {
         List<CachedRequest> requests = new ArrayList<CachedRequest>();
 
-        if(Teak.database != null) {
+        if (Teak.database != null) {
             Cursor cursor = Teak.database.query("cache", REQUEST_CACHE_READ_COLUMNS, null, null, null, null, "retry_count");
             cursor.moveToFirst();
             while (!cursor.isAfterLast()) {

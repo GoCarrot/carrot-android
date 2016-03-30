@@ -77,7 +77,7 @@ import java.text.SimpleDateFormat;
 
 /**
  * Working with Teak on Android.
- *
+ * <p/>
  * Firstly, add a <code>teak.xml</code> file into your res/values folder.
  * <pre>{@code
  * <?xml version="1.0" encoding="utf-8"?>
@@ -87,35 +87,37 @@ import java.text.SimpleDateFormat;
  * </resources>
  * }</pre>
  * Your Teak App Id and API Key can be found in the Settings for your app on the Teak dashboard.
- *
+ * <p/>
  * You may also provide a GCM sender id to Teak, in which case Teak will take care of
  * registering for a GCM key.
  * <pre>{@code
  * <string name="io_teak_gcm_sender_id">YOUR GCM SENDER ID</string>
  * }</pre>
- *
+ * <p/>
  * Next, add Teak to your gradle build.
- *
+ * <p/>
  * For Unity, open settings.gradle and add the line:
  * <pre>{@code project(':teak').projectDir=new File('teak-android/sdk') }</pre>
- *
+ * <p/>
  * And then open app/build.gradle and add the following line to dependencies:
  * <pre>{@code compile project(':teak') }</pre>
- *
+ * <p/>
  * Add the following as the <i>first line</i> of onCreate function of UnityPlayerNativeActivity:
  * <pre>{@code Teak.onCreate(this); }</pre>
- *
+ * <p/>
  * Add the following as the <i>first line</i> of onActivityResult function of UnityPlayerNativeActivity:
  * <pre>{@code Teak.onActivityResult(requestCode, resultCode, data); }</pre>
  */
 public class Teak extends BroadcastReceiver {
 
-    /** Version of the Teak SDK. */
+    /**
+     * Version of the Teak SDK.
+     */
     public static final String SDKVersion = "2.0";
 
     /**
      * Initialize Teak and tell it to listen to the lifecycle events of {@link Activity}.
-     *
+     * <p/>
      * <p>Call this function from the {@link Activity#onCreate} function of your <code>Activity</code>
      * <b>before</b> the call to <code>super.onCreate()</code></p>
      *
@@ -128,30 +130,30 @@ public class Teak extends BroadcastReceiver {
 
     /**
      * Tell Teak about the result of an {@link Activity} started by your app.
-     *
+     * <p/>
      * <p>This allows Teak to automatically get the results of In-App Purchase events.</p>
      *
      * @param requestCode The <code>requestCode</code> parameter received from {@link Activity#onActivityResult}
-     * @param resultCode The <code>resultCode</code> parameter received from {@link Activity#onActivityResult}
-     * @param data The <code>data</code> parameter received from {@link Activity#onActivityResult}
+     * @param resultCode  The <code>resultCode</code> parameter received from {@link Activity#onActivityResult}
+     * @param data        The <code>data</code> parameter received from {@link Activity#onActivityResult}
      */
     public static void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (Teak.isDebug) {
             Log.d(LOG_TAG, "Lifecycle - onActivityResult");
         }
 
-        if(data != null) {
+        if (data != null) {
             checkActivityResultForPurchase(resultCode, data);
         }
     }
 
     public static void onNewIntent(Intent intent) {
         Bundle bundle = intent.getExtras();
-        if(Teak.isDebug) {
+        if (Teak.isDebug) {
             Log.d(LOG_TAG, "Lifecycle - onNewIntent");
         }
 
-        if(bundle != null) {
+        if (bundle != null) {
             // Set the notification id
             Teak.launchedFromTeakNotifId = bundle.getString("teakNotifId");
         }
@@ -159,13 +161,13 @@ public class Teak extends BroadcastReceiver {
 
     /**
      * Tell Teak how it should identify the current user.
-     *
+     * <p/>
      * <p>This should be the same way you identify the user in your backend.</p>
      *
      * @param userIdentifier An identifier which is unique for the current user.
      */
     public static void identifyUser(String userIdentifier) {
-        if(!Teak.userId.isDone()) {
+        if (!Teak.userId.isDone()) {
             Teak.userIdQueue.offer(userIdentifier);
         }
     }
@@ -217,25 +219,25 @@ public class Teak extends BroadcastReceiver {
     static class TeakActivityLifecycleCallbacks implements ActivityLifecycleCallbacks {
         @Override
         public void onActivityCreated(final Activity activity, Bundle savedInstanceState) {
-            if(activity != Teak.mainActivity) return;
+            if (activity != Teak.mainActivity) return;
 
             // Unique device id
-            final TelephonyManager tm = (TelephonyManager)activity.getBaseContext().getSystemService(Context.TELEPHONY_SERVICE);
+            final TelephonyManager tm = (TelephonyManager) activity.getBaseContext().getSystemService(Context.TELEPHONY_SERVICE);
             final String tmDevice, tmSerial, androidId;
             tmDevice = "" + tm.getDeviceId();
             tmSerial = "" + tm.getSimSerialNumber();
             androidId = "" + android.provider.Settings.Secure.getString(activity.getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
-            UUID deviceUuid = new UUID(androidId.hashCode(), ((long)tmDevice.hashCode() << 32) | tmSerial.hashCode());
+            UUID deviceUuid = new UUID(androidId.hashCode(), ((long) tmDevice.hashCode() << 32) | tmSerial.hashCode());
             Teak.deviceId = deviceUuid.toString();
 
-             // Check for debug build
+            // Check for debug build
             Teak.isDebug = ((Boolean) Helpers.getBuildConfigValue(activity, "DEBUG")) == Boolean.TRUE;
 
             // Get current app version
             Teak.appVersion = 0;
             try {
                 Teak.appVersion = activity.getPackageManager().getPackageInfo(activity.getPackageName(), 0).versionCode;
-            } catch(Exception e) {
+            } catch (Exception e) {
                 Log.e(LOG_TAG, Log.getStackTraceString(e));
             }
 
@@ -281,7 +283,7 @@ public class Teak extends BroadcastReceiver {
                             Log.d(LOG_TAG, "User Id ready: " + ret);
                         }
                         return ret;
-                    } catch(InterruptedException e) {
+                    } catch (InterruptedException e) {
                         Log.e(LOG_TAG, Log.getStackTraceString(e));
                     }
                     return null;
@@ -296,7 +298,7 @@ public class Teak extends BroadcastReceiver {
             SharedPreferences preferences = activity.getSharedPreferences(TEAK_PREFERENCES_FILE, Context.MODE_PRIVATE);
             int storedAppVersion = preferences.getInt(TEAK_PREFERENCE_APP_VERSION, 0);
             String storedGcmId = preferences.getString(TEAK_PREFERENCE_GCM_ID, null);
-            if(storedAppVersion == Teak.appVersion && storedGcmId != null) {
+            if (storedAppVersion == Teak.appVersion && storedGcmId != null) {
                 // No need to get a new one, so put it on the blocking queue
                 if (Teak.isDebug) {
                     Log.d(LOG_TAG, "GCM Id found in cache: " + storedGcmId);
@@ -324,7 +326,8 @@ public class Teak extends BroadcastReceiver {
                             }
                         });
                     }
-                } catch(Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
 
             Teak.gcmId = new FutureTask<String>(new Callable<String>() {
@@ -332,7 +335,7 @@ public class Teak extends BroadcastReceiver {
                     try {
                         String ret = Teak.gcmIdQueue.take();
                         return ret;
-                    } catch(InterruptedException e) {
+                    } catch (InterruptedException e) {
                         Log.e(LOG_TAG, Log.getStackTraceString(e));
                     }
                     return null;
@@ -380,7 +383,7 @@ public class Teak extends BroadcastReceiver {
             }
 
             // Validate the app id/key via "/games/#{@appId}/validate_sig.json"
-            if(Teak.isDebug) {
+            if (Teak.isDebug) {
                 HashMap<String, Object> payload = new HashMap<String, Object>();
                 payload.put("id", Teak.appId);
                 Teak.asyncExecutor.execute(new Request("POST", "gocarrot.com", "/games/" + Teak.appId + "/validate_sig.json", payload) {
@@ -388,25 +391,26 @@ public class Teak extends BroadcastReceiver {
                     protected void done(int responseCode, String responseBody) {
                         try {
                             JSONObject response = new JSONObject(responseBody);
-                            if(response.has("error")) {
+                            if (response.has("error")) {
                                 JSONObject error = response.getJSONObject("error");
                                 Log.e(LOG_TAG, "Error in Teak configuration: " + error.getString("message"));
                             } else {
                                 Log.d(LOG_TAG, "Teak configuration valid for: " + response.getString("name"));
                             }
-                        } catch(Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                         super.done(responseCode, responseBody);
                     }
                 });
             }
 
-            if(Teak.isDebug) {
+            if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityCreated");
                 Log.d(LOG_TAG, "        App Id: " + Teak.appId);
                 Log.d(LOG_TAG, "       Api Key: " + Teak.apiKey);
                 Log.d(LOG_TAG, "   App Version: " + Teak.appVersion);
                 Log.d(LOG_TAG, "     App Store: " + Teak.installerPackage);
-                if(Teak.launchedFromTeakNotifId != null) {
+                if (Teak.launchedFromTeakNotifId != null) {
                     Log.d(LOG_TAG, " Teak Notif Id: " + Teak.launchedFromTeakNotifId);
                 }
             }
@@ -414,7 +418,7 @@ public class Teak extends BroadcastReceiver {
 
         @Override
         public void onActivityDestroyed(Activity activity) {
-            if(activity != Teak.mainActivity) return;
+            if (activity != Teak.mainActivity) return;
 
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityDestroyed");
@@ -429,13 +433,13 @@ public class Teak extends BroadcastReceiver {
 
         @Override
         public void onActivityPaused(Activity activity) {
-            if(activity != Teak.mainActivity) return;
+            if (activity != Teak.mainActivity) return;
 
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityPaused");
             }
 
-            if(Teak.heartbeatService != null) {
+            if (Teak.heartbeatService != null) {
                 Teak.heartbeatService.shutdown();
                 Teak.heartbeatService = null;
             }
@@ -447,7 +451,7 @@ public class Teak extends BroadcastReceiver {
 
         @Override
         public void onActivityResumed(Activity activity) {
-            if(activity != Teak.mainActivity) return;
+            if (activity != Teak.mainActivity) return;
 
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityResumed");
@@ -464,7 +468,7 @@ public class Teak extends BroadcastReceiver {
                         JSONObject response = new JSONObject(responseBody);
                         config.setConfig(response);
 
-                        if(Teak.isDebug) {
+                        if (Teak.isDebug) {
                             Log.d(LOG_TAG, "Services response (" + responseCode + "): " + response.toString(2));
                             Log.d(LOG_TAG, "Service Config " + config.toString());
                         }
@@ -474,20 +478,21 @@ public class Teak extends BroadcastReceiver {
 
                         // Submit cached requests
                         CachedRequest.submitCachedRequests();
-                    } catch(Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                 }
             }, config);
             Teak.asyncExecutor.execute(Teak.serviceConfig);
 
             // Adds executor task that waits on userId and other Futures
-            if(Teak.launchedFromTeakNotifId != null ||
-                Teak.lastSessionEndedAt == null ||
-                new Date().getTime() - Teak.lastSessionEndedAt.getTime() > SAME_SESSION_TIME_DELTA) {
+            if (Teak.launchedFromTeakNotifId != null ||
+                    Teak.lastSessionEndedAt == null ||
+                    new Date().getTime() - Teak.lastSessionEndedAt.getTime() > SAME_SESSION_TIME_DELTA) {
                 identifyUser();
             }
 
             // Check for pending inbox messages, and notify app if they exist
-            if(TeakNotification.inboxCount() > 0) {
+            if (TeakNotification.inboxCount() > 0) {
                 LocalBroadcastManager.getInstance(Teak.mainActivity).sendBroadcast(new Intent(TeakNotification.TEAK_INBOX_HAS_NOTIFICATIONS_INTENT));
             }
         }
@@ -499,7 +504,7 @@ public class Teak extends BroadcastReceiver {
             }
 
             // OpenIAB, need to store off the SKU for the purchase failed case
-            if(activity.getClass().getName().equals("org.onepf.openiab.UnityProxyActivity")) {
+            if (activity.getClass().getName().equals("org.onepf.openiab.UnityProxyActivity")) {
                 Bundle bundle = activity.getIntent().getExtras();
                 if (Teak.isDebug) {
                     Log.d(LOG_TAG, "Unity OpenIAB purchase launched: " + bundle.toString());
@@ -509,13 +514,16 @@ public class Teak extends BroadcastReceiver {
         }
 
         @Override
-        public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
+        public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
+        }
+
         @Override
-        public void onActivityStopped(Activity activity) {}
+        public void onActivityStopped(Activity activity) {
+        }
     }
 
     private static void startHeartbeat() {
-        if(Teak.heartbeatService == null) {
+        if (Teak.heartbeatService == null) {
             Teak.heartbeatService = Executors.newSingleThreadScheduledExecutor();
         }
 
@@ -524,12 +532,12 @@ public class Teak extends BroadcastReceiver {
                 String userId = null;
                 try {
                     userId = Teak.userId.get();
-                } catch(Exception e) {
+                } catch (Exception e) {
                     Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
                     return;
                 }
 
-                if(Teak.isDebug) {
+                if (Teak.isDebug) {
                     Log.d(Teak.LOG_TAG, "Sending heartbeat for user: " + userId);
                 }
 
@@ -563,7 +571,7 @@ public class Teak extends BroadcastReceiver {
                 String userId = null;
                 try {
                     userId = Teak.userId.get();
-                } catch(Exception e) {
+                } catch (Exception e) {
                     Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
                     return;
                 }
@@ -574,7 +582,7 @@ public class Teak extends BroadcastReceiver {
 
                 payload.put("device_id", Teak.deviceId);
 
-                if(Teak.userIdentifiedThisSession) {
+                if (Teak.userIdentifiedThisSession) {
                     payload.put("do_not_track_event", Boolean.TRUE);
                 }
                 Teak.userIdentifiedThisSession = true;
@@ -593,18 +601,20 @@ public class Teak extends BroadcastReceiver {
 
                 try {
                     AdvertisingInfo adInfo = Teak.adInfo.get(5L, TimeUnit.SECONDS);
-                    if(adInfo != null) {
+                    if (adInfo != null) {
                         payload.put("android_ad_id", adInfo.adId);
                         payload.put("android_limit_ad_tracking", adInfo.limitAdTracking);
                     }
-                } catch(Exception e) {}
+                } catch (Exception e) {
+                }
 
                 try {
                     String accessToken = Teak.facebookAccessToken.get(5L, TimeUnit.SECONDS);
-                    if(accessToken != null) {
+                    if (accessToken != null) {
                         payload.put("access_token", accessToken);
                     }
-                } catch(Exception e) {}
+                } catch (Exception e) {
+                }
 
                 if (launchedFromTeakNotifId != null) {
                     payload.put("teak_notif_id", new Long(launchedFromTeakNotifId));
@@ -612,10 +622,11 @@ public class Teak extends BroadcastReceiver {
 
                 try {
                     String gcmId = Teak.gcmId.get(5L, TimeUnit.SECONDS);
-                    if(gcmId != null) {
+                    if (gcmId != null) {
                         payload.put("gcm_push_key", gcmId);
                     }
-                } catch(Exception e) {}
+                } catch (Exception e) {
+                }
 
                 Log.d(LOG_TAG, "Identifying user: " + userId);
                 Log.d(LOG_TAG, "        Timezone: " + tzOffset);
@@ -629,10 +640,11 @@ public class Teak extends BroadcastReceiver {
 
                             // TODO: Grab 'id' and 'game_id' from response and store for Parsnip
 
-                            if(Teak.isDebug) {
+                            if (Teak.isDebug) {
                                 Log.d(LOG_TAG, "identifyUser response: " + response.toString(2));
                             }
-                        } catch(Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
 
                         super.done(responseCode, responseBody);
                     }
@@ -646,7 +658,7 @@ public class Teak extends BroadcastReceiver {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
             if (FacebookAccessTokenBroadcast.UPDATED_ACCESS_TOKEN_INTENT_ACTION.equals(action)) {
-                if(Teak.isDebug) {
+                if (Teak.isDebug) {
                     Log.d(LOG_TAG, "Facebook Access Token updated.");
                 }
                 createFacebookAccessTokenFuture();
@@ -663,7 +675,7 @@ public class Teak extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
 
-        if(GCM_REGISTRATION_INTENT_ACTION.equals(action)) {
+        if (GCM_REGISTRATION_INTENT_ACTION.equals(action)) {
             // Store off the GCM Id and app version
             try {
                 Bundle bundle = intent.getExtras();
@@ -673,26 +685,26 @@ public class Teak extends BroadcastReceiver {
                 editor.putString(TEAK_PREFERENCE_GCM_ID, registration);
                 editor.apply();
 
-                if(Teak.isDebug) {
+                if (Teak.isDebug) {
                     Log.d(LOG_TAG, "GCM Id received from registration intent: " + registration);
                 }
 
-                if(Teak.gcmIdQueue != null) {
+                if (Teak.gcmIdQueue != null) {
                     Teak.gcmIdQueue.offer(registration);
                 }
-            } catch(Exception e) {
+            } catch (Exception e) {
                 Log.e(LOG_TAG, "Error storing GCM Id from " + GCM_REGISTRATION_INTENT_ACTION + ":\n" + Log.getStackTraceString(e));
             }
-        } else if(GCM_RECEIVE_INTENT_ACTION.equals(action)) {
+        } else if (GCM_RECEIVE_INTENT_ACTION.equals(action)) {
             TeakNotification notif = TeakNotification.notificationFromIntent(context, intent);
 
             // TODO: Send Notification Received Metric
 
             // Send out inbox broadcast
-            if(Teak.mainActivity != null) {
+            if (Teak.mainActivity != null) {
                 LocalBroadcastManager.getInstance(Teak.mainActivity).sendBroadcast(new Intent(TeakNotification.TEAK_INBOX_HAS_NOTIFICATIONS_INTENT));
             }
-        } else if(action.endsWith(TeakNotification.TEAK_PUSH_OPENED_INTENT_ACTION_SUFFIX)) {
+        } else if (action.endsWith(TeakNotification.TEAK_PUSH_OPENED_INTENT_ACTION_SUFFIX)) {
             Bundle bundle = intent.getExtras();
 
             // Cancel the update
@@ -700,21 +712,21 @@ public class Teak extends BroadcastReceiver {
             Log.d(LOG_TAG, "Bundle: " + bundle.toString());
 
             // Launch the app
-            if(!bundle.getBoolean("noAutolaunch")) {
-                if(Teak.isDebug) {
+            if (!bundle.getBoolean("noAutolaunch")) {
+                if (Teak.isDebug) {
                     Log.d(LOG_TAG, "Notification (" + bundle.getString("teakNotifId") + ") opened, auto-launching app.");
                 }
-                Intent launchIntent  = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+                Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
                 launchIntent.addCategory("android.intent.category.LAUNCHER");
                 launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 launchIntent.putExtras(bundle);
                 context.startActivity(launchIntent);
             } else {
-                if(Teak.isDebug) {
+                if (Teak.isDebug) {
                     Log.d(LOG_TAG, "Notification (" + bundle.getString("teakNotifId") + ") opened, NOT auto-launching app (noAutoLaunch flag present, and set to true).");
                 }
             }
-        } else if(action.endsWith(TeakNotification.TEAK_PUSH_CLEARED_INTENT_ACTION_SUFFIX)) {
+        } else if (action.endsWith(TeakNotification.TEAK_PUSH_CLEARED_INTENT_ACTION_SUFFIX)) {
             Bundle bundle = intent.getExtras();
             TeakNotification.cancel(context, bundle.getInt("platformId"));
 
@@ -728,7 +740,7 @@ public class Teak extends BroadcastReceiver {
                 try {
                     String ret = Teak.facebookAccessTokenQueue.take();
                     return ret;
-                } catch(InterruptedException e) {
+                } catch (InterruptedException e) {
                     Log.e(LOG_TAG, Log.getStackTraceString(e));
                 }
                 return null;
@@ -759,9 +771,8 @@ public class Teak extends BroadcastReceiver {
         if (o == null) {
             Log.e(LOG_TAG, "Intent with no response code, assuming OK (known Google issue)");
             return BILLING_RESPONSE_RESULT_OK;
-        }
-        else if (o instanceof Integer) return ((Integer)o).intValue();
-        else if (o instanceof Long) return (int)((Long)o).longValue();
+        } else if (o instanceof Integer) return ((Integer) o).intValue();
+        else if (o instanceof Long) return (int) ((Long) o).longValue();
         else {
             Log.e(LOG_TAG, "Unexpected type for intent response code.");
             Log.e(LOG_TAG, o.getClass().getName());
@@ -776,7 +787,7 @@ public class Teak extends BroadcastReceiver {
                 Log.d(LOG_TAG, "OpenIAB purchase succeeded: " + purchase.toString(2));
             }
             purchaseSucceeded(purchase); // originalJson
-        } catch(Exception e) {
+        } catch (Exception e) {
             Log.e(LOG_TAG, e.toString());
         }
     }
@@ -793,7 +804,7 @@ public class Teak extends BroadcastReceiver {
         // TODO: Payload must include which app store!
         try {
             Log.d(LOG_TAG, "Purchase succeeded: " + purchaseData.toString(2));
-        } catch(Exception e) {
+        } catch (Exception e) {
 
         }
     }
@@ -810,17 +821,17 @@ public class Teak extends BroadcastReceiver {
         String dataSignature = data.getStringExtra(RESPONSE_INAPP_SIGNATURE);
 
         // Check for purchase activity result
-        if(purchaseData != null && dataSignature != null) {
+        if (purchaseData != null && dataSignature != null) {
             int responseCode = getResponseCodeFromIntent(data);
 
             if (resultCode == Activity.RESULT_OK && responseCode == BILLING_RESPONSE_RESULT_OK) {
                 try {
                     purchaseSucceeded(new JSONObject(purchaseData));
-                } catch(Exception e) {
+                } catch (Exception e) {
                     Log.e(LOG_TAG, "Failed to convert purchase data to JSON.");
                 }
             } else {
-                if(Teak.isDebug) {
+                if (Teak.isDebug) {
                     Log.d(LOG_TAG, "Purchase activity has failed. " + purchaseData);
                 }
 

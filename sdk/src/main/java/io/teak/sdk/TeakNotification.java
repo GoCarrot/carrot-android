@@ -60,7 +60,7 @@ import org.json.JSONException;
 
 /**
  * An app-to-user notification received from Teak via GCM.
- *
+ * <p/>
  * The following parameters from the GCM payload are used to create a <code>TeakNotification</code>.
  * <pre>
  * {@code
@@ -79,12 +79,14 @@ import org.json.JSONException;
  */
 public class TeakNotification {
 
-    /** The 'tag' specified by Teak to the {@link NotificationCompat} */
+    /**
+     * The 'tag' specified by Teak to the {@link NotificationCompat}
+     */
     public static final String NOTIFICATION_TAG = "io.teak.sdk.TeakNotification";
 
     /**
      * The {@link Intent} action sent by Teak when a notification has been opened by the user.
-     *
+     * <p/>
      * This allows you to take special actions, it is not required that you listen for it.
      */
     public static final String TEAK_PUSH_OPENED_INTENT_ACTION_SUFFIX = ".intent.TEAK_PUSH_OPENED";
@@ -93,7 +95,7 @@ public class TeakNotification {
 
     /**
      * Intent action used by Teak to notify you that there are pending inbox notifications.
-     *
+     * <p/>
      * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
      * <pre>
      * {@code
@@ -132,7 +134,7 @@ public class TeakNotification {
         List<TeakNotification> inbox = new ArrayList<TeakNotification>();
         String[] inboxReadColumns = {"notification_payload"};
 
-        if(Teak.database != null) {
+        if (Teak.database != null) {
             Cursor cursor = Teak.database.query("inbox", inboxReadColumns,
                     null, null, null, null, null);
 
@@ -161,9 +163,9 @@ public class TeakNotification {
         TeakNotification notif = null;
         String[] inboxReadColumns = {"notification_payload"};
 
-        if(Teak.database != null) {
+        if (Teak.database != null) {
             Cursor cursor = Teak.database.query("inbox", inboxReadColumns,
-                    "teak_notification_id=?", new String[] {teakNotifId}, null, null, null);
+                    "teak_notification_id=?", new String[]{teakNotifId}, null, null, null);
 
             cursor.moveToFirst();
             if (!cursor.isAfterLast()) {
@@ -186,7 +188,7 @@ public class TeakNotification {
      * @return The number of pending notifications.
      */
     public static long inboxCount() {
-        if(Teak.database != null) {
+        if (Teak.database != null) {
             return DatabaseUtils.queryNumEntries(Teak.database, "inbox", null);
         } else {
             return 0;
@@ -195,54 +197,70 @@ public class TeakNotification {
 
     public class Reward {
 
-        /** An unknown error occured while processing the reward. */
+        /**
+         * An unknown error occured while processing the reward.
+         */
         public static final int UNKNOWN = 1;
 
-        /** Valid reward claim, grant the user the reward. */
+        /**
+         * Valid reward claim, grant the user the reward.
+         */
         public static final int GRANT_REWARD = 0;
 
-        /** The user has attempted to claim a reward from their own social post. */
+        /**
+         * The user has attempted to claim a reward from their own social post.
+         */
         public static final int SELF_CLICK = -1;
 
-        /** The user has already been issued this reward. */
+        /**
+         * The user has already been issued this reward.
+         */
         public static final int ALREADY_CLICKED = -2;
 
-        /** The reward has already been claimed its maximum number of times globally. */
+        /**
+         * The reward has already been claimed its maximum number of times globally.
+         */
         public static final int TOO_MANY_CLICKS = -3;
 
-        /** The user has already claimed their maximum number of rewards of this type for the day. */
+        /**
+         * The user has already claimed their maximum number of rewards of this type for the day.
+         */
         public static final int EXCEED_MAX_CLICKS_FOR_DAY = -4;
 
-        /** This reward has expired and is no longer valid. */
+        /**
+         * This reward has expired and is no longer valid.
+         */
         public static final int EXPIRED = -5;
 
-        /** Teak does not recognize this reward id. */
+        /**
+         * Teak does not recognize this reward id.
+         */
         public static final int INVALID_POST = -6;
 
         /**
          * Status of this reward.
-         *
+         * <p/>
          * One of the following status codes:
-         *   {@link Reward#UNKNOWN}
-         *   {@link Reward#GRANT_REWARD}
-         *   {@link Reward#SELF_CLICK}
-         *   {@link Reward#ALREADY_CLICKED}
-         *   {@link Reward#TOO_MANY_CLICKS}
-         *   {@link Reward#EXCEED_MAX_CLICKS_FOR_DAY}
-         *   {@link Reward#EXPIRED}
-         *   {@link Reward#INVALID_POST}
-         *
+         * {@link Reward#UNKNOWN}
+         * {@link Reward#GRANT_REWARD}
+         * {@link Reward#SELF_CLICK}
+         * {@link Reward#ALREADY_CLICKED}
+         * {@link Reward#TOO_MANY_CLICKS}
+         * {@link Reward#EXCEED_MAX_CLICKS_FOR_DAY}
+         * {@link Reward#EXPIRED}
+         * {@link Reward#INVALID_POST}
+         * <p/>
          * If status is {@link Reward#GRANT_REWARD}, the 'reward' field will contain the reward that should be granted.
          */
         public int status;
 
         /**
          * The reward(s) to grant, or <code>null</code>.
-         *
+         * <p/>
          * <p>The reward(s) contained are in the format:
          * <code>{
-         *   “internal_id” : quantity,
-         *   “another_internal_id” : anotherQuantity
+         * “internal_id” : quantity,
+         * “another_internal_id” : anotherQuantity
          * }</code></p>
          */
         public JSONObject reward;
@@ -250,20 +268,20 @@ public class TeakNotification {
         Reward(JSONObject json) {
             String statusString = json.optString("status");
 
-            if(GRANT_REWARD_STRING.equals(statusString)) {
+            if (GRANT_REWARD_STRING.equals(statusString)) {
                 status = GRANT_REWARD;
                 reward = json.optJSONObject("reward");
-            } else if(SELF_CLICK_STRING.equals(statusString)) {
+            } else if (SELF_CLICK_STRING.equals(statusString)) {
                 status = SELF_CLICK;
-            } else if(ALREADY_CLICKED_STRING.equals(statusString)) {
+            } else if (ALREADY_CLICKED_STRING.equals(statusString)) {
                 status = ALREADY_CLICKED;
-            } else if(TOO_MANY_CLICKS_STRING.equals(statusString)) {
+            } else if (TOO_MANY_CLICKS_STRING.equals(statusString)) {
                 status = TOO_MANY_CLICKS;
-            } else if(EXCEED_MAX_CLICKS_FOR_DAY_STRING.equals(statusString)) {
+            } else if (EXCEED_MAX_CLICKS_FOR_DAY_STRING.equals(statusString)) {
                 status = EXCEED_MAX_CLICKS_FOR_DAY;
-            } else if(EXPIRED_STRING.equals(statusString)) {
+            } else if (EXPIRED_STRING.equals(statusString)) {
                 status = EXPIRED;
-            } else if(INVALID_POST_STRING.equals(statusString)) {
+            } else if (INVALID_POST_STRING.equals(statusString)) {
                 status = INVALID_POST;
             } else {
                 status = UNKNOWN;
@@ -281,7 +299,7 @@ public class TeakNotification {
 
     /**
      * Consumes the notification, removing it from the Inbox, and returns a {@link Reward}.
-     *
+     * <p/>
      * <p>The <code>Reward</code> will be <code>null</code> if there is no reward associated
      * with the notification.</p>
      *
@@ -292,7 +310,7 @@ public class TeakNotification {
 
         FutureTask<Reward> ret = new FutureTask<Reward>(new Callable<Reward>() {
             public Reward call() {
-                if(!notif.hasReward()) {
+                if (!notif.hasReward()) {
                     notif.removeFromCache();
                     return null;
                 }
@@ -301,12 +319,12 @@ public class TeakNotification {
                 String userId = null;
                 try {
                     userId = Teak.userId.get();
-                } catch(Exception e) {
+                } catch (Exception e) {
                     Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
                     return null;
                 }
 
-                if(Teak.isDebug) {
+                if (Teak.isDebug) {
                     Log.d(Teak.LOG_TAG, "Claiming reward id: " + notif.teakRewardId);
                 }
 
@@ -350,7 +368,7 @@ public class TeakNotification {
                     JSONObject rewardResponse = responseJson.optJSONObject("response");
                     Reward reward = new Reward(rewardResponse);
 
-                    if(Teak.isDebug) {
+                    if (Teak.isDebug) {
                         Log.d(Teak.LOG_TAG, "Reward claim response: " + responseJson.toString(2));
                     }
 
@@ -396,7 +414,7 @@ public class TeakNotification {
         this.teakRewardId = bundle.getString("teakRewardId");
         try {
             this.extras = bundle.getString("extras") == null ? null : new JSONObject(bundle.getString("extras"));
-        } catch(JSONException e) {
+        } catch (JSONException e) {
             this.extras = null;
         }
 
@@ -413,7 +431,7 @@ public class TeakNotification {
         values.put("android_id", this.platformId);
         values.put("notification_payload", this.toJson());
 
-        if(Teak.database != null) {
+        if (Teak.database != null) {
             Teak.database.insert("inbox", null, values);
         }
     }
@@ -441,20 +459,23 @@ public class TeakNotification {
             json.put("teakRewardId", this.teakRewardId);
             json.put("platformId", Integer.valueOf(this.platformId));
             json.put("teakNotifId", Long.valueOf(this.teakNotifId));
-            if(this.extras != null) { json.put("extras", this.extras); }
-        } catch(JSONException e) {
+            if (this.extras != null) {
+                json.put("extras", this.extras);
+            }
+        } catch (JSONException e) {
             Log.e(Teak.LOG_TAG, "Error converting TeakNotification to JSON: " + Log.getStackTraceString(e));
         }
         return json.toString();
     }
 
     private void removeFromCache() {
-        if(Teak.database != null) {
+        if (Teak.database != null) {
             Teak.database.delete("inbox", "teak_notification_id = " + this.teakNotifId, null);
         }
     }
 
     static NotificationManagerCompat notificationManager;
+
     static TeakNotification notificationFromIntent(Context context, Intent intent) {
         Bundle bundle = intent.getExtras();
 
@@ -462,7 +483,7 @@ public class TeakNotification {
             return null;
         }
 
-        if(notificationManager == null) {
+        if (notificationManager == null) {
             notificationManager = NotificationManagerCompat.from(context);
         }
 
@@ -487,12 +508,12 @@ public class TeakNotification {
         // Configure notification content
         builder.setContentTitle(ret.title);
         builder.setContentText(ret.message);
-        if(ret.tickerText != null) {
+        if (ret.tickerText != null) {
             builder.setTicker(ret.tickerText);
         } else {
             builder.setTicker(ret.message);
         }
-        if(ret.longText != null) {
+        if (ret.longText != null) {
             builder.setStyle(new NotificationCompat.BigTextStyle().bigText(ret.longText));
         } else {
             builder.setStyle(new NotificationCompat.BigTextStyle().bigText(ret.message));
@@ -517,7 +538,7 @@ public class TeakNotification {
         builder.setContentIntent(pushOpenedPendingIntent);
 
         // Send it out
-        if(Teak.isDebug) {
+        if (Teak.isDebug) {
             Log.d(Teak.LOG_TAG, "Showing Notification");
             Log.d(Teak.LOG_TAG, "       Teak id: " + ret.teakNotifId);
             Log.d(Teak.LOG_TAG, "   Platform id: " + ret.platformId);
@@ -528,13 +549,15 @@ public class TeakNotification {
     }
 
     static void cancel(Context context, int platformId) {
-        if(Teak.isDebug) {
+        if (Teak.isDebug) {
             Log.d(Teak.LOG_TAG, "Canceling notification id: " + platformId);
         }
 
         notificationManager.cancel(NOTIFICATION_TAG, platformId);
+        context.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+
         Thread updateThread = TeakNotification.notificationUpdateThread.get(platformId);
-        if(updateThread != null) {
+        if (updateThread != null) {
             updateThread.interrupt();
         }
     }

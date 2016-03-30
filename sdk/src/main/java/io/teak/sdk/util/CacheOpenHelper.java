@@ -37,7 +37,7 @@ class CacheOpenHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase database, int oldVersion, int newVersion) {
-        if(Teak.isDebug) {
+        if (Teak.isDebug) {
             Log.d(Teak.LOG_TAG, "Upgrading database " + database + " from version " + oldVersion + " to " + newVersion);
         }
 

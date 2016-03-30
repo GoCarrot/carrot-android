@@ -76,7 +76,7 @@ class Request implements Runnable {
 
         try {
             String hostname = this.hostname;
-            if(hostname == null) {
+            if (hostname == null) {
                 ServiceConfig serviceConfig = Teak.serviceConfig.get();
                 hostname = serviceConfig.getHostname(this.endpoint);
             }
@@ -89,7 +89,7 @@ class Request implements Runnable {
             // Add common fields
             addCommonPayload(requestBodyObject);
 
-            if(Teak.isDebug) {
+            if (Teak.isDebug) {
                 Log.d(Teak.LOG_TAG, "Submitting request to: " + this.endpoint);
                 Log.d(Teak.LOG_TAG, "Data: " + new JSONObject(requestBodyObject).toString(2));
             }
@@ -103,11 +103,11 @@ class Request implements Runnable {
                 if (value != null) {
                     String valueString = null;
                     if (value instanceof Map) {
-                        valueString = new JSONObject((Map)value).toString();
+                        valueString = new JSONObject((Map) value).toString();
                     } else if (value instanceof Array) {
                         valueString = new JSONArray(Arrays.asList(value)).toString();
                     } else if (value instanceof Collection) {
-                        valueString = new JSONArray((Collection)value).toString();
+                        valueString = new JSONArray((Collection) value).toString();
                     } else {
                         valueString = value.toString();
                     }
@@ -128,11 +128,11 @@ class Request implements Runnable {
                 Object value = requestBodyObject.get(key);
                 String valueString = null;
                 if (value instanceof Map) {
-                    valueString = new JSONObject((Map)value).toString();
+                    valueString = new JSONObject((Map) value).toString();
                 } else if (value instanceof Array) {
                     valueString = new JSONArray(Arrays.asList(value)).toString();
                 } else if (value instanceof Collection) {
-                    valueString = new JSONArray((Collection)value).toString();
+                    valueString = new JSONArray((Collection) value).toString();
                 } else {
                     valueString = value.toString();
                 }
@@ -189,5 +189,6 @@ class Request implements Runnable {
         }
     }
 
-    protected void done(int responseCode, String responseBody) {}
+    protected void done(int responseCode, String responseBody) {
+    }
 }
