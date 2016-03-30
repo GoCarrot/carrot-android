@@ -153,6 +153,34 @@ public class TeakNotification {
     }
 
     /**
+     * Gets a notification by id.
+     *
+     * @return A {@link TeakNotification} for the provided id, or null if not found.
+     */
+    public static TeakNotification byTeakNotifId(String teakNotifId) {
+        TeakNotification notif = null;
+        String[] inboxReadColumns = {"notification_payload"};
+
+        if(Teak.database != null) {
+            Cursor cursor = Teak.database.query("inbox", inboxReadColumns,
+                    "teak_notification_id=?", new String[] {teakNotifId}, null, null, null);
+
+            cursor.moveToFirst();
+            if (!cursor.isAfterLast()) {
+                try {
+                    notif = new TeakNotification(cursor.getString(0));
+                } catch (Exception e) {
+                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                }
+                cursor.moveToNext();
+            }
+            cursor.close();
+        }
+
+        return notif;
+    }
+
+    /**
      * Get the number of pending notifications.
      *
      * @return The number of pending notifications.
@@ -445,7 +473,6 @@ public class TeakNotification {
         bundle.putInt("platformId", ret.platformId);
         Log.d(Teak.LOG_TAG, "Bundle after: " + bundle);
         Log.d(Teak.LOG_TAG, "platformId: " + ret.platformId);
-        //final NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
         final NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
 
         // TODO: Custom icon resource support
