@@ -55,6 +55,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import java.util.Stack;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -193,6 +194,8 @@ public class Teak extends BroadcastReceiver {
     static Date lastSessionEndedAt;
     static SQLiteDatabase database;
     static String deviceId;
+    static String installerPackage;
+    static Stack<String> skuStack = new Stack<String>();
 
     static final String LOG_TAG = "Teak";
 
@@ -490,9 +493,23 @@ public class Teak extends BroadcastReceiver {
         }
 
         @Override
-        public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
+        public void onActivityStarted(Activity activity) {
+            if (Teak.isDebug) {
+                Log.d(LOG_TAG, "Lifecycle - onActivityStarted: " + activity.toString());
+            }
+
+            // OpenIAB, need to store off the SKU for the purchase failed case
+            if(activity.getClass().getName().equals("org.onepf.openiab.UnityProxyActivity")) {
+                Bundle bundle = activity.getIntent().getExtras();
+                if (Teak.isDebug) {
+                    Log.d(LOG_TAG, "Unity OpenIAB purchase launched: " + bundle.toString());
+                }
+                skuStack.push(bundle.getString("sku"));
+            }
+        }
+
         @Override
-        public void onActivityStarted(Activity activity) {}
+        public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
         @Override
         public void onActivityStopped(Activity activity) {}
     }
@@ -752,6 +769,42 @@ public class Teak extends BroadcastReceiver {
         }
     }
 
+    private static void openIABPurchaseSucceeded(String json) {
+        try {
+            JSONObject purchase = new JSONObject(json);
+            if (Teak.isDebug) {
+                Log.d(LOG_TAG, "OpenIAB purchase succeeded: " + purchase.toString(2));
+            }
+            purchaseSucceeded(purchase); // originalJson
+        } catch(Exception e) {
+            Log.e(LOG_TAG, e.toString());
+        }
+    }
+
+    private static void openIABPurchaseFailed(int errorCode) {
+        String sku = skuStack.pop();
+        if (Teak.isDebug) {
+            Log.d(LOG_TAG, "OpenIAB purchase failed (" + errorCode + "): " + sku);
+        }
+    }
+
+    private static void purchaseSucceeded(JSONObject purchaseData) {
+        // TODO: Payload
+        // TODO: Payload must include which app store!
+        try {
+            Log.d(LOG_TAG, "Purchase succeeded: " + purchaseData.toString(2));
+        } catch(Exception e) {
+
+        }
+    }
+
+    private static void purchaseFailed(int errorCode, String sku) {
+        // TODO: Payload
+        if (Teak.isDebug) {
+            Log.d(LOG_TAG, "Purchase failed (" + errorCode + ") for '" + sku + "'");
+        }
+    }
+
     private static void checkActivityResultForPurchase(int resultCode, Intent data) {
         String purchaseData = data.getStringExtra(RESPONSE_INAPP_PURCHASE_DATA);
         String dataSignature = data.getStringExtra(RESPONSE_INAPP_SIGNATURE);
@@ -761,27 +814,17 @@ public class Teak extends BroadcastReceiver {
             int responseCode = getResponseCodeFromIntent(data);
 
             if (resultCode == Activity.RESULT_OK && responseCode == BILLING_RESPONSE_RESULT_OK) {
-                // Successful purchase
-                if(Teak.isDebug) {
-                    Log.d(LOG_TAG, "Purchase activity has succeeded.");
+                try {
+                    purchaseSucceeded(new JSONObject(purchaseData));
+                } catch(Exception e) {
+                    Log.e(LOG_TAG, "Failed to convert purchase data to JSON.");
                 }
-
-                // TODO: Payload
             } else {
                 if(Teak.isDebug) {
-                    Log.d(LOG_TAG, "Purchase activity has failed.");
+                    Log.d(LOG_TAG, "Purchase activity has failed. " + purchaseData);
                 }
 
-                // TODO: Payload
-            }
-
-            if(Teak.isDebug) {
-                try {
-                    Log.d(LOG_TAG, "Purchase data: " + new JSONObject(purchaseData).toString(2));
-                } catch(Exception e) {
-                    Log.d(LOG_TAG, "Purchase data: " + purchaseData);
-                }
-                Log.d(LOG_TAG, "Data signature: " + dataSignature);
+                //purchaseFailed(responseCode, );
             }
 
             // TODO: Send request
