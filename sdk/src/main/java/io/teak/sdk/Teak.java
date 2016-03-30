@@ -252,6 +252,9 @@ public class Teak extends BroadcastReceiver {
                 }
             }
 
+            // Get the installer package
+            Teak.installerPackage = activity.getPackageManager().getInstallerPackageName(activity.getPackageName());
+
             // Facebook Access Token Broadcaster
             Teak.facebookAccessTokenBroadcast = new FacebookAccessTokenBroadcast(activity);
 
@@ -399,6 +402,7 @@ public class Teak extends BroadcastReceiver {
                 Log.d(LOG_TAG, "        App Id: " + Teak.appId);
                 Log.d(LOG_TAG, "       Api Key: " + Teak.apiKey);
                 Log.d(LOG_TAG, "   App Version: " + Teak.appVersion);
+                Log.d(LOG_TAG, "     App Store: " + Teak.installerPackage);
                 if(Teak.launchedFromTeakNotifId != null) {
                     Log.d(LOG_TAG, " Teak Notif Id: " + Teak.launchedFromTeakNotifId);
                 }
