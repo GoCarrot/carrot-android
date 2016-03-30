@@ -518,8 +518,9 @@ public class TeakNotification {
 
         // Send it out
         if(Teak.isDebug) {
-            Log.d(Teak.LOG_TAG, "Showing notification id: " + ret.platformId);
-            Log.d(Teak.LOG_TAG, "Showing teak notification id: " + ret.teakNotifId);
+            Log.d(Teak.LOG_TAG, "Showing Notification");
+            Log.d(Teak.LOG_TAG, "       Teak id: " + ret.teakNotifId);
+            Log.d(Teak.LOG_TAG, "   Platform id: " + ret.platformId);
         }
         notificationManager.notify(NOTIFICATION_TAG, ret.platformId, builder.build());
 
