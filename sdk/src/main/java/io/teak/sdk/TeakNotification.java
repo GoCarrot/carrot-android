@@ -537,6 +537,18 @@ public class TeakNotification {
         PendingIntent pushOpenedPendingIntent = PendingIntent.getBroadcast(context, 0, pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
         builder.setContentIntent(pushOpenedPendingIntent);
 
+        // HAX
+        try {
+            String packageName = context.getPackageName();
+            int resId = context.getResources().getIdentifier("small_clam", "drawable", packageName);
+            builder.addAction(resId, "Clam Now", pushOpenedPendingIntent);
+
+            resId = context.getResources().getIdentifier("peter", "drawable", packageName);
+            builder.setLargeIcon(android.graphics.BitmapFactory.decodeResource(context.getResources(), resId));
+        } catch (Exception e) {
+            Log.d(Teak.LOG_TAG, e.toString());
+        }
+
         // Send it out
         if (Teak.isDebug) {
             Log.d(Teak.LOG_TAG, "Showing Notification");
@@ -544,6 +556,28 @@ public class TeakNotification {
             Log.d(Teak.LOG_TAG, "   Platform id: " + ret.platformId);
         }
         notificationManager.notify(NOTIFICATION_TAG, ret.platformId, builder.build());
+
+        // HAX TEST
+        Thread updateThread = new Thread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        int incr;
+                        for (incr = 100; incr > 0; incr -= 2) {
+                            builder.setProgress(100, incr, false);
+                            notificationManager.notify(NOTIFICATION_TAG, ret.platformId, builder.build());
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException e) {
+                                TeakNotification.notificationUpdateThread.remove(ret.platformId);
+                                return;
+                            }
+                        }
+                    }
+                }
+        );
+        TeakNotification.notificationUpdateThread.put(ret.platformId, updateThread);
+        updateThread.start();
 
         return ret;
     }
