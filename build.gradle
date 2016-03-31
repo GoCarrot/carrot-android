@@ -37,7 +37,7 @@ android.libraryVariants.all { variant ->
 }
 
 android.libraryVariants.all { variant ->
-    def name = variant.buildType.name
+    def name = variant.name
     def task = project.tasks.create "jar${name.capitalize()}", Jar
     task.dependsOn variant.javaCompile
     task.from variant.javaCompile.destinationDir
@@ -47,6 +47,8 @@ android.libraryVariants.all { variant ->
 android {
     compileSdkVersion 19
     buildToolsVersion "20"
+    publishNonDefault true
+    defaultPublishConfig "googleplayDebug"
 
     defaultConfig {
         minSdkVersion 14
@@ -61,8 +63,17 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
+
+    productFlavors {
+        googleplay {
+        }
+
+        amazon {
+        }
+    }
 }
 
 dependencies {
     compile 'com.google.android.gms:play-services-ads:6.5.87'
+    //amazonCompile 'com.amazon:in-app-purchasing:2.+' // provided vs compile?
 }
