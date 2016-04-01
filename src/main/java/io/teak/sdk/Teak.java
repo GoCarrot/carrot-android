@@ -198,6 +198,7 @@ public class Teak extends BroadcastReceiver {
     static String deviceId;
     static String installerPackage;
     static Stack<String> skuStack = new Stack<String>();
+    static IStore appStore;
 
     static final String LOG_TAG = "Teak";
 
@@ -259,6 +260,15 @@ public class Teak extends BroadcastReceiver {
 
             // Get the installer package
             Teak.installerPackage = activity.getPackageManager().getInstallerPackageName(activity.getPackageName());
+
+            // Applicable store
+            try {
+                Class<?> clazz = Class.forName("io.teak.sdk.GooglePlay");
+                Teak.appStore = (IStore) clazz.newInstance();
+                Teak.appStore.init(activity);
+            } catch (Exception e) {
+                Log.e(LOG_TAG, "Unable to create app store interface. " + e.toString());
+            }
 
             // Facebook Access Token Broadcaster
             Teak.facebookAccessTokenBroadcast = new FacebookAccessTokenBroadcast(activity);
@@ -424,6 +434,9 @@ public class Teak extends BroadcastReceiver {
                 Log.d(LOG_TAG, "Lifecycle - onActivityDestroyed");
             }
 
+            if (Teak.appStore != null) {
+                Teak.appStore.dispose();
+            }
             Teak.database.close();
             Teak.cacheOpenHelper.close();
             Teak.facebookAccessTokenBroadcast.unregister(activity);
