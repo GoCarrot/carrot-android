@@ -783,8 +783,11 @@ public class Teak extends BroadcastReceiver {
             payload.put("orderId", purchaseData.get("orderId"));
             payload.put("appstoreName", Teak.installerPackage);
 
-            JSONObject skuDetails = Teak.appStore.querySkuDetails("inapp" /*hax?*/, purchaseData.getString("productId"));
-            payload.put("currency_code", skuDetails.getString("price_currency_code"));
+            JSONObject skuDetails = Teak.appStore.querySkuDetails(purchaseData.getString("productId"));
+            if (skuDetails != null) {
+                payload.put("currencyCode", skuDetails.getString("price_currency_code"));
+                payload.put("amountMicros", skuDetails.getString("price_amount_micros"));
+            }
 
             Log.d(LOG_TAG, "Payload: " + new JSONObject(payload).toString(2));
         } catch (Exception e) {

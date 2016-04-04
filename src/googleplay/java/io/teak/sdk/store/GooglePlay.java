@@ -168,7 +168,15 @@ class GooglePlay implements IStore {
         mService = null;
     }
 
-    public JSONObject querySkuDetails(String itemType, String sku) {
+    public JSONObject querySkuDetails(String sku) {
+        JSONObject ret = querySkuDetails(ITEM_TYPE_INAPP, sku);
+        if (ret == null) {
+            ret = querySkuDetails(ITEM_TYPE_SUBS, sku);
+        }
+        return ret;
+    }
+
+    private JSONObject querySkuDetails(String itemType, String sku) {
         try {
             ArrayList<String> skuList = new ArrayList<String>();
             skuList.add(sku);
