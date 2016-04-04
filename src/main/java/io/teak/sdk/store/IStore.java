@@ -14,9 +14,14 @@
  */
 package io.teak.sdk;
 
+import android.content.Intent;
 import android.content.Context;
+
+import org.json.JSONObject;
 
 public interface IStore {
     public void init(Context context);
     public void dispose();
+    public JSONObject querySkuDetails(String itemType, String sku);
+    public void checkActivityResultForPurchase(int resultCode, Intent data);
 }

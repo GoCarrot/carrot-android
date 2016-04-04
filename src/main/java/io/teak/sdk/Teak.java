@@ -55,7 +55,6 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-import java.util.Stack;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -197,7 +196,6 @@ public class Teak extends BroadcastReceiver {
     static SQLiteDatabase database;
     static String deviceId;
     static String installerPackage;
-    static Stack<String> skuStack = new Stack<String>();
     static IStore appStore;
 
     static final String LOG_TAG = "Teak";
@@ -512,18 +510,6 @@ public class Teak extends BroadcastReceiver {
 
         @Override
         public void onActivityStarted(Activity activity) {
-            if (Teak.isDebug) {
-                Log.d(LOG_TAG, "Lifecycle - onActivityStarted: " + activity.toString());
-            }
-
-            // OpenIAB, need to store off the SKU for the purchase failed case
-            if (activity.getClass().getName().equals("org.onepf.openiab.UnityProxyActivity")) {
-                Bundle bundle = activity.getIntent().getExtras();
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "Unity OpenIAB purchase launched: " + bundle.toString());
-                }
-                skuStack.push(bundle.getString("sku"));
-            }
         }
 
         @Override
@@ -764,116 +750,61 @@ public class Teak extends BroadcastReceiver {
 
     /**************************************************************************/
 
-    // Billing response codes
-    private static final int BILLING_RESPONSE_RESULT_OK = 0;
-    private static final int BILLING_RESPONSE_RESULT_USER_CANCELED = 1;
-    private static final int BILLING_RESPONSE_RESULT_SERVICE_UNAVAILABLE = 2;
-    private static final int BILLING_RESPONSE_RESULT_BILLING_UNAVAILABLE = 3;
-    private static final int BILLING_RESPONSE_RESULT_ITEM_UNAVAILABLE = 4;
-    private static final int BILLING_RESPONSE_RESULT_DEVELOPER_ERROR = 5;
-    private static final int BILLING_RESPONSE_RESULT_ERROR = 6;
-    private static final int BILLING_RESPONSE_RESULT_ITEM_ALREADY_OWNED = 7;
-    private static final int BILLING_RESPONSE_RESULT_ITEM_NOT_OWNED = 8;
-
-    private static final String RESPONSE_CODE = "RESPONSE_CODE";
-    private static final String RESPONSE_INAPP_PURCHASE_DATA = "INAPP_PURCHASE_DATA";
-    private static final String RESPONSE_INAPP_SIGNATURE = "INAPP_DATA_SIGNATURE";
-
-    private static int getResponseCodeFromIntent(Intent i) {
-        Object o = i.getExtras().get(RESPONSE_CODE);
-        if (o == null) {
-            Log.e(LOG_TAG, "Intent with no response code, assuming OK (known Google issue)");
-            return BILLING_RESPONSE_RESULT_OK;
-        } else if (o instanceof Integer) return ((Integer) o).intValue();
-        else if (o instanceof Long) return (int) ((Long) o).longValue();
-        else {
-            Log.e(LOG_TAG, "Unexpected type for intent response code.");
-            Log.e(LOG_TAG, o.getClass().getName());
-            throw new RuntimeException("Unexpected type for intent response code: " + o.getClass().getName());
-        }
-    }
-
     private static void openIABPurchaseSucceeded(String json) {
         try {
             JSONObject purchase = new JSONObject(json);
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "OpenIAB purchase succeeded: " + purchase.toString(2));
             }
-            purchaseSucceeded(purchase); // originalJson
+            JSONObject originalJson = new JSONObject(purchase.getString("originalJson"));
+            purchaseSucceeded(originalJson);
         } catch (Exception e) {
             Log.e(LOG_TAG, e.toString());
         }
     }
 
     private static void openIABPurchaseFailed(int errorCode) {
-        String sku = skuStack.pop();
         if (Teak.isDebug) {
-            Log.d(LOG_TAG, "OpenIAB purchase failed (" + errorCode + "): " + sku);
+            Log.d(LOG_TAG, "OpenIAB purchase failed (" + errorCode + ")");
         }
+        purchaseFailed(errorCode);
     }
 
-    private static void purchaseSucceeded(JSONObject purchaseData) {
+    static void purchaseSucceeded(JSONObject purchaseData) {
         // TODO: Payload
-        // TODO: Payload must include which app store!
         try {
             Log.d(LOG_TAG, "Purchase succeeded: " + purchaseData.toString(2));
+
+            HashMap<String, Object> payload = new HashMap<String, Object>();
+            payload.put("purchaseToken", purchaseData.get("purchaseToken"));
+            payload.put("purchaseTime", purchaseData.get("purchaseTime"));
+            payload.put("productId", purchaseData.get("productId"));
+            payload.put("packageName", purchaseData.get("packageName"));
+            payload.put("orderId", purchaseData.get("orderId"));
+            payload.put("appstoreName", Teak.installerPackage);
+
+            JSONObject skuDetails = Teak.appStore.querySkuDetails("inapp" /*hax?*/, purchaseData.getString("productId"));
+            payload.put("currency_code", skuDetails.getString("price_currency_code"));
+
+            Log.d(LOG_TAG, "Payload: " + new JSONObject(payload).toString(2));
         } catch (Exception e) {
 
         }
+        Teak.asyncExecutor.submit(new Runnable() {
+            public void run() {
+                //Teak.appStore.querySkuDetails();
+            }
+        });
     }
 
-    private static void purchaseFailed(int errorCode, String sku) {
+    static void purchaseFailed(int errorCode) {
         // TODO: Payload
         if (Teak.isDebug) {
-            Log.d(LOG_TAG, "Purchase failed (" + errorCode + ") for '" + sku + "'");
+            Log.d(LOG_TAG, "Purchase failed (" + errorCode + ")");
         }
     }
 
     private static void checkActivityResultForPurchase(int resultCode, Intent data) {
-        String purchaseData = data.getStringExtra(RESPONSE_INAPP_PURCHASE_DATA);
-        String dataSignature = data.getStringExtra(RESPONSE_INAPP_SIGNATURE);
-
-        // Check for purchase activity result
-        if (purchaseData != null && dataSignature != null) {
-            int responseCode = getResponseCodeFromIntent(data);
-
-            if (resultCode == Activity.RESULT_OK && responseCode == BILLING_RESPONSE_RESULT_OK) {
-                try {
-                    purchaseSucceeded(new JSONObject(purchaseData));
-                } catch (Exception e) {
-                    Log.e(LOG_TAG, "Failed to convert purchase data to JSON.");
-                }
-            } else {
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "Purchase activity has failed. " + purchaseData);
-                }
-
-                //purchaseFailed(responseCode, );
-            }
-
-            // TODO: Send request
-            /*
-            Teak.asyncExecutor.submit(new Runnable() {
-                public void run() {
-                    HashMap<String, Object> payload = new HashMap<String, Object>();
-                    String userId = null;
-                    try {
-                        userId = Teak.userId.get();
-                    } catch(Exception e) {
-                        Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
-                        return;
-                    }
-
-                    payload.put("app_id", Teak.appId);
-                    payload.put("user_id", userId);
-                    payload.put("network_id", new Integer(2));
-                    payload.put("happened_at", dateIssued);
-                    payload.put("platfom_id", dunno);
-
-                    Teak.asyncExecutor.submit(new CachedRequest("/purchase.json", payload, dateIssued));
-                }
-            });
-            */
-        }
+        Teak.appStore.checkActivityResultForPurchase(resultCode, data);
     }
 }

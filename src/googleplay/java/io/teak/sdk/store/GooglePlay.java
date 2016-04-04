@@ -14,6 +14,8 @@
  */
 package io.teak.sdk;
 
+import android.app.Activity;
+
 import android.content.Intent;
 import android.content.Context;
 import android.content.ComponentName;
@@ -32,6 +34,7 @@ import java.util.ArrayList;
 
 import java.lang.reflect.Method;
 
+import org.json.JSONObject;
 import org.json.JSONException;
 
 class GooglePlay implements IStore {
@@ -41,6 +44,7 @@ class GooglePlay implements IStore {
     boolean mDisposed = false;
 
     public static final String ITEM_TYPE_INAPP = "inapp";
+    public static final String ITEM_TYPE_SUBS = "subs";
 
     public static final int BILLING_RESPONSE_RESULT_OK = 0;
     public static final int BILLING_RESPONSE_RESULT_USER_CANCELED = 1;
@@ -88,7 +92,6 @@ class GooglePlay implements IStore {
                     Class<?> cls = Class.forName("com.android.vending.billing.IInAppBillingService$Stub");
                     Method m = cls.getMethod("asInterface", IBinder.class);
                     mService = m.invoke(null, (Object) service);
-                    Log.d(Teak.LOG_TAG, "Service: " + mService.toString());
                 } catch (Exception e) {
                     Log.e(Teak.LOG_TAG, "Unable to use 'IInAppBillingService' via reflection. " + e.toString());
                     return;
@@ -105,21 +108,40 @@ class GooglePlay implements IStore {
                     Method m = cls.getMethod("isBillingSupported", int.class, String.class, String.class);
                     int response = ((Integer) m.invoke(mService, 3, packageName, ITEM_TYPE_INAPP)).intValue();
                     if (response != BILLING_RESPONSE_RESULT_OK) {
-                        // "Error checking for billing v3 support."
+                        Log.e(Teak.LOG_TAG, "Error checking for billing v3 support.");
                     } else {
                         if (Teak.isDebug) {
                             Log.d(Teak.LOG_TAG, "In-app billing version 3 supported for " + packageName);
                         }
+                    }
 
-                        // Hax
-                        List<String> skus = new ArrayList<String>();
-                        skus.add("io.teak.demo.angrybots.dollar2");
-                        querySkuDetails(skus);
+                    // Check for v5 subscriptions support. This is needed for
+                    // getBuyIntentToReplaceSku which allows for subscription update
+                    response = ((Integer) m.invoke(mService, 5, packageName, ITEM_TYPE_SUBS)).intValue();
+                    if (response == BILLING_RESPONSE_RESULT_OK) {
+                        if (Teak.isDebug) {
+                            Log.d(Teak.LOG_TAG, "Subscription re-signup available.");
+                            Log.d(Teak.LOG_TAG, "Subscriptions available.");
+                        }
+                    } else {
+                        if (Teak.isDebug) {
+                            Log.d(Teak.LOG_TAG, "Subscription re-signup not available.");
+                        }
+                        // check for v3 subscriptions support
+                        response = ((Integer) m.invoke(mService, 3, packageName, ITEM_TYPE_SUBS)).intValue();
+                        if (response == BILLING_RESPONSE_RESULT_OK) {
+                            if (Teak.isDebug) {
+                                Log.d(Teak.LOG_TAG, "Subscriptions available.");
+                            }
+                        } else {
+                            if (Teak.isDebug) {
+                                Log.d(Teak.LOG_TAG, "Subscriptions NOT available. Response: " + response);
+                            }
+                        }
                     }
                 }
-                catch (/*Remote*/Exception e) { // HAX
-                    // "RemoteException while setting up in-app billing."
-                    e.printStackTrace();
+                catch (Exception e) {
+                    Log.e(Teak.LOG_TAG, "Error working with InAppBillingService " + e.toString());
                     return;
                 }
             }
@@ -129,12 +151,10 @@ class GooglePlay implements IStore {
         serviceIntent.setPackage("com.android.vending");
         List<ResolveInfo> intentServices = mContext.getPackageManager().queryIntentServices(serviceIntent, 0);
         if (intentServices != null && !intentServices.isEmpty()) {
-            // service available to handle that Intent
             mContext.bindService(serviceIntent, mServiceConn, Context.BIND_AUTO_CREATE);
         }
         else {
-            // no service available to handle that Intent
-            // "Billing service unavailable on device."
+            Log.e(Teak.LOG_TAG, "Billing service unavailable on device.");
         }
     }
 
@@ -148,62 +168,45 @@ class GooglePlay implements IStore {
         mService = null;
     }
 
-    public int querySkuDetails(String itemType, List<String> skuList) throws RemoteException, JSONException {
-        if (skuList.size() == 0) {
-            return BILLING_RESPONSE_RESULT_OK;
-        }
-
-        // Split the sku list in blocks of no more than 20 elements.
-        ArrayList<ArrayList<String>> packs = new ArrayList<ArrayList<String>>();
-        ArrayList<String> tempList;
-        int n = skuList.size() / 20;
-        int mod = skuList.size() % 20;
-        for (int i = 0; i < n; i++) {
-            tempList = new ArrayList<String>();
-            for (String s : skuList.subList(i * 20, i * 20 + 20)) {
-                tempList.add(s);
-            }
-            packs.add(tempList);
-        }
-        if (mod != 0) {
-            tempList = new ArrayList<String>();
-            for (String s : skuList.subList(n * 20, n * 20 + mod)) {
-                tempList.add(s);
-            }
-            packs.add(tempList);
-        }
-
+    public JSONObject querySkuDetails(String itemType, String sku) {
         try {
+            ArrayList<String> skuList = new ArrayList<String>();
+            skuList.add(sku);
             Class<?> cls = Class.forName("com.android.vending.billing.IInAppBillingService");
             Method m = cls.getMethod("getSkuDetails", int.class, String.class, String.class, Bundle.class);
-            for (ArrayList<String> skuPartList : packs) {
-                Bundle querySkus = new Bundle();
-                querySkus.putStringArrayList(GET_SKU_DETAILS_ITEM_LIST, skuPartList);
 
-                Bundle skuDetails = (Bundle) m.invoke(mService, 3, mContext.getPackageName(), ITEM_TYPE_INAPP, querySkus);
+            Bundle querySkus = new Bundle();
+            querySkus.putStringArrayList(GET_SKU_DETAILS_ITEM_LIST, skuList);
 
-                if (!skuDetails.containsKey(RESPONSE_GET_SKU_DETAILS_LIST)) {
-                    int response = getResponseCodeFromBundle(skuDetails);
-                    if (response != BILLING_RESPONSE_RESULT_OK) {
-                        Log.e(Teak.LOG_TAG, "getSkuDetails() failed: " + response);
-                        return response;
-                    } else {
-                        Log.e(Teak.LOG_TAG, "getSkuDetails() returned a bundle with neither an error nor a detail list.");
-                        return -1;
-                    }
+            Bundle skuDetails = (Bundle) m.invoke(mService, 3, mContext.getPackageName(), ITEM_TYPE_INAPP, querySkus);
+
+            if (!skuDetails.containsKey(RESPONSE_GET_SKU_DETAILS_LIST)) {
+                int response = getResponseCodeFromBundle(skuDetails);
+                if (response != BILLING_RESPONSE_RESULT_OK) {
+                    Log.e(Teak.LOG_TAG, "getSkuDetails() failed: " + response);
+                    return null;
+                } else {
+                    Log.e(Teak.LOG_TAG, "getSkuDetails() returned a bundle with neither an error nor a detail list.");
+                    return null;
                 }
+            }
 
-                ArrayList<String> responseList = skuDetails.getStringArrayList(RESPONSE_GET_SKU_DETAILS_LIST);
+            ArrayList<String> responseList = skuDetails.getStringArrayList(RESPONSE_GET_SKU_DETAILS_LIST);
 
-                for (String thisResponse : responseList) {
-                    Log.d(Teak.LOG_TAG, "Got sku details: " + thisResponse);
+            if (responseList.size() == 1) {
+                JSONObject ret = new JSONObject(responseList.get(0));
+                if (Teak.isDebug) {
+                    Log.d(Teak.LOG_TAG, "SKU Details: " + ret.toString(2));
                 }
+                return ret;
+            } else {
+                Log.e(Teak.LOG_TAG, "Mismatched input/output length for getSkuDetails().");
             }
         } catch (Exception e) {
             Log.e(Teak.LOG_TAG, "Reflection error: " + e.toString());
         }
 
-        return BILLING_RESPONSE_RESULT_OK;
+        return null;
     }
 
     int getResponseCodeFromBundle(Bundle b) {
@@ -217,6 +220,41 @@ class GooglePlay implements IStore {
             Log.e(Teak.LOG_TAG, "Unexpected type for bundle response code.");
             Log.e(Teak.LOG_TAG, o.getClass().getName());
             throw new RuntimeException("Unexpected type for bundle response code: " + o.getClass().getName());
+        }
+    }
+
+    int getResponseCodeFromIntent(Intent i) {
+        Object o = i.getExtras().get(RESPONSE_CODE);
+        if (o == null) {
+            Log.e(Teak.LOG_TAG, "Intent with no response code, assuming OK (known Google issue)");
+            return BILLING_RESPONSE_RESULT_OK;
+        } else if (o instanceof Integer) return ((Integer) o).intValue();
+        else if (o instanceof Long) return (int) ((Long) o).longValue();
+        else {
+            Log.e(Teak.LOG_TAG, "Unexpected type for intent response code.");
+            Log.e(Teak.LOG_TAG, o.getClass().getName());
+            throw new RuntimeException("Unexpected type for intent response code: " + o.getClass().getName());
+        }
+    }
+
+    public void checkActivityResultForPurchase(int resultCode, Intent data) {
+        String purchaseData = data.getStringExtra(RESPONSE_INAPP_PURCHASE_DATA);
+        String dataSignature = data.getStringExtra(RESPONSE_INAPP_SIGNATURE);
+
+        // Check for purchase activity result
+        if (purchaseData != null && dataSignature != null) {
+            int responseCode = getResponseCodeFromIntent(data);
+
+            if (resultCode == Activity.RESULT_OK && responseCode == BILLING_RESPONSE_RESULT_OK) {
+                try {
+                    JSONObject json = new JSONObject(purchaseData);
+                    Teak.purchaseSucceeded(json);
+                } catch (Exception e) {
+                    Log.e(Teak.LOG_TAG, "Failed to convert purchase data to JSON.");
+                }
+            } else {
+                //TODO: purchaseFailed(responseCode, );
+            }
         }
     }
 }
