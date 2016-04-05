@@ -17,7 +17,7 @@ package io.teak.sdk;
 import org.json.JSONObject;
 
 class ServiceConfig {
-    public String hostname;
+    String hostname;
 
     public void setConfig(JSONObject json) {
         this.hostname = json.optString("auth", "gocarrot.com");
@@ -28,6 +28,9 @@ class ServiceConfig {
     }
 
     public String getHostname(String endpoint) {
+        if (endpoint.equals("/notification_received")) {
+            return "parsnip.gocarrot.com";
+        }
         return this.hostname;
     }
 }

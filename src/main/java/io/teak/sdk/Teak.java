@@ -709,9 +709,29 @@ public class Teak extends BroadcastReceiver {
                 Log.e(LOG_TAG, "Error storing GCM Id from " + GCM_REGISTRATION_INTENT_ACTION + ":\n" + Log.getStackTraceString(e));
             }
         } else if (GCM_RECEIVE_INTENT_ACTION.equals(action)) {
-            TeakNotification notif = TeakNotification.notificationFromIntent(context, intent);
+            final TeakNotification notif = TeakNotification.notificationFromIntent(context, intent);
 
-            // TODO: Send Notification Received Metric
+            // Send Notification Received Metric
+            Teak.asyncExecutor.submit(new Runnable() {
+                public void run() {
+                    if (Teak.userId == null) return;
+
+                    String userId = null;
+                    try {
+                        userId = Teak.userId.get();
+                    } catch (Exception e) {
+                        Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                        return;
+                    }
+
+                    HashMap<String, Object> payload = new HashMap<String, Object>();
+                    payload.put("app_id", Teak.appId);
+                    payload.put("user_id", Teak.userId);
+                    payload.put("platform_id", new Long(notif.teakNotifId));
+
+                    Teak.asyncExecutor.submit(new CachedRequest("/notification_received", payload, new Date()));
+                }
+            });
 
             // Send out inbox broadcast
             if (Teak.mainActivity != null) {
