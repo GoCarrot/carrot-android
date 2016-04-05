@@ -64,6 +64,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 
+import java.util.Stack;
 import java.util.UUID;
 import java.util.Date;
 import java.util.Locale;
@@ -197,6 +198,7 @@ public class Teak extends BroadcastReceiver {
     static String deviceId;
     static String installerPackage;
     static IStore appStore;
+    static Stack<String> skuStack = new Stack<String>();
 
     static final String LOG_TAG = "Teak";
 
@@ -510,6 +512,18 @@ public class Teak extends BroadcastReceiver {
 
         @Override
         public void onActivityStarted(Activity activity) {
+            if (Teak.isDebug) {
+                Log.d(LOG_TAG, "Lifecycle - onActivityStarted: " + activity.toString());
+            }
+
+            // OpenIAB, need to store off the SKU for the purchase failed case
+            if (activity.getClass().getName().equals("org.onepf.openiab.UnityProxyActivity")) {
+                Bundle bundle = activity.getIntent().getExtras();
+                if (Teak.isDebug) {
+                    Log.d(LOG_TAG, "Unity OpenIAB purchase launched: " + bundle.toString());
+                }
+                skuStack.push(bundle.getString("sku"));
+            }
         }
 
         @Override
@@ -728,8 +742,6 @@ public class Teak extends BroadcastReceiver {
         } else if (action.endsWith(TeakNotification.TEAK_PUSH_CLEARED_INTENT_ACTION_SUFFIX)) {
             Bundle bundle = intent.getExtras();
             TeakNotification.cancel(context, bundle.getInt("platformId"));
-
-            // TODO: Metric?
         }
     }
 
@@ -764,10 +776,11 @@ public class Teak extends BroadcastReceiver {
     }
 
     private static void openIABPurchaseFailed(int errorCode) {
+        String sku = skuStack.pop();
         if (Teak.isDebug) {
-            Log.d(LOG_TAG, "OpenIAB purchase failed (" + errorCode + ")");
+            Log.d(LOG_TAG, "OpenIAB purchase failed (" + errorCode + ") for sku: " + sku);
         }
-        purchaseFailed(errorCode);
+        purchaseFailed(errorCode, sku);
     }
 
     static void purchaseSucceeded(JSONObject purchaseData) {
@@ -800,10 +813,10 @@ public class Teak extends BroadcastReceiver {
         });
     }
 
-    static void purchaseFailed(int errorCode) {
+    static void purchaseFailed(int errorCode, String sku) {
         // TODO: Payload
         if (Teak.isDebug) {
-            Log.d(LOG_TAG, "Purchase failed (" + errorCode + ")");
+            Log.d(LOG_TAG, "Purchase failed (" + errorCode + ") for sku: " + sku);
         }
     }
 
