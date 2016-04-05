@@ -187,7 +187,7 @@ public class Teak extends BroadcastReceiver {
     static ArrayBlockingQueue<String> userIdQueue;
     static ArrayBlockingQueue<String> gcmIdQueue;
     static ArrayBlockingQueue<String> facebookAccessTokenQueue;
-    static ExecutorService asyncExecutor;
+    static ExecutorService asyncExecutor = Executors.newCachedThreadPool();
     static FacebookAccessTokenBroadcast facebookAccessTokenBroadcast;
     static CacheOpenHelper cacheOpenHelper;
     static String launchedFromTeakNotifId;
@@ -279,7 +279,6 @@ public class Teak extends BroadcastReceiver {
             LocalBroadcastManager.getInstance(activity).registerReceiver(Teak.localBroadcastReceiver, filter);
 
             // Producer/Consumer Queues
-            Teak.asyncExecutor = Executors.newCachedThreadPool();
             Teak.gcmIdQueue = new ArrayBlockingQueue<String>(1);
             Teak.userIdQueue = new ArrayBlockingQueue<String>(1);
             Teak.facebookAccessTokenQueue = new ArrayBlockingQueue<String>(1);
