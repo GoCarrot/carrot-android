@@ -167,6 +167,9 @@ public class Teak extends BroadcastReceiver {
      * @param userIdentifier An identifier which is unique for the current user.
      */
     public static void identifyUser(String userIdentifier) {
+        // Always show this debug output.
+        Log.d(LOG_TAG, "identifyUser(): " + userIdentifier);
+
         if (!Teak.userId.isDone()) {
             Teak.userIdQueue.offer(userIdentifier);
         }
