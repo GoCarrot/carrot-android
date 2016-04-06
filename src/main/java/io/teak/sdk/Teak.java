@@ -262,12 +262,28 @@ public class Teak extends BroadcastReceiver {
             Teak.installerPackage = activity.getPackageManager().getInstallerPackageName(activity.getPackageName());
 
             // Applicable store
-            try {
-                Class<?> clazz = Class.forName("io.teak.sdk.GooglePlay");
-                Teak.appStore = (IStore) clazz.newInstance();
-                Teak.appStore.init(activity);
-            } catch (Exception e) {
-                Log.e(LOG_TAG, "Unable to create app store interface. " + e.toString());
+            if (Teak.installerPackage != null) {
+                Class<?> clazz = null;
+                if (Teak.installerPackage.equals("com.amazon.venezia")) {
+                    try {
+                        clazz = Class.forName("io.teak.sdk.Amazon");
+                    } catch (Exception e) {
+                        Log.e(LOG_TAG, "Couldn't find Teak's Amazon app store handler. " + e.toString());
+                    }
+                } else {
+                    // Default to Google Play
+                    try {
+                        clazz = Class.forName("io.teak.sdk.GooglePlay");
+                    } catch (Exception e) {
+                        Log.e(LOG_TAG, "Couldn't find Teak's Google Play app store handler. " + e.toString());
+                    }
+                }
+                try {
+                    Teak.appStore = (IStore) clazz.newInstance();
+                    Teak.appStore.init(activity);
+                } catch (Exception e) {
+                    Log.e(LOG_TAG, "Unable to create app store interface. " + e.toString());
+                }
             }
 
             // Facebook Access Token Broadcaster
