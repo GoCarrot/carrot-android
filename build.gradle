@@ -48,7 +48,7 @@ android {
     compileSdkVersion 19
     buildToolsVersion "20"
     publishNonDefault true
-    defaultPublishConfig "googleplayDebug"
+    //defaultPublishConfig "googleplayDebug"
 
     defaultConfig {
         minSdkVersion 14
@@ -63,14 +63,14 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
-
+/*
     productFlavors {
         googleplay {
         }
 
         amazon {
         }
-    }
+    }*/
 }
 
 dependencies {
