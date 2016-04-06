@@ -170,7 +170,9 @@ public class Teak extends BroadcastReceiver {
         // Always show this debug output.
         Log.d(LOG_TAG, "identifyUser(): " + userIdentifier);
 
-        if (!Teak.userId.isDone()) {
+        if (Teak.userId == null) {
+            Log.e(LOG_TAG, "Teak.onCreate() has not been called in your Activity's onCreate() function.");
+        } else if (!Teak.userId.isDone()) {
             Teak.userIdQueue.offer(userIdentifier);
         }
     }
