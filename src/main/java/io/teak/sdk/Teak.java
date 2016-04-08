@@ -273,21 +273,21 @@ public class Teak extends BroadcastReceiver {
                     try {
                         clazz = Class.forName("io.teak.sdk.Amazon");
                     } catch (Exception e) {
-                        Log.e(LOG_TAG, "Couldn't find Teak's Amazon app store handler. " + e.toString());
+                        Log.e(LOG_TAG, "Couldn't find Teak's Amazon app store handler. " + Log.getStackTraceString(e));
                     }
                 } else {
                     // Default to Google Play
                     try {
                         clazz = Class.forName("io.teak.sdk.GooglePlay");
                     } catch (Exception e) {
-                        Log.e(LOG_TAG, "Couldn't find Teak's Google Play app store handler. " + e.toString());
+                        Log.e(LOG_TAG, "Couldn't find Teak's Google Play app store handler. " + Log.getStackTraceString(e));
                     }
                 }
                 try {
                     Teak.appStore = (IStore) clazz.newInstance();
                     Teak.appStore.init(activity);
                 } catch (Exception e) {
-                    Log.e(LOG_TAG, "Unable to create app store interface. " + e.toString());
+                    Log.e(LOG_TAG, "Unable to create app store interface. " + Log.getStackTraceString(e));
                 }
             }
 
@@ -809,7 +809,7 @@ public class Teak extends BroadcastReceiver {
             JSONObject originalJson = new JSONObject(purchase.getString("originalJson"));
             purchaseSucceeded(originalJson);
         } catch (Exception e) {
-            Log.e(LOG_TAG, e.toString());
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
         }
     }
 

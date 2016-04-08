@@ -102,12 +102,12 @@ class Helpers {
     // From:
     // https://raw.githubusercontent.com/jaredrummler/AndroidDeviceNames/master/library/src/main/java/com/jaredrummler/android/device/DeviceName.java
     static void addDeviceNameToPayload(Map<String, Object> payload) {
-        payload.put("device_manufacturer", Build.MANUFACTURER);
-        payload.put("device_model", Build.MODEL);
+        payload.put("device_manufacturer", Build.MANUFACTURER == null ? "" : Build.MANUFACTURER);
+        payload.put("device_model", Build.MODEL == null ? "" : Build.MODEL);
         if (Build.MODEL.startsWith(Build.MANUFACTURER)) {
-          payload.put("fallback", capitalize(Build.MODEL));
+          payload.put("device_fallback", capitalize(Build.MODEL));
         } else {
-          payload.put("fallback", capitalize(Build.MANUFACTURER) + " " + Build.MODEL);
+          payload.put("device_fallback", capitalize(Build.MANUFACTURER) + " " + Build.MODEL);
         }
     }
 
