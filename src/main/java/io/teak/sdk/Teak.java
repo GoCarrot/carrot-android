@@ -848,32 +848,33 @@ public class Teak extends BroadcastReceiver {
         purchaseFailed(errorCode, sku);
     }
 
-    static void purchaseSucceeded(JSONObject purchaseData) {
-        // TODO: Payload
-        try {
-            Log.d(LOG_TAG, "Purchase succeeded: " + purchaseData.toString(2));
-
-            HashMap<String, Object> payload = new HashMap<String, Object>();
-            payload.put("purchaseToken", purchaseData.get("purchaseToken"));
-            payload.put("purchaseTime", purchaseData.get("purchaseTime"));
-            payload.put("productId", purchaseData.get("productId"));
-            payload.put("packageName", purchaseData.get("packageName"));
-            payload.put("orderId", purchaseData.get("orderId"));
-            payload.put("appstoreName", Teak.installerPackage);
-
-            JSONObject skuDetails = Teak.appStore.querySkuDetails(purchaseData.getString("productId"));
-            if (skuDetails != null) {
-                payload.put("currencyCode", skuDetails.getString("price_currency_code"));
-                payload.put("amountMicros", skuDetails.getString("price_amount_micros"));
-            }
-
-            Log.d(LOG_TAG, "Payload: " + new JSONObject(payload).toString(2));
-        } catch (Exception e) {
-
-        }
+    static void purchaseSucceeded(final JSONObject purchaseData) {
         Teak.asyncExecutor.submit(new Runnable() {
             public void run() {
-                //Teak.appStore.querySkuDetails();
+                try {
+                    Log.d(LOG_TAG, "Purchase succeeded: " + purchaseData.toString(2));
+
+                    HashMap<String, Object> payload = new HashMap<String, Object>();
+                    payload.put("purchase_token", purchaseData.get("purchaseToken"));
+                    payload.put("purchase_time", purchaseData.get("purchaseTime"));
+                    payload.put("product_id", purchaseData.get("productId"));
+                    payload.put("package_name", purchaseData.get("packageName"));
+                    payload.put("order_id", purchaseData.get("orderId"));
+                    payload.put("appstore_name", Teak.installerPackage);
+
+                    JSONObject skuDetails = Teak.appStore.querySkuDetails(purchaseData.getString("productId"));
+                    if (skuDetails != null) {
+                        payload.put("price_currency_code", skuDetails.getString("price_currency_code"));
+                        payload.put("price_amount_micros", skuDetails.getString("price_amount_micros"));
+                    }
+
+                    Log.d(LOG_TAG, "Payload: " + new JSONObject(payload).toString(2));
+
+                    Teak.asyncExecutor.submit(new CachedRequest("/me/purchase", payload, new Date()));
+                } catch (Exception e) {
+                    // TODO: Error?
+                    Log.e(LOG_TAG, "Error reporting purchase: " + Log.getStackTraceString(e));
+                }
             }
         });
     }
