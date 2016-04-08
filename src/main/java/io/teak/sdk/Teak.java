@@ -613,8 +613,6 @@ public class Teak extends BroadcastReceiver {
 
                 payload.put("happened_at", dateIssued.getTime() / 1000); // Milliseconds -> Seconds
 
-                payload.put("device_id", Teak.deviceId);
-
                 if (Teak.userIdentifiedThisSession) {
                     payload.put("do_not_track_event", Boolean.TRUE);
                 }

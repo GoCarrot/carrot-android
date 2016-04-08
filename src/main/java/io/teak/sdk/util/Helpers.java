@@ -17,6 +17,9 @@ package io.teak.sdk;
 import android.content.Context;
 import android.util.Log;
 
+import android.os.Build;
+import android.text.TextUtils;
+
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -94,5 +97,37 @@ class Helpers {
             list.add(value);
         }
         return list;
+    }
+
+    // From:
+    // https://raw.githubusercontent.com/jaredrummler/AndroidDeviceNames/master/library/src/main/java/com/jaredrummler/android/device/DeviceName.java
+    static void addDeviceNameToPayload(Map<String, Object> payload) {
+        payload.put("device_manufacturer", Build.MANUFACTURER);
+        payload.put("device_model", Build.MODEL);
+        if (Build.MODEL.startsWith(Build.MANUFACTURER)) {
+          payload.put("fallback", capitalize(Build.MODEL));
+        } else {
+          payload.put("fallback", capitalize(Build.MANUFACTURER) + " " + Build.MODEL);
+        }
+    }
+
+    private static String capitalize(String str) {
+        if (TextUtils.isEmpty(str)) {
+            return str;
+        }
+        char[] arr = str.toCharArray();
+        boolean capitalizeNext = true;
+        String phrase = "";
+        for (char c : arr) {
+            if (capitalizeNext && Character.isLetter(c)) {
+                phrase += Character.toUpperCase(c);
+                capitalizeNext = false;
+                continue;
+            } else if (Character.isWhitespace(c)) {
+                capitalizeNext = true;
+            }
+            phrase += c;
+        }
+        return phrase;
     }
 }

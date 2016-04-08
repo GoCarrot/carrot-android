@@ -68,6 +68,9 @@ class Request implements Runnable {
         payload.put("sdk_version", Teak.SDKVersion);
         payload.put("sdk_platform", "android_" + android.os.Build.VERSION.RELEASE);
         payload.put("app_version", String.valueOf(Teak.appVersion));
+        payload.put("device_id", Teak.deviceId);
+
+        Helpers.addDeviceNameToPayload(payload);
     }
 
     public void run() {
