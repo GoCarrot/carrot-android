@@ -655,8 +655,13 @@ public class Teak extends BroadcastReceiver {
                     String gcmId = Teak.gcmId.get(5L, TimeUnit.SECONDS);
                     if (gcmId != null) {
                         payload.put("gcm_push_key", gcmId);
+
+                        if (Teak.isDebug) {
+                            showDebugUrlForGCMKey(userId, gcmId);
+                        }
                     }
                 } catch (Exception e) {
+                    Log.e(LOG_TAG, Log.getStackTraceString(e));
                 }
 
                 Log.d(LOG_TAG, "Identifying user: " + userId);
@@ -796,6 +801,28 @@ public class Teak extends BroadcastReceiver {
             }
         });
         Teak.asyncExecutor.submit(Teak.facebookAccessToken);
+    }
+
+    static void showDebugUrlForGCMKey(String userId, String gcmId) {
+        try {
+            HashMap<String, Object> payload = new HashMap<String, Object>();
+            Helpers.addDeviceNameToPayload(payload);
+
+            String urlString = "https://app.teak.io/apps/" + Teak.appId + "/test_account" +
+                "?api_key=" + URLEncoder.encode(userId, "UTF-8") +
+                "&device_id=" + URLEncoder.encode(Teak.deviceId, "UTF-8") +
+                "&gcm_push_key="  + URLEncoder.encode(gcmId, "UTF-8") +
+                "&device_manufacturer="  + URLEncoder.encode((String) payload.get("device_manufacturer"), "UTF-8") +
+                "&device_model="  + URLEncoder.encode((String) payload.get("device_model"), "UTF-8") +
+                "&device_fallback="  + URLEncoder.encode((String) payload.get("device_fallback"), "UTF-8");
+            payload = new HashMap<String, Object>();
+            payload.put("url", urlString);
+
+            Log.d(LOG_TAG, "If you want to debug or test push notifications on this device please click the link below, or copy/paste into your browser:");
+            Log.d(LOG_TAG, "    " + urlString);
+        } catch(Exception e) {
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
+        }
     }
 
     /**************************************************************************/
