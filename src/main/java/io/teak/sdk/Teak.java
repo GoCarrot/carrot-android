@@ -571,7 +571,7 @@ public class Teak extends BroadcastReceiver {
                 }
 
                 if (Teak.isDebug) {
-                    Log.d(Teak.LOG_TAG, "Sending heartbeat for user: " + userId);
+                    Log.v(Teak.LOG_TAG, "Sending heartbeat for user: " + userId);
                 }
 
                 HttpsURLConnection connection = null;
