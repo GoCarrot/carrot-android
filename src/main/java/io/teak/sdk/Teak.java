@@ -536,11 +536,17 @@ public class Teak extends BroadcastReceiver {
                 Log.d(LOG_TAG, "Lifecycle - onActivityStarted: " + activity.toString());
             }
 
-            // OpenIAB, need to store off the SKU for the purchase failed case
+            // OpenIAB & Prime31, need to store off the SKU for the purchase failed case
             if (activity.getClass().getName().equals("org.onepf.openiab.UnityProxyActivity")) {
                 Bundle bundle = activity.getIntent().getExtras();
                 if (Teak.isDebug) {
                     Log.d(LOG_TAG, "Unity OpenIAB purchase launched: " + bundle.toString());
+                }
+                skuStack.push(bundle.getString("sku"));
+            } else if (activity.getClass().getName().equals("com.prime31.GoogleIABProxyActivity")) {
+                Bundle bundle = activity.getIntent().getExtras();
+                if (Teak.isDebug) {
+                    Log.d(LOG_TAG, "Unity Prime31 purchase launched: " + bundle.toString());
                 }
                 skuStack.push(bundle.getString("sku"));
             }
@@ -840,10 +846,22 @@ public class Teak extends BroadcastReceiver {
         }
     }
 
-    private static void openIABPurchaseFailed(int errorCode) {
+    private static void prime31PurchaseSucceeded(String json) {
+        try {
+            JSONObject originalJson = new JSONObject(json);
+            if (Teak.isDebug) {
+                Log.d(LOG_TAG, "Prime31 purchase succeeded: " + originalJson.toString(2));
+            }
+            purchaseSucceeded(originalJson);
+        } catch (Exception e) {
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
+        }
+    }
+
+    private static void pluginPurchaseFailed(int errorCode) {
         String sku = skuStack.pop();
         if (Teak.isDebug) {
-            Log.d(LOG_TAG, "OpenIAB purchase failed (" + errorCode + ") for sku: " + sku);
+            Log.d(LOG_TAG, "OpenIAB/Prime31 purchase failed (" + errorCode + ") for sku: " + sku);
         }
         purchaseFailed(errorCode, sku);
     }
