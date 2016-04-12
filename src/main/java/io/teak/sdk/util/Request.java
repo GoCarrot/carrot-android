@@ -52,6 +52,8 @@ class Request implements Runnable {
     protected Map<String, Object> payload;
     private String hostname;
 
+    static Map<String, Object> dynamicCommonPayload = new HashMap<String, Object>();
+
     public Request(String method, String endpoint, Map<String, Object> payload) {
         this(method, null, endpoint, payload);
     }
@@ -71,6 +73,7 @@ class Request implements Runnable {
         payload.put("device_id", Teak.deviceId);
 
         Helpers.addDeviceNameToPayload(payload);
+        payload.putAll(Request.dynamicCommonPayload);
     }
 
     public void run() {
