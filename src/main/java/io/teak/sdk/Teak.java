@@ -839,8 +839,15 @@ public class Teak extends BroadcastReceiver {
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "OpenIAB purchase succeeded: " + purchase.toString(2));
             }
-            JSONObject originalJson = new JSONObject(purchase.getString("originalJson"));
-            purchaseSucceeded(originalJson);
+
+            if (Teak.installerPackage.equals("com.amazon.venezia")) {
+                if (Teak.isDebug) {
+                    Log.d(LOG_TAG, "OpenIAB callback ignored, Amazon purchase reporting is auto-magical.");
+                }
+            } else {
+                JSONObject originalJson = new JSONObject(purchase.getString("originalJson"));
+                purchaseSucceeded(originalJson);
+            }
         } catch (Exception e) {
             Log.e(LOG_TAG, Log.getStackTraceString(e));
         }
@@ -852,7 +859,14 @@ public class Teak extends BroadcastReceiver {
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Prime31 purchase succeeded: " + originalJson.toString(2));
             }
-            purchaseSucceeded(originalJson);
+
+            if (Teak.installerPackage.equals("com.amazon.venezia")) {
+                if (Teak.isDebug) {
+                    Log.d(LOG_TAG, "Prime31 callback ignored, Amazon purchase reporting is auto-magical.");
+                }
+            } else {
+                purchaseSucceeded(originalJson);
+            }
         } catch (Exception e) {
             Log.e(LOG_TAG, Log.getStackTraceString(e));
         }
