@@ -186,7 +186,7 @@ class GooglePlay implements IStore {
             Bundle querySkus = new Bundle();
             querySkus.putStringArrayList(GET_SKU_DETAILS_ITEM_LIST, skuList);
 
-            Bundle skuDetails = (Bundle) m.invoke(mService, 3, mContext.getPackageName(), ITEM_TYPE_INAPP, querySkus);
+            Bundle skuDetails = (Bundle) m.invoke(mService, 3, mContext.getPackageName(), itemType, querySkus);
 
             if (!skuDetails.containsKey(RESPONSE_GET_SKU_DETAILS_LIST)) {
                 int response = getResponseCodeFromBundle(skuDetails);
