@@ -72,7 +72,6 @@ class Request implements Runnable {
         payload.put("app_version", String.valueOf(Teak.appVersion));
         payload.put("device_id", Teak.deviceId);
 
-        Helpers.addDeviceNameToPayload(payload);
         payload.putAll(Request.dynamicCommonPayload);
     }
 

@@ -291,6 +291,10 @@ public class Teak extends BroadcastReceiver {
                 }
             }
 
+            // Add dynamic payload
+            Helpers.addDeviceNameToPayload(Request.dynamicCommonPayload);
+            Request.dynamicCommonPayload.put("appstore_name", Teak.installerPackage);
+
             // Facebook Access Token Broadcaster
             Teak.facebookAccessTokenBroadcast = new FacebookAccessTokenBroadcast(activity);
 
@@ -892,7 +896,6 @@ public class Teak extends BroadcastReceiver {
                     }
 
                     HashMap<String, Object> payload = new HashMap<String, Object>();
-                    payload.put("appstore_name", Teak.installerPackage);
 
                     if (Teak.installerPackage.equals("com.amazon.venezia")) {
                         JSONObject receipt = purchaseData.getJSONObject("receipt");
@@ -934,7 +937,6 @@ public class Teak extends BroadcastReceiver {
         }
 
         HashMap<String, Object> payload = new HashMap<String, Object>();
-        payload.put("appstore_name", Teak.installerPackage);
         payload.put("error_code", new Integer(errorCode));
         payload.put("product_id", sku == null ? "" : sku);
 
