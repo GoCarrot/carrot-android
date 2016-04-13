@@ -53,10 +53,6 @@ class Amazon implements IStore {
                 Log.d(Teak.LOG_TAG, "Amazon In-App Purchasing 2.0 registered.");
                 Log.d(Teak.LOG_TAG, "   Sandbox Mode: " + sandbox.getBoolean(null));
             }
-
-            // HAX
-            m = purchasingServiceClass.getMethod("purchase", String.class);
-            m.invoke(null, "io.teak.demo.angrybots.dollar");
         } catch (Exception e) {
             Log.e(Teak.LOG_TAG, "Reflection error: " + Log.getStackTraceString(e));
         }
