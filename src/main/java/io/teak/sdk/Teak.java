@@ -884,27 +884,41 @@ public class Teak extends BroadcastReceiver {
         Teak.asyncExecutor.submit(new Runnable() {
             public void run() {
                 try {
-                    Log.d(LOG_TAG, "Purchase succeeded: " + purchaseData.toString(2));
-
-                    HashMap<String, Object> payload = new HashMap<String, Object>();
-                    payload.put("purchase_token", purchaseData.get("purchaseToken"));
-                    payload.put("purchase_time", purchaseData.get("purchaseTime"));
-                    payload.put("product_id", purchaseData.get("productId"));
-                    payload.put("package_name", purchaseData.get("packageName"));
-                    payload.put("order_id", purchaseData.get("orderId"));
-                    payload.put("appstore_name", Teak.installerPackage);
-
-                    JSONObject skuDetails = Teak.appStore.querySkuDetails(purchaseData.getString("productId"));
-                    if (skuDetails != null) {
-                        payload.put("price_currency_code", skuDetails.getString("price_currency_code"));
-                        payload.put("price_amount_micros", skuDetails.getString("price_amount_micros"));
+                    if (Teak.isDebug) {
+                        Log.d(LOG_TAG, "Purchase succeeded: " + purchaseData.toString(2));
                     }
 
-                    Log.d(LOG_TAG, "Payload: " + new JSONObject(payload).toString(2));
+                    HashMap<String, Object> payload = new HashMap<String, Object>();
+                    payload.put("appstore_name", Teak.installerPackage);
+
+                    if (Teak.installerPackage.equals("com.amazon.venezia")) {
+                        JSONObject receipt = purchaseData.getJSONObject("receipt");
+                        JSONObject userData = purchaseData.getJSONObject("userData");
+
+                        payload.put("purchase_token", receipt.get("receiptId"));
+                        payload.put("purchase_time_string", receipt.get("purchaseDate"));
+                        payload.put("product_id", receipt.get("sku"));
+                        payload.put("store_user_id", userData.get("userId"));
+                        payload.put("store_marketplace", userData.get("marketplace"));
+                    } else {
+                        payload.put("purchase_token", purchaseData.get("purchaseToken"));
+                        payload.put("purchase_time", purchaseData.get("purchaseTime"));
+                        payload.put("product_id", purchaseData.get("productId"));
+                        payload.put("order_id", purchaseData.get("orderId"));
+                    }
+
+                    JSONObject skuDetails = Teak.appStore.querySkuDetails(payload.get("product_id"));
+                    if (skuDetails != null) {
+                        if (skuDetails.has("price_amount_micros")) {
+                            payload.put("price_currency_code", skuDetails.getString("price_currency_code"));
+                            payload.put("price_amount_micros", skuDetails.getString("price_amount_micros"));
+                        } else if (skuDetails.has("price_string")) {
+                            payload.put("price_string", skuDetails.getString("price_string"));
+                        }
+                    }
 
                     Teak.asyncExecutor.submit(new CachedRequest("/me/purchase", payload, new Date()));
                 } catch (Exception e) {
-                    // TODO: Error?
                     Log.e(LOG_TAG, "Error reporting purchase: " + Log.getStackTraceString(e));
                 }
             }
@@ -912,10 +926,16 @@ public class Teak extends BroadcastReceiver {
     }
 
     static void purchaseFailed(int errorCode, String sku) {
-        // TODO: Payload
         if (Teak.isDebug) {
             Log.d(LOG_TAG, "Purchase failed (" + errorCode + ") for sku: " + sku);
         }
+
+        HashMap<String, Object> payload = new HashMap<String, Object>();
+        payload.put("appstore_name", Teak.installerPackage);
+        payload.put("error_code", new Integer(errorCode));
+        payload.put("product_id", sku == null ? "" : sku);
+
+        Teak.asyncExecutor.submit(new CachedRequest("/me/purchase", payload, new Date()));
     }
 
     private static void checkActivityResultForPurchase(int resultCode, Intent data) {

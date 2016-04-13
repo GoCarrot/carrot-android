@@ -142,9 +142,12 @@ class Amazon implements IStore {
                 Field success = purchaseResponseRequestStatusClass.getDeclaredField("SUCCESSFUL");
 
                 if (requestStatus.equals(success.get(null))) {
+                    m = purchaseResponseClass.getMethod("toJSON");
+                    JSONObject json = (JSONObject) m.invoke(args[0]);
+                    Teak.purchaseSucceeded(json);
+                } else {
+                    Teak.purchaseFailed(-1, null);
                 }
-
-                Log.d(Teak.LOG_TAG, "Purchase response: " + args[0].toString());
 
             // onProductDataResponse()
             } else if(method.getName().equals("onProductDataResponse")) {
