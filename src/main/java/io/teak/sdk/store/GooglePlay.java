@@ -162,6 +162,10 @@ class GooglePlay implements IStore {
         return false;
     }
 
+    public void onActivityResumed() {
+        // Empty
+    }
+
     public void dispose() {
         if (mServiceConn != null) {
             if (mContext != null) mContext.unbindService(mServiceConn);

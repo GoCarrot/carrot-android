@@ -52,13 +52,20 @@ class Amazon implements IStore {
                 Log.d(Teak.LOG_TAG, "   Sandbox Mode: " + sandbox.getBoolean(null));
             }
 
-            // Get user data and insert it into the dynamic common payload
-            m = purchasingServiceClass.getMethod("getUserData");
-            m.invoke(null);
-
             // HAX
             m = purchasingServiceClass.getMethod("purchase", String.class);
             m.invoke(null, "io.teak.demo.angrybots.dollar");
+        } catch (Exception e) {
+            Log.e(Teak.LOG_TAG, "Reflection error: " + Log.getStackTraceString(e));
+        }
+    }
+
+    public void onActivityResumed() {
+        // Get user data and insert it into the dynamic common payload
+        try {
+            Class<?> purchasingServiceClass = Class.forName("com.amazon.device.iap.PurchasingService");
+            Method m = purchasingServiceClass.getMethod("getUserData");
+            m.invoke(null);
         } catch (Exception e) {
             Log.e(Teak.LOG_TAG, "Reflection error: " + Log.getStackTraceString(e));
         }

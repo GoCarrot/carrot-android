@@ -490,6 +490,9 @@ public class Teak extends BroadcastReceiver {
                 Log.d(LOG_TAG, "Lifecycle - onActivityResumed");
             }
 
+            // Stores can do work if needed
+            Teak.appStore.onActivityResumed();
+
             // Service config
             final ServiceConfig config = new ServiceConfig();
             HashMap<String, Object> payload = new HashMap<String, Object>();

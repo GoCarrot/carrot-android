@@ -22,6 +22,7 @@ import org.json.JSONObject;
 public interface IStore {
     public void init(Context context);
     public void dispose();
+    public void onActivityResumed();
     public JSONObject querySkuDetails(String sku);
     public void checkActivityResultForPurchase(int resultCode, Intent data);
     public boolean ignorePluginPurchaseEvents();
