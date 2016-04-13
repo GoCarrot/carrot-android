@@ -33,8 +33,10 @@ import org.json.JSONObject;
 
 class Amazon implements IStore {
     HashMap<String, String> skuPriceMap;
+    HashMap<String, Object> skuDetailsRequestMap;
 
     public void init(Context context) {
+        skuDetailsRequestMap = new HashMap<String, Object>();
         skuPriceMap = new HashMap<String, String>();
         try {
             Class<?> purchasingListenerClass = Class.forName("com.amazon.device.iap.PurchasingListener");
@@ -81,12 +83,17 @@ class Amazon implements IStore {
             Method m = purchasingServiceClass.getMethod("getProductData", Set.class);
             HashSet<String> skus = new HashSet<String>();
             skus.add(sku);
-            m.invoke(null, skus);
+            Object requestId = m.invoke(null, skus);
 
-            // TODO: Block on queue
+            skuDetailsRequestMap.put(requestId.toString(), requestId);
+            synchronized (requestId) {
+                requestId.wait();
+            }
+            skuDetailsRequestMap.remove(requestId.toString());
 
-            // price_currency_code
-            // price_amount_micros
+            JSONObject ret = new JSONObject();
+            ret.put("price_string", skuPriceMap.get(sku));
+            return ret;
         } catch (Exception e) {
             Log.e(Teak.LOG_TAG, "Reflection error: " + Log.getStackTraceString(e));
         }
@@ -161,6 +168,8 @@ class Amazon implements IStore {
                 Class<?> productDataResponseClass = Class.forName("com.amazon.device.iap.model.ProductDataResponse");
                 Method m = productDataResponseClass.getMethod("getRequestStatus");
                 Object requestStatus = m.invoke(args[0]);
+                m = productDataResponseClass.getMethod("getRequestId");
+                Object requestId = m.invoke(args[0]);
 
                 Class<?> productDataResponseRequestStatusClass = Class.forName("com.amazon.device.iap.model.ProductDataResponse$RequestStatus");
                 Field success = productDataResponseRequestStatusClass.getDeclaredField("SUCCESSFUL");
@@ -170,11 +179,11 @@ class Amazon implements IStore {
                     Map<String, Object> skuMap = (Map<String, Object>) m.invoke(args[0]);
                     Class<?> productClass = Class.forName("com.amazon.device.iap.model.Product");
                     m = productClass.getMethod("getPrice");
-                    Log.d(Teak.LOG_TAG, "Skus: " + skuMap.toString());
 
                     if (Teak.isDebug) {
                         Log.d(Teak.LOG_TAG, "SKU Details:");
                     }
+
                     for (Map.Entry<String, Object> entry : skuMap.entrySet()) {
                         String price = m.invoke(entry.getValue()).toString();
                         skuPriceMap.put(entry.getKey(), price);
@@ -183,7 +192,10 @@ class Amazon implements IStore {
                         }
                     }
 
-                    // TODO: Hash/blocking queue
+                    Object lock = skuDetailsRequestMap.get(requestId.toString());
+                    synchronized (lock) {
+                        lock.notify();
+                    }
                 } else {
                     if (Teak.isDebug) {
                         Log.d(Teak.LOG_TAG, "SKU detail query failed.");

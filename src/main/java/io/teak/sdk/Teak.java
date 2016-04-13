@@ -910,7 +910,7 @@ public class Teak extends BroadcastReceiver {
                         payload.put("order_id", purchaseData.get("orderId"));
                     }
 
-                    JSONObject skuDetails = Teak.appStore.querySkuDetails(payload.get("product_id"));
+                    JSONObject skuDetails = Teak.appStore.querySkuDetails((String) payload.get("product_id"));
                     if (skuDetails != null) {
                         if (skuDetails.has("price_amount_micros")) {
                             payload.put("price_currency_code", skuDetails.getString("price_currency_code"));
