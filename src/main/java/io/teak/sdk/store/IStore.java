@@ -24,4 +24,5 @@ public interface IStore {
     public void dispose();
     public JSONObject querySkuDetails(String sku);
     public void checkActivityResultForPurchase(int resultCode, Intent data);
+    public boolean ignorePluginPurchaseEvents();
 }

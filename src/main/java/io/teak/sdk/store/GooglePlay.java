@@ -158,6 +158,10 @@ class GooglePlay implements IStore {
         }
     }
 
+    public boolean ignorePluginPurchaseEvents() {
+        return false;
+    }
+
     public void dispose() {
         if (mServiceConn != null) {
             if (mContext != null) mContext.unbindService(mServiceConn);

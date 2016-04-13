@@ -90,6 +90,10 @@ class Amazon implements IStore {
         // None
     }
 
+    public boolean ignorePluginPurchaseEvents() {
+        return true;
+    }
+
     // com.amazon.device.iap.PurchasingListener
     class PurchasingListenerInvocationHandler implements InvocationHandler {
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
