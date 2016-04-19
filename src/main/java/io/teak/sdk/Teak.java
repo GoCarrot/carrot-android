@@ -177,6 +177,26 @@ public class Teak extends BroadcastReceiver {
         }
     }
 
+    /**
+     * Track an arbitrary event in Teak.
+     *
+     * @param actionId         The identifier for the action, e.g. 'complete'.
+     * @param objectTypeId     The type of object that is being posted, e.g. 'quest'.
+     * @param objectInstanceId The specific instance of the object, e.g. 'gather-quest-1'
+     */
+    public static void trackEvent(String actionId, String objectTypeId, String objectInstanceId) {
+        if (Teak.isDebug) {
+            Log.d(LOG_TAG, "Tracking Event: " + actionId + " - " + objectTypeId + " - " + objectInstanceId);
+        }
+
+        HashMap<String, Object> payload = new HashMap<String, Object>();
+        payload.put("action_type", actionId);
+        payload.put("object_type", objectTypeId);
+        payload.put("object_instance_id", objectInstanceId);
+
+        Teak.asyncExecutor.submit(new CachedRequest("/me/events", payload, new Date()));
+    }
+
     /**************************************************************************/
 
     static int appVersion;
@@ -828,8 +848,6 @@ public class Teak extends BroadcastReceiver {
                 "&device_manufacturer="  + URLEncoder.encode((String) payload.get("device_manufacturer"), "UTF-8") +
                 "&device_model="  + URLEncoder.encode((String) payload.get("device_model"), "UTF-8") +
                 "&device_fallback="  + URLEncoder.encode((String) payload.get("device_fallback"), "UTF-8");
-            payload = new HashMap<String, Object>();
-            payload.put("url", urlString);
 
             Log.d(LOG_TAG, "If you want to debug or test push notifications on this device please click the link below, or copy/paste into your browser:");
             Log.d(LOG_TAG, "    " + urlString);
