@@ -684,6 +684,8 @@ public class Teak extends BroadcastReceiver {
                     payload.put("teak_notif_id", new Long(launchedFromTeakNotifId));
                 }
 
+                // Put empty string, and then try and replace it with the real id if available
+                payload.put("gcm_push_key", "");
                 try {
                     String gcmId = Teak.gcmId.get(5L, TimeUnit.SECONDS);
                     if (gcmId != null) {
