@@ -201,6 +201,7 @@ public class Teak extends BroadcastReceiver {
 
     static int appVersion;
     static boolean isDebug;
+    static boolean forceDebug = false;
     static FutureTask<String> gcmId;
     static String apiKey;
     static String appId;
@@ -240,7 +241,7 @@ public class Teak extends BroadcastReceiver {
     private static final long SAME_SESSION_TIME_DELTA = 120000;
 
     /**************************************************************************/
-    private static final TeakActivityLifecycleCallbacks lifecycleCallbacks = new TeakActivityLifecycleCallbacks();
+    static final TeakActivityLifecycleCallbacks lifecycleCallbacks = new TeakActivityLifecycleCallbacks();
 
     static class TeakActivityLifecycleCallbacks implements ActivityLifecycleCallbacks {
         @Override
@@ -257,7 +258,7 @@ public class Teak extends BroadcastReceiver {
             Teak.deviceId = deviceUuid.toString();
 
             // Check for debug build
-            Teak.isDebug = ((Boolean) Helpers.getBuildConfigValue(activity, "DEBUG")) == Boolean.TRUE;
+            Teak.isDebug = Teak.forceDebug || ((Boolean) Helpers.getBuildConfigValue(activity, "DEBUG")) == Boolean.TRUE;
 
             // Get current app version
             Teak.appVersion = 0;
@@ -313,7 +314,9 @@ public class Teak extends BroadcastReceiver {
 
             // Add dynamic payload
             Helpers.addDeviceNameToPayload(Request.dynamicCommonPayload);
-            Request.dynamicCommonPayload.put("appstore_name", Teak.installerPackage);
+            if (Teak.installerPackage != null) {
+                Request.dynamicCommonPayload.put("appstore_name", Teak.installerPackage);
+            }
 
             // Facebook Access Token Broadcaster
             Teak.facebookAccessTokenBroadcast = new FacebookAccessTokenBroadcast(activity);
@@ -463,7 +466,9 @@ public class Teak extends BroadcastReceiver {
                 Log.d(LOG_TAG, "        App Id: " + Teak.appId);
                 Log.d(LOG_TAG, "       Api Key: " + Teak.apiKey);
                 Log.d(LOG_TAG, "   App Version: " + Teak.appVersion);
-                Log.d(LOG_TAG, "     App Store: " + Teak.installerPackage);
+                if (Teak.installerPackage != null) {
+                    Log.d(LOG_TAG, "     App Store: " + Teak.installerPackage);
+                }
                 if (Teak.launchedFromTeakNotifId != null) {
                     Log.d(LOG_TAG, " Teak Notif Id: " + Teak.launchedFromTeakNotifId);
                 }
@@ -485,7 +490,6 @@ public class Teak extends BroadcastReceiver {
             Teak.cacheOpenHelper.close();
             Teak.facebookAccessTokenBroadcast.unregister(activity);
             LocalBroadcastManager.getInstance(activity).unregisterReceiver(Teak.localBroadcastReceiver);
-            activity.getApplication().unregisterActivityLifecycleCallbacks(this);
         }
 
         @Override
@@ -917,7 +921,9 @@ public class Teak extends BroadcastReceiver {
 
                     HashMap<String, Object> payload = new HashMap<String, Object>();
 
-                    if (Teak.installerPackage.equals("com.amazon.venezia")) {
+                    if (Teak.installerPackage == null) {
+                        Log.e(LOG_TAG, "Purchase succeded from unknown app store.");
+                    } else if (Teak.installerPackage.equals("com.amazon.venezia")) {
                         JSONObject receipt = purchaseData.getJSONObject("receipt");
                         JSONObject userData = purchaseData.getJSONObject("userData");
 
