@@ -258,7 +258,12 @@ public class Teak extends BroadcastReceiver {
             Teak.deviceId = deviceUuid.toString();
 
             // Check for debug build
-            Teak.isDebug = Teak.forceDebug || ((Boolean) Helpers.getBuildConfigValue(activity, "DEBUG")) == Boolean.TRUE;
+            try {
+                Teak.isDebug = Teak.forceDebug || (((Boolean) Helpers.getBuildConfigValue(activity, "DEBUG")) == Boolean.TRUE);
+            } catch(Exception ignored) {
+            } finally {
+                Teak.isDebug = Teak.forceDebug;
+            }
 
             // Get current app version
             Teak.appVersion = 0;
