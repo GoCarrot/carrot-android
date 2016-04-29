@@ -172,7 +172,7 @@ class Amazon implements IStore {
 
                 if (requestStatus.equals(success.get(null))) {
                     m = productDataResponseClass.getMethod("getProductData");
-                    Map<String, Object> skuMap = (Map<String, Object>) m.invoke(args[0]);
+                    @SuppressWarnings("unchecked") Map<String, Object> skuMap = (Map<String, Object>) m.invoke(args[0]);
                     Class<?> productClass = Class.forName("com.amazon.device.iap.model.Product");
                     m = productClass.getMethod("getPrice");
 
