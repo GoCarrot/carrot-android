@@ -678,7 +678,7 @@ public class Teak extends BroadcastReceiver {
                         payload.put("android_ad_id", adInfo.adId);
                         payload.put("android_limit_ad_tracking", adInfo.limitAdTracking);
                     }
-                } catch (Exception e) {
+                } catch (Exception ignored) {
                 }
 
                 try {
@@ -704,8 +704,7 @@ public class Teak extends BroadcastReceiver {
                             showDebugUrlForGCMKey(userId, gcmId);
                         }
                     }
-                } catch (Exception e) {
-                    Log.e(LOG_TAG, Log.getStackTraceString(e));
+                } catch (Exception ignored) {
                 }
 
                 Log.d(LOG_TAG, "Identifying user: " + userId);
