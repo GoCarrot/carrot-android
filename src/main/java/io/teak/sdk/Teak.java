@@ -647,7 +647,7 @@ public class Teak extends BroadcastReceiver {
                 try {
                     userId = Teak.userId.get();
                 } catch (Exception e) {
-                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                    identifyUser();
                     return;
                 }
 
