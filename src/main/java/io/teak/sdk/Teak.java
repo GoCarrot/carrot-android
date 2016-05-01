@@ -221,7 +221,6 @@ public class Teak extends BroadcastReceiver {
     static boolean userIdentifiedThisSession;
     static Date lastSessionEndedAt;
     static SQLiteDatabase database;
-    static String deviceId;
     static String installerPackage;
     static IStore appStore;
     static Stack<String> skuStack = new Stack<String>();
@@ -247,15 +246,6 @@ public class Teak extends BroadcastReceiver {
         @Override
         public void onActivityCreated(final Activity activity, Bundle savedInstanceState) {
             if (activity != Teak.mainActivity) return;
-
-            // Unique device id
-            final TelephonyManager tm = (TelephonyManager) activity.getBaseContext().getSystemService(Context.TELEPHONY_SERVICE);
-            final String tmDevice, tmSerial, androidId;
-            tmDevice = "" + tm.getDeviceId();
-            tmSerial = "" + tm.getSimSerialNumber();
-            androidId = "" + android.provider.Settings.Secure.getString(activity.getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
-            UUID deviceUuid = new UUID(androidId.hashCode(), ((long) tmDevice.hashCode() << 32) | tmSerial.hashCode());
-            Teak.deviceId = deviceUuid.toString();
 
             // Check for debug build
             try {
@@ -853,7 +843,6 @@ public class Teak extends BroadcastReceiver {
 
             String urlString = "https://app.teak.io/apps/" + Teak.appId + "/test_account" +
                 "?api_key=" + URLEncoder.encode(userId, "UTF-8") +
-                "&device_id=" + URLEncoder.encode(Teak.deviceId, "UTF-8") +
                 "&gcm_push_key="  + URLEncoder.encode(gcmId, "UTF-8") +
                 "&device_manufacturer="  + URLEncoder.encode((String) payload.get("device_manufacturer"), "UTF-8") +
                 "&device_model="  + URLEncoder.encode((String) payload.get("device_model"), "UTF-8") +
