@@ -847,12 +847,14 @@ public class Teak extends BroadcastReceiver {
             HashMap<String, Object> payload = new HashMap<String, Object>();
             Helpers.addDeviceNameToPayload(payload);
 
-            String urlString = "https://app.teak.io/apps/" + Teak.appId + "/test_account" +
+            String urlString = "https://app.teak.io/apps/" + Teak.appId + "/test_accounts" +
                 "?api_key=" + URLEncoder.encode(userId, "UTF-8") +
                 "&gcm_push_key="  + URLEncoder.encode(gcmId, "UTF-8") +
                 "&device_manufacturer="  + URLEncoder.encode((String) payload.get("device_manufacturer"), "UTF-8") +
                 "&device_model="  + URLEncoder.encode((String) payload.get("device_model"), "UTF-8") +
-                "&device_fallback="  + URLEncoder.encode((String) payload.get("device_fallback"), "UTF-8");
+                "&device_fallback="  + URLEncoder.encode((String) payload.get("device_fallback"), "UTF-8") +
+                "&bundle_id=" + URLEncoder.encode((String) Teak.bundleId, "UTF-8") +
+                "&_method=post";
 
             Log.d(LOG_TAG, "If you want to debug or test push notifications on this device please click the link below, or copy/paste into your browser:");
             Log.d(LOG_TAG, "    " + urlString);
