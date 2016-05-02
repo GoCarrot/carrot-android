@@ -222,6 +222,7 @@ public class Teak extends BroadcastReceiver {
     static Date lastSessionEndedAt;
     static SQLiteDatabase database;
     static String installerPackage;
+    static String bundleId;
     static IStore appStore;
     static Stack<String> skuStack = new Stack<String>();
 
@@ -262,6 +263,9 @@ public class Teak extends BroadcastReceiver {
             } catch (Exception e) {
                 Log.e(LOG_TAG, Log.getStackTraceString(e));
             }
+
+            // Package Id
+            Teak.bundleId = activity.getApplicationContext().getPackageName();
 
             // Get the API Key
             if (Teak.apiKey == null) {
@@ -312,6 +316,7 @@ public class Teak extends BroadcastReceiver {
             if (Teak.installerPackage != null) {
                 Request.dynamicCommonPayload.put("appstore_name", Teak.installerPackage);
             }
+            Request.dynamicCommonPayload.put("bundle_id", Teak.bundleId);
 
             // Facebook Access Token Broadcaster
             Teak.facebookAccessTokenBroadcast = new FacebookAccessTokenBroadcast(activity);
