@@ -113,7 +113,7 @@ public class Teak extends BroadcastReceiver {
     /**
      * Version of the Teak SDK.
      */
-    public static final String SDKVersion = "2.0";
+    public static final String SDKVersion = io.teak.sdk.BuildConfig.VERSION_NAME;
 
     /**
      * Initialize Teak and tell it to listen to the lifecycle events of {@link Activity}.
@@ -461,6 +461,7 @@ public class Teak extends BroadcastReceiver {
                 Log.d(LOG_TAG, "        App Id: " + Teak.appId);
                 Log.d(LOG_TAG, "       Api Key: " + Teak.apiKey);
                 Log.d(LOG_TAG, "   App Version: " + Teak.appVersion);
+                Log.d(LOG_TAG, "  Teak Version: " + Teak.SDKVersion);
                 if (Teak.installerPackage != null) {
                     Log.d(LOG_TAG, "     App Store: " + Teak.installerPackage);
                 }
