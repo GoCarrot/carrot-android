@@ -793,7 +793,7 @@ public class Teak extends BroadcastReceiver {
 
                     HashMap<String, Object> payload = new HashMap<String, Object>();
                     payload.put("app_id", Teak.appId);
-                    payload.put("user_id", Teak.userId);
+                    payload.put("user_id", userId);
                     payload.put("platform_id", new Long(notif.teakNotifId));
 
                     Teak.asyncExecutor.submit(new CachedRequest("/notification_received", payload, new Date()));
