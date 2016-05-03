@@ -34,8 +34,6 @@ import android.os.AsyncTask;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 
-import android.telephony.TelephonyManager;
-
 import android.util.Log;
 
 import org.json.JSONObject;
