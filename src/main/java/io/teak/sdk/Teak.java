@@ -374,10 +374,10 @@ public class Teak extends BroadcastReceiver {
                         Teak.asyncExecutor.submit(new Runnable() {
                             public void run() {
                                 try {
-                                    GoogleCloudMessaging gcm = GoogleCloudMessaging.getInstance(activity);
+                                    GoogleCloudMessaging gcm = GoogleCloudMessaging.getInstance(activity.getApplicationContext());
                                     gcm.register(senderId);
-                                } catch (Exception ex) {
-                                    Log.e(LOG_TAG, ex.toString());
+                                } catch (Exception e) {
+                                    Log.e(LOG_TAG, Log.getStackTraceString(e));
                                     // TODO: exponential back-off, re-register
                                 }
                             }
