@@ -344,6 +344,9 @@ public class Teak extends BroadcastReceiver {
             });
             Teak.asyncExecutor.submit(Teak.userId);
 
+            // Do services config
+            configServices();
+
             // Facebook Access Token
             createFacebookAccessTokenFuture();
 
@@ -520,32 +523,8 @@ public class Teak extends BroadcastReceiver {
                 Teak.appStore.onActivityResumed();
             }
 
-            // Service config
-            final ServiceConfig config = new ServiceConfig();
-            HashMap<String, Object> payload = new HashMap<String, Object>();
-            payload.put("id", Teak.appId);
-            Teak.serviceConfig = new FutureTask<ServiceConfig>(new Request("POST", "gocarrot.com", "/games/" + Teak.appId + "/settings.json", payload) {
-                @Override
-                protected void done(int responseCode, String responseBody) {
-                    try {
-                        JSONObject response = new JSONObject(responseBody);
-                        config.setConfig(response);
-
-                        if (Teak.isDebug) {
-                            Log.d(LOG_TAG, "Services response (" + responseCode + "): " + response.toString(2));
-                            Log.d(LOG_TAG, "Service Config " + config.toString());
-                        }
-
-                        // Heartbeat will block on userId Future, which is fine
-                        startHeartbeat();
-
-                        // Submit cached requests
-                        CachedRequest.submitCachedRequests();
-                    } catch (Exception ignored) {
-                    }
-                }
-            }, config);
-            Teak.asyncExecutor.execute(Teak.serviceConfig);
+            // Do services config
+            configServices();
 
             // Adds executor task that waits on userId and other Futures
             if (Teak.launchedFromTeakNotifId != null ||
@@ -588,6 +567,36 @@ public class Teak extends BroadcastReceiver {
 
         @Override
         public void onActivityStopped(Activity activity) {
+        }
+    }
+
+    private static void configServices() {
+        if (Teak.serviceConfig == null || Teak.serviceConfig.isDone()) {
+            final ServiceConfig config = new ServiceConfig();
+            HashMap<String, Object> payload = new HashMap<String, Object>();
+            payload.put("id", Teak.appId);
+            Teak.serviceConfig = new FutureTask<ServiceConfig>(new Request("POST", "gocarrot.com", "/games/" + Teak.appId + "/settings.json", payload) {
+                @Override
+                protected void done(int responseCode, String responseBody) {
+                    try {
+                        JSONObject response = new JSONObject(responseBody);
+                        config.setConfig(response);
+
+                        if (Teak.isDebug) {
+                            Log.d(LOG_TAG, "Services response (" + responseCode + "): " + response.toString(2));
+                            Log.d(LOG_TAG, "Service Config " + config.toString());
+                        }
+
+                        // Heartbeat will block on userId Future, which is fine
+                        startHeartbeat();
+
+                        // Submit cached requests
+                        CachedRequest.submitCachedRequests();
+                    } catch (Exception ignored) {
+                    }
+                }
+            }, config);
+            Teak.asyncExecutor.execute(Teak.serviceConfig);
         }
     }
 
