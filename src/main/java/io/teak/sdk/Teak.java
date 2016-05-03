@@ -23,6 +23,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.BroadcastReceiver;
 import android.content.pm.PackageManager;
+import android.content.pm.ApplicationInfo;
 
 import android.support.v4.content.LocalBroadcastManager;
 
@@ -249,12 +250,7 @@ public class Teak extends BroadcastReceiver {
             if (activity != Teak.mainActivity) return;
 
             // Check for debug build
-            try {
-                Teak.isDebug = Teak.forceDebug || (((Boolean) Helpers.getBuildConfigValue(activity, "DEBUG")) == Boolean.TRUE);
-            } catch(Exception ignored) {
-            } finally {
-                Teak.isDebug = Teak.forceDebug;
-            }
+            Teak.isDebug = Teak.forceDebug || (0 != (activity.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE));
 
             // Get current app version
             Teak.appVersion = 0;
