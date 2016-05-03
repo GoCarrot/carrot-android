@@ -123,6 +123,7 @@ public class Teak extends BroadcastReceiver {
      * @param activity The main <code>Activity</code> of your app.
      */
     public static void onCreate(Activity activity) {
+        Log.d(LOG_TAG, "SDK Version: " + Teak.SDKVersion);
         Teak.mainActivity = activity;
         activity.getApplication().registerActivityLifecycleCallbacks(Teak.lifecycleCallbacks);
     }
@@ -463,7 +464,6 @@ public class Teak extends BroadcastReceiver {
                 Log.d(LOG_TAG, "        App Id: " + Teak.appId);
                 Log.d(LOG_TAG, "       Api Key: " + Teak.apiKey);
                 Log.d(LOG_TAG, "   App Version: " + Teak.appVersion);
-                Log.d(LOG_TAG, "  Teak Version: " + Teak.SDKVersion);
                 if (Teak.installerPackage != null) {
                     Log.d(LOG_TAG, "     App Store: " + Teak.installerPackage);
                 }
