@@ -520,7 +520,9 @@ public class Teak extends BroadcastReceiver {
             }
 
             // Stores can do work if needed
-            Teak.appStore.onActivityResumed();
+            if (Teak.appStore != null) {
+                Teak.appStore.onActivityResumed();
+            }
 
             // Service config
             final ServiceConfig config = new ServiceConfig();
@@ -872,7 +874,7 @@ public class Teak extends BroadcastReceiver {
                 Log.d(LOG_TAG, "OpenIAB purchase succeeded: " + purchase.toString(2));
             }
 
-            if (Teak.appStore.ignorePluginPurchaseEvents()) {
+            if (Teak.appStore != null && Teak.appStore.ignorePluginPurchaseEvents()) {
                 if (Teak.isDebug) {
                     Log.d(LOG_TAG, "OpenIAB callback ignored, store purchase reporting is auto-magical.");
                 }
@@ -892,7 +894,7 @@ public class Teak extends BroadcastReceiver {
                 Log.d(LOG_TAG, "Prime31 purchase succeeded: " + originalJson.toString(2));
             }
 
-            if (Teak.appStore.ignorePluginPurchaseEvents()) {
+            if (Teak.appStore != null && Teak.appStore.ignorePluginPurchaseEvents()) {
                 if (Teak.isDebug) {
                     Log.d(LOG_TAG, "Prime31 callback ignored, store purchase reporting is auto-magical.");
                 }
@@ -940,13 +942,15 @@ public class Teak extends BroadcastReceiver {
                         payload.put("order_id", purchaseData.get("orderId"));
                     }
 
-                    JSONObject skuDetails = Teak.appStore.querySkuDetails((String) payload.get("product_id"));
-                    if (skuDetails != null) {
-                        if (skuDetails.has("price_amount_micros")) {
-                            payload.put("price_currency_code", skuDetails.getString("price_currency_code"));
-                            payload.put("price_amount_micros", skuDetails.getString("price_amount_micros"));
-                        } else if (skuDetails.has("price_string")) {
-                            payload.put("price_string", skuDetails.getString("price_string"));
+                    if (Teak.appStore != null) {
+                        JSONObject skuDetails = Teak.appStore.querySkuDetails((String) payload.get("product_id"));
+                        if (skuDetails != null) {
+                            if (skuDetails.has("price_amount_micros")) {
+                                payload.put("price_currency_code", skuDetails.getString("price_currency_code"));
+                                payload.put("price_amount_micros", skuDetails.getString("price_amount_micros"));
+                            } else if (skuDetails.has("price_string")) {
+                                payload.put("price_string", skuDetails.getString("price_string"));
+                            }
                         }
                     }
 
@@ -971,6 +975,8 @@ public class Teak extends BroadcastReceiver {
     }
 
     private static void checkActivityResultForPurchase(int resultCode, Intent data) {
-        Teak.appStore.checkActivityResultForPurchase(resultCode, data);
+        if (Teak.appStore != null) {
+            Teak.appStore.checkActivityResultForPurchase(resultCode, data);
+        }
     }
 }
