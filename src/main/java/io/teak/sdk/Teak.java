@@ -773,7 +773,10 @@ public class Teak extends BroadcastReceiver {
                 Log.e(LOG_TAG, "Error storing GCM Id from " + GCM_REGISTRATION_INTENT_ACTION + ":\n" + Log.getStackTraceString(e));
             }
         } else if (GCM_RECEIVE_INTENT_ACTION.equals(action)) {
-            final TeakNotification notif = TeakNotification.notificationFromIntent(context, intent);
+            final TeakNotification notif = TeakNotification.remoteNotificationFromIntent(context, intent);
+            if (notif == null) {
+                return;
+            }
 
             // Send Notification Received Metric
             Teak.asyncExecutor.submit(new Runnable() {
@@ -801,7 +804,7 @@ public class Teak extends BroadcastReceiver {
             if (Teak.mainActivity != null) {
                 LocalBroadcastManager.getInstance(Teak.mainActivity).sendBroadcast(new Intent(TeakNotification.TEAK_INBOX_HAS_NOTIFICATIONS_INTENT));
             }
-        } else if (action.endsWith(TeakNotification.TEAK_PUSH_OPENED_INTENT_ACTION_SUFFIX)) {
+        } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX)) {
             Bundle bundle = intent.getExtras();
 
             // Cancel the update
@@ -823,7 +826,7 @@ public class Teak extends BroadcastReceiver {
                     Log.d(LOG_TAG, "Notification (" + bundle.getString("teakNotifId") + ") opened, NOT auto-launching app (noAutoLaunch flag present, and set to true).");
                 }
             }
-        } else if (action.endsWith(TeakNotification.TEAK_PUSH_CLEARED_INTENT_ACTION_SUFFIX)) {
+        } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX)) {
             Bundle bundle = intent.getExtras();
             TeakNotification.cancel(context, bundle.getInt("platformId"));
         }

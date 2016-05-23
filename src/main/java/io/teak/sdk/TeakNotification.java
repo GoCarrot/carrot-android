@@ -89,9 +89,9 @@ public class TeakNotification {
      * <p/>
      * This allows you to take special actions, it is not required that you listen for it.
      */
-    public static final String TEAK_PUSH_OPENED_INTENT_ACTION_SUFFIX = ".intent.TEAK_PUSH_OPENED";
+    public static final String TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX = ".intent.TEAK_NOTIFICATION_OPENED";
 
-    public static final String TEAK_PUSH_CLEARED_INTENT_ACTION_SUFFIX = ".intent.TEAK_PUSH_CLEARED";
+    public static final String TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX = ".intent.TEAK_NOTIFICATION_CLEARED";
 
     /**
      * Intent action used by Teak to notify you that there are pending inbox notifications.
@@ -476,7 +476,7 @@ public class TeakNotification {
 
     static NotificationManagerCompat notificationManager;
 
-    static TeakNotification notificationFromIntent(Context context, Intent intent) {
+    static TeakNotification remoteNotificationFromIntent(Context context, Intent intent) {
         Bundle bundle = intent.getExtras();
 
         if (!bundle.containsKey("teakNotifId")) {
@@ -526,13 +526,13 @@ public class TeakNotification {
         builder.setAutoCancel(true);
 
         // Create intent to fire if/when notification is cleared
-        Intent pushClearedIntent = new Intent(context.getPackageName() + TEAK_PUSH_CLEARED_INTENT_ACTION_SUFFIX);
+        Intent pushClearedIntent = new Intent(context.getPackageName() + TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX);
         pushClearedIntent.putExtras(bundle);
         PendingIntent pushClearedPendingIntent = PendingIntent.getBroadcast(context, 0, pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
         builder.setDeleteIntent(pushClearedPendingIntent);
 
         // Create intent to fire if/when notification is opened, attach bundle info
-        Intent pushOpenedIntent = new Intent(context.getPackageName() + TEAK_PUSH_OPENED_INTENT_ACTION_SUFFIX);
+        Intent pushOpenedIntent = new Intent(context.getPackageName() + TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX);
         pushOpenedIntent.putExtras(bundle);
         PendingIntent pushOpenedPendingIntent = PendingIntent.getBroadcast(context, 0, pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
         builder.setContentIntent(pushOpenedPendingIntent);
