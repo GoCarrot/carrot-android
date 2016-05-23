@@ -189,7 +189,8 @@ public class TeakNotification {
      */
     public static long inboxCount() {
         if (Teak.database != null) {
-            return DatabaseUtils.queryNumEntries(Teak.database, "inbox", null);
+            // API v11 version: DatabaseUtils.queryNumEntries(Teak.database, "inbox", null);
+            return DatabaseUtils.longForQuery(Teak.database, "SELECT COUNT(*) FROM inbox", null);
         } else {
             return 0;
         }
