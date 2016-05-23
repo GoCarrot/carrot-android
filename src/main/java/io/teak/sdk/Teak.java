@@ -618,7 +618,15 @@ public class Teak extends BroadcastReceiver {
                     connection = (HttpsURLConnection) url.openConnection();
                     connection.setRequestProperty("Accept-Charset", "UTF-8");
                     connection.setUseCaches(false);
+
+                    int responseCode = connection.getResponseCode();
+                    if (Teak.isDebug) {
+                        Log.v(Teak.LOG_TAG, "Heartbeat response code: " + responseCode);
+                    }
                 } catch (Exception e) {
+                    if (Teak.isDebug) {
+                        Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                    }
                 } finally {
                     connection.disconnect();
                     connection = null;
