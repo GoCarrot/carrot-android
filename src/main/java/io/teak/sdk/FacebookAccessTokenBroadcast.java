@@ -16,8 +16,6 @@ package io.teak.sdk;
 
 import java.lang.reflect.*;
 
-import android.os.Bundle;
-
 import android.content.Intent;
 import android.content.Context;
 import android.content.IntentFilter;
@@ -136,7 +134,7 @@ class FacebookAccessTokenBroadcast {
                         Log.d(Teak.LOG_TAG, "Listening for Facebook SDK 3.x broadcast actions.");
                     }
 
-                    Class<?> com_facebook_Session = null;
+                    Class<?> com_facebook_Session;
                     try {
                         com_facebook_Session = Class.forName(FACEBOOK_3_x_SESSION_CLASS_NAME);
                         if (Teak.isDebug) {
@@ -175,7 +173,7 @@ class FacebookAccessTokenBroadcast {
                 break;
 
                 case 4: {
-                    Class<?> com_facebook_AccessToken = null;
+                    Class<?> com_facebook_AccessToken;
                     try {
                         com_facebook_AccessToken = Class.forName(FACEBOOK_4_x_ACCESS_TOKEN_CLASS_NAME);
                         if (Teak.isDebug) {
@@ -192,7 +190,7 @@ class FacebookAccessTokenBroadcast {
                     }
 
                     try {
-                        Class<?> com_facebook_AccessTokenManager = null;
+                        Class<?> com_facebook_AccessTokenManager;
                         com_facebook_AccessTokenManager = Class.forName(FACEBOOK_4_x_ACCESS_TOKEN_MANAGER_CLASS_NAME);
                         if (Teak.isDebug) {
                             Log.d(Teak.LOG_TAG, "Found " + com_facebook_AccessTokenManager.toString());

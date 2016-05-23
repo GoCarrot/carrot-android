@@ -103,7 +103,7 @@ class CachedRequest extends Request implements Runnable {
     }
 
     private static List<CachedRequest> requestsInCache() {
-        List<CachedRequest> requests = new ArrayList<CachedRequest>();
+        List<CachedRequest> requests = new ArrayList<>();
 
         if (Teak.database != null) {
             Cursor cursor = Teak.database.query("cache", REQUEST_CACHE_READ_COLUMNS, null, null, null, null, "retry_count");

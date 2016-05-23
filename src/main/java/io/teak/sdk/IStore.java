@@ -20,10 +20,10 @@ import android.content.Context;
 import org.json.JSONObject;
 
 public interface IStore {
-    public void init(Context context);
-    public void dispose();
-    public void onActivityResumed();
-    public JSONObject querySkuDetails(String sku);
-    public void checkActivityResultForPurchase(int resultCode, Intent data);
-    public boolean ignorePluginPurchaseEvents();
+    void init(Context context);
+    void dispose();
+    void onActivityResumed();
+    JSONObject querySkuDetails(String sku);
+    void checkActivityResultForPurchase(int resultCode, Intent data);
+    boolean ignorePluginPurchaseEvents();
 }

@@ -15,7 +15,6 @@
 package io.teak.sdk;
 
 import android.content.Context;
-import android.util.Log;
 
 import android.os.Build;
 import android.text.TextUtils;
@@ -23,8 +22,6 @@ import android.text.TextUtils;
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.json.JSONException;
-
-import java.lang.reflect.*;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -43,23 +40,8 @@ class Helpers {
         return null;
     }
 
-    static Object getBuildConfigValue(Context context, String fieldName) {
-        try {
-            Class<?> clazz = Class.forName(context.getPackageName() + ".BuildConfig");
-            Field field = clazz.getField(fieldName);
-            return field.get(null);
-        } catch (ClassNotFoundException e) {
-            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
-        } catch (NoSuchFieldException e) {
-            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
-        } catch (IllegalAccessException e) {
-            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
-        }
-        return null;
-    }
-
     static Map<String, Object> jsonToMap(JSONObject json) throws JSONException {
-        Map<String, Object> retMap = new HashMap<String, Object>();
+        Map<String, Object> retMap = new HashMap<>();
 
         if (json != JSONObject.NULL) {
             retMap = toMap(json);
@@ -68,7 +50,7 @@ class Helpers {
     }
 
     private static Map<String, Object> toMap(JSONObject object) throws JSONException {
-        Map<String, Object> map = new HashMap<String, Object>();
+        Map<String, Object> map = new HashMap<>();
 
         Iterator keysItr = object.keys();
         while (keysItr.hasNext()) {
@@ -86,7 +68,7 @@ class Helpers {
     }
 
     private static List<Object> toList(JSONArray array) throws JSONException {
-        List<Object> list = new ArrayList<Object>();
+        List<Object> list = new ArrayList<>();
         for (int i = 0; i < array.length(); i++) {
             Object value = array.get(i);
             if (value instanceof JSONArray) {

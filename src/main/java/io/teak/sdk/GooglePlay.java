@@ -25,7 +25,6 @@ import android.content.pm.ResolveInfo;
 
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.RemoteException;
 
 import android.util.Log;
 
@@ -35,8 +34,8 @@ import java.util.ArrayList;
 import java.lang.reflect.Method;
 
 import org.json.JSONObject;
-import org.json.JSONException;
 
+@SuppressWarnings("unused")
 class GooglePlay implements IStore {
     Object mService;
     ServiceConnection mServiceConn;
@@ -47,27 +46,27 @@ class GooglePlay implements IStore {
     public static final String ITEM_TYPE_SUBS = "subs";
 
     public static final int BILLING_RESPONSE_RESULT_OK = 0;
-    public static final int BILLING_RESPONSE_RESULT_USER_CANCELED = 1;
-    public static final int BILLING_RESPONSE_RESULT_SERVICE_UNAVAILABLE = 2;
-    public static final int BILLING_RESPONSE_RESULT_BILLING_UNAVAILABLE = 3;
-    public static final int BILLING_RESPONSE_RESULT_ITEM_UNAVAILABLE = 4;
-    public static final int BILLING_RESPONSE_RESULT_DEVELOPER_ERROR = 5;
-    public static final int BILLING_RESPONSE_RESULT_ERROR = 6;
-    public static final int BILLING_RESPONSE_RESULT_ITEM_ALREADY_OWNED = 7;
-    public static final int BILLING_RESPONSE_RESULT_ITEM_NOT_OWNED = 8;
+    //public static final int BILLING_RESPONSE_RESULT_USER_CANCELED = 1;
+    //public static final int BILLING_RESPONSE_RESULT_SERVICE_UNAVAILABLE = 2;
+    //public static final int BILLING_RESPONSE_RESULT_BILLING_UNAVAILABLE = 3;
+    //public static final int BILLING_RESPONSE_RESULT_ITEM_UNAVAILABLE = 4;
+    //public static final int BILLING_RESPONSE_RESULT_DEVELOPER_ERROR = 5;
+    //public static final int BILLING_RESPONSE_RESULT_ERROR = 6;
+    //public static final int BILLING_RESPONSE_RESULT_ITEM_ALREADY_OWNED = 7;
+    //public static final int BILLING_RESPONSE_RESULT_ITEM_NOT_OWNED = 8;
 
     public static final String RESPONSE_CODE = "RESPONSE_CODE";
     public static final String RESPONSE_GET_SKU_DETAILS_LIST = "DETAILS_LIST";
-    public static final String RESPONSE_BUY_INTENT = "BUY_INTENT";
+    //public static final String RESPONSE_BUY_INTENT = "BUY_INTENT";
     public static final String RESPONSE_INAPP_PURCHASE_DATA = "INAPP_PURCHASE_DATA";
     public static final String RESPONSE_INAPP_SIGNATURE = "INAPP_DATA_SIGNATURE";
-    public static final String RESPONSE_INAPP_ITEM_LIST = "INAPP_PURCHASE_ITEM_LIST";
-    public static final String RESPONSE_INAPP_PURCHASE_DATA_LIST = "INAPP_PURCHASE_DATA_LIST";
-    public static final String RESPONSE_INAPP_SIGNATURE_LIST = "INAPP_DATA_SIGNATURE_LIST";
-    public static final String INAPP_CONTINUATION_TOKEN = "INAPP_CONTINUATION_TOKEN";
+    //public static final String RESPONSE_INAPP_ITEM_LIST = "INAPP_PURCHASE_ITEM_LIST";
+    //public static final String RESPONSE_INAPP_PURCHASE_DATA_LIST = "INAPP_PURCHASE_DATA_LIST";
+    //public static final String RESPONSE_INAPP_SIGNATURE_LIST = "INAPP_DATA_SIGNATURE_LIST";
+    //public static final String INAPP_CONTINUATION_TOKEN = "INAPP_CONTINUATION_TOKEN";
 
     public static final String GET_SKU_DETAILS_ITEM_LIST = "ITEM_ID_LIST";
-    public static final String GET_SKU_DETAILS_ITEM_TYPE_LIST = "ITEM_TYPE_LIST";
+    //public static final String GET_SKU_DETAILS_ITEM_TYPE_LIST = "ITEM_TYPE_LIST";
 
     public void init(Context context) {
         mContext = context.getApplicationContext();
@@ -106,7 +105,7 @@ class GooglePlay implements IStore {
                     // check for in-app billing v3 support
                     Class<?> cls = Class.forName("com.android.vending.billing.IInAppBillingService");
                     Method m = cls.getMethod("isBillingSupported", int.class, String.class, String.class);
-                    int response = ((Integer) m.invoke(mService, 3, packageName, ITEM_TYPE_INAPP)).intValue();
+                    int response = (Integer) m.invoke(mService, 3, packageName, ITEM_TYPE_INAPP);
                     if (response != BILLING_RESPONSE_RESULT_OK) {
                         Log.e(Teak.LOG_TAG, "Error checking for Google Play billing v3 support.");
                     } else {
@@ -117,7 +116,7 @@ class GooglePlay implements IStore {
 
                     // Check for v5 subscriptions support. This is needed for
                     // getBuyIntentToReplaceSku which allows for subscription update
-                    response = ((Integer) m.invoke(mService, 5, packageName, ITEM_TYPE_SUBS)).intValue();
+                    response = (Integer) m.invoke(mService, 5, packageName, ITEM_TYPE_SUBS);
                     if (response == BILLING_RESPONSE_RESULT_OK) {
                         if (Teak.isDebug) {
                             Log.d(Teak.LOG_TAG, "Google Play Subscription re-signup available.");
@@ -128,7 +127,7 @@ class GooglePlay implements IStore {
                             Log.d(Teak.LOG_TAG, "Google Play Subscription re-signup not available.");
                         }
                         // check for v3 subscriptions support
-                        response = ((Integer) m.invoke(mService, 3, packageName, ITEM_TYPE_SUBS)).intValue();
+                        response = (Integer) m.invoke(mService, 3, packageName, ITEM_TYPE_SUBS);
                         if (response == BILLING_RESPONSE_RESULT_OK) {
                             if (Teak.isDebug) {
                                 Log.d(Teak.LOG_TAG, "Google Play Subscriptions available.");
@@ -142,7 +141,6 @@ class GooglePlay implements IStore {
                 }
                 catch (Exception e) {
                     Log.e(Teak.LOG_TAG, "Error working with InAppBillingService: " + Log.getStackTraceString(e));
-                    return;
                 }
             }
         };
@@ -186,7 +184,7 @@ class GooglePlay implements IStore {
 
     private JSONObject querySkuDetails(String itemType, String sku) {
         try {
-            ArrayList<String> skuList = new ArrayList<String>();
+            ArrayList<String> skuList = new ArrayList<>();
             skuList.add(sku);
             Class<?> cls = Class.forName("com.android.vending.billing.IInAppBillingService");
             Method m = cls.getMethod("getSkuDetails", int.class, String.class, String.class, Bundle.class);
@@ -209,7 +207,7 @@ class GooglePlay implements IStore {
 
             ArrayList<String> responseList = skuDetails.getStringArrayList(RESPONSE_GET_SKU_DETAILS_LIST);
 
-            if (responseList.size() == 1) {
+            if (responseList != null && responseList.size() == 1) {
                 JSONObject ret = new JSONObject(responseList.get(0));
                 if (Teak.isDebug) {
                     Log.d(Teak.LOG_TAG, "SKU Details: " + ret.toString(2));
@@ -230,7 +228,7 @@ class GooglePlay implements IStore {
         if (o == null) {
             return BILLING_RESPONSE_RESULT_OK;
         }
-        else if (o instanceof Integer) return ((Integer)o).intValue();
+        else if (o instanceof Integer) return (Integer) o;
         else if (o instanceof Long) return (int)((Long)o).longValue();
         else {
             Log.e(Teak.LOG_TAG, "Unexpected type for bundle response code.");
@@ -244,7 +242,7 @@ class GooglePlay implements IStore {
         if (o == null) {
             Log.e(Teak.LOG_TAG, "Intent with no response code, assuming OK (known Google issue)");
             return BILLING_RESPONSE_RESULT_OK;
-        } else if (o instanceof Integer) return ((Integer) o).intValue();
+        } else if (o instanceof Integer) return (Integer) o;
         else if (o instanceof Long) return (int) ((Long) o).longValue();
         else {
             Log.e(Teak.LOG_TAG, "Unexpected type for intent response code.");

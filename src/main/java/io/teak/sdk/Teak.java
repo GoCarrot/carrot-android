@@ -24,6 +24,7 @@ import android.content.SharedPreferences;
 import android.content.BroadcastReceiver;
 import android.content.pm.ApplicationInfo;
 
+import android.os.Build;
 import android.support.v4.content.LocalBroadcastManager;
 
 import android.os.Bundle;
@@ -115,7 +116,13 @@ public class Teak extends BroadcastReceiver {
     public static void onCreate(Activity activity) {
         Log.d(LOG_TAG, "SDK Version: " + Teak.SDKVersion);
         Teak.mainActivity = activity;
-        activity.getApplication().registerActivityLifecycleCallbacks(Teak.lifecycleCallbacks);
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            // TODO: This is non-ideal, see if we can find a better fallback.
+            Teak.lifecycleCallbacks.onActivityCreated(activity, null);
+        } else {
+            activity.getApplication().registerActivityLifecycleCallbacks(Teak.lifecycleCallbacks);
+        }
     }
 
     /**
@@ -127,7 +134,7 @@ public class Teak extends BroadcastReceiver {
      * @param resultCode  The <code>resultCode</code> parameter received from {@link Activity#onActivityResult}
      * @param data        The <code>data</code> parameter received from {@link Activity#onActivityResult}
      */
-    public static void onActivityResult(int requestCode, int resultCode, Intent data) {
+    public static void onActivityResult(@SuppressWarnings("unused") int requestCode, int resultCode, Intent data) {
         if (Teak.isDebug) {
             Log.d(LOG_TAG, "Lifecycle - onActivityResult");
         }
@@ -174,12 +181,13 @@ public class Teak extends BroadcastReceiver {
      * @param objectTypeId     The type of object that is being posted, e.g. 'quest'.
      * @param objectInstanceId The specific instance of the object, e.g. 'gather-quest-1'
      */
+    @SuppressWarnings("unused")
     public static void trackEvent(String actionId, String objectTypeId, String objectInstanceId) {
         if (Teak.isDebug) {
             Log.d(LOG_TAG, "Tracking Event: " + actionId + " - " + objectTypeId + " - " + objectInstanceId);
         }
 
-        HashMap<String, Object> payload = new HashMap<String, Object>();
+        HashMap<String, Object> payload = new HashMap<>();
         payload.put("action_type", actionId);
         payload.put("object_type", objectTypeId);
         payload.put("object_instance_id", objectInstanceId);
@@ -214,7 +222,7 @@ public class Teak extends BroadcastReceiver {
     static String installerPackage;
     static String bundleId;
     static IStore appStore;
-    static Stack<String> skuStack = new Stack<String>();
+    static Stack<String> skuStack = new Stack<>();
 
     static final String LOG_TAG = "Teak";
 
@@ -225,8 +233,6 @@ public class Teak extends BroadcastReceiver {
     private static final String TEAK_PREFERENCES_FILE = "io.teak.sdk.Preferences";
     private static final String TEAK_PREFERENCE_GCM_ID = "io.teak.sdk.Preferences.GcmId";
     private static final String TEAK_PREFERENCE_APP_VERSION = "io.teak.sdk.Preferences.AppVersion";
-
-    private static final String TEAK_SERVICES_HOSTNAME = "services.gocarrot.com";
 
     private static final long SAME_SESSION_TIME_DELTA = 120000;
 
@@ -289,7 +295,7 @@ public class Teak extends BroadcastReceiver {
                     }
                 }
                 try {
-                    Teak.appStore = (IStore) clazz.newInstance();
+                    Teak.appStore = (IStore) (clazz != null ? clazz.newInstance() : null);
                     Teak.appStore.init(activity);
                 } catch (Exception e) {
                     Log.e(LOG_TAG, "Unable to create app store interface. " + Log.getStackTraceString(e));
@@ -312,12 +318,12 @@ public class Teak extends BroadcastReceiver {
             LocalBroadcastManager.getInstance(activity).registerReceiver(Teak.localBroadcastReceiver, filter);
 
             // Producer/Consumer Queues
-            Teak.gcmIdQueue = new ArrayBlockingQueue<String>(1);
-            Teak.userIdQueue = new ArrayBlockingQueue<String>(1);
-            Teak.facebookAccessTokenQueue = new ArrayBlockingQueue<String>(1);
+            Teak.gcmIdQueue = new ArrayBlockingQueue<>(1);
+            Teak.userIdQueue = new ArrayBlockingQueue<>(1);
+            Teak.facebookAccessTokenQueue = new ArrayBlockingQueue<>(1);
 
             // User Id
-            Teak.userId = new FutureTask<String>(new Callable<String>() {
+            Teak.userId = new FutureTask<>(new Callable<String>() {
                 public String call() {
                     try {
                         String ret = Teak.userIdQueue.take();
@@ -375,7 +381,7 @@ public class Teak extends BroadcastReceiver {
                 }
             }
 
-            Teak.gcmId = new FutureTask<String>(new Callable<String>() {
+            Teak.gcmId = new FutureTask<>(new Callable<String>() {
                 public String call() {
                     try {
                         return Teak.gcmIdQueue.take();
@@ -390,7 +396,7 @@ public class Teak extends BroadcastReceiver {
             // Google Play Advertising Id
             int googlePlayStatus = GooglePlayServicesUtil.isGooglePlayServicesAvailable(activity);
             if (googlePlayStatus == ConnectionResult.SUCCESS) {
-                Teak.adInfo = new FutureTask<AdvertisingInfo>(new Callable<AdvertisingInfo>() {
+                Teak.adInfo = new FutureTask<>(new Callable<AdvertisingInfo>() {
                     public AdvertisingInfo call() {
                         AdvertisingInfo ret = null;
                         try {
@@ -409,7 +415,7 @@ public class Teak extends BroadcastReceiver {
                     }
                 });
             } else {
-                Teak.adInfo = new FutureTask<AdvertisingInfo>(new Callable<AdvertisingInfo>() {
+                Teak.adInfo = new FutureTask<>(new Callable<AdvertisingInfo>() {
                     public AdvertisingInfo call() {
                         Log.e(LOG_TAG, "Google Play Services not available, can't get advertising id.");
                         return null;
@@ -428,7 +434,7 @@ public class Teak extends BroadcastReceiver {
 
             // Validate the app id/key via "/games/#{@appId}/validate_sig.json"
             if (Teak.isDebug) {
-                HashMap<String, Object> payload = new HashMap<String, Object>();
+                HashMap<String, Object> payload = new HashMap<>();
                 payload.put("id", Teak.appId);
                 Teak.asyncExecutor.execute(new Request("POST", "gocarrot.com", "/games/" + Teak.appId + "/validate_sig.json", payload) {
                     @Override
@@ -560,9 +566,9 @@ public class Teak extends BroadcastReceiver {
     private static void configServices() {
         if (Teak.serviceConfig == null || Teak.serviceConfig.isDone()) {
             final ServiceConfig config = new ServiceConfig();
-            HashMap<String, Object> payload = new HashMap<String, Object>();
+            HashMap<String, Object> payload = new HashMap<>();
             payload.put("id", Teak.appId);
-            Teak.serviceConfig = new FutureTask<ServiceConfig>(new Request("POST", "gocarrot.com", "/games/" + Teak.appId + "/settings.json", payload) {
+            Teak.serviceConfig = new FutureTask<>(new Request("POST", "gocarrot.com", "/games/" + Teak.appId + "/settings.json", payload) {
                 @Override
                 protected void done(int responseCode, String responseBody) {
                     try {
@@ -594,7 +600,7 @@ public class Teak extends BroadcastReceiver {
 
         Teak.heartbeatService.scheduleAtFixedRate(new Runnable() {
             public void run() {
-                String userId = null;
+                String userId;
                 try {
                     userId = Teak.userId.get();
                 } catch (Exception e) {
@@ -628,8 +634,9 @@ public class Teak extends BroadcastReceiver {
                         Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
                     }
                 } finally {
-                    connection.disconnect();
-                    connection = null;
+                    if (connection != null) {
+                        connection.disconnect();
+                    }
                 }
             }
         }, 0, 1, TimeUnit.MINUTES); // TODO: If services config specifies a different rate, use that
@@ -641,7 +648,7 @@ public class Teak extends BroadcastReceiver {
 
         Teak.asyncExecutor.submit(new Runnable() {
             public void run() {
-                String userId = null;
+                String userId;
                 try {
                     userId = Teak.userId.get();
                 } catch (Exception e) {
@@ -649,7 +656,7 @@ public class Teak extends BroadcastReceiver {
                     return;
                 }
 
-                HashMap<String, Object> payload = new HashMap<String, Object>();
+                HashMap<String, Object> payload = new HashMap<>();
 
                 payload.put("happened_at", dateIssued.getTime() / 1000); // Milliseconds -> Seconds
 
@@ -684,11 +691,11 @@ public class Teak extends BroadcastReceiver {
                     if (accessToken != null) {
                         payload.put("access_token", accessToken);
                     }
-                } catch (Exception e) {
+                } catch (Exception ignored) {
                 }
 
                 if (launchedFromTeakNotifId != null) {
-                    payload.put("teak_notif_id", new Long(launchedFromTeakNotifId));
+                    payload.put("teak_notif_id", Long.valueOf(launchedFromTeakNotifId));
                 }
 
                 // Put empty string, and then try and replace it with the real id if available
@@ -756,7 +763,7 @@ public class Teak extends BroadcastReceiver {
             // Store off the GCM Id and app version
             try {
                 Bundle bundle = intent.getExtras();
-                String registration = bundle.get("registration_id").toString();
+                String registration = bundle.getString("registration_id");
                 SharedPreferences.Editor editor = context.getSharedPreferences(TEAK_PREFERENCES_FILE, Context.MODE_PRIVATE).edit();
                 editor.putInt(TEAK_PREFERENCE_APP_VERSION, Teak.appVersion);
                 editor.putString(TEAK_PREFERENCE_GCM_ID, registration);
@@ -783,7 +790,7 @@ public class Teak extends BroadcastReceiver {
                 public void run() {
                     if (Teak.userId == null) return;
 
-                    String userId = null;
+                    String userId;
                     try {
                         userId = Teak.userId.get();
                     } catch (Exception e) {
@@ -791,10 +798,10 @@ public class Teak extends BroadcastReceiver {
                         return;
                     }
 
-                    HashMap<String, Object> payload = new HashMap<String, Object>();
+                    HashMap<String, Object> payload = new HashMap<>();
                     payload.put("app_id", Teak.appId);
                     payload.put("user_id", userId);
-                    payload.put("platform_id", new Long(notif.teakNotifId));
+                    payload.put("platform_id", notif.teakNotifId);
 
                     Teak.asyncExecutor.submit(new CachedRequest("/notification_received", payload, new Date()));
                 }
@@ -833,11 +840,10 @@ public class Teak extends BroadcastReceiver {
     }
 
     static void createFacebookAccessTokenFuture() {
-        Teak.facebookAccessToken = new FutureTask<String>(new Callable<String>() {
+        Teak.facebookAccessToken = new FutureTask<>(new Callable<String>() {
             public String call() {
                 try {
-                    String ret = Teak.facebookAccessTokenQueue.take();
-                    return ret;
+                    return Teak.facebookAccessTokenQueue.take();
                 } catch (InterruptedException e) {
                     Log.e(LOG_TAG, Log.getStackTraceString(e));
                 }
@@ -849,7 +855,7 @@ public class Teak extends BroadcastReceiver {
 
     static void showDebugUrlForGCMKey(String userId, String gcmId) {
         try {
-            HashMap<String, Object> payload = new HashMap<String, Object>();
+            HashMap<String, Object> payload = new HashMap<>();
             Helpers.addDeviceNameToPayload(payload);
 
             String urlString = "https://app.teak.io/apps/" + Teak.appId + "/test_accounts/new" +
@@ -858,7 +864,7 @@ public class Teak extends BroadcastReceiver {
                 "&device_manufacturer="  + URLEncoder.encode((String) payload.get("device_manufacturer"), "UTF-8") +
                 "&device_model="  + URLEncoder.encode((String) payload.get("device_model"), "UTF-8") +
                 "&device_fallback="  + URLEncoder.encode((String) payload.get("device_fallback"), "UTF-8") +
-                "&bundle_id=" + URLEncoder.encode((String) Teak.bundleId, "UTF-8");
+                "&bundle_id=" + URLEncoder.encode(Teak.bundleId, "UTF-8");
 
             Log.d(LOG_TAG, "If you want to debug or test push notifications on this device please click the link below, or copy/paste into your browser:");
             Log.d(LOG_TAG, "    " + urlString);
@@ -869,6 +875,7 @@ public class Teak extends BroadcastReceiver {
 
     /**************************************************************************/
 
+    @SuppressWarnings("unused")
     private static void openIABPurchaseSucceeded(String json) {
         try {
             JSONObject purchase = new JSONObject(json);
@@ -889,6 +896,7 @@ public class Teak extends BroadcastReceiver {
         }
     }
 
+    @SuppressWarnings("unused")
     private static void prime31PurchaseSucceeded(String json) {
         try {
             JSONObject originalJson = new JSONObject(json);
@@ -908,6 +916,7 @@ public class Teak extends BroadcastReceiver {
         }
     }
 
+    @SuppressWarnings("unused")
     private static void pluginPurchaseFailed(int errorCode) {
         String sku = skuStack.pop();
         if (Teak.isDebug) {
@@ -924,7 +933,7 @@ public class Teak extends BroadcastReceiver {
                         Log.d(LOG_TAG, "Purchase succeeded: " + purchaseData.toString(2));
                     }
 
-                    HashMap<String, Object> payload = new HashMap<String, Object>();
+                    HashMap<String, Object> payload = new HashMap<>();
 
                     if (Teak.installerPackage == null) {
                         Log.e(LOG_TAG, "Purchase succeded from unknown app store.");
@@ -969,8 +978,8 @@ public class Teak extends BroadcastReceiver {
             Log.d(LOG_TAG, "Purchase failed (" + errorCode + ") for sku: " + sku);
         }
 
-        HashMap<String, Object> payload = new HashMap<String, Object>();
-        payload.put("error_code", new Integer(errorCode));
+        HashMap<String, Object> payload = new HashMap<>();
+        payload.put("error_code", errorCode);
         payload.put("product_id", sku == null ? "" : sku);
 
         Teak.asyncExecutor.submit(new CachedRequest("/me/purchase", payload, new Date()));

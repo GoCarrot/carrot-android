@@ -31,13 +31,14 @@ import java.util.HashMap;
 
 import org.json.JSONObject;
 
+@SuppressWarnings("unused")
 class Amazon implements IStore {
     HashMap<String, String> skuPriceMap;
     HashMap<String, Object> skuDetailsRequestMap;
 
     public void init(Context context) {
-        skuDetailsRequestMap = new HashMap<String, Object>();
-        skuPriceMap = new HashMap<String, String>();
+        skuDetailsRequestMap = new HashMap<>();
+        skuPriceMap = new HashMap<>();
         try {
             Class<?> purchasingListenerClass = Class.forName("com.amazon.device.iap.PurchasingListener");
             InvocationHandler handler = new PurchasingListenerInvocationHandler();
@@ -77,7 +78,7 @@ class Amazon implements IStore {
         try {
             Class<?> purchasingServiceClass = Class.forName("com.amazon.device.iap.PurchasingService");
             Method m = purchasingServiceClass.getMethod("getProductData", Set.class);
-            HashSet<String> skus = new HashSet<String>();
+            HashSet<String> skus = new HashSet<>();
             skus.add(sku);
             Object requestId = m.invoke(null, skus);
 

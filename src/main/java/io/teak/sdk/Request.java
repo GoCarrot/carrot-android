@@ -37,9 +37,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.List;
-import java.util.UUID;
-import java.util.Arrays;
 
 import org.json.JSONObject;
 import org.json.JSONArray;
@@ -52,7 +49,7 @@ class Request implements Runnable {
     protected Map<String, Object> payload;
     private String hostname;
 
-    static Map<String, Object> dynamicCommonPayload = new HashMap<String, Object>();
+    static Map<String, Object> dynamicCommonPayload = new HashMap<>();
 
     public Request(String method, String endpoint, Map<String, Object> payload) {
         this(method, null, endpoint, payload);
@@ -85,7 +82,7 @@ class Request implements Runnable {
                 hostname = serviceConfig.getHostname(this.endpoint);
             }
 
-            HashMap<String, Object> requestBodyObject = new HashMap<String, Object>();
+            HashMap<String, Object> requestBodyObject = new HashMap<>();
             if (this.payload != null) {
                 requestBodyObject.putAll(this.payload);
             }
@@ -98,24 +95,24 @@ class Request implements Runnable {
                 Log.d(Teak.LOG_TAG, "Data: " + new JSONObject(requestBodyObject).toString(2));
             }
 
-            ArrayList<String> payloadKeys = new ArrayList<String>(requestBodyObject.keySet());
+            ArrayList<String> payloadKeys = new ArrayList<>(requestBodyObject.keySet());
             Collections.sort(payloadKeys);
 
             StringBuilder requestBody = new StringBuilder();
             for (String key : payloadKeys) {
                 Object value = requestBodyObject.get(key);
                 if (value != null) {
-                    String valueString = null;
+                    String valueString;
                     if (value instanceof Map) {
                         valueString = new JSONObject((Map) value).toString();
                     } else if (value instanceof Array) {
-                        valueString = new JSONArray(Arrays.asList(value)).toString();
+                        valueString = new JSONArray(Collections.singletonList(value)).toString();
                     } else if (value instanceof Collection) {
                         valueString = new JSONArray((Collection) value).toString();
                     } else {
                         valueString = value.toString();
                     }
-                    requestBody.append(key + "=" + valueString + "&");
+                    requestBody.append(key).append("=").append(valueString).append("&");
                 } else {
                     Log.e(Teak.LOG_TAG, "Value for key: " + key + " is NULL.");
                 }
@@ -130,21 +127,21 @@ class Request implements Runnable {
             requestBody = new StringBuilder();
             for (String key : payloadKeys) {
                 Object value = requestBodyObject.get(key);
-                String valueString = null;
+                String valueString;
                 if (value instanceof Map) {
                     valueString = new JSONObject((Map) value).toString();
                 } else if (value instanceof Array) {
-                    valueString = new JSONArray(Arrays.asList(value)).toString();
+                    valueString = new JSONArray(Collections.singletonList(value)).toString();
                 } else if (value instanceof Collection) {
                     valueString = new JSONArray((Collection) value).toString();
                 } else {
                     valueString = value.toString();
                 }
-                requestBody.append(key + "=" + URLEncoder.encode(valueString, "UTF-8") + "&");
+                requestBody.append(key).append("=").append(URLEncoder.encode(valueString, "UTF-8")).append("&");
             }
-            requestBody.append("sig=" + URLEncoder.encode(Base64.encodeToString(result, Base64.NO_WRAP), "UTF-8"));
+            requestBody.append("sig=").append(URLEncoder.encode(Base64.encodeToString(result, Base64.NO_WRAP), "UTF-8"));
 
-            if (this.method == "POST") {
+            if (this.method.equalsIgnoreCase("POST")) {
                 URL url = new URL("https://" + hostname + this.endpoint);
                 connection = (HttpsURLConnection) url.openConnection();
 
@@ -168,7 +165,7 @@ class Request implements Runnable {
             }
 
             // Get Response
-            InputStream is = null;
+            InputStream is;
             if (connection.getResponseCode() < 400) {
                 is = connection.getInputStream();
             } else {
@@ -176,7 +173,7 @@ class Request implements Runnable {
             }
             BufferedReader rd = new BufferedReader(new InputStreamReader(is));
             String line;
-            StringBuffer response = new StringBuffer();
+            StringBuilder response = new StringBuilder();
             while ((line = rd.readLine()) != null) {
                 response.append(line);
                 response.append('\r');
@@ -188,8 +185,9 @@ class Request implements Runnable {
         } catch (Exception e) {
             Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
         } finally {
-            connection.disconnect();
-            connection = null;
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
     }
 

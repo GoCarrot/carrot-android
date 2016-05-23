@@ -121,6 +121,7 @@ public class TeakNotification {
      *
      * @return {@link JSONObject} containing extra data sent by the server.
      */
+    @SuppressWarnings("unused")
     public JSONObject getExtras() {
         return this.extras;
     }
@@ -130,8 +131,9 @@ public class TeakNotification {
      *
      * @return A {@link List} containing all pending notifications.
      */
+    @SuppressWarnings("unused")
     public static List<TeakNotification> inbox() {
-        List<TeakNotification> inbox = new ArrayList<TeakNotification>();
+        List<TeakNotification> inbox = new ArrayList<>();
         String[] inboxReadColumns = {"notification_payload"};
 
         if (Teak.database != null) {
@@ -159,6 +161,7 @@ public class TeakNotification {
      *
      * @return A {@link TeakNotification} for the provided id, or null if not found.
      */
+    @SuppressWarnings("unused")
     public static TeakNotification byTeakNotifId(String teakNotifId) {
         TeakNotification notif = null;
         String[] inboxReadColumns = {"notification_payload"};
@@ -306,10 +309,11 @@ public class TeakNotification {
      *
      * @return A {@link Future} which will contain the reward that should be granted, or <code>null</code> if there is no associated reward.
      */
+    @SuppressWarnings("unused")
     public Future<Reward> consumeNotification() {
         final TeakNotification notif = this;
 
-        FutureTask<Reward> ret = new FutureTask<Reward>(new Callable<Reward>() {
+        FutureTask<Reward> ret = new FutureTask<>(new Callable<Reward>() {
             public Reward call() {
                 if (!notif.hasReward()) {
                     notif.removeFromCache();
@@ -317,7 +321,7 @@ public class TeakNotification {
                 }
 
                 HttpsURLConnection connection = null;
-                String userId = null;
+                String userId ;
                 try {
                     userId = Teak.userId.get();
                 } catch (Exception e) {
@@ -350,7 +354,7 @@ public class TeakNotification {
                     wr.close();
 
                     // Get Response
-                    InputStream is = null;
+                    InputStream is;
                     if (connection.getResponseCode() < 400) {
                         is = connection.getInputStream();
                     } else {
@@ -358,7 +362,7 @@ public class TeakNotification {
                     }
                     BufferedReader rd = new BufferedReader(new InputStreamReader(is));
                     String line;
-                    StringBuffer response = new StringBuffer();
+                    StringBuilder response = new StringBuilder();
                     while ((line = rd.readLine()) != null) {
                         response.append(line);
                         response.append('\r');
@@ -379,8 +383,9 @@ public class TeakNotification {
                 } catch (Exception e) {
                     Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
                 } finally {
-                    connection.disconnect();
-                    connection = null;
+                    if (connection != null) {
+                        connection.disconnect();
+                    }
                 }
 
                 return null;
@@ -405,7 +410,7 @@ public class TeakNotification {
     long teakNotifId;
     JSONObject extras;
 
-    static SparseArray<Thread> notificationUpdateThread = new SparseArray<Thread>();
+    static SparseArray<Thread> notificationUpdateThread = new SparseArray<>();
 
     private TeakNotification(Bundle bundle) {
         this.title = bundle.getString("title");
