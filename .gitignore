@@ -5,3 +5,5 @@ docs/
 */*.iml
 local.properties
 .gradle/
+
+example/
