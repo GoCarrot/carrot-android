@@ -42,7 +42,7 @@ class Amazon implements IStore {
         try {
             Class<?> purchasingListenerClass = Class.forName("com.amazon.device.iap.PurchasingListener");
             InvocationHandler handler = new PurchasingListenerInvocationHandler();
-            Object proxy = Proxy.newProxyInstance(purchasingListenerClass.getClassLoader(), new Class[] { purchasingListenerClass }, handler);
+            Object proxy = Proxy.newProxyInstance(purchasingListenerClass.getClassLoader(), new Class[]{purchasingListenerClass}, handler);
 
             Class<?> purchasingServiceClass = Class.forName("com.amazon.device.iap.PurchasingService");
             Method m = purchasingServiceClass.getMethod("registerListener", Context.class, purchasingListenerClass);
@@ -113,8 +113,8 @@ class Amazon implements IStore {
             if (method.getName().equals("toString")) {
                 return "io.teak.sdk.Amazon$PurchasingListenerInvocationHandler";
 
-            // onUserDataResponse()
-            } else if(method.getName().equals("onUserDataResponse")) {
+                // onUserDataResponse()
+            } else if (method.getName().equals("onUserDataResponse")) {
                 Class<?> userDataResponseClass = Class.forName("com.amazon.device.iap.model.UserDataResponse");
                 Method m = userDataResponseClass.getMethod("getRequestStatus");
                 Object requestStatus = m.invoke(args[0]);
@@ -143,8 +143,8 @@ class Amazon implements IStore {
                     }
                 }
 
-            // onPurchaseResponse()
-            } else if(method.getName().equals("onPurchaseResponse")) {
+                // onPurchaseResponse()
+            } else if (method.getName().equals("onPurchaseResponse")) {
                 Class<?> purchaseResponseClass = Class.forName("com.amazon.device.iap.model.PurchaseResponse");
                 Method m = purchaseResponseClass.getMethod("getRequestStatus");
                 Object requestStatus = m.invoke(args[0]);
@@ -160,8 +160,8 @@ class Amazon implements IStore {
                     Teak.purchaseFailed(-1, null);
                 }
 
-            // onProductDataResponse()
-            } else if(method.getName().equals("onProductDataResponse")) {
+                // onProductDataResponse()
+            } else if (method.getName().equals("onProductDataResponse")) {
                 Class<?> productDataResponseClass = Class.forName("com.amazon.device.iap.model.ProductDataResponse");
                 Method m = productDataResponseClass.getMethod("getRequestStatus");
                 Object requestStatus = m.invoke(args[0]);

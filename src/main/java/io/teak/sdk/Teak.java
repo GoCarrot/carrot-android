@@ -88,13 +88,13 @@ import java.text.DecimalFormat;
  * <p/>
  * For Unity, open settings.gradle and add the line:
  * <pre>{@code project(':teak').projectDir=new File('teak-android/sdk') }</pre>
- * <p/>
+ *
  * And then open app/build.gradle and add the following line to dependencies:
  * <pre>{@code compile project(':teak') }</pre>
- * <p/>
+ *
  * Add the following as the <i>first line</i> of onCreate function of UnityPlayerNativeActivity:
  * <pre>{@code Teak.onCreate(this); }</pre>
- * <p/>
+ *
  * Add the following as the <i>first line</i> of onActivityResult function of UnityPlayerNativeActivity:
  * <pre>{@code Teak.onActivityResult(requestCode, resultCode, data); }</pre>
  */
@@ -859,16 +859,16 @@ public class Teak extends BroadcastReceiver {
             Helpers.addDeviceNameToPayload(payload);
 
             String urlString = "https://app.teak.io/apps/" + Teak.appId + "/test_accounts/new" +
-                "?api_key=" + URLEncoder.encode(userId, "UTF-8") +
-                "&gcm_push_key="  + URLEncoder.encode(gcmId, "UTF-8") +
-                "&device_manufacturer="  + URLEncoder.encode((String) payload.get("device_manufacturer"), "UTF-8") +
-                "&device_model="  + URLEncoder.encode((String) payload.get("device_model"), "UTF-8") +
-                "&device_fallback="  + URLEncoder.encode((String) payload.get("device_fallback"), "UTF-8") +
-                "&bundle_id=" + URLEncoder.encode(Teak.bundleId, "UTF-8");
+                    "?api_key=" + URLEncoder.encode(userId, "UTF-8") +
+                    "&gcm_push_key=" + URLEncoder.encode(gcmId, "UTF-8") +
+                    "&device_manufacturer=" + URLEncoder.encode((String) payload.get("device_manufacturer"), "UTF-8") +
+                    "&device_model=" + URLEncoder.encode((String) payload.get("device_model"), "UTF-8") +
+                    "&device_fallback=" + URLEncoder.encode((String) payload.get("device_fallback"), "UTF-8") +
+                    "&bundle_id=" + URLEncoder.encode(Teak.bundleId, "UTF-8");
 
             Log.d(LOG_TAG, "If you want to debug or test push notifications on this device please click the link below, or copy/paste into your browser:");
             Log.d(LOG_TAG, "    " + urlString);
-        } catch(Exception e) {
+        } catch (Exception e) {
             Log.e(LOG_TAG, Log.getStackTraceString(e));
         }
     }

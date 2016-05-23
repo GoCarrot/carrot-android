@@ -321,7 +321,7 @@ public class TeakNotification {
                 }
 
                 HttpsURLConnection connection = null;
-                String userId ;
+                String userId;
                 try {
                     userId = Teak.userId.get();
                 } catch (Exception e) {

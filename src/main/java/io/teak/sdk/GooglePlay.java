@@ -138,8 +138,7 @@ class GooglePlay implements IStore {
                             }
                         }
                     }
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     Log.e(Teak.LOG_TAG, "Error working with InAppBillingService: " + Log.getStackTraceString(e));
                 }
             }
@@ -150,8 +149,7 @@ class GooglePlay implements IStore {
         List<ResolveInfo> intentServices = mContext.getPackageManager().queryIntentServices(serviceIntent, 0);
         if (intentServices != null && !intentServices.isEmpty()) {
             mContext.bindService(serviceIntent, mServiceConn, Context.BIND_AUTO_CREATE);
-        }
-        else {
+        } else {
             Log.e(Teak.LOG_TAG, "Google Play Billing service unavailable on device.");
         }
     }
@@ -227,9 +225,8 @@ class GooglePlay implements IStore {
         Object o = b.get(RESPONSE_CODE);
         if (o == null) {
             return BILLING_RESPONSE_RESULT_OK;
-        }
-        else if (o instanceof Integer) return (Integer) o;
-        else if (o instanceof Long) return (int)((Long)o).longValue();
+        } else if (o instanceof Integer) return (Integer) o;
+        else if (o instanceof Long) return (int) ((Long) o).longValue();
         else {
             Log.e(Teak.LOG_TAG, "Unexpected type for bundle response code.");
             Log.e(Teak.LOG_TAG, o.getClass().getName());

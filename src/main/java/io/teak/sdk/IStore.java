@@ -21,9 +21,14 @@ import org.json.JSONObject;
 
 public interface IStore {
     void init(Context context);
+
     void dispose();
+
     void onActivityResumed();
+
     JSONObject querySkuDetails(String sku);
+
     void checkActivityResultForPurchase(int resultCode, Intent data);
+
     boolean ignorePluginPurchaseEvents();
 }

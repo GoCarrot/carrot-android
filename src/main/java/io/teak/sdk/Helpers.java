@@ -87,9 +87,9 @@ class Helpers {
         payload.put("device_manufacturer", Build.MANUFACTURER == null ? "" : Build.MANUFACTURER);
         payload.put("device_model", Build.MODEL == null ? "" : Build.MODEL);
         if (Build.MODEL.startsWith(Build.MANUFACTURER)) {
-          payload.put("device_fallback", capitalize(Build.MODEL));
+            payload.put("device_fallback", capitalize(Build.MODEL));
         } else {
-          payload.put("device_fallback", capitalize(Build.MANUFACTURER) + " " + Build.MODEL);
+            payload.put("device_fallback", capitalize(Build.MANUFACTURER) + " " + Build.MODEL);
         }
     }
 
