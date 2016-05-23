@@ -22,14 +22,11 @@ import android.content.Context;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.BroadcastReceiver;
-import android.content.pm.PackageManager;
 import android.content.pm.ApplicationInfo;
 
 import android.support.v4.content.LocalBroadcastManager;
 
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.AsyncTask;
 
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
@@ -50,12 +47,7 @@ import javax.net.ssl.HttpsURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
@@ -70,9 +62,7 @@ import java.util.Locale;
 import java.util.HashMap;
 import java.util.TimeZone;
 
-import java.text.DateFormat;
 import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
 
 /**
  * Working with Teak on Android.
@@ -388,8 +378,7 @@ public class Teak extends BroadcastReceiver {
             Teak.gcmId = new FutureTask<String>(new Callable<String>() {
                 public String call() {
                     try {
-                        String ret = Teak.gcmIdQueue.take();
-                        return ret;
+                        return Teak.gcmIdQueue.take();
                     } catch (InterruptedException e) {
                         Log.e(LOG_TAG, Log.getStackTraceString(e));
                     }
