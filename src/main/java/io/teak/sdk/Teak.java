@@ -369,7 +369,7 @@ public class Teak extends BroadcastReceiver {
                             public void run() {
                                 try {
                                     GoogleCloudMessaging gcm = GoogleCloudMessaging.getInstance(activity.getApplicationContext());
-                                    gcm.register(senderId);
+                                    storeGCMIdAndAppVersion(activity, gcm.register(senderId));
                                 } catch (Exception e) {
                                     Log.e(LOG_TAG, Log.getStackTraceString(e));
                                     // TODO: exponential back-off, re-register
@@ -755,6 +755,21 @@ public class Teak extends BroadcastReceiver {
     private static final String GCM_RECEIVE_INTENT_ACTION = "com.google.android.c2dm.intent.RECEIVE";
     private static final String GCM_REGISTRATION_INTENT_ACTION = "com.google.android.c2dm.intent.REGISTRATION";
 
+    static void storeGCMIdAndAppVersion(Context context, String registration) {
+        SharedPreferences.Editor editor = context.getSharedPreferences(TEAK_PREFERENCES_FILE, Context.MODE_PRIVATE).edit();
+        editor.putInt(TEAK_PREFERENCE_APP_VERSION, Teak.appVersion);
+        editor.putString(TEAK_PREFERENCE_GCM_ID, registration);
+        editor.apply();
+
+        if (Teak.isDebug) {
+            Log.d(LOG_TAG, "GCM Id received from registration intent: " + registration);
+        }
+
+        if (Teak.gcmIdQueue != null) {
+            Teak.gcmIdQueue.offer(registration);
+        }
+    }
+
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
@@ -764,18 +779,7 @@ public class Teak extends BroadcastReceiver {
             try {
                 Bundle bundle = intent.getExtras();
                 String registration = bundle.getString("registration_id");
-                SharedPreferences.Editor editor = context.getSharedPreferences(TEAK_PREFERENCES_FILE, Context.MODE_PRIVATE).edit();
-                editor.putInt(TEAK_PREFERENCE_APP_VERSION, Teak.appVersion);
-                editor.putString(TEAK_PREFERENCE_GCM_ID, registration);
-                editor.apply();
-
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "GCM Id received from registration intent: " + registration);
-                }
-
-                if (Teak.gcmIdQueue != null) {
-                    Teak.gcmIdQueue.offer(registration);
-                }
+                storeGCMIdAndAppVersion(context, registration);
             } catch (Exception e) {
                 Log.e(LOG_TAG, "Error storing GCM Id from " + GCM_REGISTRATION_INTENT_ACTION + ":\n" + Log.getStackTraceString(e));
             }
