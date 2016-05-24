@@ -818,9 +818,8 @@ public class Teak extends BroadcastReceiver {
         } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX)) {
             Bundle bundle = intent.getExtras();
 
-            // Cancel the update
+            // Cancel any updates pending
             TeakNotification.cancel(context, bundle.getInt("platformId"));
-            Log.d(LOG_TAG, "Bundle: " + bundle.toString());
 
             // Launch the app
             if (!bundle.getBoolean("noAutolaunch")) {
