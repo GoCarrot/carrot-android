@@ -461,10 +461,10 @@ public class TeakNotification {
         JSONObject contents = new JSONObject(json);
 
         this.message = contents.getString("message");
-        this.longText = contents.getString("longText");
-        this.teakRewardId = contents.getString("teakRewardId");
-        this.imageAssetA = contents.getString("imageAssetA");
-        this.deepLink = contents.getString("deepLink");
+        this.longText = contents.optString("longText");
+        this.teakRewardId = contents.optString("teakRewardId");
+        this.imageAssetA = contents.optString("imageAssetA");
+        this.deepLink = contents.optString("deepLink");
         this.platformId = contents.getInt("platformId");
         this.teakNotifId = contents.getLong("teakNotifId");
         this.extras = contents.optJSONObject("extras");
@@ -474,15 +474,13 @@ public class TeakNotification {
         JSONObject json = new JSONObject();
         try {
             json.put("message", this.message);
-            json.put("longText", this.longText);
-            json.put("imageAssetA", this.imageAssetA);
-            json.put("deepLink", this.deepLink);
-            json.put("teakRewardId", this.teakRewardId);
+            json.putOpt("longText", this.longText);
+            json.putOpt("imageAssetA", this.imageAssetA);
+            json.putOpt("deepLink", this.deepLink);
+            json.putOpt("teakRewardId", this.teakRewardId);
             json.put("platformId", Integer.valueOf(this.platformId));
             json.put("teakNotifId", Long.valueOf(this.teakNotifId));
-            if (this.extras != null) {
-                json.put("extras", this.extras);
-            }
+            json.putOpt("extras", this.extras);
         } catch (JSONException e) {
             Log.e(Teak.LOG_TAG, "Error converting TeakNotification to JSON: " + Log.getStackTraceString(e));
         }
