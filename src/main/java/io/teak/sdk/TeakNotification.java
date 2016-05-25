@@ -77,6 +77,7 @@ import org.json.JSONException;
  * {
  *   [noAutolaunch] : boolean - automatically launch the app when a push notification is 'opened',
  *   [teakRewardId] : string  - associated Teak Reward Id,
+ *   [deepLink]     : string  - a deep link to navigate to on launch,
  *   teakNotifId    : string  - associated Teak Notification Id,
  *   message        : string  - the body text of the notification,
  *   longText       : string  - text displayed when the notification is expanded,
@@ -419,6 +420,7 @@ public class TeakNotification {
     String longText;
     String teakRewardId;
     String imageAssetA;
+    String deepLink;
     int platformId;
     long teakNotifId;
     JSONObject extras;
@@ -430,6 +432,7 @@ public class TeakNotification {
         this.longText = bundle.getString("longText");
         this.teakRewardId = bundle.getString("teakRewardId");
         this.imageAssetA = bundle.getString("imageAssetA");
+        this.deepLink = bundle.getString("deepLink");
         try {
             this.extras = bundle.getString("extras") == null ? null : new JSONObject(bundle.getString("extras"));
         } catch (JSONException e) {
@@ -461,6 +464,7 @@ public class TeakNotification {
         this.longText = contents.getString("longText");
         this.teakRewardId = contents.getString("teakRewardId");
         this.imageAssetA = contents.getString("imageAssetA");
+        this.deepLink = contents.getString("deepLink");
         this.platformId = contents.getInt("platformId");
         this.teakNotifId = contents.getLong("teakNotifId");
         this.extras = contents.optJSONObject("extras");
@@ -472,6 +476,7 @@ public class TeakNotification {
             json.put("message", this.message);
             json.put("longText", this.longText);
             json.put("imageAssetA", this.imageAssetA);
+            json.put("deepLink", this.deepLink);
             json.put("teakRewardId", this.teakRewardId);
             json.put("platformId", Integer.valueOf(this.platformId));
             json.put("teakNotifId", Long.valueOf(this.teakNotifId));

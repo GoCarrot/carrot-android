@@ -24,6 +24,7 @@ import android.content.SharedPreferences;
 import android.content.BroadcastReceiver;
 import android.content.pm.ApplicationInfo;
 
+import android.net.Uri;
 import android.os.Build;
 import android.support.v4.content.LocalBroadcastManager;
 
@@ -145,14 +146,23 @@ public class Teak extends BroadcastReceiver {
     }
 
     public static void onNewIntent(Intent intent) {
-        Bundle bundle = intent.getExtras();
-        if (Teak.isDebug) {
-            Log.d(LOG_TAG, "Lifecycle - onNewIntent");
-        }
+        checkIntentForDeepLink(intent);
 
+        Bundle bundle = intent.getExtras();
         if (bundle != null) {
             // Set the notification id
             Teak.launchedFromTeakNotifId = bundle.getString("teakNotifId");
+        }
+
+        if (Teak.isDebug) {
+            Log.d(LOG_TAG, "Lifecycle - onNewIntent");
+
+            if (Teak.launchedFromTeakNotifId != null) {
+                Log.d(LOG_TAG, " Teak Notif Id: " + Teak.launchedFromTeakNotifId);
+            }
+            if (Teak.launchedFromDeepLink != null) {
+                Log.d(LOG_TAG, " Deep Link URL: " + Teak.launchedFromDeepLink);
+            }
         }
     }
 
@@ -223,6 +233,7 @@ public class Teak extends BroadcastReceiver {
     static String bundleId;
     static IStore appStore;
     static Stack<String> skuStack = new Stack<>();
+    static String launchedFromDeepLink;
 
     static final String LOG_TAG = "Teak";
 
@@ -237,6 +248,13 @@ public class Teak extends BroadcastReceiver {
     private static final long SAME_SESSION_TIME_DELTA = 120000;
 
     /**************************************************************************/
+
+    static void checkIntentForDeepLink(Intent intent) {
+        if (intent != null && intent.getDataString() != null) {
+            Teak.launchedFromDeepLink = intent.getDataString();
+        }
+    }
+
     static final TeakActivityLifecycleCallbacks lifecycleCallbacks = new TeakActivityLifecycleCallbacks();
 
     static class TeakActivityLifecycleCallbacks implements ActivityLifecycleCallbacks {
@@ -273,6 +291,9 @@ public class Teak extends BroadcastReceiver {
                     throw new RuntimeException("Failed to find R.string." + TEAK_APP_ID);
                 }
             }
+
+            // Check for deep links
+            checkIntentForDeepLink(activity.getIntent());
 
             // Get the installer package
             Teak.installerPackage = activity.getPackageManager().getInstallerPackageName(activity.getPackageName());
@@ -465,6 +486,9 @@ public class Teak extends BroadcastReceiver {
                 if (Teak.launchedFromTeakNotifId != null) {
                     Log.d(LOG_TAG, " Teak Notif Id: " + Teak.launchedFromTeakNotifId);
                 }
+                if (Teak.launchedFromDeepLink != null) {
+                    Log.d(LOG_TAG, " Deep Link URL: " + Teak.launchedFromDeepLink);
+                }
             }
         }
 
@@ -499,6 +523,7 @@ public class Teak extends BroadcastReceiver {
             }
 
             Teak.launchedFromTeakNotifId = null;
+            Teak.launchedFromDeepLink = null;
             Teak.userIdentifiedThisSession = false;
             Teak.lastSessionEndedAt = new Date();
         }
@@ -521,6 +546,7 @@ public class Teak extends BroadcastReceiver {
 
             // Adds executor task that waits on userId and other Futures
             if (Teak.launchedFromTeakNotifId != null ||
+                    Teak.launchedFromDeepLink != null ||
                     Teak.lastSessionEndedAt == null ||
                     new Date().getTime() - Teak.lastSessionEndedAt.getTime() > SAME_SESSION_TIME_DELTA) {
                 identifyUser();
@@ -645,6 +671,7 @@ public class Teak extends BroadcastReceiver {
     private static void identifyUser() {
         final Date dateIssued = new Date();
         final String launchedFromTeakNotifId = Teak.launchedFromTeakNotifId;
+        final String launchedFromDeepLink = Teak.launchedFromDeepLink;
 
         Teak.asyncExecutor.submit(new Runnable() {
             public void run() {
@@ -696,6 +723,10 @@ public class Teak extends BroadcastReceiver {
 
                 if (launchedFromTeakNotifId != null) {
                     payload.put("teak_notif_id", Long.valueOf(launchedFromTeakNotifId));
+                }
+
+                if (launchedFromDeepLink != null) {
+                    payload.put("deep_link", launchedFromDeepLink);
                 }
 
                 // Put empty string, and then try and replace it with the real id if available
@@ -830,6 +861,9 @@ public class Teak extends BroadcastReceiver {
                 launchIntent.addCategory("android.intent.category.LAUNCHER");
                 launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 launchIntent.putExtras(bundle);
+                if (bundle.getString("deepLink") != null) {
+                    launchIntent.setData(Uri.parse(bundle.getString("deepLink")));
+                }
                 context.startActivity(launchIntent);
             } else {
                 if (Teak.isDebug) {
