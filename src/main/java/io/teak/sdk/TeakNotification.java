@@ -15,6 +15,7 @@
 package io.teak.sdk;
 
 import android.content.BroadcastReceiver;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
@@ -536,7 +537,7 @@ public class TeakNotification {
         // TODO: Here is where any kind of thread/update logic will live
     }
 
-    static Notification createNativeNotification(Context context, Bundle bundle, TeakNotification teakNotificaton) {
+    static Notification createNativeNotification(final Context context, Bundle bundle, TeakNotification teakNotificaton) {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context.getApplicationContext());
 
         // Configue notification behavior
@@ -570,24 +571,44 @@ public class TeakNotification {
         // Notification builder
         Notification nativeNotification = builder.build();
 
+        // Because we can't be certain that the R class will line up with what is at SDK build time
+        // like in the case of Unity et. al.
+        class IdHelper {
+            public int id(String identifier) {
+                int ret = context.getResources().getIdentifier(identifier, "id", context.getPackageName());
+                if (ret == 0) {
+                    throw new Resources.NotFoundException("Could not find R.id." + identifier);
+                }
+                return ret;
+            }
+            public int layout(String identifier) {
+                int ret = context.getResources().getIdentifier(identifier, "layout", context.getPackageName());
+                if (ret == 0) {
+                    throw new Resources.NotFoundException("Could not find R.layout." + identifier);
+                }
+                return ret;
+            }
+        }
+        IdHelper R = new IdHelper(); // Declaring local as 'R' ensures we don't accidentally use the other R
+
         // Configure notification small view
         RemoteViews smallView = new RemoteViews(
                 context.getPackageName(),
-                R.layout.teak_notif_no_title
+                R.layout("teak_notif_no_title")
         );
 
         // Set small view image
         try {
             PackageManager pm = context.getPackageManager();
             ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
-            smallView.setImageViewResource(R.id.left_image, ai.icon);
+            smallView.setImageViewResource(R.id("left_image"), ai.icon);
         } catch (Exception e) {
             Log.e(Teak.LOG_TAG, "Unable to load icon resource for Notification.");
             return null;
         }
 
         // Set small view text
-        smallView.setTextViewText(R.id.text, Html.fromHtml(teakNotificaton.message));
+        smallView.setTextViewText(R.id("text"), Html.fromHtml(teakNotificaton.message));
         nativeNotification.contentView = smallView;
 
         // Check for Jellybean (API 16, 4.1)+ for expanded view
@@ -596,11 +617,11 @@ public class TeakNotification {
                 !teakNotificaton.longText.isEmpty()) {
             RemoteViews bigView = new RemoteViews(
                     context.getPackageName(),
-                    R.layout.teak_big_notif_image_text
+                    R.layout("teak_big_notif_image_text")
             );
 
             // Set big view text
-            bigView.setTextViewText(R.id.text, Html.fromHtml(teakNotificaton.longText));
+            bigView.setTextViewText(R.id("text"), Html.fromHtml(teakNotificaton.longText));
 
             URI imageAssetA = null;
             try {
@@ -633,7 +654,7 @@ public class TeakNotification {
 
             if (topImageBitmap != null) {
                 // Set large bitmap
-                bigView.setImageViewBitmap(R.id.top_image, topImageBitmap);
+                bigView.setImageViewBitmap(R.id("top_image"), topImageBitmap);
 
                 // Use reflection to avoid compile-time issues, we check minimum API version above
                 try {
@@ -644,12 +665,11 @@ public class TeakNotification {
             } else {
                 Log.e(Teak.LOG_TAG, "Unable to load image asset for Notification.");
                 // Hide pulldown
-                smallView.setViewVisibility(R.id.pulldown_layout, View.INVISIBLE);
+                smallView.setViewVisibility(R.id("pulldown_layout"), View.INVISIBLE);
             }
-
         } else {
             // Hide pulldown
-            smallView.setViewVisibility(R.id.pulldown_layout, View.INVISIBLE);
+            smallView.setViewVisibility(R.id("pulldown_layout"), View.INVISIBLE);
         }
 
         return nativeNotification;
