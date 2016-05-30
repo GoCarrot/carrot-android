@@ -26,6 +26,7 @@ import android.content.pm.ApplicationInfo;
 
 import android.net.Uri;
 import android.os.Build;
+import android.provider.Settings;
 import android.support.v4.content.LocalBroadcastManager;
 
 import android.os.Bundle;
@@ -336,6 +337,12 @@ public class Teak extends BroadcastReceiver {
                 Request.dynamicCommonPayload.put("appstore_name", Teak.installerPackage);
             }
             Request.dynamicCommonPayload.put("bundle_id", Teak.bundleId);
+
+            try {
+                String androidId = Settings.Secure.getString(activity.getContentResolver(), Settings.Secure.ANDROID_ID);
+                Request.dynamicCommonPayload.put("device_id", UUID.nameUUIDFromBytes(androidId.getBytes("utf8")));
+            } catch (Exception ignored) {
+            }
 
             // Facebook Access Token Broadcaster
             Teak.facebookAccessTokenBroadcast = new FacebookAccessTokenBroadcast(activity);
