@@ -1,7 +1,8 @@
 -keep public class com.amazon.device.iap.* { public *; }
 -dontwarn com.amazon.device.iap.**
 
--keep public class com.android.vending.billing.IInAppBillingService.* { public *; }
+-keep public class com.android.vending.billing.IInAppBillingService { public *; }
+-keep public class * implements com.android.vending.billing.IInAppBillingService { public static *; }
 -dontwarn com.android.vending.billing.IInAppBillingService.**
 
 -keep class com.facebook.** { *; }
