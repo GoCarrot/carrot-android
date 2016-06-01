@@ -48,10 +48,12 @@ import java.io.BufferedInputStream;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URLConnection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.ArrayList;
 
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.Callable;
@@ -410,6 +412,116 @@ public class TeakNotification {
 
         Teak.asyncExecutor.submit(ret);
 
+        return ret;
+    }
+
+    /**
+     * Schedules a push notification for some time in the future.
+     *
+     * @param creativeId        The identifier of the notification in the Teak dashboard (will create if not found).
+     * @param defaultMessage    The default message to send, may be over-ridden in the dashboard.
+     * @param delayInSeconds    The delay in seconds from now to send the notification.
+     * @return The identifier of the scheduled notification (see {@link TeakNotification#cancelNotification(String)} or null.
+     */
+    @SuppressWarnings("unused")
+    public static FutureTask<String> scheduleNotification(String creativeId, String defaultMessage, long delayInSeconds) {
+        if (!Teak.userId.isDone()) {
+            return null;
+        }
+
+        final ArrayBlockingQueue<String> q = new ArrayBlockingQueue<>(1);
+
+        FutureTask<String> ret = new FutureTask<>(new Callable<String>() {
+            public String call() {
+                try {
+                    return q.take();
+                } catch (InterruptedException e) {
+                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                }
+                return null;
+            }
+        });
+        Teak.asyncExecutor.submit(ret);
+
+        HashMap<String, Object> payload = new HashMap<>();
+        payload.put("identifier", creativeId);
+        payload.put("message", defaultMessage);
+        payload.put("offset", delayInSeconds);
+        try {
+            payload.put("api_key", Teak.userId.get());
+        } catch (Exception ignored) {
+            q.offer("");
+            return ret;
+        }
+
+        Teak.asyncExecutor.execute(new Request("POST", "gocarrot.com", "/me/local_notify.json", payload) {
+            @Override
+            protected void done(int responseCode, String responseBody) {
+                try {
+                    JSONObject response = new JSONObject(responseBody);
+                    if (response.getString("status").equals("ok")) {
+                        q.offer(response.getJSONObject("event").getString("id"));
+                    } else {
+                        q.offer("");
+                    }
+                } catch (Exception ignored) {
+                    q.offer("");
+                }
+            }
+        });
+        return ret;
+    }
+
+    /**
+     * Cancel a push notification that was scheduled with {@link TeakNotification#scheduleNotification(String, String, long)}
+     *
+     * @param scheduleId
+     * @return
+     */
+    @SuppressWarnings("unused")
+    public static FutureTask<String> cancelNotification(String scheduleId) {
+        if (!Teak.userId.isDone()) {
+            return null;
+        }
+
+        final ArrayBlockingQueue<String> q = new ArrayBlockingQueue<>(1);
+
+        FutureTask<String> ret = new FutureTask<>(new Callable<String>() {
+            public String call() {
+                try {
+                    return q.take();
+                } catch (InterruptedException e) {
+                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                }
+                return null;
+            }
+        });
+        Teak.asyncExecutor.submit(ret);
+
+        HashMap<String, Object> payload = new HashMap<>();
+        payload.put("id", scheduleId);
+        try {
+            payload.put("api_key", Teak.userId.get());
+        } catch (Exception ignored) {
+            q.offer("");
+            return ret;
+        }
+
+        Teak.asyncExecutor.execute(new Request("POST", "gocarrot.com", "/me/cancel_local_notify.json", payload) {
+            @Override
+            protected void done(int responseCode, String responseBody) {
+                try {
+                    JSONObject response = new JSONObject(responseBody);
+                    if (response.getString("status").equals("ok")) {
+                        q.offer(response.getJSONObject("event").getString("id"));
+                    } else {
+                        q.offer("");
+                    }
+                } catch (Exception ignored) {
+                    q.offer("");
+                }
+            }
+        });
         return ret;
     }
 
