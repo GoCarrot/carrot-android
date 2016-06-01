@@ -131,7 +131,7 @@ public class TeakNotification {
      * @return <code>true</code> if this notification has a reward attached to it.
      */
     public boolean hasReward() {
-        return (this.teakRewardId != null);
+        return (this.teakRewardId != null && !this.teakRewardId.trim().isEmpty());
     }
 
     /**
