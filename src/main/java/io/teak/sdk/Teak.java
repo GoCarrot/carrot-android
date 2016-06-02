@@ -171,6 +171,10 @@ public class Teak extends BroadcastReceiver {
                 Log.d(LOG_TAG, " Deep Link URL: " + Teak.launchedFromDeepLink);
             }
         }
+
+        if (Teak.launchedFromTeakNotifId != null && Teak.mainActivity != null) {
+            LocalBroadcastManager.getInstance(Teak.mainActivity).sendBroadcast(new Intent(TeakNotification.LAUNCHED_FROM_NOTIFICATION_INTENT));
+        }
     }
 
     /**

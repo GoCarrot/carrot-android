@@ -126,6 +126,11 @@ public class TeakNotification {
     public static final String TEAK_INBOX_HAS_NOTIFICATIONS_INTENT = "io.teak.sdk.TeakNotification.intent.INBOX_HAS_NOTIFICATIONS";
 
     /**
+     * Intent action used by Teak to notify you that the app was launched from a notification.
+     */
+    public static final String LAUNCHED_FROM_NOTIFICATION_INTENT = "io.teak.sdk.TeakNotification.intent.LAUNCHED_FROM_NOTIFICATION";
+
+    /**
      * Check to see if this notification has a reward attached to it.
      *
      * @return <code>true</code> if this notification has a reward attached to it.
