@@ -14,6 +14,7 @@
  */
 package io.teak.sdk;
 
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -39,7 +40,6 @@ import android.view.View;
 import android.widget.RemoteViews;
 
 import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationManagerCompat;
 
 import android.util.Log;
 import android.util.SparseArray;
@@ -606,7 +606,7 @@ public class TeakNotification {
         }
     }
 
-    static NotificationManagerCompat notificationManager;
+    static NotificationManager notificationManager;
 
     static TeakNotification remoteNotificationFromIntent(final Context context, Intent intent) {
         final Bundle bundle = intent.getExtras();
@@ -635,7 +635,11 @@ public class TeakNotification {
 
     static void displayNotification(Context context, TeakNotification teakNotif, Notification nativeNotification) {
         if (notificationManager == null) {
-            notificationManager = NotificationManagerCompat.from(context);
+            try {
+                notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            } catch (Exception e) {
+                Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+            }
         }
 
         // Send it out
