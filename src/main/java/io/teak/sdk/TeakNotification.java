@@ -431,6 +431,7 @@ public class TeakNotification {
     @SuppressWarnings("unused")
     public static FutureTask<String> scheduleNotification(String creativeId, String defaultMessage, long delayInSeconds) {
         if (!Teak.userId.isDone()) {
+            Log.e(Teak.LOG_TAG, "identifyUser() not yet called, cannot call scheduleNotification().");
             return null;
         }
 
@@ -486,6 +487,7 @@ public class TeakNotification {
     @SuppressWarnings("unused")
     public static FutureTask<String> cancelNotification(String scheduleId) {
         if (!Teak.userId.isDone()) {
+            Log.e(Teak.LOG_TAG, "identifyUser() not yet called, cannot call cancelNotification().");
             return null;
         }
 

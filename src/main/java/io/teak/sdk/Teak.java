@@ -116,7 +116,7 @@ public class Teak extends BroadcastReceiver {
      * @param activity The main <code>Activity</code> of your app.
      */
     public static void onCreate(Activity activity) {
-        Log.d(LOG_TAG, "SDK Version: " + Teak.SDKVersion);
+        Log.d(LOG_TAG, "Android SDK Version: " + Teak.SDKVersion);
         Teak.mainActivity = activity;
 
         if (Teak.qaInterface != null) {
