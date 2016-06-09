@@ -1032,11 +1032,15 @@ public class Teak extends BroadcastReceiver {
                         payload.put("product_id", receipt.get("sku"));
                         payload.put("store_user_id", userData.get("userId"));
                         payload.put("store_marketplace", userData.get("marketplace"));
+
+                        Log.d(LOG_TAG, "Purchase of " + receipt.get("sku") + " detected.");
                     } else {
                         payload.put("purchase_token", purchaseData.get("purchaseToken"));
                         payload.put("purchase_time", purchaseData.get("purchaseTime"));
                         payload.put("product_id", purchaseData.get("productId"));
                         payload.put("order_id", purchaseData.get("orderId"));
+
+                        Log.d(LOG_TAG, "Purchase of " + purchaseData.get("productId") + " detected.");
                     }
 
                     if (Teak.appStore != null) {
@@ -1079,9 +1083,11 @@ public class Teak extends BroadcastReceiver {
         Teak.asyncExecutor.submit(new CachedRequest("/me/purchase", payload, new Date()));
     }
 
-    private static void checkActivityResultForPurchase(int resultCode, Intent data) {
+    public static void checkActivityResultForPurchase(int resultCode, Intent data) {
         if (Teak.appStore != null) {
             Teak.appStore.checkActivityResultForPurchase(resultCode, data);
+        } else {
+            Log.e(LOG_TAG, "Unable to checkActivityResultForPurchase, no active app store.");
         }
     }
 }
