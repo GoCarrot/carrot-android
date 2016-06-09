@@ -257,6 +257,8 @@ class GooglePlay implements IStore {
         String purchaseData = data.getStringExtra(RESPONSE_INAPP_PURCHASE_DATA);
         String dataSignature = data.getStringExtra(RESPONSE_INAPP_SIGNATURE);
 
+        Log.d(Teak.LOG_TAG, "Checking activity result for purchase.");
+
         // Check for purchase activity result
         if (purchaseData != null && dataSignature != null) {
             int responseCode = getResponseCodeFromIntent(data);
@@ -271,6 +273,8 @@ class GooglePlay implements IStore {
             } else {
                 Teak.purchaseFailed(responseCode, "");
             }
+        } else {
+            Log.d(Teak.LOG_TAG, "No purchase found in activity result.");
         }
     }
 }

@@ -183,6 +183,11 @@ class Request implements Runnable {
             }
             rd.close();
 
+            if (Teak.isDebug) {
+                Log.d(Teak.LOG_TAG, "Reply from: " + this.endpoint);
+                Log.d(Teak.LOG_TAG, "Data: " + new JSONObject(response.toString()).toString(2));
+            }
+
             // For extending classes
             done(connection.getResponseCode(), response.toString());
         } catch (Exception e) {
