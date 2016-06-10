@@ -807,6 +807,10 @@ public class Teak extends BroadcastReceiver {
                             // Enable verbose logging if flagged
                             Teak.isDebug |= response.optBoolean("verbose_logging");
 
+                            if (response.optBoolean("verbose_logging")) {
+                                Log.d(LOG_TAG, "Enabling verbose logging via identifyUser()");
+                            }
+
                             if (Teak.isDebug) {
                                 Log.d(LOG_TAG, "identifyUser response: " + response.toString(2));
                             }
