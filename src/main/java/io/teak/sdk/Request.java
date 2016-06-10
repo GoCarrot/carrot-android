@@ -91,8 +91,7 @@ class Request implements Runnable {
             addCommonPayload(requestBodyObject);
 
             if (Teak.isDebug) {
-                Log.d(Teak.LOG_TAG, "Submitting request to: " + this.endpoint);
-                Log.d(Teak.LOG_TAG, "Data: " + new JSONObject(requestBodyObject).toString(2));
+                Log.d(Teak.LOG_TAG, "Submitting request to '" + this.endpoint + "': " +  new JSONObject(requestBodyObject).toString(2));
             }
 
             ArrayList<String> payloadKeys = new ArrayList<>(requestBodyObject.keySet());
@@ -181,8 +180,7 @@ class Request implements Runnable {
             rd.close();
 
             if (Teak.isDebug) {
-                Log.d(Teak.LOG_TAG, "Reply from: " + this.endpoint);
-                Log.d(Teak.LOG_TAG, "Data: " + new JSONObject(response.toString()).toString(2));
+                Log.d(Teak.LOG_TAG, "Reply from '" + this.endpoint + "': " + new JSONObject(response.toString()).toString(2));
             }
 
             // For extending classes

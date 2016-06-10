@@ -246,6 +246,7 @@ public class Teak extends BroadcastReceiver {
     static Stack<String> skuStack = new Stack<>();
     static String launchedFromDeepLink;
     static TeakQAInterface qaInterface;
+    static String teakCountryCode;
 
     static final String LOG_TAG = "Teak";
 
@@ -647,7 +648,6 @@ public class Teak extends BroadcastReceiver {
                         config.setConfig(response);
 
                         if (Teak.isDebug) {
-                            Log.d(LOG_TAG, "Services response (" + responseCode + "): " + response.toString(2));
                             Log.d(LOG_TAG, "Service Config " + config.toString());
                         }
 
@@ -690,6 +690,7 @@ public class Teak extends BroadcastReceiver {
                             "&sdk_version=" + URLEncoder.encode(Teak.SDKVersion, "UTF-8") +
                             "&sdk_platform=" + URLEncoder.encode("android_" + android.os.Build.VERSION.RELEASE, "UTF-8") +
                             "&app_version=" + URLEncoder.encode(String.valueOf(Teak.appVersion), "UTF-8") +
+                            (Teak.teakCountryCode == null ? "" : "&country_code=" + URLEncoder.encode(String.valueOf(Teak.teakCountryCode), "UTF-8")) +
                             "&buster=" + URLEncoder.encode(UUID.randomUUID().toString(), "UTF-8");
                     URL url = new URL("https://iroko.gocarrot.com/ping?" + queryString);
                     connection = (HttpsURLConnection) url.openConnection();
@@ -811,8 +812,8 @@ public class Teak extends BroadcastReceiver {
                                 Log.d(LOG_TAG, "Enabling verbose logging via identifyUser()");
                             }
 
-                            if (Teak.isDebug) {
-                                Log.d(LOG_TAG, "identifyUser response: " + response.toString(2));
+                            if (response.has("country_code")) {
+                                Teak.teakCountryCode = response.getString("country_code");
                             }
                         } catch (Exception ignored) {
                         }
