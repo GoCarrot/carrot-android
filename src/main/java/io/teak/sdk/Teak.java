@@ -804,6 +804,9 @@ public class Teak extends BroadcastReceiver {
 
                             // TODO: Grab 'id' and 'game_id' from response and store for Parsnip
 
+                            // Enable verbose logging if flagged
+                            Teak.isDebug |= response.optBoolean("verbose_logging");
+
                             if (Teak.isDebug) {
                                 Log.d(LOG_TAG, "identifyUser response: " + response.toString(2));
                             }
