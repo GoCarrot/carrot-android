@@ -597,11 +597,6 @@ public class Teak extends BroadcastReceiver {
                     new Date().getTime() - Teak.lastSessionEndedAt.getTime() > SAME_SESSION_TIME_DELTA) {
                 identifyUser();
             }
-
-            // Check for pending inbox messages, and notify app if they exist
-            if (TeakNotification.inboxCount() > 0) {
-                LocalBroadcastManager.getInstance(Teak.mainActivity).sendBroadcast(new Intent(TeakNotification.TEAK_INBOX_HAS_NOTIFICATIONS_INTENT));
-            }
         }
 
         @Override
@@ -898,11 +893,6 @@ public class Teak extends BroadcastReceiver {
                     Teak.asyncExecutor.submit(new CachedRequest("/notification_received", payload, new Date()));
                 }
             });
-
-            // Send out inbox broadcast
-            if (Teak.mainActivity != null) {
-                LocalBroadcastManager.getInstance(Teak.mainActivity).sendBroadcast(new Intent(TeakNotification.TEAK_INBOX_HAS_NOTIFICATIONS_INTENT));
-            }
         } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX)) {
             Bundle bundle = intent.getExtras();
 

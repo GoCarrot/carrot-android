@@ -112,21 +112,16 @@ public class TeakNotification {
     public static final String TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX = ".intent.TEAK_NOTIFICATION_CLEARED";
 
     /**
-     * Intent action used by Teak to notify you that there are pending inbox notifications.
+     * Intent action used by Teak to notify you that the app was launched from a notification.
      * <p/>
      * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
      * <pre>
      * {@code
      *     IntentFilter filter = new IntentFilter();
-     *     filter.addAction(TeakNotification.TEAK_INBOX_HAS_NOTIFICATIONS_INTENT);
+     *     filter.addAction(TeakNotification.LAUNCHED_FROM_NOTIFICATION_INTENT);
      *     LocalBroadcastManager.getInstance(context).registerReceiver(yourBroadcastListener, filter);
      * }
      * </pre>
-     */
-    public static final String TEAK_INBOX_HAS_NOTIFICATIONS_INTENT = "io.teak.sdk.TeakNotification.intent.INBOX_HAS_NOTIFICATIONS";
-
-    /**
-     * Intent action used by Teak to notify you that the app was launched from a notification.
      */
     public static final String LAUNCHED_FROM_NOTIFICATION_INTENT = "io.teak.sdk.TeakNotification.intent.LAUNCHED_FROM_NOTIFICATION";
 
@@ -147,36 +142,6 @@ public class TeakNotification {
     @SuppressWarnings("unused")
     public JSONObject getExtras() {
         return this.extras;
-    }
-
-    /**
-     * Gets all of the pending notifications.
-     *
-     * @return A {@link List} containing all pending notifications.
-     */
-    @SuppressWarnings("unused")
-    public static List<TeakNotification> inbox() {
-        List<TeakNotification> inbox = new ArrayList<>();
-        String[] inboxReadColumns = {"notification_payload"};
-
-        if (Teak.database != null) {
-            Cursor cursor = Teak.database.query("inbox", inboxReadColumns,
-                    null, null, null, null, null);
-
-            cursor.moveToFirst();
-            while (!cursor.isAfterLast()) {
-                try {
-                    TeakNotification notif = new TeakNotification(cursor.getString(0));
-                    inbox.add(notif);
-                } catch (Exception e) {
-                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
-                }
-                cursor.moveToNext();
-            }
-            cursor.close();
-        }
-
-        return inbox;
     }
 
     /**
@@ -206,20 +171,6 @@ public class TeakNotification {
         }
 
         return notif;
-    }
-
-    /**
-     * Get the number of pending notifications.
-     *
-     * @return The number of pending notifications.
-     */
-    public static long inboxCount() {
-        if (Teak.database != null) {
-            // API v11 version: DatabaseUtils.queryNumEntries(Teak.database, "inbox", null);
-            return DatabaseUtils.longForQuery(Teak.database, "SELECT COUNT(*) FROM inbox", null);
-        } else {
-            return 0;
-        }
     }
 
     public class Reward {
