@@ -31,9 +31,6 @@ import android.support.v4.content.LocalBroadcastManager;
 
 import android.os.Bundle;
 
-import android.database.SQLException;
-import android.database.sqlite.SQLiteDatabase;
-
 import android.util.Log;
 
 import org.json.JSONObject;
@@ -118,6 +115,8 @@ public class Teak extends BroadcastReceiver {
     public static void onCreate(Activity activity) {
         Log.d(LOG_TAG, "Android SDK Version: " + Teak.SDKVersion);
         Teak.mainActivity = activity;
+
+        CacheManager.initialize(activity);
 
         if (Teak.qaInterface != null) {
             HashMap<String, Object> payload = new HashMap<>();
@@ -234,12 +233,10 @@ public class Teak extends BroadcastReceiver {
     static ArrayBlockingQueue<String> facebookAccessTokenQueue;
     static ExecutorService asyncExecutor = Executors.newCachedThreadPool();
     static FacebookAccessTokenBroadcast facebookAccessTokenBroadcast;
-    static CacheOpenHelper cacheOpenHelper;
     static String launchedFromTeakNotifId;
     static ScheduledExecutorService heartbeatService;
     static boolean userIdentifiedThisSession;
     static Date lastSessionEndedAt;
-    static SQLiteDatabase database;
     static String installerPackage;
     static String bundleId;
     static IStore appStore;
@@ -468,14 +465,6 @@ public class Teak extends BroadcastReceiver {
             }
             Teak.asyncExecutor.submit(Teak.adInfo);
 
-            // Cache
-            Teak.cacheOpenHelper = new CacheOpenHelper(activity);
-            try {
-                Teak.database = Teak.cacheOpenHelper.getWritableDatabase();
-            } catch (SQLException e) {
-                Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
-            }
-
             // Validate the app id/key via "/games/#{@appId}/validate_sig.json"
             if (Teak.isDebug) {
                 HashMap<String, Object> payload = new HashMap<>();
@@ -549,8 +538,6 @@ public class Teak extends BroadcastReceiver {
             if (Teak.appStore != null) {
                 Teak.appStore.dispose();
             }
-            Teak.database.close();
-            Teak.cacheOpenHelper.close();
             Teak.facebookAccessTokenBroadcast.unregister(activity);
             LocalBroadcastManager.getInstance(activity).unregisterReceiver(Teak.localBroadcastReceiver);
         }

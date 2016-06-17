@@ -52,8 +52,12 @@ class CachedRequest extends Request implements Runnable {
         values.put("request_date", this.dateIssued.getTime());
         values.put("retry_count", 0);
 
-        if (Teak.database != null) {
-            this.cacheId = Teak.database.insert("cache", null, values);
+        try {
+            this.cacheId = CacheManager.instance().open().insert("cache", null, values);
+            CacheManager.instance().close();
+        } catch(Exception e) {
+            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+            this.cacheId = 0;
         }
 
         // These parts of the payload should not be inserted into the database
@@ -90,14 +94,17 @@ class CachedRequest extends Request implements Runnable {
 
     @Override
     protected void done(int responseCode, String responseBody) {
-        if (Teak.database != null) {
+        try {
             if (responseCode < 500) {
-                Teak.database.delete("cache", "rowid = " + this.cacheId, null);
+                CacheManager.instance().open().delete("cache", "rowid = " + this.cacheId, null);
             } else {
                 ContentValues values = new ContentValues();
                 values.put("retry_count", this.retryCount + 1);
-                Teak.database.update("cache", values, "rowid = " + this.cacheId, null);
+                CacheManager.instance().open().update("cache", values, "rowid = " + this.cacheId, null);
             }
+            CacheManager.instance().close();
+        } catch(Exception e) {
+            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
         }
         super.done(responseCode, responseBody);
     }
@@ -105,8 +112,8 @@ class CachedRequest extends Request implements Runnable {
     private static List<CachedRequest> requestsInCache() {
         List<CachedRequest> requests = new ArrayList<>();
 
-        if (Teak.database != null) {
-            Cursor cursor = Teak.database.query("cache", REQUEST_CACHE_READ_COLUMNS, null, null, null, null, "retry_count");
+        try {
+            Cursor cursor = CacheManager.instance().open().query("cache", REQUEST_CACHE_READ_COLUMNS, null, null, null, null, "retry_count");
             cursor.moveToFirst();
             while (!cursor.isAfterLast()) {
                 try {
@@ -118,6 +125,9 @@ class CachedRequest extends Request implements Runnable {
                 cursor.moveToNext();
             }
             cursor.close();
+            CacheManager.instance().close();
+        } catch(Exception e) {
+            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
         }
 
         return requests;

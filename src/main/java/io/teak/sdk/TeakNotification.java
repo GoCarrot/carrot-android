@@ -154,8 +154,8 @@ public class TeakNotification {
         TeakNotification notif = null;
         String[] inboxReadColumns = {"notification_payload"};
 
-        if (Teak.database != null) {
-            Cursor cursor = Teak.database.query("inbox", inboxReadColumns,
+        try {
+            Cursor cursor = CacheManager.instance().open().query("inbox", inboxReadColumns,
                     "teak_notification_id=?", new String[]{teakNotifId}, null, null, null);
 
             cursor.moveToFirst();
@@ -168,6 +168,9 @@ public class TeakNotification {
                 cursor.moveToNext();
             }
             cursor.close();
+            CacheManager.instance().close();
+        } catch(Exception e) {
+            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
         }
 
         return notif;
@@ -523,8 +526,11 @@ public class TeakNotification {
         values.put("android_id", this.platformId);
         values.put("notification_payload", this.toJson());
 
-        if (Teak.database != null) {
-            Teak.database.insert("inbox", null, values);
+        try {
+            CacheManager.instance().open().insert("inbox", null, values);
+            CacheManager.instance().close();
+        } catch(Exception e) {
+            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
         }
     }
 
@@ -559,8 +565,11 @@ public class TeakNotification {
     }
 
     private void removeFromCache() {
-        if (Teak.database != null) {
-            Teak.database.delete("inbox", "teak_notification_id = " + this.teakNotifId, null);
+        try {
+            CacheManager.instance().open().delete("inbox", "teak_notification_id = " + this.teakNotifId, null);
+            CacheManager.instance().close();
+        } catch(Exception e) {
+            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
         }
     }
 
