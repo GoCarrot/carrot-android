@@ -302,8 +302,20 @@ public class Teak extends BroadcastReceiver {
                 }
             }
 
+            // Launch intent, if available
+            Intent launchIntent = activity.getIntent();
+
             // Check for deep links
-            checkIntentForDeepLink(activity.getIntent());
+            checkIntentForDeepLink(launchIntent);
+
+            // Check for notification launch
+            if (launchIntent != null) {
+                Bundle bundle = launchIntent.getExtras();
+                if (bundle != null) {
+                    // Set the notification id
+                    Teak.launchedFromTeakNotifId = bundle.getString("teakNotifId");
+                }
+            }
 
             // Get the installer package
             Teak.installerPackage = activity.getPackageManager().getInstallerPackageName(activity.getPackageName());
