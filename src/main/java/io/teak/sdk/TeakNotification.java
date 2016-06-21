@@ -36,6 +36,7 @@ import android.app.PendingIntent;
 
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.Html;
+import android.text.Spanned;
 import android.view.View;
 import android.widget.RemoteViews;
 
@@ -623,11 +624,15 @@ public class TeakNotification {
     static Notification createNativeNotification(final Context context, Bundle bundle, TeakNotification teakNotificaton) {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context.getApplicationContext());
 
-        // Configue notification behavior
+        // Rich text message
+        Spanned richMessageText = Html.fromHtml(teakNotificaton.message);
+
+        // Configure notification behavior
         builder.setPriority(NotificationCompat.PRIORITY_MAX);
         builder.setDefaults(NotificationCompat.DEFAULT_ALL);
         builder.setOnlyAlertOnce(true);
         builder.setAutoCancel(true);
+        builder.setTicker(richMessageText);
 
         // Set small view image
         try {
@@ -691,7 +696,7 @@ public class TeakNotification {
         }
 
         // Set small view text
-        smallView.setTextViewText(R.id("text"), Html.fromHtml(teakNotificaton.message));
+        smallView.setTextViewText(R.id("text"), richMessageText);
         nativeNotification.contentView = smallView;
 
         // Check for Jellybean (API 16, 4.1)+ for expanded view
