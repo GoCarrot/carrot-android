@@ -1040,7 +1040,9 @@ public class Teak extends BroadcastReceiver {
                         payload.put("purchase_token", purchaseData.get("purchaseToken"));
                         payload.put("purchase_time", purchaseData.get("purchaseTime"));
                         payload.put("product_id", purchaseData.get("productId"));
-                        payload.put("order_id", purchaseData.get("orderId"));
+                        if (purchaseData.has("orderId")) {
+                            payload.put("order_id", purchaseData.get("orderId"));
+                        }
 
                         Log.d(LOG_TAG, "Purchase of " + purchaseData.get("productId") + " detected.");
                     }
