@@ -197,6 +197,7 @@ class FacebookAccessTokenBroadcast {
                         }
 
                         Field f = com_facebook_AccessTokenManager.getDeclaredField(FACEBOOK_4_x_BROADCAST_ACTION_FIELD);
+                        f.setAccessible(true);
                         this.facebook_4_x_BroadcastAction = (String) f.get(null);
                         if (Teak.isDebug) {
                             Log.d(Teak.LOG_TAG, "Found broadcast action: " + this.facebook_4_x_BroadcastAction);
