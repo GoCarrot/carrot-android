@@ -552,6 +552,10 @@ public class Teak extends BroadcastReceiver {
             }
             Teak.facebookAccessTokenBroadcast.unregister(activity);
             LocalBroadcastManager.getInstance(activity).unregisterReceiver(Teak.localBroadcastReceiver);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+                activity.getApplication().unregisterActivityLifecycleCallbacks(Teak.lifecycleCallbacks);
+            }
         }
 
         @Override
