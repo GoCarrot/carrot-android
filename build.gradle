@@ -69,6 +69,12 @@ def getVersionName = { ->
     return stdout.toString().trim()
 }
 
+def getSentryDSN = { ->
+    Properties properties = new Properties()
+    properties.load(project.file('sentry.properties').newDataInputStream())
+    return properties.getProperty('sentry.dsn')
+}
+
 android {
     compileSdkVersion 23
     buildToolsVersion "23.0.2"
@@ -80,6 +86,7 @@ android {
         versionName = getVersionName()
         consumerProguardFiles 'proguard.txt'
         archivesBaseName = 'teak'
+        buildConfigField "String", "SentryDSN", getSentryDSN()
     }
 }
 

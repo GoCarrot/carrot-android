@@ -340,7 +340,14 @@ public class Teak extends BroadcastReceiver {
                 }
             }
 
-            Teak.gcmSenderId = Helpers.getStringResourceByName(TEAK_GCM_SENDER_ID, activity);
+            // Get the installer package
+            Teak.installerPackage = activity.getPackageManager().getInstallerPackageName(activity.getPackageName());
+
+            // Have all we need to init Sentry
+            Sentry.init(BuildConfig.SentryDSN);
+
+            // Hax
+            Sentry.reportException("Testing", null);
 
             // Launch intent, if available
             Intent launchIntent = activity.getIntent();
@@ -356,9 +363,6 @@ public class Teak extends BroadcastReceiver {
                     Teak.launchedFromTeakNotifId = bundle.getString("teakNotifId");
                 }
             }
-
-            // Get the installer package
-            Teak.installerPackage = activity.getPackageManager().getInstallerPackageName(activity.getPackageName());
 
             // Applicable store
             if (Teak.installerPackage != null) {
