@@ -615,6 +615,11 @@ public class Teak extends BroadcastReceiver {
                             Log.d(LOG_TAG, "Service Config " + config.toString());
                         }
 
+                        // Begin exception reporting, if enabled
+                        if (config.reportSDKExceptions()) {
+                            Teak.sdkSentry.enableReporting(true);
+                        }
+
                         // Heartbeat will block on userId Future, which is fine
                         startHeartbeat();
 

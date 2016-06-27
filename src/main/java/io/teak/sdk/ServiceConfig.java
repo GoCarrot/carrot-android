@@ -16,15 +16,20 @@ package io.teak.sdk;
 
 import org.json.JSONObject;
 
+import java.util.Locale;
+
 class ServiceConfig {
     String hostname;
+    boolean reportSDKExceptions = false;
 
     public void setConfig(JSONObject json) {
         this.hostname = json.optString("auth", "gocarrot.com");
+        this. reportSDKExceptions = json.optBoolean("report_sdk_exceptions", false);
     }
 
     public String toString() {
-        return "{\n  Hostname: " + this.hostname + "\n}";
+        return String.format(Locale.US, "{\n  Hostname: %s\n   ReportSDKExceptions: %b\n}",
+                this.hostname, this.reportSDKExceptions);
     }
 
     public String getHostname(String endpoint) {
@@ -32,5 +37,9 @@ class ServiceConfig {
             return "parsnip.gocarrot.com";
         }
         return this.hostname;
+    }
+
+    public boolean reportSDKExceptions() {
+        return reportSDKExceptions;
     }
 }
