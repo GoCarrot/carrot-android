@@ -391,7 +391,8 @@ public class Teak extends BroadcastReceiver {
             try {
                 String androidId = Settings.Secure.getString(activity.getContentResolver(), Settings.Secure.ANDROID_ID);
                 Request.dynamicCommonPayload.put("device_id", UUID.nameUUIDFromBytes(androidId.getBytes("utf8")));
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                Log.e(LOG_TAG, "Unable to create device id. " + Log.getStackTraceString(e));
             }
 
             // Facebook Access Token Broadcaster
