@@ -118,15 +118,6 @@ public class Teak extends BroadcastReceiver {
 
         CacheManager.initialize(activity);
 
-        if (Teak.qaInterface != null) {
-            HashMap<String, Object> payload = new HashMap<>();
-            Helpers.addDeviceNameToPayload(payload);
-            Teak.qaInterface.identifyClient(payload.get("device_fallback").toString());
-        }
-
-        Teak.preferences = activity.getSharedPreferences(TEAK_PREFERENCES_FILE, Context.MODE_PRIVATE);
-        Teak.gcm = GoogleCloudMessaging.getInstance(activity.getApplicationContext());
-
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
             // TODO: This is non-ideal, see if we can find a better fallback.
             Teak.lifecycleCallbacks.onActivityCreated(activity, null);
@@ -277,7 +268,6 @@ public class Teak extends BroadcastReceiver {
     static IStore appStore;
     static Stack<String> skuStack = new Stack<>();
     static String launchedFromDeepLink;
-    static TeakQAInterface qaInterface;
     static String teakCountryCode;
     static SharedPreferences preferences;
     static GoogleCloudMessaging gcm;
@@ -484,14 +474,8 @@ public class Teak extends BroadcastReceiver {
                             if (response.has("error")) {
                                 JSONObject error = response.getJSONObject("error");
                                 Log.e(LOG_TAG, "Error in Teak configuration: " + error.getString("message"));
-                                if (Teak.qaInterface != null) {
-                                    Teak.qaInterface.settingsValidated(false, error.getString("message"));
-                                }
                             } else {
                                 Log.d(LOG_TAG, "Teak configuration valid for: " + response.getString("name"));
-                                if (Teak.qaInterface != null) {
-                                    Teak.qaInterface.settingsValidated(true, response.getString("name"));
-                                }
                             }
                         } catch (Exception ignored) {
                         }
@@ -514,23 +498,6 @@ public class Teak extends BroadcastReceiver {
                 if (Teak.launchedFromDeepLink != null) {
                     Log.d(LOG_TAG, " Deep Link URL: " + Teak.launchedFromDeepLink);
                 }
-            }
-
-            if (Teak.qaInterface != null) {
-                HashMap<String, Object> payload = new HashMap<>();
-                payload.put("app_id", Teak.appId);
-                payload.put("api_key", Teak.apiKey);
-                payload.put("app_version", Teak.appVersion);
-                if (Teak.installerPackage != null) {
-                    payload.put("installer_package", Teak.installerPackage);
-                }
-                if (Teak.launchedFromTeakNotifId != null) {
-                    payload.put("launched_from_teak_notif_id", Teak.launchedFromTeakNotifId);
-                }
-                if (Teak.launchedFromDeepLink != null) {
-                    payload.put("deep_link", Teak.launchedFromDeepLink);
-                }
-                Teak.qaInterface.onCreate(payload);
             }
         }
 
@@ -694,9 +661,6 @@ public class Teak extends BroadcastReceiver {
             public String call() {
                 try {
                     String gcmId = Teak.gcmIdQueue.take();
-                    if (Teak.qaInterface != null) {
-                        Teak.qaInterface.gcmIdAssigned(gcmId);
-                    }
                     return gcmId;
                 } catch (InterruptedException e) {
                     Log.e(LOG_TAG, Log.getStackTraceString(e));
@@ -839,10 +803,6 @@ public class Teak extends BroadcastReceiver {
                 Log.d(LOG_TAG, "Identifying user: " + userId);
                 Log.d(LOG_TAG, "        Timezone: " + tzOffset);
                 Log.d(LOG_TAG, "          Locale: " + locale);
-
-                if (Teak.qaInterface != null) {
-                    Teak.qaInterface.reportEvent("userdata", "identify", payload);
-                }
 
                 Teak.asyncExecutor.submit(new CachedRequest("/games/" + Teak.appId + "/users.json", payload, dateIssued) {
                     @Override
@@ -1115,10 +1075,6 @@ public class Teak extends BroadcastReceiver {
                         }
                     }
 
-                    if (Teak.qaInterface != null) {
-                        Teak.qaInterface.reportEvent("purchase", "succeeded", payload);
-                    }
-
                     Teak.asyncExecutor.submit(new CachedRequest("/me/purchase", payload, new Date()));
                 } catch (Exception e) {
                     Log.e(LOG_TAG, "Error reporting purchase: " + Log.getStackTraceString(e));
@@ -1135,10 +1091,6 @@ public class Teak extends BroadcastReceiver {
         HashMap<String, Object> payload = new HashMap<>();
         payload.put("error_code", errorCode);
         payload.put("product_id", sku == null ? "" : sku);
-
-        if (Teak.qaInterface != null) {
-            Teak.qaInterface.reportEvent("purchase", "failed", payload);
-        }
 
         Teak.asyncExecutor.submit(new CachedRequest("/me/purchase", payload, new Date()));
     }
