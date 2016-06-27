@@ -336,9 +336,6 @@ public class Teak extends BroadcastReceiver {
             // Have all we need to init Sentry
             Sentry.init(BuildConfig.SentryDSN);
 
-            // Hax
-            Sentry.reportException("Testing", null);
-
             // Launch intent, if available
             Intent launchIntent = activity.getIntent();
 
@@ -362,6 +359,7 @@ public class Teak extends BroadcastReceiver {
                         clazz = Class.forName("io.teak.sdk.Amazon");
                     } catch (Exception e) {
                         Log.e(LOG_TAG, "Couldn't find Teak's Amazon app store handler. " + Log.getStackTraceString(e));
+                        Sentry.reportException(e);
                     }
                 } else {
                     // Default to Google Play
@@ -369,6 +367,7 @@ public class Teak extends BroadcastReceiver {
                         clazz = Class.forName("io.teak.sdk.GooglePlay");
                     } catch (Exception e) {
                         Log.e(LOG_TAG, "Couldn't find Teak's Google Play app store handler. " + Log.getStackTraceString(e));
+                        Sentry.reportException(e);
                     }
                 }
                 try {
@@ -376,6 +375,7 @@ public class Teak extends BroadcastReceiver {
                     Teak.appStore.init(activity);
                 } catch (Exception e) {
                     Log.e(LOG_TAG, "Unable to create app store interface. " + Log.getStackTraceString(e));
+                    Sentry.reportException(e);
                 }
             }
 
@@ -477,7 +477,8 @@ public class Teak extends BroadcastReceiver {
                             } else {
                                 Log.d(LOG_TAG, "Teak configuration valid for: " + response.getString("name"));
                             }
-                        } catch (Exception ignored) {
+                        } catch (Exception e) {
+                            Sentry.reportException(e);
                         }
                         super.done(responseCode, responseBody);
                     }
@@ -997,6 +998,7 @@ public class Teak extends BroadcastReceiver {
             }
         } catch (Exception e) {
             Log.e(LOG_TAG, Log.getStackTraceString(e));
+            Sentry.reportException(e);
         }
     }
 
@@ -1017,6 +1019,7 @@ public class Teak extends BroadcastReceiver {
             }
         } catch (Exception e) {
             Log.e(LOG_TAG, Log.getStackTraceString(e));
+            Sentry.reportException(e);
         }
     }
 
@@ -1078,6 +1081,7 @@ public class Teak extends BroadcastReceiver {
                     Teak.asyncExecutor.submit(new CachedRequest("/me/purchase", payload, new Date()));
                 } catch (Exception e) {
                     Log.e(LOG_TAG, "Error reporting purchase: " + Log.getStackTraceString(e));
+                    Sentry.reportException(e);
                 }
             }
         });

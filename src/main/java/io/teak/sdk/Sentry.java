@@ -23,24 +23,25 @@ import org.json.JSONObject;
 import javax.net.ssl.HttpsURLConnection;
 
 import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Objects;
+import java.util.Locale;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.zip.GZIPOutputStream;
 
 public class Sentry {
     public static final int SENTRY_VERSION = 7; // Sentry protocol version
     public static final String TEAK_SENTRY_VERSION = "1.0.0";
-    public static final String SENTRY_CLIENT= "teak/" + TEAK_SENTRY_VERSION;
+    public static final String SENTRY_CLIENT = "teak/" + TEAK_SENTRY_VERSION;
+    public static final String LOG_TAG = "Teak:Sentry";
 
     public enum Level {
         FATAL("fatal"),
@@ -50,6 +51,7 @@ public class Sentry {
         DEBUG("debug");
 
         private final String value;
+
         Level(String value) {
             this.value = value;
         }
@@ -65,6 +67,7 @@ public class Sentry {
     static URL endpoint;
     static HashMap<String, Object> payloadTemplate = new HashMap<>();
     static ExecutorService requestExecutor = Executors.newCachedThreadPool();
+    static SimpleDateFormat timestampFormatter;
 
     public static void init(String dsn) {
         Uri uri = Uri.parse(dsn);
@@ -84,8 +87,12 @@ public class Sentry {
             endpoint = new URL(String.format("%s://%s%s/api%s/store/",
                     uri.getScheme(), uri.getHost(), port, project));
         } catch (Exception e) {
-            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
         }
+
+        // Timestamp formatting
+        timestampFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
+        timestampFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
 
         // Build out a template to base all payloads off of
         payloadTemplate.put("logger", "teak");
@@ -114,22 +121,66 @@ public class Sentry {
         // extra : map
     }
 
-    public static void reportException(String message, Throwable t) {
-        Sentry.requestExecutor.submit(new Request(message, Level.ERROR));
+    public static void reportException(Throwable t) {
+        HashMap<String, Object> additions = new HashMap<>();
+        ArrayList<Object> exceptions = new ArrayList<>();
+        HashMap<String, Object> exception = new HashMap<>();
+
+        exception.put("type", t.getClass().getSimpleName());
+        exception.put("value", t.getMessage());
+        exception.put("module", t.getClass().getPackage().getName());
+
+        HashMap<String, Object> stacktrace = new HashMap<>();
+        ArrayList<Object> stackFrames = new ArrayList<>();
+
+        StackTraceElement[] steArray = t.getStackTrace();
+        for (int i = steArray.length - 1; i >= 0; i--) {
+            StackTraceElement ste = steArray[i];
+            HashMap<String, Object> frame = new HashMap<>();
+
+            frame.put("filename", ste.getFileName());
+
+            String method = ste.getMethodName();
+            if (method.length() != 0) {
+                frame.put("function", method);
+            }
+
+            int lineno = ste.getLineNumber();
+            if (!ste.isNativeMethod() && lineno >= 0) {
+                frame.put("lineno", lineno);
+            }
+
+            String module = ste.getClassName();
+            frame.put("module", module);
+
+            boolean in_app = true;
+            if (module.startsWith("android.") || module.startsWith("java.") || module.startsWith("dalvik.") || module.startsWith("com.android.")) {
+                in_app = false;
+            }
+
+            frame.put("in_app", in_app);
+
+            stackFrames.add(frame);
+        }
+        stacktrace.put("frames", stackFrames);
+        // TODO: Frames omitted
+
+        exception.put("stacktrace", stacktrace);
+
+        exceptions.add(exception);
+        additions.put("exception", exceptions);
+        Sentry.requestExecutor.submit(new Request(t.getMessage(), Level.ERROR, additions));
     }
 
     static class Request implements Runnable {
         HashMap<String, Object> payload = new HashMap<>(payloadTemplate);
         Date timestamp = new Date();
 
-        public Request(String message, Level level) {
+        public Request(String message, Level level, HashMap<String, Object> additions) {
             payload.put("event_id", UUID.randomUUID().toString().replace("-", ""));
             payload.put("message", message.substring(0, Math.min(message.length(), 1000)));
 
-            TimeZone tz = TimeZone.getTimeZone("UTC");
-            DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
-            df.setTimeZone(tz);
-            payload.put("timestamp", df.format(timestamp));
+            payload.put("timestamp", timestampFormatter.format(timestamp));
 
             payload.put("level", level.toString());
 
@@ -137,15 +188,20 @@ public class Sentry {
                 // 0 dalvik.system.VMStack.getThreadStackTrace
                 // 1 java.lang.Thread.getStackTrace
                 // 2 io.teak.sdk.Sentry$Request.<init>
-                // 3 method calling this function
-                final int depth = 3;
+                // 3 Sentry.report*
+                // 4 culprit method
+                final int depth = 4;
                 final StackTraceElement[] ste = Thread.currentThread().getStackTrace();
                 payload.put("culprit", ste[depth].toString());
-                for (StackTraceElement elem : ste) {
-                    Log.d(Teak.LOG_TAG, elem.toString());
-                }
+                //for (StackTraceElement elem : ste) {
+                //    Log.d(LOG_TAG, elem.toString());
+                //}
             } catch (Exception e) {
                 payload.put("culprit", "unknown");
+            }
+
+            if (additions != null) {
+                payload.putAll(additions);
             }
         }
 
@@ -161,23 +217,23 @@ public class Sentry {
         @Override
         public void run() {
             HttpsURLConnection connection = null;
-            Date timestamp = new Date();
-
-            StringBuilder requestBody = new StringBuilder();
 
             try {
+                JSONObject requestBody = new JSONObject(payload);
+
                 connection = (HttpsURLConnection) endpoint.openConnection();
                 connection.setRequestProperty("Accept-Charset", "UTF-8");
                 connection.setUseCaches(false);
                 connection.setDoOutput(true);
                 connection.setRequestProperty("Content-Type", "application/json");
+                connection.setRequestProperty("Content-Encoding", "gzip");
                 connection.setRequestProperty("User-Agent", SENTRY_CLIENT);
                 connection.setRequestProperty("X-Sentry-Auth",
-                        String.format("Sentry sentry_version=%d\nsentry_timestamp=%d\nsentry_key=%s\nsentry_secret=%s\nsentry_client=%s",
+                        String.format(Locale.US, "Sentry sentry_version=%d,sentry_timestamp=%d,sentry_key=%s,sentry_secret=%s,sentry_client=%s",
                                 SENTRY_VERSION, timestamp.getTime() / 1000, SENTRY_KEY, SENTRY_SECRET, SENTRY_CLIENT));
 
-                DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
-                wr.writeBytes(requestBody.toString());
+                GZIPOutputStream wr = new GZIPOutputStream(connection.getOutputStream());
+                wr.write(requestBody.toString().getBytes());
                 wr.flush();
                 wr.close();
 
@@ -195,14 +251,8 @@ public class Sentry {
                     response.append('\r');
                 }
                 rd.close();
-
-                // Reply
-                try {
-                    Log.d(Teak.LOG_TAG, new JSONObject(response.toString()).toString(2));
-                } catch (Exception ignored) {
-                }
             } catch (Exception e) {
-                Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                Log.e(LOG_TAG, Log.getStackTraceString(e));
             } finally {
                 if (connection != null) {
                     connection.disconnect();

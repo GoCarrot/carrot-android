@@ -56,6 +56,7 @@ class Amazon implements IStore {
             }
         } catch (Exception e) {
             Log.e(Teak.LOG_TAG, "Reflection error: " + Log.getStackTraceString(e));
+            Sentry.reportException(e);
         }
     }
 
@@ -67,6 +68,7 @@ class Amazon implements IStore {
             m.invoke(null);
         } catch (Exception e) {
             Log.e(Teak.LOG_TAG, "Reflection error: " + Log.getStackTraceString(e));
+            Sentry.reportException(e);
         }
     }
 
@@ -93,6 +95,7 @@ class Amazon implements IStore {
             return ret;
         } catch (Exception e) {
             Log.e(Teak.LOG_TAG, "Reflection error: " + Log.getStackTraceString(e));
+            Sentry.reportException(e);
         }
         return null;
     }
