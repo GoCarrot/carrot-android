@@ -372,7 +372,9 @@ public class Teak extends BroadcastReceiver {
                 }
                 try {
                     Teak.appStore = (IStore) (clazz != null ? clazz.newInstance() : null);
-                    Teak.appStore.init(activity);
+                    if (Teak.appStore != null) {
+                        Teak.appStore.init(activity);
+                    }
                 } catch (Exception e) {
                     Log.e(LOG_TAG, "Unable to create app store interface. " + Log.getStackTraceString(e));
                     Sentry.reportException(e);
@@ -444,9 +446,8 @@ public class Teak extends BroadcastReceiver {
                                 Log.d(LOG_TAG, "Google Play Advertising Info loaded: " + ret.toString());
                             }
                         } catch (Exception e) {
-                            Log.e(LOG_TAG, "Couldn't get Google Play Advertising Id.");
                             if (Teak.isDebug) {
-                                e.printStackTrace();
+                                Log.e(LOG_TAG, "Couldn't get Google Play Advertising Id.");
                             }
                         }
                         return ret;
