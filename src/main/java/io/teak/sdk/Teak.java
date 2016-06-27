@@ -863,13 +863,13 @@ public class Teak extends BroadcastReceiver {
 
     static void storeGCMIdAndAppVersion(String registration, boolean wasIntent) {
         if (Teak.isDebug) {
-            if(wasIntent) {
+            if (wasIntent) {
                 Log.d(LOG_TAG, "GCM Id received from registration intent: " + registration);
             } else {
                 Log.d(LOG_TAG, "GCM Id received from GoogleCloudMessaging.getInstance: " + registration);
             }
         }
-        if(registration == null) return;
+        if (registration == null) return;
 
         SharedPreferences.Editor editor = Teak.preferences.edit();
         editor.putInt(TEAK_PREFERENCE_APP_VERSION, Teak.appVersion);

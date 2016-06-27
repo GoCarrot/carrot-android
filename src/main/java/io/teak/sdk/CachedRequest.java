@@ -55,7 +55,7 @@ class CachedRequest extends Request implements Runnable {
         try {
             this.cacheId = CacheManager.instance().open().insert("cache", null, values);
             CacheManager.instance().close();
-        } catch(Exception e) {
+        } catch (Exception e) {
             Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
             this.cacheId = 0;
         }

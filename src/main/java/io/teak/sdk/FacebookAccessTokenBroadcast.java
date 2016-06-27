@@ -116,7 +116,7 @@ class FacebookAccessTokenBroadcast {
                     Log.d(Teak.LOG_TAG, "Facebook SDK version string: " + fbSdkVersion);
                 }
             } catch (Exception e) {
-                Log.e(Teak.LOG_TAG, e.toString());
+                Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
             }
         }
 

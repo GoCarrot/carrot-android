@@ -171,7 +171,7 @@ public class TeakNotification {
             }
             cursor.close();
             CacheManager.instance().close();
-        } catch(Exception e) {
+        } catch (Exception e) {
             Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
         }
 
@@ -389,9 +389,9 @@ public class TeakNotification {
     /**
      * Schedules a push notification for some time in the future.
      *
-     * @param creativeId        The identifier of the notification in the Teak dashboard (will create if not found).
-     * @param defaultMessage    The default message to send, may be over-ridden in the dashboard.
-     * @param delayInSeconds    The delay in seconds from now to send the notification.
+     * @param creativeId     The identifier of the notification in the Teak dashboard (will create if not found).
+     * @param defaultMessage The default message to send, may be over-ridden in the dashboard.
+     * @param delayInSeconds The delay in seconds from now to send the notification.
      * @return The identifier of the scheduled notification (see {@link TeakNotification#cancelNotification(String)} or null.
      */
     @SuppressWarnings("unused")
@@ -541,7 +541,7 @@ public class TeakNotification {
         try {
             CacheManager.instance().open().insert("inbox", null, values);
             CacheManager.instance().close();
-        } catch(Exception e) {
+        } catch (Exception e) {
             Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
         }
     }
@@ -580,7 +580,7 @@ public class TeakNotification {
         try {
             CacheManager.instance().open().delete("inbox", "teak_notification_id = " + this.teakNotifId, null);
             CacheManager.instance().close();
-        } catch(Exception e) {
+        } catch (Exception e) {
             Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
         }
     }
@@ -682,6 +682,7 @@ public class TeakNotification {
                 }
                 return ret;
             }
+
             public int layout(String identifier) {
                 int ret = context.getResources().getIdentifier(identifier, "layout", context.getPackageName());
                 if (ret == 0) {

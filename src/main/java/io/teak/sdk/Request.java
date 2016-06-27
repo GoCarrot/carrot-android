@@ -91,7 +91,7 @@ class Request implements Runnable {
             addCommonPayload(requestBodyObject);
 
             if (Teak.isDebug) {
-                Log.d(Teak.LOG_TAG, "Submitting request to '" + this.endpoint + "': " +  new JSONObject(requestBodyObject).toString(2));
+                Log.d(Teak.LOG_TAG, "Submitting request to '" + this.endpoint + "': " + new JSONObject(requestBodyObject).toString(2));
             }
 
             ArrayList<String> payloadKeys = new ArrayList<>(requestBodyObject.keySet());

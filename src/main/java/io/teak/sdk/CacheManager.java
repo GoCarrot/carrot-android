@@ -49,14 +49,14 @@ class CacheManager {
     }
 
     public synchronized SQLiteDatabase open() {
-        if(mOpenCounter.incrementAndGet() == 1) {
+        if (mOpenCounter.incrementAndGet() == 1) {
             mDatabase = mDatabaseHelper.getWritableDatabase();
         }
         return mDatabase;
     }
 
     public synchronized void close() {
-        if(mOpenCounter.decrementAndGet() == 0) {
+        if (mOpenCounter.decrementAndGet() == 0) {
             mDatabase.close();
         }
     }
