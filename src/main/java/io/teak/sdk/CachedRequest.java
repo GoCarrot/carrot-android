@@ -105,7 +105,7 @@ class CachedRequest extends Request implements Runnable {
             CacheManager.instance().close();
         } catch (Exception e) {
             Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
-            Sentry.reportException(e);
+            Teak.sdkSentry.reportException(e);
         }
         super.done(responseCode, responseBody);
     }
@@ -122,7 +122,7 @@ class CachedRequest extends Request implements Runnable {
                     requests.add(request);
                 } catch (Exception e) {
                     Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
-                    Sentry.reportException(e);
+                    Teak.sdkSentry.reportException(e);
                 }
                 cursor.moveToNext();
             }
@@ -130,7 +130,7 @@ class CachedRequest extends Request implements Runnable {
             CacheManager.instance().close();
         } catch (Exception e) {
             Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
-            Sentry.reportException(e);
+            Teak.sdkSentry.reportException(e);
         }
 
         return requests;

@@ -33,8 +33,9 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
 public class Sentry {
@@ -62,14 +63,37 @@ public class Sentry {
         }
     }
 
-    static String SENTRY_KEY;
-    static String SENTRY_SECRET;
-    static URL endpoint;
-    static HashMap<String, Object> payloadTemplate = new HashMap<>();
-    static ExecutorService requestExecutor = Executors.newCachedThreadPool();
+    String SENTRY_KEY;
+    String SENTRY_SECRET;
+    URL endpoint;
+    HashMap<String, Object> payloadTemplate;
+    boolean reportingEnabled = false;
+    final Object monitor = new Object();
+
     static SimpleDateFormat timestampFormatter;
 
-    public static void init(String dsn) {
+    static {
+        // Timestamp formatting
+        timestampFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
+        timestampFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+    }
+
+    ThreadPoolExecutor reportThreadQueueExecutor = new ThreadPoolExecutor(1, 3, 2, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>()) {
+        @Override
+        protected void beforeExecute(Thread t, Runnable r) {
+            synchronized(monitor) {
+                while (!reportingEnabled) {
+                    try {
+                        monitor.wait();
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+            super.beforeExecute(t, r);
+        }
+    };
+
+    public Sentry(String dsn) {
         Uri uri = Uri.parse(dsn);
 
         String port = "";
@@ -89,39 +113,18 @@ public class Sentry {
         } catch (Exception e) {
             Log.e(LOG_TAG, Log.getStackTraceString(e));
         }
-
-        // Timestamp formatting
-        timestampFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
-        timestampFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-        // Build out a template to base all payloads off of
-        payloadTemplate.put("logger", "teak");
-        payloadTemplate.put("platform", "java");
-        payloadTemplate.put("release", Teak.SDKVersion);
-        payloadTemplate.put("server_name", Teak.bundleId);
-
-        HashMap<String, Object> sdkAttribute = new HashMap<>();
-        sdkAttribute.put("name", "teak");
-        sdkAttribute.put("version", TEAK_SENTRY_VERSION);
-        payloadTemplate.put("sdk", sdkAttribute);
-
-        HashMap<String, Object> deviceAttribute = new HashMap<>();
-        HashMap<String, Object> deviceInfo = new HashMap<>();
-        Helpers.addDeviceNameToPayload(deviceInfo);
-        deviceAttribute.put("name", deviceInfo.get("device_fallback"));
-        deviceAttribute.put("version", Build.VERSION.SDK_INT);
-        deviceAttribute.put("build", Build.VERSION.RELEASE);
-        payloadTemplate.put("device", deviceAttribute);
-
-        HashMap<String, Object> tagsAttribute = new HashMap<>();
-        tagsAttribute.put("app_id", Teak.appId);
-        tagsAttribute.put("app_version", Teak.appVersion);
-        payloadTemplate.put("tags", tagsAttribute);
-
-        // extra : map
     }
 
-    public static void reportException(Throwable t) {
+    public void enableReporting(boolean enabled) {
+        reportingEnabled = enabled;
+        if (reportingEnabled) {
+            synchronized (monitor) {
+                monitor.notify();
+            }
+        }
+    }
+
+    public void reportException(Throwable t) {
         HashMap<String, Object> additions = new HashMap<>();
         ArrayList<Object> exceptions = new ArrayList<>();
         HashMap<String, Object> exception = new HashMap<>();
@@ -169,14 +172,52 @@ public class Sentry {
 
         exceptions.add(exception);
         additions.put("exception", exceptions);
-        Sentry.requestExecutor.submit(new Request(t.getMessage(), Level.ERROR, additions));
+
+        reportThreadQueueExecutor.execute(new Report(t.getMessage(), Level.ERROR, additions));
     }
 
-    static class Request implements Runnable {
-        HashMap<String, Object> payload = new HashMap<>(payloadTemplate);
+    public synchronized void ready(HashMap<String, Object> extra) {
+        if (payloadTemplate == null) {
+            payloadTemplate = new HashMap<>();
+
+            // Build out a template to base all payloads off of
+            payloadTemplate.put("logger", "teak");
+            payloadTemplate.put("platform", "java");
+            payloadTemplate.put("release", Teak.SDKVersion);
+            payloadTemplate.put("server_name", Teak.bundleId);
+
+            HashMap<String, Object> sdkAttribute = new HashMap<>();
+            sdkAttribute.put("name", "teak");
+            sdkAttribute.put("version", TEAK_SENTRY_VERSION);
+            payloadTemplate.put("sdk", sdkAttribute);
+
+            HashMap<String, Object> deviceAttribute = new HashMap<>();
+            HashMap<String, Object> deviceInfo = new HashMap<>();
+            Helpers.addDeviceNameToPayload(deviceInfo);
+            deviceAttribute.put("name", deviceInfo.get("device_fallback"));
+            deviceAttribute.put("version", Build.VERSION.SDK_INT);
+            deviceAttribute.put("build", Build.VERSION.RELEASE);
+            payloadTemplate.put("device", deviceAttribute);
+
+            HashMap<String, Object> tagsAttribute = new HashMap<>();
+            tagsAttribute.put("app_id", Teak.appId);
+            tagsAttribute.put("app_version", Teak.appVersion);
+            payloadTemplate.put("tags", tagsAttribute);
+        }
+
+        // Set/replace 'extra'
+        if (extra != null) {
+            payloadTemplate.put("extra", extra);
+        } else if (payloadTemplate.containsKey("extra")){
+            payloadTemplate.remove("extra");
+        }
+    }
+
+    class Report implements Runnable {
+        HashMap<String, Object> payload = new HashMap<>();
         Date timestamp = new Date();
 
-        public Request(String message, Level level, HashMap<String, Object> additions) {
+        public Report(String message, Level level, HashMap<String, Object> additions) {
             payload.put("event_id", UUID.randomUUID().toString().replace("-", ""));
             payload.put("message", message.substring(0, Math.min(message.length(), 1000)));
 
@@ -219,6 +260,7 @@ public class Sentry {
             HttpsURLConnection connection = null;
 
             try {
+                payload.putAll(payloadTemplate);
                 JSONObject requestBody = new JSONObject(payload);
 
                 connection = (HttpsURLConnection) endpoint.openConnection();
@@ -236,7 +278,7 @@ public class Sentry {
                 wr.write(requestBody.toString().getBytes());
                 wr.flush();
                 wr.close();
-
+/*
                 InputStream is;
                 if (connection.getResponseCode() < 400) {
                     is = connection.getInputStream();
@@ -251,6 +293,7 @@ public class Sentry {
                     response.append('\r');
                 }
                 rd.close();
+*/
             } catch (Exception e) {
                 Log.e(LOG_TAG, Log.getStackTraceString(e));
             } finally {

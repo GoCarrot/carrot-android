@@ -25,7 +25,7 @@ public class TeakExceptionHandler implements Thread.UncaughtExceptionHandler {
         if (thread != createdOnThread) {
             Log.d(Teak.LOG_TAG, "TeakExceptionHandler created on " + createdOnThread.toString() + " getting exception from " + thread.toString());
         }
-        Sentry.reportException(ex);
+        Teak.sdkSentry.reportException(ex);
     }
 
     public static synchronized TeakExceptionHandler begin() {
