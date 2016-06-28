@@ -114,7 +114,7 @@ public class Teak extends BroadcastReceiver {
      */
     public static void onCreate(Activity activity) {
         Log.d(LOG_TAG, "Android SDK Version: " + Teak.SDKVersion);
-        Teak.mainActivity = activity;
+        Teak.localBroadcastManager = LocalBroadcastManager.getInstance(activity);
 
         CacheManager.initialize(activity);
 
@@ -165,8 +165,8 @@ public class Teak extends BroadcastReceiver {
             }
         }
 
-        if (Teak.launchedFromTeakNotifId != null && Teak.mainActivity != null) {
-            LocalBroadcastManager.getInstance(Teak.mainActivity).sendBroadcast(new Intent(TeakNotification.LAUNCHED_FROM_NOTIFICATION_INTENT));
+        if (Teak.launchedFromTeakNotifId != null && Teak.localBroadcastManager != null) {
+            Teak.localBroadcastManager.sendBroadcast(new Intent(TeakNotification.LAUNCHED_FROM_NOTIFICATION_INTENT));
         }
     }
 
@@ -253,7 +253,6 @@ public class Teak extends BroadcastReceiver {
     static FutureTask<ServiceConfig> serviceConfig;
     static FutureTask<String> userId;
     static FutureTask<String> facebookAccessToken;
-    static Activity mainActivity;
     static ArrayBlockingQueue<String> userIdQueue;
     static ArrayBlockingQueue<String> gcmIdQueue;
     static ArrayBlockingQueue<String> facebookAccessTokenQueue;
@@ -273,6 +272,7 @@ public class Teak extends BroadcastReceiver {
     static GoogleCloudMessaging gcm;
     static String gcmSenderId;
     static Sentry sdkSentry = new Sentry(BuildConfig.SentryDSN);
+    static LocalBroadcastManager localBroadcastManager;
 
     static final String LOG_TAG = "Teak";
 
@@ -299,8 +299,6 @@ public class Teak extends BroadcastReceiver {
     static class TeakActivityLifecycleCallbacks implements ActivityLifecycleCallbacks {
         @Override
         public void onActivityCreated(final Activity activity, Bundle savedInstanceState) {
-            if (activity != Teak.mainActivity) return;
-
             // Check for debug build
             Teak.isDebug = Teak.forceDebug || (0 != (activity.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE));
 
@@ -507,8 +505,6 @@ public class Teak extends BroadcastReceiver {
 
         @Override
         public void onActivityDestroyed(Activity activity) {
-            if (activity != Teak.mainActivity) return;
-
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityDestroyed");
             }
@@ -526,8 +522,6 @@ public class Teak extends BroadcastReceiver {
 
         @Override
         public void onActivityPaused(Activity activity) {
-            if (activity != Teak.mainActivity) return;
-
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityPaused");
             }
@@ -545,8 +539,6 @@ public class Teak extends BroadcastReceiver {
 
         @Override
         public void onActivityResumed(Activity activity) {
-            if (activity != Teak.mainActivity) return;
-
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityResumed");
             }
