@@ -866,14 +866,7 @@ public class Teak extends BroadcastReceiver {
         String action = intent.getAction();
 
         if (GCM_REGISTRATION_INTENT_ACTION.equals(action)) {
-            // Store off the GCM Id and app version
-            try {
-                Bundle bundle = intent.getExtras();
-                String registration = bundle.getString("registration_id");
-                storeGCMIdAndAppVersion(context, registration, true);
-            } catch (Exception e) {
-                Log.e(LOG_TAG, "Error storing GCM Id from " + GCM_REGISTRATION_INTENT_ACTION + ":\n" + Log.getStackTraceString(e));
-            }
+            // Ignore this.
         } else if (GCM_RECEIVE_INTENT_ACTION.equals(action)) {
             final TeakNotification notif = TeakNotification.remoteNotificationFromIntent(context, intent);
             if (notif == null) {
