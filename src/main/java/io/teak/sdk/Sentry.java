@@ -116,6 +116,8 @@ public class Sentry {
 
                 endpoint = new URL(String.format("%s://%s%s/api%s/store/",
                         uri.getScheme(), uri.getHost(), port, project));
+
+                reportingEnabled = true;
             } catch (Exception e) {
                 Log.e(LOG_TAG, Log.getStackTraceString(e));
             }
