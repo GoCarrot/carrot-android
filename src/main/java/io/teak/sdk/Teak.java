@@ -271,7 +271,8 @@ public class Teak extends BroadcastReceiver {
     static SharedPreferences preferences;
     static GoogleCloudMessaging gcm;
     static String gcmSenderId;
-    static Sentry sdkSentry = new Sentry(BuildConfig.SentryDSN);
+    static Sentry sdkSentry = new Sentry();
+
     static LocalBroadcastManager localBroadcastManager;
 
     static final String LOG_TAG = "Teak";
@@ -603,14 +604,8 @@ public class Teak extends BroadcastReceiver {
                         JSONObject response = new JSONObject(responseBody);
                         config.setConfig(response);
 
-                        if (Teak.isDebug) {
-                            Log.d(LOG_TAG, "Service Config " + config.toString());
-                        }
-
                         // Begin exception reporting, if enabled
-                        if (config.reportSDKExceptions()) {
-                            Teak.sdkSentry.enableReporting(true);
-                        }
+                        Teak.sdkSentry.setDsn(config.sdkSentryDSN());
 
                         // Heartbeat will block on userId Future, which is fine
                         startHeartbeat();

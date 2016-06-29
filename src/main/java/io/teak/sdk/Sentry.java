@@ -93,30 +93,34 @@ public class Sentry {
         }
     };
 
-    public Sentry(String dsn) {
-        Uri uri = Uri.parse(dsn);
-
-        String port = "";
-        if (uri.getPort() >= 0) {
-            port = ":" + uri.getPort();
-        }
-
-        try {
-            String project = uri.getPath().substring(uri.getPath().lastIndexOf("/"));
-
-            String[] userInfo = uri.getUserInfo().split(":");
-            SENTRY_KEY = userInfo[0];
-            SENTRY_SECRET = userInfo[1];
-
-            endpoint = new URL(String.format("%s://%s%s/api%s/store/",
-                    uri.getScheme(), uri.getHost(), port, project));
-        } catch (Exception e) {
-            Log.e(LOG_TAG, Log.getStackTraceString(e));
-        }
+    public Sentry() {
     }
 
-    public void enableReporting(boolean enabled) {
-        reportingEnabled = enabled;
+    public void setDsn(String dsn) {
+        if (dsn.isEmpty()) {
+            reportingEnabled = false;
+        } else {
+            Uri uri = Uri.parse(dsn);
+
+            String port = "";
+            if (uri.getPort() >= 0) {
+                port = ":" + uri.getPort();
+            }
+
+            try {
+                String project = uri.getPath().substring(uri.getPath().lastIndexOf("/"));
+
+                String[] userInfo = uri.getUserInfo().split(":");
+                SENTRY_KEY = userInfo[0];
+                SENTRY_SECRET = userInfo[1];
+
+                endpoint = new URL(String.format("%s://%s%s/api%s/store/",
+                        uri.getScheme(), uri.getHost(), port, project));
+            } catch (Exception e) {
+                Log.e(LOG_TAG, Log.getStackTraceString(e));
+            }
+        }
+
         if (reportingEnabled) {
             synchronized (monitor) {
                 monitor.notify();

@@ -20,16 +20,17 @@ import java.util.Locale;
 
 class ServiceConfig {
     String hostname;
-    boolean reportSDKExceptions = false;
+    String sdkSentryDsn = "";
 
     public void setConfig(JSONObject json) {
         this.hostname = json.optString("auth", "gocarrot.com");
-        this. reportSDKExceptions = json.optBoolean("report_sdk_exceptions", false);
+        this.sdkSentryDsn = json.optString("sdk_sentry_dsn", "");
     }
 
+    @Override
     public String toString() {
         return String.format(Locale.US, "{\n  Hostname: %s\n   ReportSDKExceptions: %b\n}",
-                this.hostname, this.reportSDKExceptions);
+                this.hostname, this.sdkSentryDsn);
     }
 
     public String getHostname(String endpoint) {
@@ -39,7 +40,7 @@ class ServiceConfig {
         return this.hostname;
     }
 
-    public boolean reportSDKExceptions() {
-        return reportSDKExceptions;
+    public String sdkSentryDSN() {
+        return sdkSentryDsn;
     }
 }
