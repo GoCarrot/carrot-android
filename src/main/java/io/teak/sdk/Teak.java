@@ -124,6 +124,9 @@ public class Teak extends BroadcastReceiver {
             Teak.qaInterface.identifyClient(payload.get("device_fallback").toString());
         }
 
+        Teak.preferences = activity.getSharedPreferences(TEAK_PREFERENCES_FILE, Context.MODE_PRIVATE);
+        Teak.gcm = GoogleCloudMessaging.getInstance(activity.getApplicationContext());
+
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
             // TODO: This is non-ideal, see if we can find a better fallback.
             Teak.lifecycleCallbacks.onActivityCreated(activity, null);
@@ -244,6 +247,9 @@ public class Teak extends BroadcastReceiver {
     static String launchedFromDeepLink;
     static TeakQAInterface qaInterface;
     static String teakCountryCode;
+    static SharedPreferences preferences;
+    static GoogleCloudMessaging gcm;
+    static String gcmSenderId;
 
     static final String LOG_TAG = "Teak";
 
@@ -301,6 +307,8 @@ public class Teak extends BroadcastReceiver {
                     throw new RuntimeException("Failed to find R.string." + TEAK_APP_ID);
                 }
             }
+
+            Teak.gcmSenderId = Helpers.getStringResourceByName(TEAK_GCM_SENDER_ID, activity);
 
             // Launch intent, if available
             Intent launchIntent = activity.getIntent();
@@ -395,56 +403,7 @@ public class Teak extends BroadcastReceiver {
             createFacebookAccessTokenFuture();
 
             // Check for valid GCM Id
-            SharedPreferences preferences = activity.getSharedPreferences(TEAK_PREFERENCES_FILE, Context.MODE_PRIVATE);
-            int storedAppVersion = preferences.getInt(TEAK_PREFERENCE_APP_VERSION, 0);
-            String storedGcmId = preferences.getString(TEAK_PREFERENCE_GCM_ID, null);
-            if (storedAppVersion == Teak.appVersion && storedGcmId != null) {
-                // No need to get a new one, so put it on the blocking queue
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "GCM Id found in cache: " + storedGcmId);
-                }
-                Teak.gcmIdQueue.offer(storedGcmId);
-            } else {
-                // If io_teak_gcm_sender_id is available, do the registration ourselves.
-                try {
-                    final String senderId = Helpers.getStringResourceByName(TEAK_GCM_SENDER_ID, activity);
-                    if (senderId != null) {
-                        if (Teak.isDebug) {
-                            Log.d(LOG_TAG, "Registering for GCM with sender id: " + senderId);
-                        }
-
-                        // Register for GCM in the background
-                        Teak.asyncExecutor.submit(new Runnable() {
-                            public void run() {
-                                try {
-                                    GoogleCloudMessaging gcm = GoogleCloudMessaging.getInstance(activity.getApplicationContext());
-                                    storeGCMIdAndAppVersion(activity, gcm.register(senderId), false);
-                                } catch (Exception e) {
-                                    Log.e(LOG_TAG, Log.getStackTraceString(e));
-                                    // TODO: exponential back-off, re-register
-                                }
-                            }
-                        });
-                    }
-                } catch (Exception ignored) {
-                }
-            }
-
-            Teak.gcmId = new FutureTask<>(new Callable<String>() {
-                public String call() {
-                    try {
-                        String gcmId = Teak.gcmIdQueue.take();
-                        if (Teak.qaInterface != null) {
-                            Teak.qaInterface.gcmIdAssigned(gcmId);
-                        }
-                        return gcmId;
-                    } catch (InterruptedException e) {
-                        Log.e(LOG_TAG, Log.getStackTraceString(e));
-                    }
-                    return null;
-                }
-            });
-            Teak.asyncExecutor.submit(Teak.gcmId);
+            checkGCM(false);
 
             // Google Play Advertising Id
             int googlePlayStatus = GooglePlayServicesUtil.isGooglePlayServicesAvailable(activity);
@@ -662,6 +621,60 @@ public class Teak extends BroadcastReceiver {
         }
     }
 
+    private static void checkGCM(boolean callIdentifyUser) {
+        int storedAppVersion = Teak.preferences.getInt(TEAK_PREFERENCE_APP_VERSION, 0);
+        String storedGcmId = Teak.preferences.getString(TEAK_PREFERENCE_GCM_ID, null);
+        if (storedAppVersion == Teak.appVersion && storedGcmId != null) {
+            // No need to get a new one, so put it on the blocking queue
+            if (Teak.isDebug) {
+                Log.d(LOG_TAG, "GCM Id found in cache: " + storedGcmId);
+            }
+            Teak.gcmIdQueue.offer(storedGcmId);
+        } else {
+            // If io_teak_gcm_sender_id is available, do the registration ourselves.
+            try {
+                if (Teak.gcmSenderId != null) {
+                    if (Teak.isDebug) {
+                        Log.d(LOG_TAG, "Registering for GCM with sender id: " + Teak.gcmSenderId);
+                    }
+
+                    // Register for GCM in the background
+                    Teak.asyncExecutor.submit(new Runnable() {
+                        public void run() {
+                            try {
+                                storeGCMIdAndAppVersion(Teak.gcm.register(Teak.gcmSenderId), false);
+                            } catch (Exception e) {
+                                Log.e(LOG_TAG, Log.getStackTraceString(e));
+                                // TODO: exponential back-off, re-register
+                            }
+                        }
+                    });
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        Teak.gcmId = new FutureTask<>(new Callable<String>() {
+            public String call() {
+                try {
+                    String gcmId = Teak.gcmIdQueue.take();
+                    if (Teak.qaInterface != null) {
+                        Teak.qaInterface.gcmIdAssigned(gcmId);
+                    }
+                    return gcmId;
+                } catch (InterruptedException e) {
+                    Log.e(LOG_TAG, Log.getStackTraceString(e));
+                }
+                return null;
+            }
+        });
+        Teak.asyncExecutor.submit(Teak.gcmId);
+
+        if (callIdentifyUser) {
+            identifyUser();
+        }
+    }
+
     private static void startHeartbeat() {
         if (Teak.heartbeatService == null) {
             Teak.heartbeatService = Executors.newSingleThreadScheduledExecutor();
@@ -810,6 +823,16 @@ public class Teak extends BroadcastReceiver {
                                 Log.d(LOG_TAG, "Enabling verbose logging via identifyUser()");
                             }
 
+                            // Server requesting new push key.
+                            if (response.optBoolean("reset_push_key", false)) {
+                                SharedPreferences.Editor editor = Teak.preferences.edit();
+                                editor.remove(TEAK_PREFERENCE_APP_VERSION);
+                                editor.remove(TEAK_PREFERENCE_GCM_ID);
+                                editor.apply();
+
+                                checkGCM(true);
+                            }
+
                             if (response.has("country_code")) {
                                 Teak.teakCountryCode = response.getString("country_code");
                             }
@@ -841,7 +864,7 @@ public class Teak extends BroadcastReceiver {
     private static final String GCM_RECEIVE_INTENT_ACTION = "com.google.android.c2dm.intent.RECEIVE";
     private static final String GCM_REGISTRATION_INTENT_ACTION = "com.google.android.c2dm.intent.REGISTRATION";
 
-    static void storeGCMIdAndAppVersion(Context context, String registration, boolean wasIntent) {
+    static void storeGCMIdAndAppVersion(String registration, boolean wasIntent) {
         if (Teak.isDebug) {
             if(wasIntent) {
                 Log.d(LOG_TAG, "GCM Id received from registration intent: " + registration);
@@ -851,7 +874,7 @@ public class Teak extends BroadcastReceiver {
         }
         if(registration == null) return;
 
-        SharedPreferences.Editor editor = context.getSharedPreferences(TEAK_PREFERENCES_FILE, Context.MODE_PRIVATE).edit();
+        SharedPreferences.Editor editor = Teak.preferences.edit();
         editor.putInt(TEAK_PREFERENCE_APP_VERSION, Teak.appVersion);
         editor.putString(TEAK_PREFERENCE_GCM_ID, registration);
         editor.apply();
