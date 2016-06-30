@@ -189,13 +189,14 @@ public class Teak extends BroadcastReceiver {
             return;
         }
 
-        HashMap<String, Object> sentryExtra = new HashMap<>();
-        sentryExtra.put("api_key", userIdentifier);
-        Teak.sdkSentry.ready(sentryExtra);
-
         if (Teak.userId == null) {
             Log.e(LOG_TAG, "Teak.onCreate() has not been called in your Activity's onCreate() function.");
         } else {
+            // Sentry is ready
+            HashMap<String, Object> sentryExtra = new HashMap<>();
+            sentryExtra.put("teak_user", userIdentifier);
+            Teak.sdkSentry.ready(sentryExtra);
+
             if (Teak.userId.isDone()) {
                 String userId = "";
                 try {

@@ -284,7 +284,7 @@ public class Sentry {
                 wr.write(requestBody.toString().getBytes());
                 wr.flush();
                 wr.close();
-/*
+
                 InputStream is;
                 if (connection.getResponseCode() < 400) {
                     is = connection.getInputStream();
@@ -299,7 +299,11 @@ public class Sentry {
                     response.append('\r');
                 }
                 rd.close();
-*/
+
+                JSONObject jsonResponse = new JSONObject(response.toString());
+                if (Teak.isDebug) {
+                    Log.d(LOG_TAG, "Exception reported: " + jsonResponse.toString(2));
+                }
             } catch (Exception e) {
                 Log.e(LOG_TAG, Log.getStackTraceString(e));
             } finally {
