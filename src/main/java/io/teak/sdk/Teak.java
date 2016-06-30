@@ -189,6 +189,10 @@ public class Teak extends BroadcastReceiver {
             return;
         }
 
+        HashMap<String, Object> sentryExtra = new HashMap<>();
+        sentryExtra.put("api_key", userIdentifier);
+        Teak.sdkSentry.ready(sentryExtra);
+
         if (Teak.userId == null) {
             Log.e(LOG_TAG, "Teak.onCreate() has not been called in your Activity's onCreate() function.");
         } else {
@@ -335,9 +339,6 @@ public class Teak extends BroadcastReceiver {
 
             // Get the installer package
             Teak.installerPackage = activity.getPackageManager().getInstallerPackageName(activity.getPackageName());
-
-            // Have all we need to init Sentry
-            Teak.sdkSentry.ready(null);
 
             // Launch intent, if available
             Intent launchIntent = activity.getIntent();
