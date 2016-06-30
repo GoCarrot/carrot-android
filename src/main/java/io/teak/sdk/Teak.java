@@ -190,10 +190,43 @@ public class Teak extends BroadcastReceiver {
         // Always show this debug output.
         Log.d(LOG_TAG, "identifyUser(): " + userIdentifier);
 
+        if (userIdentifier == null || userIdentifier.isEmpty()) {
+            Log.e(LOG_TAG, "User identifier can not be null or empty.");
+            return;
+        }
+
         if (Teak.userId == null) {
             Log.e(LOG_TAG, "Teak.onCreate() has not been called in your Activity's onCreate() function.");
-        } else if (!Teak.userId.isDone()) {
-            Teak.userIdQueue.offer(userIdentifier);
+        } else {
+            if (!Teak.userId.isDone()) {
+                Teak.userIdQueue.offer(userIdentifier);
+            } else {
+                String userId = "";
+                try {
+                    userId = Teak.userId.get();
+                } catch (Exception ignored) {
+                }
+                if (!userIdentifier.equals(userId)) {
+                    Teak.lastSessionEndedAt = null;
+                    Teak.userIdentifiedThisSession = false;
+                    Teak.userId = new FutureTask<>(new Callable<String>() {
+                        public String call() {
+                            try {
+                                String ret = Teak.userIdQueue.take();
+                                if (Teak.isDebug) {
+                                    Log.d(LOG_TAG, "User Id ready: " + ret);
+                                }
+                                return ret;
+                            } catch (InterruptedException e) {
+                                Log.e(LOG_TAG, Log.getStackTraceString(e));
+                            }
+                            return null;
+                        }
+                    });
+                    Teak.asyncExecutor.submit(Teak.userId);
+                    identifyUser();
+                }
+            }
         }
     }
 
