@@ -51,6 +51,7 @@ import java.net.URI;
 import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 import java.util.ArrayList;
 
@@ -252,7 +253,12 @@ public class TeakNotification {
 
             if (GRANT_REWARD_STRING.equals(statusString)) {
                 status = GRANT_REWARD;
-                reward = json.optJSONObject("reward");
+                try {
+                    reward = new JSONObject(json.optString("reward"));
+                } catch (Exception e) {
+                    // TODO: Sentry log this
+                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                }
             } else if (SELF_CLICK_STRING.equals(statusString)) {
                 status = SELF_CLICK;
             } else if (ALREADY_CLICKED_STRING.equals(statusString)) {
@@ -268,6 +274,11 @@ public class TeakNotification {
             } else {
                 status = UNKNOWN;
             }
+        }
+
+        @Override
+        public String toString() {
+            return String.format(Locale.US, "%s{status: %d, reward: %s}", super.toString(), status, reward == null ? "null" : reward.toString());
         }
 
         private static final String GRANT_REWARD_STRING = "grant_reward";
