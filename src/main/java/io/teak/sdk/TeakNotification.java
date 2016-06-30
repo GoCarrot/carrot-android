@@ -644,16 +644,18 @@ public class TeakNotification {
             return null;
         }
 
+        Random rng = new Random();
+
         // Create intent to fire if/when notification is cleared
         Intent pushClearedIntent = new Intent(context.getPackageName() + TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX);
         pushClearedIntent.putExtras(bundle);
-        PendingIntent pushClearedPendingIntent = PendingIntent.getBroadcast(context, 0, pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
+        PendingIntent pushClearedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
         builder.setDeleteIntent(pushClearedPendingIntent);
 
         // Create intent to fire if/when notification is opened, attach bundle info
         Intent pushOpenedIntent = new Intent(context.getPackageName() + TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX);
         pushOpenedIntent.putExtras(bundle);
-        PendingIntent pushOpenedPendingIntent = PendingIntent.getBroadcast(context, 0, pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
+        PendingIntent pushOpenedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
         builder.setContentIntent(pushOpenedPendingIntent);
 
         // Notification builder
