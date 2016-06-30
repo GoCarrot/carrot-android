@@ -41,7 +41,7 @@ import java.util.zip.GZIPOutputStream;
 public class Sentry {
     public static final int SENTRY_VERSION = 7; // Sentry protocol version
     public static final String TEAK_SENTRY_VERSION = "1.0.0";
-    public static final String SENTRY_CLIENT = "teak/" + TEAK_SENTRY_VERSION;
+    public static final String SENTRY_CLIENT = "teak-android/" + TEAK_SENTRY_VERSION;
     public static final String LOG_TAG = "Teak:Sentry";
 
     public enum Level {
