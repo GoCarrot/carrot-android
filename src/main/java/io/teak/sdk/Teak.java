@@ -347,6 +347,8 @@ public class Teak extends BroadcastReceiver {
             }
 
 
+            // Get the GCM sender id
+            Teak.gcmSenderId = Helpers.getStringResourceByName(TEAK_GCM_SENDER_ID, activity);
 
             // Get the installer package
             Teak.installerPackage = activity.getPackageManager().getInstallerPackageName(activity.getPackageName());
