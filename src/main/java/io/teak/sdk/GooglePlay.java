@@ -93,7 +93,7 @@ class GooglePlay implements IStore {
                     mService = m.invoke(null, (Object) service);
                 } catch (Exception e) {
                     Log.e(Teak.LOG_TAG, "Unable to use 'IInAppBillingService' via reflection. " + Log.getStackTraceString(e));
-                    Teak.sdkSentry.reportException(e);
+                    Teak.sdkRaven.reportException(e);
                     return;
                 }
 
@@ -141,7 +141,7 @@ class GooglePlay implements IStore {
                     }
                 } catch (Exception e) {
                     Log.e(Teak.LOG_TAG, "Error working with InAppBillingService: " + Log.getStackTraceString(e));
-                    Teak.sdkSentry.reportException(e);
+                    Teak.sdkRaven.reportException(e);
                 }
             }
         };
@@ -218,7 +218,7 @@ class GooglePlay implements IStore {
             }
         } catch (Exception e) {
             Log.e(Teak.LOG_TAG, "Reflection error: " + Log.getStackTraceString(e));
-            Teak.sdkSentry.reportException(e);
+            Teak.sdkRaven.reportException(e);
         }
 
         return null;
@@ -267,7 +267,7 @@ class GooglePlay implements IStore {
                     Teak.purchaseSucceeded(json);
                 } catch (Exception e) {
                     Log.e(Teak.LOG_TAG, "Failed to convert purchase data to JSON.");
-                    Teak.sdkSentry.reportException(e);
+                    Teak.sdkRaven.reportException(e);
                 }
             } else {
                 Teak.purchaseFailed(responseCode, "");

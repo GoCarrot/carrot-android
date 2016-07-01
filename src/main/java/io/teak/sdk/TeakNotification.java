@@ -256,7 +256,7 @@ public class TeakNotification {
                 try {
                     reward = new JSONObject(json.optString("reward"));
                 } catch (Exception e) {
-                    // TODO: Sentry log this
+                    // TODO: Raven log this
                     Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
                 }
             } else if (SELF_CLICK_STRING.equals(statusString)) {

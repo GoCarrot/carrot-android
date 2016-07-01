@@ -38,11 +38,11 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
-public class Sentry {
-    public static final int SENTRY_VERSION = 7; // Sentry protocol version
+public class Raven {
+    public static final int SENTRY_VERSION = 7; // Raven protocol version
     public static final String TEAK_SENTRY_VERSION = "1.0.0";
     public static final String SENTRY_CLIENT = "teak-android/" + TEAK_SENTRY_VERSION;
-    public static final String LOG_TAG = "Teak:Sentry";
+    public static final String LOG_TAG = "Teak:Raven";
 
     public enum Level {
         FATAL("fatal"),
@@ -93,7 +93,7 @@ public class Sentry {
         }
     };
 
-    public Sentry() {
+    public Raven() {
     }
 
     public void setDsn(String dsn) {
@@ -234,8 +234,8 @@ public class Sentry {
             try {
                 // 0 dalvik.system.VMStack.getThreadStackTrace
                 // 1 java.lang.Thread.getStackTrace
-                // 2 io.teak.sdk.Sentry$Request.<init>
-                // 3 Sentry.report*
+                // 2 io.teak.sdk.Raven$Request.<init>
+                // 3 Raven.report*
                 // 4 culprit method
                 final int depth = 4;
                 final StackTraceElement[] ste = Thread.currentThread().getStackTrace();
@@ -276,8 +276,8 @@ public class Sentry {
                 connection.setRequestProperty("Content-Type", "application/json");
                 connection.setRequestProperty("Content-Encoding", "gzip");
                 connection.setRequestProperty("User-Agent", SENTRY_CLIENT);
-                connection.setRequestProperty("X-Sentry-Auth",
-                        String.format(Locale.US, "Sentry sentry_version=%d,sentry_timestamp=%d,sentry_key=%s,sentry_secret=%s,sentry_client=%s",
+                connection.setRequestProperty("X-Raven-Auth",
+                        String.format(Locale.US, "Raven sentry_version=%d,sentry_timestamp=%d,sentry_key=%s,sentry_secret=%s,sentry_client=%s",
                                 SENTRY_VERSION, timestamp.getTime() / 1000, SENTRY_KEY, SENTRY_SECRET, SENTRY_CLIENT));
 
                 GZIPOutputStream wr = new GZIPOutputStream(connection.getOutputStream());

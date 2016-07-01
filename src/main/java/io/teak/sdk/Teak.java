@@ -192,10 +192,10 @@ public class Teak extends BroadcastReceiver {
         if (Teak.userId == null) {
             Log.e(LOG_TAG, "Teak.onCreate() has not been called in your Activity's onCreate() function.");
         } else {
-            // Sentry is ready
+            // Raven is ready
             HashMap<String, Object> sentryExtra = new HashMap<>();
             sentryExtra.put("teak_user", userIdentifier);
-            Teak.sdkSentry.ready(sentryExtra);
+            Teak.sdkRaven.ready(sentryExtra);
 
             if (Teak.userId.isDone()) {
                 String userId = "";
@@ -279,7 +279,7 @@ public class Teak extends BroadcastReceiver {
     static SharedPreferences preferences;
     static GoogleCloudMessaging gcm;
     static String gcmSenderId;
-    static Sentry sdkSentry = new Sentry();
+    static Raven sdkRaven = new Raven();
 
     static LocalBroadcastManager localBroadcastManager;
 
@@ -364,7 +364,7 @@ public class Teak extends BroadcastReceiver {
                         clazz = Class.forName("io.teak.sdk.Amazon");
                     } catch (Exception e) {
                         Log.e(LOG_TAG, "Couldn't find Teak's Amazon app store handler. " + Log.getStackTraceString(e));
-                        Teak.sdkSentry.reportException(e);
+                        Teak.sdkRaven.reportException(e);
                     }
                 } else {
                     // Default to Google Play
@@ -372,7 +372,7 @@ public class Teak extends BroadcastReceiver {
                         clazz = Class.forName("io.teak.sdk.GooglePlay");
                     } catch (Exception e) {
                         Log.e(LOG_TAG, "Couldn't find Teak's Google Play app store handler. " + Log.getStackTraceString(e));
-                        Teak.sdkSentry.reportException(e);
+                        Teak.sdkRaven.reportException(e);
                     }
                 }
                 try {
@@ -382,7 +382,7 @@ public class Teak extends BroadcastReceiver {
                     }
                 } catch (Exception e) {
                     Log.e(LOG_TAG, "Unable to create app store interface. " + Log.getStackTraceString(e));
-                    Teak.sdkSentry.reportException(e);
+                    Teak.sdkRaven.reportException(e);
                 }
             }
 
@@ -485,7 +485,7 @@ public class Teak extends BroadcastReceiver {
                                 Log.d(LOG_TAG, "Teak configuration valid for: " + response.getString("name"));
                             }
                         } catch (Exception e) {
-                            Teak.sdkSentry.reportException(e);
+                            Teak.sdkRaven.reportException(e);
                         }
                         super.done(responseCode, responseBody);
                     }
@@ -610,7 +610,7 @@ public class Teak extends BroadcastReceiver {
                         config.setConfig(response);
 
                         // Begin exception reporting, if enabled
-                        Teak.sdkSentry.setDsn(config.sdkSentryDSN());
+                        Teak.sdkRaven.setDsn(config.sdkSentryDSN());
 
                         // Heartbeat will block on userId Future, which is fine
                         startHeartbeat();
@@ -998,7 +998,7 @@ public class Teak extends BroadcastReceiver {
             }
         } catch (Exception e) {
             Log.e(LOG_TAG, Log.getStackTraceString(e));
-            Teak.sdkSentry.reportException(e);
+            Teak.sdkRaven.reportException(e);
         }
     }
 
@@ -1019,7 +1019,7 @@ public class Teak extends BroadcastReceiver {
             }
         } catch (Exception e) {
             Log.e(LOG_TAG, Log.getStackTraceString(e));
-            Teak.sdkSentry.reportException(e);
+            Teak.sdkRaven.reportException(e);
         }
     }
 
@@ -1081,7 +1081,7 @@ public class Teak extends BroadcastReceiver {
                     Teak.asyncExecutor.submit(new CachedRequest("/me/purchase", payload, new Date()));
                 } catch (Exception e) {
                     Log.e(LOG_TAG, "Error reporting purchase: " + Log.getStackTraceString(e));
-                    Teak.sdkSentry.reportException(e);
+                    Teak.sdkRaven.reportException(e);
                 }
             }
         });
