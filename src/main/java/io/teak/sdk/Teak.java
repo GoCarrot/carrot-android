@@ -64,6 +64,8 @@ import java.util.TimeZone;
 
 import java.text.DecimalFormat;
 
+import io.teak.sdk.service.RavenService;
+
 /**
  * Working with Teak on Android.
  * <p/>
@@ -117,6 +119,11 @@ public class Teak extends BroadcastReceiver {
         Teak.localBroadcastManager = LocalBroadcastManager.getInstance(activity);
 
         CacheManager.initialize(activity);
+
+        // Start up the Raven service
+        Intent intent = new Intent(activity, RavenService.class);
+        intent.putExtra("");
+        activity.startService(intent);
 
         Teak.preferences = activity.getSharedPreferences(TEAK_PREFERENCES_FILE, Context.MODE_PRIVATE);
         Teak.gcm = GoogleCloudMessaging.getInstance(activity.getApplicationContext());

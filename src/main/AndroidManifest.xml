@@ -22,4 +22,7 @@
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <application>
+        <service android:name="io.teak.sdk.service.RavenService" android:process=":teak.raven" android:exported="false"/>
+    </application>
 </manifest>
