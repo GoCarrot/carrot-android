@@ -668,8 +668,7 @@ public class Teak extends BroadcastReceiver {
         Teak.gcmId = new FutureTask<>(new Callable<String>() {
             public String call() {
                 try {
-                    String gcmId = Teak.gcmIdQueue.take();
-                    return gcmId;
+                    return Teak.gcmIdQueue.take();
                 } catch (InterruptedException e) {
                     Log.e(LOG_TAG, Log.getStackTraceString(e));
                 }
