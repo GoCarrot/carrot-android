@@ -199,7 +199,7 @@ public class Teak extends BroadcastReceiver {
         if (Teak.userId == null) {
             Log.e(LOG_TAG, "Teak.onCreate() has not been called in your Activity's onCreate() function.");
         } else {
-            // Raven is ready
+            // Update the extras on Raven with the user id
             HashMap<String, Object> sentryExtra = new HashMap<>();
             sentryExtra.put("teak_user", userIdentifier);
             Teak.sdkRaven.ready(sentryExtra);
@@ -287,6 +287,7 @@ public class Teak extends BroadcastReceiver {
     static GoogleCloudMessaging gcm;
     static String gcmSenderId;
     static Raven sdkRaven = new Raven();
+    static String deviceId;
 
     static LocalBroadcastManager localBroadcastManager;
 
@@ -345,23 +346,21 @@ public class Teak extends BroadcastReceiver {
                 }
             }
 
+
+
             // Get the installer package
             Teak.installerPackage = activity.getPackageManager().getInstallerPackageName(activity.getPackageName());
 
-            // Launch intent, if available
-            Intent launchIntent = activity.getIntent();
-
-            // Check for deep links
-            checkIntentForDeepLink(launchIntent);
-
-            // Check for notification launch
-            if (launchIntent != null) {
-                Bundle bundle = launchIntent.getExtras();
-                if (bundle != null) {
-                    // Set the notification id
-                    Teak.launchedFromTeakNotifId = bundle.getString("teakNotifId");
-                }
+            try {
+                String androidId = Settings.Secure.getString(activity.getContentResolver(), Settings.Secure.ANDROID_ID);
+                Teak.deviceId = UUID.nameUUIDFromBytes(androidId.getBytes("utf8")).toString();
+                Request.dynamicCommonPayload.put("device_id", Teak.deviceId);
+            } catch (Exception e) {
+                Log.e(LOG_TAG, "Unable to create device id. " + Log.getStackTraceString(e));
             }
+
+            // Sentry has what we need now, add extras after identifyUser()
+            Teak.sdkRaven.ready(null);
 
             // Applicable store
             if (Teak.installerPackage != null) {
@@ -393,19 +392,27 @@ public class Teak extends BroadcastReceiver {
                 }
             }
 
+            // Launch intent, if available
+            Intent launchIntent = activity.getIntent();
+
+            // Check for deep links
+            checkIntentForDeepLink(launchIntent);
+
+            // Check for notification launch
+            if (launchIntent != null) {
+                Bundle bundle = launchIntent.getExtras();
+                if (bundle != null) {
+                    // Set the notification id
+                    Teak.launchedFromTeakNotifId = bundle.getString("teakNotifId");
+                }
+            }
+
             // Add dynamic payload
             Helpers.addDeviceNameToPayload(Request.dynamicCommonPayload);
             if (Teak.installerPackage != null) {
                 Request.dynamicCommonPayload.put("appstore_name", Teak.installerPackage);
             }
             Request.dynamicCommonPayload.put("bundle_id", Teak.bundleId);
-
-            try {
-                String androidId = Settings.Secure.getString(activity.getContentResolver(), Settings.Secure.ANDROID_ID);
-                Request.dynamicCommonPayload.put("device_id", UUID.nameUUIDFromBytes(androidId.getBytes("utf8")));
-            } catch (Exception e) {
-                Log.e(LOG_TAG, "Unable to create device id. " + Log.getStackTraceString(e));
-            }
 
             // Facebook Access Token Broadcaster
             Teak.facebookAccessTokenBroadcast = new FacebookAccessTokenBroadcast(activity);
