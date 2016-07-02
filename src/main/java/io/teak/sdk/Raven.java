@@ -278,8 +278,8 @@ public class Raven {
                 connection.setRequestProperty("Content-Type", "application/json");
                 connection.setRequestProperty("Content-Encoding", "gzip");
                 connection.setRequestProperty("User-Agent", SENTRY_CLIENT);
-                connection.setRequestProperty("X-Raven-Auth",
-                        String.format(Locale.US, "Raven sentry_version=%d,sentry_timestamp=%d,sentry_key=%s,sentry_secret=%s,sentry_client=%s",
+                connection.setRequestProperty("X-Sentry-Auth",
+                        String.format(Locale.US, "Sentry sentry_version=%d,sentry_timestamp=%d,sentry_key=%s,sentry_secret=%s,sentry_client=%s",
                                 SENTRY_VERSION, timestamp.getTime() / 1000, SENTRY_KEY, SENTRY_SECRET, SENTRY_CLIENT));
 
                 GZIPOutputStream wr = new GZIPOutputStream(connection.getOutputStream());
