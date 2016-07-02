@@ -191,7 +191,6 @@ public class Raven {
             stackFrames.add(frame);
         }
         stacktrace.put("frames", stackFrames);
-        // TODO: Frames omitted
 
         exception.put("stacktrace", stacktrace);
 
