@@ -199,10 +199,8 @@ public class Teak extends BroadcastReceiver {
         if (Teak.userId == null) {
             Log.e(LOG_TAG, "Teak.onCreate() has not been called in your Activity's onCreate() function.");
         } else {
-            // Update the extras on Raven with the user id
-            HashMap<String, Object> sentryExtra = new HashMap<>();
-            sentryExtra.put("teak_user", userIdentifier);
-            Teak.sdkRaven.ready(sentryExtra);
+            // Add userId to the Raven
+            Teak.sdkRaven.addExtra("teak_user", userIdentifier);
 
             if (Teak.userId.isDone()) {
                 String userId = "";
@@ -362,7 +360,7 @@ public class Teak extends BroadcastReceiver {
             }
 
             // Sentry has what we need now, add extras after identifyUser()
-            Teak.sdkRaven.ready(null);
+            Teak.sdkRaven.addTeakPayload();
 
             // Applicable store
             if (Teak.installerPackage != null) {

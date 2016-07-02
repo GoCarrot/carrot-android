@@ -66,7 +66,7 @@ public class Raven {
     String SENTRY_KEY;
     String SENTRY_SECRET;
     URL endpoint;
-    HashMap<String, Object> payloadTemplate;
+    HashMap<String, Object> payloadTemplate = new HashMap<>();
     boolean reportingEnabled = false;
     final Object monitor = new Object();
 
@@ -94,6 +94,25 @@ public class Raven {
     };
 
     public Raven() {
+        // Fill in as much of the payload template as we can
+        payloadTemplate.put("logger", "teak");
+        payloadTemplate.put("platform", "java");
+        payloadTemplate.put("release", Teak.SDKVersion);
+
+        HashMap<String, Object> sdkAttribute = new HashMap<>();
+        sdkAttribute.put("name", "teak");
+        sdkAttribute.put("version", TEAK_SENTRY_VERSION);
+        payloadTemplate.put("sdk", sdkAttribute);
+
+        HashMap<String, Object> deviceAttribute = new HashMap<>();
+        HashMap<String, Object> deviceInfo = new HashMap<>();
+        Helpers.addDeviceNameToPayload(deviceInfo);
+        deviceAttribute.put("name", deviceInfo.get("device_fallback"));
+        deviceAttribute.put("version", Build.VERSION.SDK_INT);
+        deviceAttribute.put("build", Build.VERSION.RELEASE);
+        payloadTemplate.put("device", deviceAttribute);
+
+        payloadTemplate.put("extra", new HashMap<String, Object>());
     }
 
     public void setDsn(String dsn) {
@@ -182,40 +201,24 @@ public class Raven {
         reportThreadQueueExecutor.execute(new Report(t.getMessage(), Level.ERROR, additions));
     }
 
-    public synchronized void ready(HashMap<String, Object> extra) {
-        if (payloadTemplate == null) {
-            payloadTemplate = new HashMap<>();
+    public synchronized void addTeakPayload() {
+        payloadTemplate.put("server_name", Teak.bundleId);
 
-            // Build out a template to base all payloads off of
-            payloadTemplate.put("logger", "teak");
-            payloadTemplate.put("platform", "java");
-            payloadTemplate.put("release", Teak.SDKVersion);
-            payloadTemplate.put("server_name", Teak.bundleId);
+        HashMap<String, Object> tagsAttribute = new HashMap<>();
+        tagsAttribute.put("app_id", Teak.appId);
+        tagsAttribute.put("app_version", Teak.appVersion);
+        payloadTemplate.put("tags", tagsAttribute);
 
-            HashMap<String, Object> sdkAttribute = new HashMap<>();
-            sdkAttribute.put("name", "teak");
-            sdkAttribute.put("version", TEAK_SENTRY_VERSION);
-            payloadTemplate.put("sdk", sdkAttribute);
+        @SuppressWarnings("unchecked") HashMap<String, Object> extra = (HashMap<String, Object>) payloadTemplate.get("extra");
+        extra.put("teak_device_id", Teak.deviceId);
+    }
 
-            HashMap<String, Object> deviceAttribute = new HashMap<>();
-            HashMap<String, Object> deviceInfo = new HashMap<>();
-            Helpers.addDeviceNameToPayload(deviceInfo);
-            deviceAttribute.put("name", deviceInfo.get("device_fallback"));
-            deviceAttribute.put("version", Build.VERSION.SDK_INT);
-            deviceAttribute.put("build", Build.VERSION.RELEASE);
-            payloadTemplate.put("device", deviceAttribute);
-
-            HashMap<String, Object> tagsAttribute = new HashMap<>();
-            tagsAttribute.put("app_id", Teak.appId);
-            tagsAttribute.put("app_version", Teak.appVersion);
-            payloadTemplate.put("tags", tagsAttribute);
-        }
-
-        // Set/replace 'extra'
-        if (extra != null) {
-            payloadTemplate.put("extra", extra);
-        } else if (payloadTemplate.containsKey("extra")){
-            payloadTemplate.remove("extra");
+    public synchronized void addExtra(String key, String value) {
+        @SuppressWarnings("unchecked") HashMap<String, Object> extra = (HashMap<String, Object>) payloadTemplate.get("extra");
+        if (value != null) {
+            extra.put(key, value);
+        } else {
+            extra.remove(key);
         }
     }
 
