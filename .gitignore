@@ -1,6 +1,4 @@
 build/
-tmp/*
-!tmp/.gitkeep
 docs/
 .DS_Store
 *.iml
