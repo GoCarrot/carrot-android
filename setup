@@ -22,4 +22,5 @@ echo y | android update sdk --all --no-ui --filter 'extra-android-m2repository'
 echo
 echo
 echo
-echo "INFO: Now, add 'export ANDROID_HOME=/usr/local/opt/android-sdk' to ~/.profile (or equivalent), and reload your shell."
+echo "INFO: Now, the following to ~/.profile (or equivalent), and reload your shell:"
+echo "  export ANDROID_HOME=$(brew --prefix android-sdk)"
