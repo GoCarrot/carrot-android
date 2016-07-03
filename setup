@@ -12,7 +12,13 @@ fi
 
 if [ "$(which ant)" == "" ]; then brew install ant; fi
 if [ "$(which mvn)" == "" ]; then brew install maven; fi
-if [ "$(which android)" == "" ]; then brew install android-sdk; fi
+if [ "$(which android)" == "" ]; then
+  if [ ! -e "$(brew --prefix android-sdk)" ]; then
+    brew install android-sdk
+  else
+    brew link android-sdk
+  fi
+fi
 
 ANDROID_HOME=$(brew --prefix android-sdk)
 export ANDROID_HOME
