@@ -11,6 +11,8 @@ if [ "$(which java)" == "" ]; then
 fi
 
 brew install android-sdk ant maven
+ANDROID_HOME=$(brew --prefix android-sdk)
+export ANDROID_HOME
 
 # TODO: Suss out how to automate installing JUST the bits we want:
 echo y | android update sdk --all --no-ui --filter 'tools,platform-tools'
