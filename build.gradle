@@ -70,6 +70,7 @@ def getVersionName = { ->
 }
 
 android {
+    // IMPORTANT: Changing versions?  Update `setup` as well!
     compileSdkVersion 23
     buildToolsVersion "23.0.2"
 
