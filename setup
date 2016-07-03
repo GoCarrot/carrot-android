@@ -1,0 +1,25 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+
+brew update
+
+# TODO: Ensure both Brew and Caskroom are set up.
+if [ "$(which java)" == "" ]; then
+  echo "ERROR: Install JDK first.  Maybe use 'brew cask install java'.  Leaving this to you in case you want to handle this differently."
+  exit 1
+fi
+
+brew install android-sdk ant maven
+
+# TODO: Suss out how to automate installing JUST the bits we want:
+echo y | android update sdk --all --no-ui --filter 'tools,platform-tools'
+echo y | android update sdk --all --no-ui --filter 'android-23'
+echo y | android update sdk --all --no-ui --filter 'build-tools-23.0.2'
+echo y | android update sdk --all --no-ui --filter 'extra-google-m2repository'
+echo y | android update sdk --all --no-ui --filter 'extra-android-m2repository'
+
+echo
+echo
+echo
+echo "INFO: Now, add 'export ANDROID_HOME=/usr/local/opt/android-sdk' to ~/.profile (or equivalent), and reload your shell."
