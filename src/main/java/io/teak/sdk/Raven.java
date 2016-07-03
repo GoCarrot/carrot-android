@@ -14,6 +14,8 @@
  */
 package io.teak.sdk;
 
+import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
@@ -38,8 +40,10 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
+import io.teak.sdk.service.RavenService;
+
 public class Raven {
-    public static final int SENTRY_VERSION = 7; // Raven protocol version
+    public static final int SENTRY_VERSION = 7;
     public static final String TEAK_SENTRY_VERSION = "1.0.0";
     public static final String SENTRY_CLIENT = "teak-android/" + TEAK_SENTRY_VERSION;
     public static final String LOG_TAG = "Teak:Raven";
@@ -69,6 +73,8 @@ public class Raven {
     HashMap<String, Object> payloadTemplate = new HashMap<>();
     boolean reportingEnabled = false;
     final Object monitor = new Object();
+    Context applicationContext;
+    String appId;
 
     static SimpleDateFormat timestampFormatter;
 
@@ -93,7 +99,10 @@ public class Raven {
         }
     };
 
-    public Raven() {
+    public Raven(Context context, String appId) {
+        this.applicationContext = context.getApplicationContext();
+        this.appId = appId;
+
         // Fill in as much of the payload template as we can
         payloadTemplate.put("logger", "teak");
         payloadTemplate.put("platform", "java");
@@ -112,7 +121,7 @@ public class Raven {
         deviceAttribute.put("build", Build.VERSION.RELEASE);
         payloadTemplate.put("device", deviceAttribute);
 
-        payloadTemplate.put("extra", new HashMap<String, Object>());
+        payloadTemplate.put("user", new HashMap<String, Object>());
     }
 
     public void setDsn(String dsn) {
@@ -197,7 +206,9 @@ public class Raven {
         exceptions.add(exception);
         additions.put("exception", exceptions);
 
-        reportThreadQueueExecutor.execute(new Report(t.getMessage(), Level.ERROR, additions));
+        Report report = new Report(t.getMessage(), Level.ERROR, additions);
+        reportThreadQueueExecutor.execute(report);
+        report.sendToService();
     }
 
     public synchronized void addTeakPayload() {
@@ -208,16 +219,16 @@ public class Raven {
         tagsAttribute.put("app_version", Teak.appVersion);
         payloadTemplate.put("tags", tagsAttribute);
 
-        @SuppressWarnings("unchecked") HashMap<String, Object> extra = (HashMap<String, Object>) payloadTemplate.get("extra");
-        extra.put("teak_device_id", Teak.deviceId);
+        @SuppressWarnings("unchecked") HashMap<String, Object> user = (HashMap<String, Object>) payloadTemplate.get("user");
+        user.put("device_id", Teak.deviceId);
     }
 
-    public synchronized void addExtra(String key, String value) {
-        @SuppressWarnings("unchecked") HashMap<String, Object> extra = (HashMap<String, Object>) payloadTemplate.get("extra");
+    public synchronized void addUserData(String key, Object value) {
+        @SuppressWarnings("unchecked") HashMap<String, Object> user = (HashMap<String, Object>) payloadTemplate.get("user");
         if (value != null) {
-            extra.put(key, value);
+            user.put(key, value);
         } else {
-            extra.remove(key);
+            user.remove(key);
         }
     }
 
@@ -251,6 +262,18 @@ public class Raven {
 
             if (additions != null) {
                 payload.putAll(additions);
+            }
+        }
+
+        public void sendToService() {
+            try {
+                Intent intent = new Intent(RavenService.REPORT_EXCEPTION_INTENT_ACTION, null, applicationContext, RavenService.class);
+                intent.putExtra("appId", appId);
+                intent.putExtra("timestamp", this.timestamp.getTime() / 1000L);
+                intent.putExtra("payload", this.toString());
+                applicationContext.startService(intent);
+            } catch (Exception e) {
+                Log.e(LOG_TAG, Log.getStackTraceString(e));
             }
         }
 

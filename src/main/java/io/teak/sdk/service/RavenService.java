@@ -15,39 +15,58 @@
 package io.teak.sdk.service;
 
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.database.ContentObserver;
-import android.database.DatabaseErrorHandler;
+import android.content.IntentFilter;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.net.Uri;
-import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 
 import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class RavenService extends Service {
     public static final String LOG_TAG = "Teak:Raven:Service";
-    HashMap<String, ObserveAndReport> observeAndReports = new HashMap<>();
+    public static final int DATABASE_VERSION = 1;
+    public static final String REPORT_EXCEPTION_INTENT_ACTION = "REPORT_EXCEPTION";
+
+    HashMap<String, ObserveAndReport> observeAndReporterMap = new HashMap<>();
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(LOG_TAG, "Lifecycle - onStartCommand");
+        String appId = intent.getStringExtra("appId");
+        Log.d(LOG_TAG, "Lifecycle - onStartCommand: " + appId);
+
+        if (appId != null && !appId.isEmpty()) {
+            if (!observeAndReporterMap.containsKey(appId)) {
+                Log.d(LOG_TAG, "   Creating new reporter for: " + appId);
+                ObserveAndReport obs = new ObserveAndReport(this, appId);
+                observeAndReporterMap.put(appId, obs);
+            }
+
+            String action = intent.getAction();
+            if (action != null && !action.isEmpty()) {
+                Log.d(LOG_TAG, "   Action: " + action);
+            }
+        }
 
         return START_STICKY;
     }
 
     @Override
     public void onCreate() {
-        // Create SQLite content observer
         Log.d(LOG_TAG, "Lifecycle - onCreate");
     }
 
     @Override
     public void onDestroy() {
         Log.d(LOG_TAG, "Lifecycle - onDestroy");
+        for (Map.Entry<String, ObserveAndReport> entry : observeAndReporterMap.entrySet()) {
+
+        }
     }
 
     @Override
@@ -55,36 +74,47 @@ public class RavenService extends Service {
         return null;
     }
 
-    class ObserveAndReport extends ContentObserver {
-        public ObserveAndReport(Handler handler) {
-            super(handler);
-        }
+    private static final String[] EXCEPTIONS_READ_COLUMNS = {"rowid", "payload", "timestamp", "retries"};
 
-        @Override
-        public void onChange(boolean selfChange) {
-            onChange(selfChange, null);
-        }
+    class ObserveAndReport {
+        private DatabaseHelper databaseHelper;
 
-        @Override
-        public void onChange(boolean selfChange, Uri uri) {
-            // Handle change.
+        public ObserveAndReport(Context context, String appId) {
+            databaseHelper = new DatabaseHelper(context, "raven." + appId + ".db");
         }
 
         class DatabaseHelper extends SQLiteOpenHelper {
-            public DatabaseHelper(Context context, String name, SQLiteDatabase.CursorFactory factory, int version, DatabaseErrorHandler errorHandler) {
-                super(context, name, factory, version, errorHandler);
+            private AtomicInteger openCounter = new AtomicInteger();
+            private SQLiteDatabase database;
+
+            public DatabaseHelper(Context context, String name) {
+                super(context, name, null, DATABASE_VERSION);
+            }
+
+            public synchronized SQLiteDatabase acquire() {
+                if (openCounter.incrementAndGet() == 1) {
+                    database = getWritableDatabase();
+                }
+                return database;
+            }
+
+            public synchronized void release() {
+                if (openCounter.decrementAndGet() == 0) {
+                    database.close();
+                }
             }
 
             @Override
             public void onCreate(SQLiteDatabase db) {
-
+                //db.execSQL("CREATE TABLE IF NOT EXISTS credentials(dsn TEXT)");
+                db.execSQL("CREATE TABLE IF NOT EXISTS exceptions(payload TEXT, timestamp INTEGER, retries INTEGER)");
             }
 
             @Override
             public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
                 Log.d(LOG_TAG, "Upgrading database " + db + " from version " + oldVersion + " to " + newVersion);
-                db.execSQL("DROP TABLE IF EXISTS cache");
-                db.execSQL("DROP TABLE IF EXISTS inbox");
+                //db.execSQL("DROP TABLE IF EXISTS credentials");
+                db.execSQL("DROP TABLE IF EXISTS exceptions");
                 onCreate(db);
             }
         }

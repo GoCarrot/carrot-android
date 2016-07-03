@@ -118,12 +118,15 @@ public class Teak extends BroadcastReceiver {
         Log.d(LOG_TAG, "Android SDK Version: " + Teak.SDKVersion);
         Teak.localBroadcastManager = LocalBroadcastManager.getInstance(activity);
 
-        CacheManager.initialize(activity);
+        // Raven for the SDK
+        Teak.sdkRaven = new Raven(activity, "sdk");
 
-        // Start up the Raven service
+        // Raven service for the SDK bug reporting
         Intent intent = new Intent(activity, RavenService.class);
-        intent.putExtra("");
+        intent.putExtra("appId", "sdk");
         activity.startService(intent);
+
+        CacheManager.initialize(activity);
 
         Teak.preferences = activity.getSharedPreferences(TEAK_PREFERENCES_FILE, Context.MODE_PRIVATE);
         Teak.gcm = GoogleCloudMessaging.getInstance(activity.getApplicationContext());
@@ -200,7 +203,7 @@ public class Teak extends BroadcastReceiver {
             Log.e(LOG_TAG, "Teak.onCreate() has not been called in your Activity's onCreate() function.");
         } else {
             // Add userId to the Raven
-            Teak.sdkRaven.addExtra("teak_user", userIdentifier);
+            Teak.sdkRaven.addUserData("id", userIdentifier);
 
             if (Teak.userId.isDone()) {
                 String userId = "";
@@ -284,7 +287,7 @@ public class Teak extends BroadcastReceiver {
     static SharedPreferences preferences;
     static GoogleCloudMessaging gcm;
     static String gcmSenderId;
-    static Raven sdkRaven = new Raven();
+    static Raven sdkRaven;
     static String deviceId;
 
     static LocalBroadcastManager localBroadcastManager;
@@ -344,6 +347,10 @@ public class Teak extends BroadcastReceiver {
                 }
             }
 
+            // Raven service for the app bug reporting
+            Intent intent = new Intent(activity, RavenService.class);
+            intent.putExtra("appId", Teak.appId);
+            activity.startService(intent);
 
             // Get the GCM sender id
             Teak.gcmSenderId = Helpers.getStringResourceByName(TEAK_GCM_SENDER_ID, activity);
