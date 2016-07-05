@@ -49,27 +49,27 @@ public class RavenService extends Service {
     public static final String REPORT_EXCEPTION_INTENT_ACTION = "REPORT_EXCEPTION";
     public static final String  SET_DSN_INTENT_ACTION = "SET_DSN";
 
-    HashMap<String, ObserveAndReport> observeAndReporterMap = new HashMap<>();
+    HashMap<String, AppReporter> appReporterMap = new HashMap<>();
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String appId = intent.getStringExtra("appId");
 
         if (appId != null && !appId.isEmpty()) {
-            ObserveAndReport obs;
-            if (!observeAndReporterMap.containsKey(appId)) {
-                obs = new ObserveAndReport(this, appId);
-                observeAndReporterMap.put(appId, obs);
+            AppReporter appReporter;
+            if (!appReporterMap.containsKey(appId)) {
+                appReporter = new AppReporter(this, appId);
+                appReporterMap.put(appId, appReporter);
             } else {
-                obs = observeAndReporterMap.get(appId);
+                appReporter = appReporterMap.get(appId);
             }
 
             String action = intent.getAction();
             if (action != null && !action.isEmpty()) {
                 if (SET_DSN_INTENT_ACTION.equals(action)) {
-                    obs.setDsn(intent);
+                    appReporter.setDsn(intent);
                 } else if(REPORT_EXCEPTION_INTENT_ACTION.equals(action)) {
-                    obs.reportException(intent);
+                    appReporter.reportException(intent);
                 }
             }
         }
@@ -88,7 +88,7 @@ public class RavenService extends Service {
     @Override
     public void onDestroy() {
         Log.d(LOG_TAG, "Lifecycle - onDestroy");
-        for (Map.Entry<String, ObserveAndReport> entry : observeAndReporterMap.entrySet()) {
+        for (Map.Entry<String, AppReporter> entry : appReporterMap.entrySet()) {
 
         }
     }
@@ -100,13 +100,13 @@ public class RavenService extends Service {
 
     private static final String[] EXCEPTIONS_READ_COLUMNS = {"rowid", "payload", "timestamp", "retries"};
 
-    class ObserveAndReport {
+    class AppReporter {
         private DatabaseHelper databaseHelper;
         private String SENTRY_KEY;
         private String SENTRY_SECRET;
         private URL endpoint;
 
-        public ObserveAndReport(Context context, String appId) {
+        public AppReporter(Context context, String appId) {
             databaseHelper = new DatabaseHelper(context, "raven." + appId + ".db");
         }
 
