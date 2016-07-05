@@ -16,18 +16,11 @@ package io.teak.sdk;
 
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
 
 import org.json.JSONObject;
 
-import javax.net.ssl.HttpsURLConnection;
-
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -35,17 +28,10 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.zip.GZIPOutputStream;
 
 import io.teak.sdk.service.RavenService;
 
 public class Raven {
-    public static final int SENTRY_VERSION = 7;
-    public static final String TEAK_SENTRY_VERSION = "1.0.0";
-    public static final String SENTRY_CLIENT = "teak-android/" + TEAK_SENTRY_VERSION;
     public static final String LOG_TAG = "Teak:Raven";
 
     public enum Level {
@@ -67,12 +53,7 @@ public class Raven {
         }
     }
 
-    String SENTRY_KEY;
-    String SENTRY_SECRET;
-    URL endpoint;
     HashMap<String, Object> payloadTemplate = new HashMap<>();
-    boolean reportingEnabled = false;
-    final Object monitor = new Object();
     Context applicationContext;
     String appId;
 
@@ -83,21 +64,6 @@ public class Raven {
         timestampFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
         timestampFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
-
-    ThreadPoolExecutor reportThreadQueueExecutor = new ThreadPoolExecutor(1, 3, 2, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>()) {
-        @Override
-        protected void beforeExecute(Thread t, Runnable r) {
-            synchronized(monitor) {
-                while (!reportingEnabled) {
-                    try {
-                        monitor.wait();
-                    } catch (Exception ignored) {
-                    }
-                }
-            }
-            super.beforeExecute(t, r);
-        }
-    };
 
     public Raven(Context context, String appId) {
         this.applicationContext = context.getApplicationContext();
@@ -110,7 +76,7 @@ public class Raven {
 
         HashMap<String, Object> sdkAttribute = new HashMap<>();
         sdkAttribute.put("name", "teak");
-        sdkAttribute.put("version", TEAK_SENTRY_VERSION);
+        sdkAttribute.put("version", RavenService.TEAK_SENTRY_VERSION);
         payloadTemplate.put("sdk", sdkAttribute);
 
         HashMap<String, Object> deviceAttribute = new HashMap<>();
@@ -125,37 +91,10 @@ public class Raven {
     }
 
     public void setDsn(String dsn) {
-        if (dsn.isEmpty()) {
-            reportingEnabled = false;
-        } else {
-            Uri uri = Uri.parse(dsn);
-
-            String port = "";
-            if (uri.getPort() >= 0) {
-                port = ":" + uri.getPort();
-            }
-
-            try {
-                String project = uri.getPath().substring(uri.getPath().lastIndexOf("/"));
-
-                String[] userInfo = uri.getUserInfo().split(":");
-                SENTRY_KEY = userInfo[0];
-                SENTRY_SECRET = userInfo[1];
-
-                endpoint = new URL(String.format("%s://%s%s/api%s/store/",
-                        uri.getScheme(), uri.getHost(), port, project));
-
-                reportingEnabled = true;
-            } catch (Exception e) {
-                Log.e(LOG_TAG, Log.getStackTraceString(e));
-            }
-        }
-
-        if (reportingEnabled) {
-            synchronized (monitor) {
-                monitor.notify();
-            }
-        }
+        Intent intent = new Intent(RavenService.SET_DSN_INTENT_ACTION, null, applicationContext, RavenService.class);
+        intent.putExtra("appId", appId);
+        intent.putExtra("dsn", dsn);
+        applicationContext.startService(intent);
     }
 
     public void reportException(Throwable t) {
@@ -207,7 +146,6 @@ public class Raven {
         additions.put("exception", exceptions);
 
         Report report = new Report(t.getMessage(), Level.ERROR, additions);
-        reportThreadQueueExecutor.execute(report);
         report.sendToService();
     }
 
@@ -232,7 +170,7 @@ public class Raven {
         }
     }
 
-    class Report implements Runnable {
+    class Report {
         HashMap<String, Object> payload = new HashMap<>();
         Date timestamp = new Date();
 
@@ -266,11 +204,12 @@ public class Raven {
         }
 
         public void sendToService() {
+            payload.putAll(payloadTemplate);
             try {
                 Intent intent = new Intent(RavenService.REPORT_EXCEPTION_INTENT_ACTION, null, applicationContext, RavenService.class);
                 intent.putExtra("appId", appId);
                 intent.putExtra("timestamp", this.timestamp.getTime() / 1000L);
-                intent.putExtra("payload", this.toString());
+                intent.putExtra("payload", new JSONObject(payload).toString());
                 applicationContext.startService(intent);
             } catch (Exception e) {
                 Log.e(LOG_TAG, Log.getStackTraceString(e));
@@ -283,58 +222,6 @@ public class Raven {
                 return new JSONObject(payload).toString(2);
             } catch (Exception ignored) {
                 return payload.toString();
-            }
-        }
-
-        @Override
-        public void run() {
-            HttpsURLConnection connection = null;
-
-            try {
-                payload.putAll(payloadTemplate);
-                JSONObject requestBody = new JSONObject(payload);
-
-                connection = (HttpsURLConnection) endpoint.openConnection();
-                connection.setRequestProperty("Accept-Charset", "UTF-8");
-                connection.setUseCaches(false);
-                connection.setDoOutput(true);
-                connection.setRequestProperty("Content-Type", "application/json");
-                connection.setRequestProperty("Content-Encoding", "gzip");
-                connection.setRequestProperty("User-Agent", SENTRY_CLIENT);
-                connection.setRequestProperty("X-Sentry-Auth",
-                        String.format(Locale.US, "Sentry sentry_version=%d,sentry_timestamp=%d,sentry_key=%s,sentry_secret=%s,sentry_client=%s",
-                                SENTRY_VERSION, timestamp.getTime() / 1000, SENTRY_KEY, SENTRY_SECRET, SENTRY_CLIENT));
-
-                GZIPOutputStream wr = new GZIPOutputStream(connection.getOutputStream());
-                wr.write(requestBody.toString().getBytes());
-                wr.flush();
-                wr.close();
-
-                InputStream is;
-                if (connection.getResponseCode() < 400) {
-                    is = connection.getInputStream();
-                } else {
-                    is = connection.getErrorStream();
-                }
-                BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-                String line;
-                StringBuilder response = new StringBuilder();
-                while ((line = rd.readLine()) != null) {
-                    response.append(line);
-                    response.append('\r');
-                }
-                rd.close();
-
-                JSONObject jsonResponse = new JSONObject(response.toString());
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "Exception reported: " + jsonResponse.toString(2));
-                }
-            } catch (Exception e) {
-                Log.e(LOG_TAG, Log.getStackTraceString(e));
-            } finally {
-                if (connection != null) {
-                    connection.disconnect();
-                }
             }
         }
     }
