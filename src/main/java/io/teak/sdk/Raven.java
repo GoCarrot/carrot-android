@@ -31,7 +31,7 @@ import java.util.UUID;
 
 import io.teak.sdk.service.RavenService;
 
-public class Raven {
+public class Raven implements Thread.UncaughtExceptionHandler {
     public static final String LOG_TAG = "Teak:Raven";
 
     public enum Level {
@@ -56,6 +56,7 @@ public class Raven {
     HashMap<String, Object> payloadTemplate = new HashMap<>();
     Context applicationContext;
     String appId;
+    Thread.UncaughtExceptionHandler previousUncaughtExceptionHandler;
 
     static SimpleDateFormat timestampFormatter;
 
@@ -88,6 +89,25 @@ public class Raven {
         payloadTemplate.put("device", deviceAttribute);
 
         payloadTemplate.put("user", new HashMap<String, Object>());
+    }
+
+    public void setAsUncaughtExceptionHandler() {
+        if (Thread.getDefaultUncaughtExceptionHandler() instanceof Raven) {
+            Raven raven = (Raven) Thread.getDefaultUncaughtExceptionHandler();
+            raven.unsetAsUncaughtExceptionHandler();
+        }
+        previousUncaughtExceptionHandler = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler(this);
+    }
+
+    public void unsetAsUncaughtExceptionHandler() {
+        Thread.setDefaultUncaughtExceptionHandler(previousUncaughtExceptionHandler);
+        previousUncaughtExceptionHandler = null;
+    }
+
+    @Override
+    public void uncaughtException(Thread thread, Throwable ex) {
+        reportException(ex);
     }
 
     public void setDsn(String dsn) {
