@@ -16,7 +16,7 @@ package io.teak.sdk;
 
 import android.util.Log;
 
-public class TeakExceptionHandler implements Thread.UncaughtExceptionHandler {
+public class TeakUncaught implements Thread.UncaughtExceptionHandler {
     Thread.UncaughtExceptionHandler previousUncaughtExceptionHandler;
     Thread createdOnThread;
 
@@ -28,11 +28,11 @@ public class TeakExceptionHandler implements Thread.UncaughtExceptionHandler {
         Teak.sdkRaven.reportException(ex);
     }
 
-    public static synchronized TeakExceptionHandler begin() {
-        return new TeakExceptionHandler();
+    public static synchronized TeakUncaught begin() {
+        return new TeakUncaught();
     }
 
-    protected TeakExceptionHandler() {
+    protected TeakUncaught() {
         createdOnThread = Thread.currentThread();
         previousUncaughtExceptionHandler = createdOnThread.getUncaughtExceptionHandler();
         createdOnThread.setUncaughtExceptionHandler(this);
