@@ -121,11 +121,6 @@ public class Teak extends BroadcastReceiver {
         // Raven for the SDK
         Teak.sdkRaven = new Raven(activity, "sdk");
 
-        // Raven service for the SDK bug reporting
-        Intent intent = new Intent(activity, RavenService.class);
-        intent.putExtra("appId", "sdk");
-        activity.startService(intent);
-
         CacheManager.initialize(activity);
 
         Teak.preferences = activity.getSharedPreferences(TEAK_PREFERENCES_FILE, Context.MODE_PRIVATE);
