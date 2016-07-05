@@ -118,8 +118,9 @@ public class Teak extends BroadcastReceiver {
         Log.d(LOG_TAG, "Android SDK Version: " + Teak.SDKVersion);
         Teak.localBroadcastManager = LocalBroadcastManager.getInstance(activity);
 
-        // Raven for the SDK
+        // Ravens
         Teak.sdkRaven = new Raven(activity, "sdk");
+        Teak.appRaven = new Raven(activity, activity.getApplicationContext().getPackageName());
 
         CacheManager.initialize(activity);
 
@@ -197,8 +198,9 @@ public class Teak extends BroadcastReceiver {
         if (Teak.userId == null) {
             Log.e(LOG_TAG, "Teak.onCreate() has not been called in your Activity's onCreate() function.");
         } else {
-            // Add userId to the Raven
+            // Add userId to the Ravens
             Teak.sdkRaven.addUserData("id", userIdentifier);
+            Teak.appRaven.addUserData("id", userIdentifier);
 
             if (Teak.userId.isDone()) {
                 String userId = "";
@@ -283,6 +285,7 @@ public class Teak extends BroadcastReceiver {
     static GoogleCloudMessaging gcm;
     static String gcmSenderId;
     static Raven sdkRaven;
+    static Raven appRaven;
     static String deviceId;
 
     static LocalBroadcastManager localBroadcastManager;
@@ -363,6 +366,7 @@ public class Teak extends BroadcastReceiver {
 
             // Sentry has what we need now, add extras after identifyUser()
             Teak.sdkRaven.addTeakPayload();
+            Teak.appRaven.addTeakPayload();
 
             // Applicable store
             if (Teak.installerPackage != null) {
@@ -626,7 +630,14 @@ public class Teak extends BroadcastReceiver {
                         config.setConfig(response);
 
                         // Begin exception reporting, if enabled
-                        Teak.sdkRaven.setDsn(config.sdkSentryDSN());
+                        if (config.sdkSentryDSN() != null && !config.sdkSentryDSN().isEmpty()) {
+                            Teak.sdkRaven.setDsn(config.sdkSentryDSN());
+                        }
+
+                        if (config.appSentryDSN() != null &&! config.appSentryDSN().isEmpty()) {
+                            Teak.appRaven.setDsn(config.appSentryDSN());
+                            Teak.appRaven.setAsUncaughtExceptionHandler();
+                        }
 
                         // Heartbeat will block on userId Future, which is fine
                         startHeartbeat();
