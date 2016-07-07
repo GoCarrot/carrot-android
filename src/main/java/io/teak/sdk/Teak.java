@@ -310,9 +310,7 @@ public class Teak extends BroadcastReceiver {
         }
     }
 
-    static final TeakActivityLifecycleCallbacks lifecycleCallbacks = new TeakActivityLifecycleCallbacks();
-
-    static class TeakActivityLifecycleCallbacks implements ActivityLifecycleCallbacks {
+    static final ActivityLifecycleCallbacks lifecycleCallbacks = new ActivityLifecycleCallbacks() {
         @Override
         public void onActivityCreated(final Activity activity, Bundle savedInstanceState) {
             // Check for debug build
