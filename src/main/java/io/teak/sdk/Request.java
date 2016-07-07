@@ -62,7 +62,7 @@ class Request implements Runnable {
         this.payload = payload;
     }
 
-    protected void addCommonPayload(Map<String, Object> payload) throws InterruptedException, ExecutionException {
+    protected void addCommonPayload(Map<String, Object> payload) {
         payload.put("game_id", Teak.appId);
         payload.put("sdk_version", Teak.SDKVersion);
         payload.put("sdk_platform", "android_" + android.os.Build.VERSION.RELEASE);
