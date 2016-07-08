@@ -17,6 +17,7 @@ package io.teak.sdk;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import org.json.JSONObject;
@@ -66,7 +67,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         timestampFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
-    public Raven(Context context, String appId) {
+    public Raven(@NonNull Context context, @NonNull String appId, @NonNull AppConfiguration appConfiguration, @NonNull DeviceConfiguration deviceConfiguration) {
         this.applicationContext = context.getApplicationContext();
         this.appId = appId;
 
@@ -74,6 +75,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         payloadTemplate.put("logger", "teak");
         payloadTemplate.put("platform", "java");
         payloadTemplate.put("release", Teak.SDKVersion);
+        payloadTemplate.put("server_name", appConfiguration.bundleId);
 
         HashMap<String, Object> sdkAttribute = new HashMap<>();
         sdkAttribute.put("name", "teak");
@@ -81,14 +83,19 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         payloadTemplate.put("sdk", sdkAttribute);
 
         HashMap<String, Object> deviceAttribute = new HashMap<>();
-        HashMap<String, Object> deviceInfo = new HashMap<>();
-        Helpers.addDeviceNameToPayload(deviceInfo);
-        deviceAttribute.put("name", deviceInfo.get("device_fallback"));
+        deviceAttribute.put("name", deviceConfiguration.deviceFallback);
         deviceAttribute.put("version", Build.VERSION.SDK_INT);
         deviceAttribute.put("build", Build.VERSION.RELEASE);
         payloadTemplate.put("device", deviceAttribute);
 
-        payloadTemplate.put("user", new HashMap<String, Object>());
+        HashMap<String, Object> user = new HashMap<>();
+        user.put("device_id", deviceConfiguration.deviceId);
+        payloadTemplate.put("user", user);
+
+        HashMap<String, Object> tagsAttribute = new HashMap<>();
+        tagsAttribute.put("app_id", appConfiguration.appId);
+        tagsAttribute.put("app_version", appConfiguration.appVersion);
+        payloadTemplate.put("tags", tagsAttribute);
     }
 
     public void setAsUncaughtExceptionHandler() {
@@ -110,7 +117,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         reportException(ex);
     }
 
-    public void setDsn(String dsn) {
+    public void setDsn(@NonNull String dsn) {
         Intent intent = new Intent(RavenService.SET_DSN_INTENT_ACTION, null, applicationContext, RavenService.class);
         intent.putExtra("appId", appId);
         intent.putExtra("dsn", dsn);
@@ -169,19 +176,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         report.sendToService();
     }
 
-    public synchronized void addTeakPayload() {
-        payloadTemplate.put("server_name", Teak.bundleId);
-
-        HashMap<String, Object> tagsAttribute = new HashMap<>();
-        tagsAttribute.put("app_id", Teak.appId);
-        tagsAttribute.put("app_version", Teak.appVersion);
-        payloadTemplate.put("tags", tagsAttribute);
-
-        @SuppressWarnings("unchecked") HashMap<String, Object> user = (HashMap<String, Object>) payloadTemplate.get("user");
-        user.put("device_id", Teak.deviceId);
-    }
-
-    public synchronized void addUserData(String key, Object value) {
+    public synchronized void addUserData(@NonNull String key, Object value) {
         @SuppressWarnings("unchecked") HashMap<String, Object> user = (HashMap<String, Object>) payloadTemplate.get("user");
         if (value != null) {
             user.put(key, value);
@@ -194,7 +189,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         HashMap<String, Object> payload = new HashMap<>();
         Date timestamp = new Date();
 
-        public Report(String message, Level level, HashMap<String, Object> additions) {
+        public Report(@NonNull String message, @NonNull Level level, HashMap<String, Object> additions) {
             payload.put("event_id", UUID.randomUUID().toString().replace("-", ""));
             payload.put("message", message.substring(0, Math.min(message.length(), 1000)));
 

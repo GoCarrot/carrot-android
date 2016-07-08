@@ -300,33 +300,39 @@ public class TeakNotification {
      */
     @SuppressWarnings("unused")
     public Future<Reward> consumeNotification() {
-        final TeakNotification notif = this;
-
-        FutureTask<Reward> ret = new FutureTask<>(new Callable<Reward>() {
+        final TeakNotification _this = this;
+        final ArrayBlockingQueue<Reward> q = new ArrayBlockingQueue<>(1);
+        final FutureTask<Reward> ret = new FutureTask<>(new Callable<Reward>() {
             public Reward call() {
-                if (!notif.hasReward()) {
-                    notif.removeFromCache();
-                    return null;
+                try {
+                    return q.take();
+                } catch (InterruptedException e) {
+                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                }
+                return null;
+            }
+        });
+
+        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+            @Override
+            public void run(Session session) {
+                if (!_this.hasReward()) {
+                    _this.removeFromCache();
+                    q.offer(null);
+                    return;
                 }
 
                 HttpsURLConnection connection = null;
-                String userId;
-                try {
-                    userId = Teak.userId.get();
-                } catch (Exception e) {
-                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
-                    return null;
-                }
 
                 if (Teak.isDebug) {
-                    Log.d(Teak.LOG_TAG, "Claiming reward id: " + notif.teakRewardId);
+                    Log.d(Teak.LOG_TAG, "Claiming reward id: " + _this.teakRewardId);
                 }
 
                 try {
                     // https://rewards.gocarrot.com/<<teak_reward_id>>/clicks?clicking_user_id=<<your_user_id>>
-                    String requestBody = "clicking_user_id=" + URLEncoder.encode(userId, "UTF-8");
+                    String requestBody = "clicking_user_id=" + URLEncoder.encode(session.userId(), "UTF-8");
 
-                    URL url = new URL("https://rewards.gocarrot.com/" + notif.teakRewardId + "/clicks");
+                    URL url = new URL("https://rewards.gocarrot.com/" + _this.teakRewardId + "/clicks");
                     connection = (HttpsURLConnection) url.openConnection();
 
                     connection.setRequestProperty("Accept-Charset", "UTF-8");
@@ -366,22 +372,19 @@ public class TeakNotification {
                         Log.d(Teak.LOG_TAG, "Reward claim response: " + responseJson.toString(2));
                     }
 
-                    notif.removeFromCache();
+                    _this.removeFromCache();
 
-                    return reward;
+                    q.offer(reward);
                 } catch (Exception e) {
                     Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                    q.offer(null);
                 } finally {
                     if (connection != null) {
                         connection.disconnect();
                     }
                 }
-
-                return null;
             }
         });
-
-        Teak.asyncExecutor.submit(ret);
 
         return ret;
     }
@@ -395,15 +398,9 @@ public class TeakNotification {
      * @return The identifier of the scheduled notification (see {@link TeakNotification#cancelNotification(String)} or null.
      */
     @SuppressWarnings("unused")
-    public static FutureTask<String> scheduleNotification(String creativeId, String defaultMessage, long delayInSeconds) {
-        if (!Teak.userId.isDone()) {
-            Log.e(Teak.LOG_TAG, "identifyUser() not yet called, cannot call scheduleNotification().");
-            return null;
-        }
-
+    public static FutureTask<String> scheduleNotification(final String creativeId, final String defaultMessage, final long delayInSeconds) {
         final ArrayBlockingQueue<String> q = new ArrayBlockingQueue<>(1);
-
-        FutureTask<String> ret = new FutureTask<>(new Callable<String>() {
+        final FutureTask<String> ret = new FutureTask<>(new Callable<String>() {
             public String call() {
                 try {
                     return q.take();
@@ -413,32 +410,33 @@ public class TeakNotification {
                 return null;
             }
         });
-        Teak.asyncExecutor.submit(ret);
 
-        HashMap<String, Object> payload = new HashMap<>();
-        payload.put("identifier", creativeId);
-        payload.put("message", defaultMessage);
-        payload.put("offset", delayInSeconds);
-        try {
-            payload.put("api_key", Teak.userId.get());
-        } catch (Exception ignored) {
-            q.offer("");
-            return ret;
-        }
-
-        Teak.asyncExecutor.execute(new Request("POST", "gocarrot.com", "/me/local_notify.json", payload) {
+        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
             @Override
-            protected void done(int responseCode, String responseBody) {
-                try {
-                    JSONObject response = new JSONObject(responseBody);
-                    if (response.getString("status").equals("ok")) {
-                        q.offer(response.getJSONObject("event").getString("id"));
-                    } else {
-                        q.offer("");
+            public void run(Session session) {
+                HashMap<String, Object> payload = new HashMap<>();
+                payload.put("identifier", creativeId);
+                payload.put("message", defaultMessage);
+                payload.put("offset", delayInSeconds);
+                payload.put("api_key", session.userId());
+
+                new Request("POST", "gocarrot.com", "/me/local_notify.json", payload, session) {
+                    @Override
+                    protected void done(int responseCode, String responseBody) {
+                        try {
+                            JSONObject response = new JSONObject(responseBody);
+                            if (response.getString("status").equals("ok")) {
+                                q.offer(response.getJSONObject("event").getString("id"));
+                            } else {
+                                q.offer("");
+                            }
+                        } catch (Exception ignored) {
+                            q.offer("");
+                        }
+
+                        ret.run();
                     }
-                } catch (Exception ignored) {
-                    q.offer("");
-                }
+                }.run();
             }
         });
         return ret;
@@ -451,15 +449,9 @@ public class TeakNotification {
      * @return
      */
     @SuppressWarnings("unused")
-    public static FutureTask<String> cancelNotification(String scheduleId) {
-        if (!Teak.userId.isDone()) {
-            Log.e(Teak.LOG_TAG, "identifyUser() not yet called, cannot call cancelNotification().");
-            return null;
-        }
-
+    public static FutureTask<String> cancelNotification(final String scheduleId) {
         final ArrayBlockingQueue<String> q = new ArrayBlockingQueue<>(1);
-
-        FutureTask<String> ret = new FutureTask<>(new Callable<String>() {
+        final FutureTask<String> ret = new FutureTask<>(new Callable<String>() {
             public String call() {
                 try {
                     return q.take();
@@ -469,32 +461,33 @@ public class TeakNotification {
                 return null;
             }
         });
-        Teak.asyncExecutor.submit(ret);
 
-        HashMap<String, Object> payload = new HashMap<>();
-        payload.put("id", scheduleId);
-        try {
-            payload.put("api_key", Teak.userId.get());
-        } catch (Exception ignored) {
-            q.offer("");
-            return ret;
-        }
-
-        Teak.asyncExecutor.execute(new Request("POST", "gocarrot.com", "/me/cancel_local_notify.json", payload) {
+        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
             @Override
-            protected void done(int responseCode, String responseBody) {
-                try {
-                    JSONObject response = new JSONObject(responseBody);
-                    if (response.getString("status").equals("ok")) {
-                        q.offer(response.getJSONObject("event").getString("id"));
-                    } else {
-                        q.offer("");
+            public void run(Session session) {
+                HashMap<String, Object> payload = new HashMap<>();
+                payload.put("id", scheduleId);
+                payload.put("api_key", session.userId());
+
+                new Request("POST", "gocarrot.com", "/me/cancel_local_notify.json", payload, session) {
+                    @Override
+                    protected void done(int responseCode, String responseBody) {
+                        try {
+                            JSONObject response = new JSONObject(responseBody);
+                            if (response.getString("status").equals("ok")) {
+                                q.offer(response.getJSONObject("event").getString("id"));
+                            } else {
+                                q.offer("");
+                            }
+                        } catch (Exception ignored) {
+                            q.offer("");
+                        }
+                        ret.run();
                     }
-                } catch (Exception ignored) {
-                    q.offer("");
-                }
+                }.run();
             }
         });
+
         return ret;
     }
 

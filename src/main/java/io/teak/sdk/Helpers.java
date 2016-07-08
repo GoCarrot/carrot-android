@@ -80,36 +80,4 @@ class Helpers {
         }
         return list;
     }
-
-    // From:
-    // https://raw.githubusercontent.com/jaredrummler/AndroidDeviceNames/master/library/src/main/java/com/jaredrummler/android/device/DeviceName.java
-    static void addDeviceNameToPayload(Map<String, Object> payload) {
-        payload.put("device_manufacturer", Build.MANUFACTURER == null ? "" : Build.MANUFACTURER);
-        payload.put("device_model", Build.MODEL == null ? "" : Build.MODEL);
-        if (Build.MODEL.startsWith(Build.MANUFACTURER)) {
-            payload.put("device_fallback", capitalize(Build.MODEL));
-        } else {
-            payload.put("device_fallback", capitalize(Build.MANUFACTURER) + " " + Build.MODEL);
-        }
-    }
-
-    private static String capitalize(String str) {
-        if (TextUtils.isEmpty(str)) {
-            return str;
-        }
-        char[] arr = str.toCharArray();
-        boolean capitalizeNext = true;
-        String phrase = "";
-        for (char c : arr) {
-            if (capitalizeNext && Character.isLetter(c)) {
-                phrase += Character.toUpperCase(c);
-                capitalizeNext = false;
-                continue;
-            } else if (Character.isWhitespace(c)) {
-                capitalizeNext = true;
-            }
-            phrase += c;
-        }
-        return phrase;
-    }
 }

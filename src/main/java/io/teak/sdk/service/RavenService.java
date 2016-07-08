@@ -208,6 +208,7 @@ public class RavenService extends Service {
             }
         }
 
+        // TODO: Pull this class out
         class DatabaseHelper extends SQLiteOpenHelper {
             private AtomicInteger openCounter = new AtomicInteger();
             private SQLiteDatabase database;
