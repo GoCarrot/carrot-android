@@ -255,7 +255,7 @@ public class Teak extends BroadcastReceiver {
             // Register for local broadcasts
             IntentFilter filter = new IntentFilter();
             filter.addAction(FacebookAccessTokenBroadcast.UPDATED_ACCESS_TOKEN_INTENT_ACTION);
-            LocalBroadcastManager.getInstance(activity).registerReceiver(Teak.localBroadcastReceiver, filter);
+            Teak.localBroadcastManager.registerReceiver(Teak.localBroadcastReceiver, filter);
 
             // Producer/Consumer Queues
             Teak.facebookAccessTokenQueue = new ArrayBlockingQueue<>(1);
@@ -310,11 +310,10 @@ public class Teak extends BroadcastReceiver {
             RemoteConfiguration.removeEventListener(Teak.remoteConfigurationEventListener);
             Session.removeEventListener(Teak.sessionEventListener);
             Teak.facebookAccessTokenBroadcast.unregister(activity);
-            LocalBroadcastManager.getInstance(activity).unregisterReceiver(Teak.localBroadcastReceiver);
+            Teak.localBroadcastManager.unregisterReceiver(Teak.localBroadcastReceiver);
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-                activity.getApplication().unregisterActivityLifecycleCallbacks(Teak.lifecycleCallbacks);
-            }
+
+            activity.getApplication().unregisterActivityLifecycleCallbacks(Teak.lifecycleCallbacks);
         }
 
         @Override
