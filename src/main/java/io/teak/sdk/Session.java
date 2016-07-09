@@ -471,7 +471,7 @@ class Session {
         synchronized (currentSessionMutex) {
             synchronized (currentSession.stateMutex) {
                 if (currentSession.state == State.UserIdentified) {
-                    new Thread(new WhenUserIdIsReadyRun(runnable)).run();
+                    new Thread(new WhenUserIdIsReadyRun(runnable)).start();
                 } else {
                     synchronized (userIdReadyRunnableQueueMutex) {
                         userIdReadyRunnableQueue.add(new WhenUserIdIsReadyRun(runnable));
