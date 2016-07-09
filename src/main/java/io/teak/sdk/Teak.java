@@ -394,7 +394,10 @@ public class Teak extends BroadcastReceiver {
 
             if (configuration.appSentryDSN() != null) {
                 Teak.appRaven.setDsn(configuration.appSentryDSN());
-                //Teak.appRaven.setAsUncaughtExceptionHandler(); // TODO: Remove this // hax
+
+                if (!android.os.Debug.isDebuggerConnected()) {
+                    Teak.appRaven.setAsUncaughtExceptionHandler();
+                }
             }
         }
     };
