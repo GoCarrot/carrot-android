@@ -98,6 +98,11 @@ public class Teak extends BroadcastReceiver {
     public static void onCreate(Activity activity) {
         Log.d(LOG_TAG, "Android SDK Version: " + Teak.SDKVersion);
 
+        if (activity == null) {
+            Log.e(LOG_TAG, "null Activity passed to onCreate, Teak is unavailable.");
+            return;
+        }
+
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
             Log.e(LOG_TAG, "Teak requires API level 14 to operate. Teak is unavailable.");
         } else {
@@ -131,6 +136,11 @@ public class Teak extends BroadcastReceiver {
     public static void onNewIntent(Intent intent) {
         if (Teak.isDebug) {
             Log.d(LOG_TAG, "Lifecycle - onNewIntent");
+        }
+
+        if (intent == null) {
+            Log.e(LOG_TAG, "null Intent passed to onNewIntent, ignoring.");
+            return;
         }
         Session.processIntent(intent, Teak.appConfiguration, Teak.deviceConfiguration);
     }
