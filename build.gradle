@@ -1,5 +1,7 @@
 import com.android.builder.core.BuilderConstants
 
+import java.util.regex.Pattern
+
 buildscript {
     repositories {
         jcenter()
@@ -39,25 +41,51 @@ android.libraryVariants.all { variant ->
 
     // Jar task
     // https://docs.gradle.org/current/dsl/org.gradle.api.tasks.bundling.Jar.html
-    artifacts.add('archives', task("jar${variant.name.capitalize()}", type: Jar) {
+    // ${android.defaultConfig.versionName}
+    def jarTask = task("jar${variant.name.capitalize()}", type: Jar) {
         description "Bundles compiled .class files into a JAR file for $variant.name."
         dependsOn variant.javaCompile
         from variant.javaCompile.destinationDir
-        exclude '**/R.class', '**/R$*.class', '**/R.html', '**/R.*.html' // TODO: Exclude dependencies here
-        archiveName "${archivesBaseName}-${variant.name}-${android.defaultConfig.versionName}.jar"
+        exclude '**/R.class', '**/R$*.class', '**/R.html', '**/R.*.html',
+                'com/google/**'
+        if (variant.buildType.name.equals(BuilderConstants.DEBUG)) {
+            archiveName "${archivesBaseName}-${variant.name.replace('Debug', '')}-debug.jar"
+        } else {
+            archiveName "${archivesBaseName}-${variant.name.replace('Release', '')}.jar"
+        }
+    }
+    artifacts.add('archives', jarTask)
+
+    // Zip jar + res/
+    artifacts.add('archives', task("zip${variant.name.capitalize()}", type: Zip) {
+        description "Bundles .jar file and res/**.xml into a ZIP file for $variant.name."
+        dependsOn jarTask
+        def flavor
+        if (variant.buildType.name.equals(BuilderConstants.DEBUG)) {
+            flavor = variant.name.replace('Debug', '')
+            archiveName "${archivesBaseName}-${flavor}-debug.zip"
+        } else {
+            flavor = variant.name.replace('Release', '')
+            archiveName "${archivesBaseName}-${flavor}.zip"
+        }
+
+        from(jarTask.archivePath) {
+            into('teak')
+            rename(Pattern.quote(jarTask.archivePath.name), "teak.jar")
+        }
+
+        from fileTree(dir: "src/${flavor}", include: 'res/**')
     })
-    // TODO: Zip jar + /res/ task that depends on jar task
 
     // Rename AARs
     variant.outputs.each { output ->
         def outputFile = output.outputFile
         if (outputFile != null && outputFile.name.endsWith('.aar')) {
-            def fileName = null
-            def name = variant.buildType.name
-            if (name.equals(BuilderConstants.DEBUG)) {
-                fileName = "${archivesBaseName}-debug-${android.defaultConfig.versionName}.aar"
+            def fileName
+            if (variant.buildType.name.equals(BuilderConstants.DEBUG)) {
+                fileName = "${archivesBaseName}-${variant.name.replace('Debug', '')}-debug.aar"
             } else {
-                fileName = "${archivesBaseName}-${android.defaultConfig.versionName}.aar"
+                fileName = "${archivesBaseName}-${variant.name.replace('Release', '')}.aar"
             }
             output.outputFile = new File(outputFile.parent, fileName)
         }
