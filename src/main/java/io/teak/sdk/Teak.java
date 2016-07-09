@@ -15,6 +15,7 @@
 package io.teak.sdk;
 
 import android.app.Activity;
+import android.app.Application;
 import android.app.Application.ActivityLifecycleCallbacks;
 
 import android.content.Intent;
@@ -107,7 +108,13 @@ public class Teak extends BroadcastReceiver {
             Log.e(LOG_TAG, "Teak requires API level 14 to operate. Teak is unavailable.");
         } else {
             try {
-                activity.getApplication().registerActivityLifecycleCallbacks(Teak.lifecycleCallbacks);
+                Application application = activity.getApplication();
+                if (!Teak.lifecycleCallbacksRegistered.containsKey(application.hashCode())) {
+                    Teak.lifecycleCallbacksRegistered.put(application.hashCode(), Boolean.TRUE);
+                    application.registerActivityLifecycleCallbacks(Teak.lifecycleCallbacks);
+                } else {
+                    Log.d(LOG_TAG, "Duplicate onCreate call for Application " + application.toString() + ", ignoring.");
+                }
             } catch (Exception e) {
                 Log.e(LOG_TAG, "Failed to register Activity lifecycle callbacks. Teak is unavailable. " + Log.getStackTraceString(e));
             }
@@ -194,6 +201,7 @@ public class Teak extends BroadcastReceiver {
 
     static boolean isDebug;
     static boolean forceDebug = false;
+    static HashMap<Integer, Boolean> lifecycleCallbacksRegistered = new HashMap<>();
 
     static IStore appStore;
     static AppConfiguration appConfiguration;
