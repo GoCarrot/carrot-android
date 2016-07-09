@@ -177,9 +177,18 @@ public class Teak extends BroadcastReceiver {
             Log.d(LOG_TAG, "Tracking Event: " + actionId + " - " + objectTypeId + " - " + objectInstanceId);
         }
 
-        if (Teak.enabled) {
-            // TODO: Null/empty checks
+        if (actionId == null || actionId.isEmpty()) {
+            Log.e(LOG_TAG, "actionId can not be null or empty for trackEvent(), ignoring.");
+            return;
+        }
 
+        if ((objectInstanceId == null || objectInstanceId.isEmpty()) &&
+                (objectTypeId == null || objectTypeId.isEmpty())) {
+            Log.e(LOG_TAG, "objectTypeId can not be null or empty if objectInstanceId is present for trackEvent(), ignoring.");
+            return;
+        }
+
+        if (Teak.enabled) {
             HashMap<String, Object> payload = new HashMap<>();
             payload.put("action_type", actionId);
             payload.put("object_type", objectTypeId);
