@@ -358,7 +358,13 @@ public class Teak extends BroadcastReceiver {
                 Log.d(LOG_TAG, "Lifecycle - onActivityDestroyed");
             }
 
-            cleanup(activity);
+            Application application = activity.getApplication();
+            if (Teak.lifecycleCallbacksRegistered.containsKey(application.hashCode())) {
+                Teak.lifecycleCallbacksRegistered.remove(application.hashCode());
+                cleanup(activity);
+            } else {
+                Log.d(LOG_TAG, "Duplicate onActivityDestroyed call for Application " + application.toString() + ", ignoring.");
+            }
         }
 
         @Override
