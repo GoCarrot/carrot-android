@@ -157,6 +157,8 @@ public class Teak extends BroadcastReceiver {
             Log.d(LOG_TAG, "Tracking Event: " + actionId + " - " + objectTypeId + " - " + objectInstanceId);
         }
 
+        // TODO: Null/empty checks
+
         HashMap<String, Object> payload = new HashMap<>();
         payload.put("action_type", actionId);
         payload.put("object_type", objectTypeId);
@@ -176,10 +178,12 @@ public class Teak extends BroadcastReceiver {
     static AppConfiguration appConfiguration;
     static DeviceConfiguration deviceConfiguration;
 
+    // TODO: The Facebook stuff should be moved around a bit
     static FutureTask<String> facebookAccessToken;
     static ArrayBlockingQueue<String> facebookAccessTokenQueue;
-    static ExecutorService asyncExecutor = Executors.newCachedThreadPool();
     static FacebookAccessTokenBroadcast facebookAccessTokenBroadcast;
+
+    private static ExecutorService asyncExecutor = Executors.newCachedThreadPool();
 
     static Raven sdkRaven;
     static Raven appRaven;
@@ -391,7 +395,7 @@ public class Teak extends BroadcastReceiver {
 
             if (configuration.appSentryDSN() != null) {
                 Teak.appRaven.setDsn(configuration.appSentryDSN());
-                Teak.appRaven.setAsUncaughtExceptionHandler();
+                //Teak.appRaven.setAsUncaughtExceptionHandler();
             }
         }
     };

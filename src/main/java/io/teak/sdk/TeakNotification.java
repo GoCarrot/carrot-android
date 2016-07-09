@@ -589,7 +589,7 @@ public class TeakNotification {
 
         final TeakNotification ret = new TeakNotification(bundle);
 
-        Teak.asyncExecutor.submit(new Runnable() {
+        new Thread(new Runnable() {
             @Override
             public void run() {
                 // Add platformId to bundle
@@ -600,7 +600,7 @@ public class TeakNotification {
                     displayNotification(context, ret, nativeNotification);
                 }
             }
-        });
+        }).start();
 
         return ret;
     }

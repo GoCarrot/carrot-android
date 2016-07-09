@@ -85,7 +85,7 @@ class CachedRequest extends Request implements Runnable {
     public static void submitCachedRequests(@NonNull Session session) {
         List<CachedRequest> requests = CachedRequest.requestsInCache(session);
         for (CachedRequest request : requests) {
-            Teak.asyncExecutor.submit(request);
+            new Thread(request).start();
         }
     }
 
