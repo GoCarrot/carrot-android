@@ -52,7 +52,6 @@ class DeviceConfiguration {
     private GoogleCloudMessaging gcm;
     private SharedPreferences preferences;
 
-    private static final String PREFERENCES_FILE = "io.teak.sdk.Preferences";
     private static final String PREFERENCE_GCM_ID = "io.teak.sdk.Preferences.GcmId";
     private static final String PREFERENCE_APP_VERSION = "io.teak.sdk.Preferences.AppVersion";
     private static final String PREFERENCE_DEVICE_ID = "io.teak.sdk.Preferences.DeviceId";
@@ -64,7 +63,7 @@ class DeviceConfiguration {
             this.platformString = "android_" + android.os.Build.VERSION.RELEASE;
         }
 
-        this.preferences = context.getSharedPreferences(PREFERENCES_FILE, Context.MODE_PRIVATE);
+        this.preferences = context.getSharedPreferences(Teak.PREFERENCES_FILE, Context.MODE_PRIVATE);
         if (this.preferences == null) {
             Log.e(LOG_TAG, "getSharedPreferences() returned null. Some caching is disabled.");
         }

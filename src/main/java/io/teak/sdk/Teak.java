@@ -202,8 +202,10 @@ public class Teak extends BroadcastReceiver {
 
     /**************************************************************************/
 
+    static final String PREFERENCES_FILE = "io.teak.sdk.Preferences";
+
     static boolean isDebug;
-    static boolean forceDebug = false;
+    static DebugConfiguration debugConfiguration;
 
     static boolean enabled = true;
 
@@ -232,8 +234,10 @@ public class Teak extends BroadcastReceiver {
         public void onActivityCreated(Activity inActivity, Bundle savedInstanceState) {
             final Context context = inActivity.getApplicationContext();
 
+            Teak.debugConfiguration = new DebugConfiguration(context);
+
             // Check for debug build
-            Teak.isDebug = Teak.forceDebug || (0 != (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE));
+            Teak.isDebug = Teak.debugConfiguration.forceDebug || (0 != (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE));
 
             // App Configuration
             Teak.appConfiguration = new AppConfiguration(context);

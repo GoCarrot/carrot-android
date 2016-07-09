@@ -431,11 +431,8 @@ class Session {
                                 // TODO: Grab 'id' and 'game_id' from response and store for Parsnip
 
                                 // Enable verbose logging if flagged
-                                Teak.isDebug |= response.optBoolean("verbose_logging");
-
-                                if (response.optBoolean("verbose_logging")) {
-                                    Log.d(LOG_TAG, "Enabling verbose logging via identifyUser()");
-                                }
+                                boolean enableVerboseLogging = response.optBoolean("verbose_logging");
+                                Teak.debugConfiguration.setPreferenceForceDebug(enableVerboseLogging);
 
                                 // Server requesting new push key.
                                 if (response.optBoolean("reset_push_key", false)) {
