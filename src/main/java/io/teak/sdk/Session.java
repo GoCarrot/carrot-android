@@ -546,7 +546,7 @@ class Session {
                 currentSession.attributionChain.add(launchedFromTeakNotifId);
 
                 // Send broadcast
-                // TODO: Update SDKs to read teakNotifId from the broadcast intent
+                // TODO: Update Unity SDK to read teakNotifId from the broadcast intent
                 if (Teak.localBroadcastManager != null) {
                     Intent broadcastEvent = new Intent(TeakNotification.LAUNCHED_FROM_NOTIFICATION_INTENT);
                     broadcastEvent.putExtra("teakNotifId", currentSession.launchedFromTeakNotifId);
