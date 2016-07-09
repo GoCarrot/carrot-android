@@ -135,6 +135,7 @@ public class DeviceConfiguration {
                     Log.d(LOG_TAG, "GCM Id found in cache: " + storedGcmId);
                 }
                 this.gcmId = storedGcmId;
+                displayGCMDebugMessage();
             } else {
                 registerForGCM(appConfiguration);
             }
@@ -222,25 +223,7 @@ public class DeviceConfiguration {
                                 }
                             }
 
-                            Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
-                                @Override
-                                public void run(Session session) {
-                                    try {
-                                        String urlString = "https://app.teak.io/apps/" + session.appConfiguration.appId + "/test_accounts/new" +
-                                                "?api_key=" + URLEncoder.encode(session.userId(), "UTF-8") +
-                                                "&gcm_push_key=" + URLEncoder.encode(_this.gcmId, "UTF-8") +
-                                                "&device_manufacturer=" + URLEncoder.encode(_this.deviceManufacturer, "UTF-8") +
-                                                "&device_model=" + URLEncoder.encode(_this.deviceModel, "UTF-8") +
-                                                "&device_fallback=" + URLEncoder.encode(_this.deviceFallback, "UTF-8") +
-                                                "&bundle_id=" + URLEncoder.encode(session.appConfiguration.bundleId, "UTF-8");
-
-                                        Log.d(LOG_TAG, "If you want to debug or test push notifications on this device please click the link below, or copy/paste into your browser:");
-                                        Log.d(LOG_TAG, "    " + urlString);
-                                    } catch (Exception e) {
-                                        Log.e(LOG_TAG, Log.getStackTraceString(e));
-                                    }
-                                }
-                            });
+                            displayGCMDebugMessage();
                         } catch (Exception e) {
                             Log.e(LOG_TAG, Log.getStackTraceString(e));
                             // TODO: exponential back-off, re-register
@@ -275,6 +258,31 @@ public class DeviceConfiguration {
         }
     }
     // endregion
+
+    private void displayGCMDebugMessage() {
+        if (Teak.isDebug) {
+            final DeviceConfiguration _this = this;
+            Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+                @Override
+                public void run(Session session) {
+                    try {
+                        String urlString = "https://app.teak.io/apps/" + session.appConfiguration.appId + "/test_accounts/new" +
+                                "?api_key=" + URLEncoder.encode(session.userId(), "UTF-8") +
+                                "&gcm_push_key=" + URLEncoder.encode(_this.gcmId, "UTF-8") +
+                                "&device_manufacturer=" + URLEncoder.encode(_this.deviceManufacturer, "UTF-8") +
+                                "&device_model=" + URLEncoder.encode(_this.deviceModel, "UTF-8") +
+                                "&device_fallback=" + URLEncoder.encode(_this.deviceFallback, "UTF-8") +
+                                "&bundle_id=" + URLEncoder.encode(session.appConfiguration.bundleId, "UTF-8");
+
+                        Log.d(LOG_TAG, "If you want to debug or test push notifications on this device please click the link below, or copy/paste into your browser:");
+                        Log.d(LOG_TAG, "    " + urlString);
+                    } catch (Exception e) {
+                        Log.e(LOG_TAG, Log.getStackTraceString(e));
+                    }
+                }
+            });
+        }
+    }
 
     // region Helpers
     // https://raw.githubusercontent.com/jaredrummler/AndroidDeviceNames/master/library/src/main/java/com/jaredrummler/android/device/DeviceName.java
