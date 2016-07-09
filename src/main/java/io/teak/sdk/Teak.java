@@ -50,6 +50,7 @@ import java.util.HashMap;
  * Teak
  */
 public class Teak extends BroadcastReceiver {
+    private static final String LOG_TAG = "Teak";
 
     /**
      * Version of the Teak SDK.
@@ -172,25 +173,23 @@ public class Teak extends BroadcastReceiver {
     static boolean isDebug;
     static boolean forceDebug = false;
 
-    static HashMap<Integer, Boolean> lifecycleCallbacksRegistered = new HashMap<>();
-
-    static IStore appStore;
-    static AppConfiguration appConfiguration;
-    static DeviceConfiguration deviceConfiguration;
-
-    // TODO: The Facebook stuff should be moved around a bit
-    static FutureTask<String> facebookAccessToken;
-    static ArrayBlockingQueue<String> facebookAccessTokenQueue;
-    static FacebookAccessTokenBroadcast facebookAccessTokenBroadcast;
-
-    private static ExecutorService asyncExecutor = Executors.newCachedThreadPool();
-
     static Raven sdkRaven;
     static Raven appRaven;
 
     static LocalBroadcastManager localBroadcastManager;
 
-    private static final String LOG_TAG = "Teak";
+    private static HashMap<Integer, Boolean> lifecycleCallbacksRegistered = new HashMap<>();
+
+    private static IStore appStore;
+    private static AppConfiguration appConfiguration;
+    private static DeviceConfiguration deviceConfiguration;
+
+    // TODO: The Facebook stuff should be moved around a bit
+    static FutureTask<String> facebookAccessToken;
+    static ArrayBlockingQueue<String> facebookAccessTokenQueue;
+    private static FacebookAccessTokenBroadcast facebookAccessTokenBroadcast;
+
+    private static ExecutorService asyncExecutor = Executors.newCachedThreadPool();
 
     /**************************************************************************/
 
@@ -395,7 +394,7 @@ public class Teak extends BroadcastReceiver {
 
             if (configuration.appSentryDSN() != null) {
                 Teak.appRaven.setDsn(configuration.appSentryDSN());
-                //Teak.appRaven.setAsUncaughtExceptionHandler();
+                //Teak.appRaven.setAsUncaughtExceptionHandler(); // TODO: Remove this // hax
             }
         }
     };
