@@ -20,13 +20,11 @@ import android.app.Application.ActivityLifecycleCallbacks;
 import android.content.Intent;
 import android.content.Context;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.content.BroadcastReceiver;
 import android.content.pm.ApplicationInfo;
 
 import android.net.Uri;
 import android.os.Build;
-import android.provider.Settings;
 import android.support.v4.content.LocalBroadcastManager;
 
 import android.os.Bundle;
@@ -35,14 +33,7 @@ import android.util.Log;
 
 import org.json.JSONObject;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.ads.identifier.AdvertisingIdClient;
-import com.google.android.gms.gcm.GoogleCloudMessaging;
-
 import java.lang.InterruptedException;
-
-import java.net.URLEncoder;
 
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.Callable;
@@ -51,7 +42,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import java.util.Stack;
-import java.util.UUID;
 import java.util.Date;
 import java.util.HashMap;
 
