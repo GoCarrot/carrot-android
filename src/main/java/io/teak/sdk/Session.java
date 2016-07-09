@@ -142,6 +142,8 @@ class Session {
         this.appConfiguration = appConfiguration;
         this.deviceConfiguration = deviceConfiguration;
 
+        DeviceConfiguration.addEventListener(this.deviceConfigurationListener);
+
         setState(State.Created);
     }
 
@@ -158,6 +160,8 @@ class Session {
         this.previousState = otherSession.previousState;
         this.userId = otherSession.userId;
         this.countryCode = otherSession.countryCode;
+
+        DeviceConfiguration.addEventListener(this.deviceConfigurationListener);
 
         // Assign state
         setState(otherSession.state);
@@ -282,6 +286,11 @@ class Session {
                         this.heartbeatService.shutdown();
                         this.heartbeatService = null;
                     }
+                }
+                break;
+
+                case Expired: {
+                    DeviceConfiguration.removeEventListener(this.deviceConfigurationListener);
                 }
                 break;
             }
