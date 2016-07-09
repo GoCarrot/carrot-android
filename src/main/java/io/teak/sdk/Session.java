@@ -273,6 +273,8 @@ class Session {
                 break;
 
                 case Expiring: {
+                    this.endDate = new Date();
+
                     // TODO: When expiring, punt to background service and say "Hey check the state of this session in N seconds"
 
                     // Stop heartbeat, Expiring->Expiring is possible, so no invalid data here
