@@ -435,7 +435,7 @@ public class Teak extends BroadcastReceiver {
                 @Override
                 public void run(Session session) {
                     HashMap<String, Object> payload = new HashMap<>();
-                    payload.put("app_id", Teak.appConfiguration.appId);
+                    payload.put("app_id", session.appConfiguration.appId);
                     payload.put("user_id", session.userId());
                     payload.put("platform_id", notif.teakNotifId);
 
