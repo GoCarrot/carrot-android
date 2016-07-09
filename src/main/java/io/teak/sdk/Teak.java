@@ -98,13 +98,14 @@ public class Teak extends BroadcastReceiver {
     public static void onCreate(Activity activity) {
         Log.d(LOG_TAG, "Android SDK Version: " + Teak.SDKVersion);
 
-        // TODO: Move onActivityCreated stuff into here?
-
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-            // TODO: This is non-ideal, see if we can find a better fallback.
-            Teak.lifecycleCallbacks.onActivityCreated(activity, null);
+            Log.e(LOG_TAG, "Teak requires API level 14 to operate. Teak is unavailable.");
         } else {
-            activity.getApplication().registerActivityLifecycleCallbacks(Teak.lifecycleCallbacks);
+            try {
+                activity.getApplication().registerActivityLifecycleCallbacks(Teak.lifecycleCallbacks);
+            } catch (Exception e) {
+                Log.e(LOG_TAG, "Failed to register Activity lifecycle callbacks. Teak is unavailable. " + Log.getStackTraceString(e));
+            }
         }
     }
 
