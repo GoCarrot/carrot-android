@@ -160,7 +160,7 @@ class Amazon implements IStore {
                     JSONObject json = (JSONObject) m.invoke(args[0]);
                     Teak.purchaseSucceeded(json);
                 } else {
-                    Teak.purchaseFailed(-1, null);
+                    Teak.purchaseFailed(-1);
                 }
 
                 // onProductDataResponse()

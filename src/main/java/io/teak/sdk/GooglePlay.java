@@ -270,7 +270,7 @@ class GooglePlay implements IStore {
                     Teak.sdkRaven.reportException(e);
                 }
             } else {
-                Teak.purchaseFailed(responseCode, "");
+                Teak.purchaseFailed(responseCode);
             }
         } else {
             Log.d(Teak.LOG_TAG, "No purchase found in activity result.");

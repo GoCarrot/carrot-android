@@ -181,8 +181,6 @@ public class Teak extends BroadcastReceiver {
     static ExecutorService asyncExecutor = Executors.newCachedThreadPool();
     static FacebookAccessTokenBroadcast facebookAccessTokenBroadcast;
 
-    static Stack<String> skuStack = new Stack<>();
-
     static Raven sdkRaven;
     static Raven appRaven;
 
@@ -354,13 +352,11 @@ public class Teak extends BroadcastReceiver {
                 if (Teak.isDebug) {
                     Log.d(LOG_TAG, "Unity OpenIAB purchase launched: " + bundle.toString());
                 }
-                skuStack.push(bundle.getString("sku"));
             } else if (activity.getClass().getName().equals("com.prime31.GoogleIABProxyActivity")) {
                 Bundle bundle = activity.getIntent().getExtras();
                 if (Teak.isDebug) {
                     Log.d(LOG_TAG, "Unity Prime31 purchase launched: " + bundle.toString());
                 }
-                skuStack.push(bundle.getString("sku"));
             }
         }
 
@@ -534,11 +530,10 @@ public class Teak extends BroadcastReceiver {
 
     @SuppressWarnings("unused")
     private static void pluginPurchaseFailed(int errorCode) {
-        String sku = skuStack.pop();
         if (Teak.isDebug) {
-            Log.d(LOG_TAG, "OpenIAB/Prime31 purchase failed (" + errorCode + ") for sku: " + sku);
+            Log.d(LOG_TAG, "OpenIAB/Prime31 purchase failed (" + errorCode + ")");
         }
-        purchaseFailed(errorCode, sku);
+        purchaseFailed(errorCode);
     }
 
     static void purchaseSucceeded(final JSONObject purchaseData) {
@@ -596,14 +591,13 @@ public class Teak extends BroadcastReceiver {
         });
     }
 
-    static void purchaseFailed(int errorCode, String sku) {
+    static void purchaseFailed(int errorCode) {
         if (Teak.isDebug) {
-            Log.d(LOG_TAG, "Purchase failed (" + errorCode + ") for sku: " + sku);
+            Log.d(LOG_TAG, "Purchase failed (" + errorCode + ")");
         }
 
         HashMap<String, Object> payload = new HashMap<>();
         payload.put("error_code", errorCode);
-        payload.put("product_id", sku == null ? "" : sku);
 
         CachedRequest.submitCachedRequest("/me/purchase", payload, new Date());
     }
