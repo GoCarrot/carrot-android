@@ -193,7 +193,7 @@ public class Teak extends BroadcastReceiver {
 
     /**************************************************************************/
 
-    static final ActivityLifecycleCallbacks lifecycleCallbacks = new ActivityLifecycleCallbacks() {
+    private static final ActivityLifecycleCallbacks lifecycleCallbacks = new ActivityLifecycleCallbacks() {
         @Override
         public void onActivityCreated(final Activity activity, Bundle savedInstanceState) {
             // Check for debug build
@@ -371,7 +371,7 @@ public class Teak extends BroadcastReceiver {
         }
     };
 
-    static final Session.EventListener sessionEventListener = new Session.EventListener() {
+    private static final Session.EventListener sessionEventListener = new Session.EventListener() {
         @Override
         public void onStateChange(Session session, Session.State oldState, Session.State newState) {
             if (newState == Session.State.Created) {
@@ -384,7 +384,7 @@ public class Teak extends BroadcastReceiver {
         }
     };
 
-    static final RemoteConfiguration.EventListener remoteConfigurationEventListener = new RemoteConfiguration.EventListener() {
+    private static final RemoteConfiguration.EventListener remoteConfigurationEventListener = new RemoteConfiguration.EventListener() {
         @Override
         public void onConfigurationReady(RemoteConfiguration configuration) {
             // Begin exception reporting, if enabled
@@ -402,9 +402,9 @@ public class Teak extends BroadcastReceiver {
         }
     };
 
-    static BroadcastReceiver localBroadcastReceiver = new BroadcastReceiver() {
+    private static BroadcastReceiver localBroadcastReceiver = new BroadcastReceiver() {
         @Override
-        public void onReceive(Context context, Intent intent) {
+        public void onReceive(Context ignored, Intent intent) {
             String action = intent.getAction();
             if (FacebookAccessTokenBroadcast.UPDATED_ACCESS_TOKEN_INTENT_ACTION.equals(action)) {
                 if (Teak.isDebug) {
