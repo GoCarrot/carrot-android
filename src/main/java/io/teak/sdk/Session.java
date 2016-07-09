@@ -469,12 +469,18 @@ class Session {
 
     public static void whenUserIdIsReadyRun(@NonNull SessionRunnable runnable) {
         synchronized (currentSessionMutex) {
-            synchronized (currentSession.stateMutex) {
-                if (currentSession.state == State.UserIdentified) {
-                    new Thread(new WhenUserIdIsReadyRun(runnable)).start();
-                } else {
-                    synchronized (userIdReadyRunnableQueueMutex) {
-                        userIdReadyRunnableQueue.add(new WhenUserIdIsReadyRun(runnable));
+            if (currentSession == null) {
+                synchronized (userIdReadyRunnableQueueMutex) {
+                    userIdReadyRunnableQueue.add(new WhenUserIdIsReadyRun(runnable));
+                }
+            } else {
+                synchronized (currentSession.stateMutex) {
+                    if (currentSession.state == State.UserIdentified) {
+                        new Thread(new WhenUserIdIsReadyRun(runnable)).start();
+                    } else {
+                        synchronized (userIdReadyRunnableQueueMutex) {
+                            userIdReadyRunnableQueue.add(new WhenUserIdIsReadyRun(runnable));
+                        }
                     }
                 }
             }
