@@ -194,10 +194,12 @@ public class RavenService extends Service {
                     }
                     rd.close();
 
-                    JSONObject jsonResponse = new JSONObject(response.toString());
-
-                    // TODO: If debug print...
-                    //Log.d(LOG_TAG, "Exception reported: " + jsonResponse.toString(2));
+                    try {
+                        JSONObject jsonResponse = new JSONObject(response.toString());
+                        Log.e(LOG_TAG, "Exception reported: " + jsonResponse.toString(2));
+                    } catch (Exception ignored) {
+                        Log.e(LOG_TAG, "Exception reported: " + response.toString());
+                    }
                 } catch (Exception e) {
                     Log.e(LOG_TAG, Log.getStackTraceString(e));
                 } finally {
