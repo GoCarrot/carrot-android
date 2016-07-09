@@ -26,11 +26,10 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 
 import io.teak.sdk.service.RavenService;
 
-public class AppConfiguration {
+class AppConfiguration {
     private static final String LOG_TAG = "Teak:AppConfig";
 
     public final String appId;

@@ -36,7 +36,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-public class DeviceConfiguration {
+class DeviceConfiguration {
     private static final String LOG_TAG = "Teak:DeviceConfig";
 
     public String gcmId;
