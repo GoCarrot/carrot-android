@@ -66,6 +66,18 @@ public class DeviceConfiguration {
 
         this.gcm = GoogleCloudMessaging.getInstance(context);
 
+        // Device model/manufacturer
+        // https://raw.githubusercontent.com/jaredrummler/AndroidDeviceNames/master/library/src/main/java/com/jaredrummler/android/device/DeviceName.java
+        {
+            this.deviceManufacturer = Build.MANUFACTURER == null ? "" : Build.MANUFACTURER;
+            this.deviceModel = Build.MODEL == null ? "" : Build.MODEL;
+            if (this.deviceModel.startsWith(Build.MANUFACTURER)) {
+                this.deviceFallback = capitalize(Build.MODEL);
+            } else {
+                this.deviceFallback = capitalize(Build.MANUFACTURER) + " " + Build.MODEL;
+            }
+        }
+
         // Device id
         {
             String tempDeviceId = null;
@@ -107,18 +119,10 @@ public class DeviceConfiguration {
                 }
             }
 
-            this.deviceId = tempDeviceId; // TODO: If still null, Teak has to bail out entirely
-        }
+            this.deviceId = tempDeviceId;
 
-        // Device model/manufacturer
-        // https://raw.githubusercontent.com/jaredrummler/AndroidDeviceNames/master/library/src/main/java/com/jaredrummler/android/device/DeviceName.java
-        {
-            this.deviceManufacturer = Build.MANUFACTURER == null ? "" : Build.MANUFACTURER;
-            this.deviceModel = Build.MODEL == null ? "" : Build.MODEL;
-            if (this.deviceModel.startsWith(Build.MANUFACTURER)) {
-                this.deviceFallback = capitalize(Build.MODEL);
-            } else {
-                this.deviceFallback = capitalize(Build.MANUFACTURER) + " " + Build.MODEL;
+            if (this.deviceId == null) {
+                return;
             }
         }
 

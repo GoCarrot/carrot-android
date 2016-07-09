@@ -42,7 +42,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import java.util.Stack;
 import java.util.Date;
 import java.util.HashMap;
 
@@ -69,12 +68,14 @@ public class Teak extends BroadcastReceiver {
         Log.d(LOG_TAG, "Android SDK Version: " + Teak.SDKVersion);
 
         if (activity == null) {
-            Log.e(LOG_TAG, "null Activity passed to onCreate, Teak is unavailable.");
+            Log.e(LOG_TAG, "null Activity passed to onCreate, Teak is disabled.");
+            Teak.enabled = false;
             return;
         }
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-            Log.e(LOG_TAG, "Teak requires API level 14 to operate. Teak is unavailable.");
+            Log.e(LOG_TAG, "Teak requires API level 14 to operate. Teak is disabled.");
+            Teak.enabled = false;
         } else {
             try {
                 Application application = activity.getApplication();
@@ -85,7 +86,8 @@ public class Teak extends BroadcastReceiver {
                     Log.d(LOG_TAG, "Duplicate onCreate call for Application " + application.toString() + ", ignoring.");
                 }
             } catch (Exception e) {
-                Log.e(LOG_TAG, "Failed to register Activity lifecycle callbacks. Teak is unavailable. " + Log.getStackTraceString(e));
+                Log.e(LOG_TAG, "Failed to register Activity lifecycle callbacks. Teak is disabled. " + Log.getStackTraceString(e));
+                Teak.enabled = false;
             }
         }
     }
@@ -104,8 +106,12 @@ public class Teak extends BroadcastReceiver {
             Log.d(LOG_TAG, "Lifecycle - onActivityResult");
         }
 
-        if (data != null) {
-            checkActivityResultForPurchase(resultCode, data);
+        if (Teak.enabled) {
+            if (data != null) {
+                checkActivityResultForPurchase(resultCode, data);
+            }
+        } else {
+            Log.e(LOG_TAG, "Teak is disabled, ignoring onActivityResult().");
         }
     }
 
@@ -118,7 +124,16 @@ public class Teak extends BroadcastReceiver {
             Log.e(LOG_TAG, "null Intent passed to onNewIntent, ignoring.");
             return;
         }
-        Session.processIntent(intent, Teak.appConfiguration, Teak.deviceConfiguration);
+
+        if (Teak.enabled) {
+            if (Teak.appConfiguration != null && Teak.deviceConfiguration != null) {
+                Session.processIntent(intent, Teak.appConfiguration, Teak.deviceConfiguration);
+            } else {
+                Log.e(LOG_TAG, "App Configuration and/or Device Configuration are null, cannot process onNewIntent().");
+            }
+        } else {
+            Log.e(LOG_TAG, "Teak is disabled, ignoring onNewIntent().");
+        }
     }
 
     /**
@@ -137,12 +152,16 @@ public class Teak extends BroadcastReceiver {
             return;
         }
 
-        // Add userId to the Ravens
-        Teak.sdkRaven.addUserData("id", userIdentifier);
-        Teak.appRaven.addUserData("id", userIdentifier);
+        if (Teak.enabled) {
+            // Add userId to the Ravens
+            Teak.sdkRaven.addUserData("id", userIdentifier);
+            Teak.appRaven.addUserData("id", userIdentifier);
 
-        // Send to Session
-        Session.setUserId(userIdentifier);
+            // Send to Session
+            Session.setUserId(userIdentifier);
+        } else {
+            Log.e(LOG_TAG, "Teak is disabled, ignoring identifyUser().");
+        }
     }
 
     /**
@@ -158,20 +177,26 @@ public class Teak extends BroadcastReceiver {
             Log.d(LOG_TAG, "Tracking Event: " + actionId + " - " + objectTypeId + " - " + objectInstanceId);
         }
 
-        // TODO: Null/empty checks
+        if (Teak.enabled) {
+            // TODO: Null/empty checks
 
-        HashMap<String, Object> payload = new HashMap<>();
-        payload.put("action_type", actionId);
-        payload.put("object_type", objectTypeId);
-        payload.put("object_instance_id", objectInstanceId);
+            HashMap<String, Object> payload = new HashMap<>();
+            payload.put("action_type", actionId);
+            payload.put("object_type", objectTypeId);
+            payload.put("object_instance_id", objectInstanceId);
 
-        CachedRequest.submitCachedRequest("/me/events", payload, new Date());
+            CachedRequest.submitCachedRequest("/me/events", payload, new Date());
+        } else {
+            Log.e(LOG_TAG, "Teak is disabled, ignoring trackEvent().");
+        }
     }
 
     /**************************************************************************/
 
     static boolean isDebug;
     static boolean forceDebug = false;
+
+    static boolean enabled = true;
 
     static Raven sdkRaven;
     static Raven appRaven;
@@ -207,6 +232,17 @@ public class Teak extends BroadcastReceiver {
             // Device configuration
             Teak.deviceConfiguration = new DeviceConfiguration(context, Teak.appConfiguration);
 
+            // If deviceId is null, we can't operate
+            if (Teak.deviceConfiguration.deviceId == null) {
+                Teak.enabled = false;
+                cleanup(inActivity);
+                return;
+            }
+
+            // Hook in to Session state change events
+            Session.addEventListener(Teak.sessionEventListener);
+            RemoteConfiguration.addEventListener(Teak.remoteConfigurationEventListener);
+
             // Ravens
             Teak.sdkRaven = new Raven(context, "sdk", Teak.appConfiguration, Teak.deviceConfiguration);
             Teak.appRaven = new Raven(context, Teak.appConfiguration.bundleId, Teak.appConfiguration, Teak.deviceConfiguration);
@@ -216,10 +252,6 @@ public class Teak extends BroadcastReceiver {
 
             // Broadcast manager
             Teak.localBroadcastManager = LocalBroadcastManager.getInstance(context);
-
-            // Hook in to Session state change events
-            Session.addEventListener(Teak.sessionEventListener);
-            RemoteConfiguration.addEventListener(Teak.remoteConfigurationEventListener);
 
             // Process launch event
             Session.processIntent(inActivity.getIntent(), Teak.appConfiguration, Teak.deviceConfiguration);
@@ -309,17 +341,7 @@ public class Teak extends BroadcastReceiver {
                 Log.d(LOG_TAG, "Lifecycle - onActivityDestroyed");
             }
 
-            if (Teak.appStore != null) {
-                Teak.appStore.dispose();
-            }
-
-            RemoteConfiguration.removeEventListener(Teak.remoteConfigurationEventListener);
-            Session.removeEventListener(Teak.sessionEventListener);
-            Teak.facebookAccessTokenBroadcast.unregister(activity.getApplicationContext());
-            Teak.localBroadcastManager.unregisterReceiver(Teak.localBroadcastReceiver);
-
-
-            activity.getApplication().unregisterActivityLifecycleCallbacks(Teak.lifecycleCallbacks);
+            cleanup(activity);
         }
 
         @Override
@@ -418,6 +440,25 @@ public class Teak extends BroadcastReceiver {
         }
     };
 
+    private static void cleanup(Activity activity) {
+        if (Teak.appStore != null) {
+            Teak.appStore.dispose();
+        }
+
+        RemoteConfiguration.removeEventListener(Teak.remoteConfigurationEventListener);
+        Session.removeEventListener(Teak.sessionEventListener);
+
+        if (Teak.facebookAccessTokenBroadcast != null) {
+            Teak.facebookAccessTokenBroadcast.unregister(activity.getApplicationContext());
+        }
+
+        if (Teak.localBroadcastManager != null) {
+            Teak.localBroadcastManager.unregisterReceiver(Teak.localBroadcastReceiver);
+        }
+
+        activity.getApplication().unregisterActivityLifecycleCallbacks(Teak.lifecycleCallbacks);
+    }
+
     /**************************************************************************/
 
     private static final String GCM_RECEIVE_INTENT_ACTION = "com.google.android.c2dm.intent.RECEIVE";
@@ -425,6 +466,11 @@ public class Teak extends BroadcastReceiver {
     @Override
     public void onReceive(Context inContext, Intent intent) {
         final Context context = inContext.getApplicationContext();
+
+        if (!Teak.enabled) {
+            Log.e(LOG_TAG, "Teak is disabled, ignoring onReceive().");
+            return;
+        }
 
         // In case a push comes in
         CacheManager.initialize(context);
@@ -613,10 +659,14 @@ public class Teak extends BroadcastReceiver {
     }
 
     public static void checkActivityResultForPurchase(int resultCode, Intent data) {
-        if (Teak.appStore != null) {
-            Teak.appStore.checkActivityResultForPurchase(resultCode, data);
+        if (Teak.enabled) {
+            if (Teak.appStore != null) {
+                Teak.appStore.checkActivityResultForPurchase(resultCode, data);
+            } else {
+                Log.e(LOG_TAG, "Unable to checkActivityResultForPurchase, no active app store.");
+            }
         } else {
-            Log.e(LOG_TAG, "Unable to checkActivityResultForPurchase, no active app store.");
+            Log.e(LOG_TAG, "Teak is disabled, ignoring checkActivityResultForPurchase().");
         }
     }
 }

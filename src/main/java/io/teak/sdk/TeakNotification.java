@@ -154,6 +154,11 @@ public class TeakNotification {
      */
     @SuppressWarnings("unused")
     public static TeakNotification byTeakNotifId(String teakNotifId) {
+        if (!Teak.enabled) {
+            Log.e(LOG_TAG, "Teak is disabled, ignoring byTeakNotifId().");
+            return null;
+        }
+
         TeakNotification notif = null;
         String[] inboxReadColumns = {"notification_payload"};
 
@@ -400,6 +405,11 @@ public class TeakNotification {
      */
     @SuppressWarnings("unused")
     public static FutureTask<String> scheduleNotification(final String creativeId, final String defaultMessage, final long delayInSeconds) {
+        if (!Teak.enabled) {
+            Log.e(LOG_TAG, "Teak is disabled, ignoring scheduleNotification().");
+            return null;
+        }
+
         final ArrayBlockingQueue<String> q = new ArrayBlockingQueue<>(1);
         final FutureTask<String> ret = new FutureTask<>(new Callable<String>() {
             public String call() {
@@ -451,6 +461,11 @@ public class TeakNotification {
      */
     @SuppressWarnings("unused")
     public static FutureTask<String> cancelNotification(final String scheduleId) {
+        if (!Teak.enabled) {
+            Log.e(LOG_TAG, "Teak is disabled, ignoring cancelNotification().");
+            return null;
+        }
+
         final ArrayBlockingQueue<String> q = new ArrayBlockingQueue<>(1);
         final FutureTask<String> ret = new FutureTask<>(new Callable<String>() {
             public String call() {
