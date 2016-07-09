@@ -1,9 +1,11 @@
+import com.android.builder.core.BuilderConstants
+
 buildscript {
     repositories {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:1.5.0'
+        classpath 'com.android.tools.build:gradle:2.1.2'
     }
 }
 
@@ -50,7 +52,7 @@ android.libraryVariants.all { variant ->
         if (outputFile != null && outputFile.name.endsWith('.aar')) {
             def fileName = null
             def name = variant.buildType.name
-            if (name.equals(com.android.builder.core.BuilderConstants.DEBUG)) {
+            if (name.equals(BuilderConstants.DEBUG)) {
                 fileName = "${archivesBaseName}-debug-${android.defaultConfig.versionName}.aar"
             } else {
                 fileName = "${archivesBaseName}-${android.defaultConfig.versionName}.aar"
