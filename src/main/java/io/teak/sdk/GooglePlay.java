@@ -37,6 +37,8 @@ import org.json.JSONObject;
 
 @SuppressWarnings("unused")
 class GooglePlay implements IStore {
+    private static final String LOG_TAG = "Teak:GooglePlay";
+
     Object mService;
     ServiceConnection mServiceConn;
     Context mContext;
@@ -75,7 +77,7 @@ class GooglePlay implements IStore {
             @Override
             public void onServiceDisconnected(ComponentName name) {
                 if (Teak.isDebug) {
-                    Log.d(Teak.LOG_TAG, "Google Play Billing service disconnected.");
+                    Log.d(LOG_TAG, "Google Play Billing service disconnected.");
                 }
                 mService = null;
             }
@@ -84,7 +86,7 @@ class GooglePlay implements IStore {
             public void onServiceConnected(ComponentName name, IBinder service) {
                 if (mDisposed) return;
                 if (Teak.isDebug) {
-                    Log.d(Teak.LOG_TAG, "Google Play Billing service connected.");
+                    Log.d(LOG_TAG, "Google Play Billing service connected.");
                 }
 
                 try {
@@ -92,7 +94,7 @@ class GooglePlay implements IStore {
                     Method m = cls.getMethod("asInterface", IBinder.class);
                     mService = m.invoke(null, (Object) service);
                 } catch (Exception e) {
-                    Log.e(Teak.LOG_TAG, "Unable to use 'IInAppBillingService' via reflection. " + Log.getStackTraceString(e));
+                    Log.e(LOG_TAG, "Unable to use 'IInAppBillingService' via reflection. " + Log.getStackTraceString(e));
                     Teak.sdkRaven.reportException(e);
                     return;
                 }
@@ -100,7 +102,7 @@ class GooglePlay implements IStore {
                 String packageName = mContext.getPackageName();
                 try {
                     if (Teak.isDebug) {
-                        Log.d(Teak.LOG_TAG, "Checking for Google Play in-app billing 3 support.");
+                        Log.d(LOG_TAG, "Checking for Google Play in-app billing 3 support.");
                     }
 
                     // check for in-app billing v3 support
@@ -108,10 +110,10 @@ class GooglePlay implements IStore {
                     Method m = cls.getMethod("isBillingSupported", int.class, String.class, String.class);
                     int response = (Integer) m.invoke(mService, 3, packageName, ITEM_TYPE_INAPP);
                     if (response != BILLING_RESPONSE_RESULT_OK) {
-                        Log.e(Teak.LOG_TAG, "Error checking for Google Play billing v3 support.");
+                        Log.e(LOG_TAG, "Error checking for Google Play billing v3 support.");
                     } else {
                         if (Teak.isDebug) {
-                            Log.d(Teak.LOG_TAG, "Google Play In-app billing version 3 supported for " + packageName);
+                            Log.d(LOG_TAG, "Google Play In-app billing version 3 supported for " + packageName);
                         }
                     }
 
@@ -120,27 +122,27 @@ class GooglePlay implements IStore {
                     response = (Integer) m.invoke(mService, 5, packageName, ITEM_TYPE_SUBS);
                     if (response == BILLING_RESPONSE_RESULT_OK) {
                         if (Teak.isDebug) {
-                            Log.d(Teak.LOG_TAG, "Google Play Subscription re-signup available.");
-                            Log.d(Teak.LOG_TAG, "Google Play Subscriptions available.");
+                            Log.d(LOG_TAG, "Google Play Subscription re-signup available.");
+                            Log.d(LOG_TAG, "Google Play Subscriptions available.");
                         }
                     } else {
                         if (Teak.isDebug) {
-                            Log.d(Teak.LOG_TAG, "Google Play Subscription re-signup not available.");
+                            Log.d(LOG_TAG, "Google Play Subscription re-signup not available.");
                         }
                         // check for v3 subscriptions support
                         response = (Integer) m.invoke(mService, 3, packageName, ITEM_TYPE_SUBS);
                         if (response == BILLING_RESPONSE_RESULT_OK) {
                             if (Teak.isDebug) {
-                                Log.d(Teak.LOG_TAG, "Google Play Subscriptions available.");
+                                Log.d(LOG_TAG, "Google Play Subscriptions available.");
                             }
                         } else {
                             if (Teak.isDebug) {
-                                Log.d(Teak.LOG_TAG, "Google Play Subscriptions NOT available. Response: " + response);
+                                Log.d(LOG_TAG, "Google Play Subscriptions NOT available. Response: " + response);
                             }
                         }
                     }
                 } catch (Exception e) {
-                    Log.e(Teak.LOG_TAG, "Error working with InAppBillingService: " + Log.getStackTraceString(e));
+                    Log.e(LOG_TAG, "Error working with InAppBillingService: " + Log.getStackTraceString(e));
                     Teak.sdkRaven.reportException(e);
                 }
             }
@@ -152,7 +154,7 @@ class GooglePlay implements IStore {
         if (intentServices != null && !intentServices.isEmpty()) {
             mContext.bindService(serviceIntent, mServiceConn, Context.BIND_AUTO_CREATE);
         } else {
-            Log.e(Teak.LOG_TAG, "Google Play Billing service unavailable on device.");
+            Log.e(LOG_TAG, "Google Play Billing service unavailable on device.");
         }
     }
 
@@ -197,10 +199,10 @@ class GooglePlay implements IStore {
             if (!skuDetails.containsKey(RESPONSE_GET_SKU_DETAILS_LIST)) {
                 int response = getResponseCodeFromBundle(skuDetails);
                 if (response != BILLING_RESPONSE_RESULT_OK) {
-                    Log.e(Teak.LOG_TAG, "getSkuDetails() failed: " + response);
+                    Log.e(LOG_TAG, "getSkuDetails() failed: " + response);
                     return null;
                 } else {
-                    Log.e(Teak.LOG_TAG, "getSkuDetails() returned a bundle with neither an error nor a detail list.");
+                    Log.e(LOG_TAG, "getSkuDetails() returned a bundle with neither an error nor a detail list.");
                     return null;
                 }
             }
@@ -210,14 +212,14 @@ class GooglePlay implements IStore {
             if (responseList != null && responseList.size() == 1) {
                 JSONObject ret = new JSONObject(responseList.get(0));
                 if (Teak.isDebug) {
-                    Log.d(Teak.LOG_TAG, "SKU Details: " + ret.toString(2));
+                    Log.d(LOG_TAG, "SKU Details: " + ret.toString(2));
                 }
                 return ret;
             } else {
-                Log.e(Teak.LOG_TAG, "Mismatched input/output length for getSkuDetails().");
+                Log.e(LOG_TAG, "Mismatched input/output length for getSkuDetails().");
             }
         } catch (Exception e) {
-            Log.e(Teak.LOG_TAG, "Reflection error: " + Log.getStackTraceString(e));
+            Log.e(LOG_TAG, "Reflection error: " + Log.getStackTraceString(e));
             Teak.sdkRaven.reportException(e);
         }
 
@@ -231,8 +233,8 @@ class GooglePlay implements IStore {
         } else if (o instanceof Integer) return (Integer) o;
         else if (o instanceof Long) return (int) ((Long) o).longValue();
         else {
-            Log.e(Teak.LOG_TAG, "Unexpected type for bundle response code.");
-            Log.e(Teak.LOG_TAG, o.getClass().getName());
+            Log.e(LOG_TAG, "Unexpected type for bundle response code.");
+            Log.e(LOG_TAG, o.getClass().getName());
             throw new RuntimeException("Unexpected type for bundle response code: " + o.getClass().getName());
         }
     }
@@ -240,13 +242,13 @@ class GooglePlay implements IStore {
     int getResponseCodeFromIntent(Intent i) {
         Object o = i.getExtras().get(RESPONSE_CODE);
         if (o == null) {
-            Log.e(Teak.LOG_TAG, "Intent with no response code, assuming OK (known Google issue)");
+            Log.e(LOG_TAG, "Intent with no response code, assuming OK (known Google issue)");
             return BILLING_RESPONSE_RESULT_OK;
         } else if (o instanceof Integer) return (Integer) o;
         else if (o instanceof Long) return (int) ((Long) o).longValue();
         else {
-            Log.e(Teak.LOG_TAG, "Unexpected type for intent response code.");
-            Log.e(Teak.LOG_TAG, o.getClass().getName());
+            Log.e(LOG_TAG, "Unexpected type for intent response code.");
+            Log.e(LOG_TAG, o.getClass().getName());
             throw new RuntimeException("Unexpected type for intent response code: " + o.getClass().getName());
         }
     }
@@ -255,7 +257,7 @@ class GooglePlay implements IStore {
         String purchaseData = data.getStringExtra(RESPONSE_INAPP_PURCHASE_DATA);
         String dataSignature = data.getStringExtra(RESPONSE_INAPP_SIGNATURE);
 
-        Log.d(Teak.LOG_TAG, "Checking activity result for purchase.");
+        Log.d(LOG_TAG, "Checking activity result for purchase.");
 
         // Check for purchase activity result
         if (purchaseData != null && dataSignature != null) {
@@ -266,14 +268,14 @@ class GooglePlay implements IStore {
                     JSONObject json = new JSONObject(purchaseData);
                     Teak.purchaseSucceeded(json);
                 } catch (Exception e) {
-                    Log.e(Teak.LOG_TAG, "Failed to convert purchase data to JSON.");
+                    Log.e(LOG_TAG, "Failed to convert purchase data to JSON.");
                     Teak.sdkRaven.reportException(e);
                 }
             } else {
                 Teak.purchaseFailed(responseCode);
             }
         } else {
-            Log.d(Teak.LOG_TAG, "No purchase found in activity result.");
+            Log.d(LOG_TAG, "No purchase found in activity result.");
         }
     }
 }

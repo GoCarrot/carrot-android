@@ -25,6 +25,8 @@ import android.util.Log;
 import java.util.concurrent.atomic.AtomicInteger;
 
 class CacheManager extends SQLiteOpenHelper {
+    private static final String LOG_TAG = "Teak:CacheManager";
+
     private AtomicInteger openCounter = new AtomicInteger();
     private SQLiteDatabase database;
 
@@ -47,7 +49,7 @@ class CacheManager extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase database, int oldVersion, int newVersion) {
         if (Teak.isDebug) {
-            Log.d(Teak.LOG_TAG, "Upgrading database " + database + " from version " + oldVersion + " to " + newVersion);
+            Log.d(LOG_TAG, "Upgrading database " + database + " from version " + oldVersion + " to " + newVersion);
         }
 
         database.execSQL("DROP TABLE IF EXISTS cache");

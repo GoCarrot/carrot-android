@@ -190,7 +190,7 @@ public class Teak extends BroadcastReceiver {
 
     static LocalBroadcastManager localBroadcastManager;
 
-    static final String LOG_TAG = "Teak";
+    private static final String LOG_TAG = "Teak";
 
     /**************************************************************************/
 

@@ -45,6 +45,8 @@ import org.json.JSONArray;
 import java.util.concurrent.ExecutionException;
 
 class Request implements Runnable {
+    private static final String LOG_TAG = "Teak:Request";
+
     private final String endpoint;
     private final String method;
     private final String hostname;
@@ -135,7 +137,7 @@ class Request implements Runnable {
                     }
                     builder.append(key).append("=").append(valueString).append("&");
                 } else {
-                    Log.e(Teak.LOG_TAG, "Value for key: " + key + " is null.");
+                    Log.e(LOG_TAG, "Value for key: " + key + " is null.");
                 }
             }
             builder.deleteCharAt(builder.length() - 1);
@@ -164,13 +166,13 @@ class Request implements Runnable {
 
             requestBody = builder.toString();
         } catch (Exception e) {
-            Log.e(Teak.LOG_TAG, "Error signing payload: " + Log.getStackTraceString(e));
+            Log.e(LOG_TAG, "Error signing payload: " + Log.getStackTraceString(e));
             return;
         }
 
         try {
             if (Teak.isDebug) {
-                Log.d(Teak.LOG_TAG, "Submitting request to '" + this.endpoint + "': " + new JSONObject(this.payload).toString(2));
+                Log.d(LOG_TAG, "Submitting request to '" + this.endpoint + "': " + new JSONObject(this.payload).toString(2));
             }
 
             if (this.method.equalsIgnoreCase("POST")) {
@@ -218,13 +220,13 @@ class Request implements Runnable {
                     responseText = new JSONObject(response.toString()).toString(2);
                 } catch (Exception ignored) {
                 }
-                Log.d(Teak.LOG_TAG, "Reply from '" + this.endpoint + "': " + responseText);
+                Log.d(LOG_TAG, "Reply from '" + this.endpoint + "': " + responseText);
             }
 
             // For extending classes
             done(connection.getResponseCode(), response.toString());
         } catch (Exception e) {
-            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
         } finally {
             if (connection != null) {
                 connection.disconnect();

@@ -33,6 +33,8 @@ import java.util.concurrent.ExecutionException;
 import org.json.JSONObject;
 
 class CachedRequest extends Request implements Runnable {
+    private static final String LOG_TAG = "Teak:CachedRequest";
+
     private final String requestId;
     private final int retryCount;
     private final long cacheId;
@@ -65,7 +67,7 @@ class CachedRequest extends Request implements Runnable {
                 tempCacheId = CacheManager.instance().open().insert("cache", null, values);
                 CacheManager.instance().close();
             } catch (Exception e) {
-                Log.e(Teak.LOG_TAG, "Error inserting request into cache: " + Log.getStackTraceString(e));
+                Log.e(LOG_TAG, "Error inserting request into cache: " + Log.getStackTraceString(e));
                 Teak.sdkRaven.reportException(e);
             } finally {
                 this.cacheId = tempCacheId;
@@ -111,7 +113,7 @@ class CachedRequest extends Request implements Runnable {
             }
             CacheManager.instance().close();
         } catch (Exception e) {
-            Log.e(Teak.LOG_TAG, "Error removing request from cache: " + Log.getStackTraceString(e));
+            Log.e(LOG_TAG, "Error removing request from cache: " + Log.getStackTraceString(e));
             Teak.sdkRaven.reportException(e);
         }
         super.done(responseCode, responseBody);
@@ -130,7 +132,7 @@ class CachedRequest extends Request implements Runnable {
                             payload, cursor.getString(3), new Date(cursor.getLong(4)), cursor.getInt(5), session);
                     requests.add(request);
                 } catch (Exception e) {
-                    Log.e(Teak.LOG_TAG, "Error loading request from cache: " + Log.getStackTraceString(e));
+                    Log.e(LOG_TAG, "Error loading request from cache: " + Log.getStackTraceString(e));
                     Teak.sdkRaven.reportException(e);
                 }
                 cursor.moveToNext();
@@ -138,7 +140,7 @@ class CachedRequest extends Request implements Runnable {
             cursor.close();
             CacheManager.instance().close();
         } catch (Exception e) {
-            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
             Teak.sdkRaven.reportException(e);
         }
 

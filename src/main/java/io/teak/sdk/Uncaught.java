@@ -16,23 +16,25 @@ package io.teak.sdk;
 
 import android.util.Log;
 
-public class TeakUncaught implements Thread.UncaughtExceptionHandler {
+class Uncaught implements Thread.UncaughtExceptionHandler {
+    private static final String LOG_TAG = "Teak:Uncaught";
+
     Thread.UncaughtExceptionHandler previousUncaughtExceptionHandler;
     Thread createdOnThread;
 
     @Override
     public void uncaughtException(Thread thread, Throwable ex) {
         if (thread != createdOnThread) {
-            Log.d(Teak.LOG_TAG, "TeakExceptionHandler created on " + createdOnThread.toString() + " getting exception from " + thread.toString());
+            Log.d(LOG_TAG, "TeakExceptionHandler created on " + createdOnThread.toString() + " getting exception from " + thread.toString());
         }
         Teak.sdkRaven.reportException(ex);
     }
 
-    public static synchronized TeakUncaught begin() {
-        return new TeakUncaught();
+    public static synchronized Uncaught begin() {
+        return new Uncaught();
     }
 
-    protected TeakUncaught() {
+    protected Uncaught() {
         createdOnThread = Thread.currentThread();
         previousUncaughtExceptionHandler = createdOnThread.getUncaughtExceptionHandler();
         createdOnThread.setUncaughtExceptionHandler(this);

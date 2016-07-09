@@ -93,6 +93,7 @@ import org.json.JSONException;
  * </pre>
  */
 public class TeakNotification {
+    private static final String LOG_TAG = "Teak:Notification";
 
     /**
      * The 'tag' specified by Teak to the {@link NotificationCompat}
@@ -165,14 +166,14 @@ public class TeakNotification {
                 try {
                     notif = new TeakNotification(cursor.getString(0));
                 } catch (Exception e) {
-                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                    Log.e(LOG_TAG, Log.getStackTraceString(e));
                 }
                 cursor.moveToNext();
             }
             cursor.close();
             CacheManager.instance().close();
         } catch (Exception e) {
-            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
         }
 
         return notif;
@@ -257,7 +258,7 @@ public class TeakNotification {
                     reward = new JSONObject(json.optString("reward"));
                 } catch (Exception e) {
                     // TODO: Raven log this
-                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                    Log.e(LOG_TAG, Log.getStackTraceString(e));
                 }
             } else if (SELF_CLICK_STRING.equals(statusString)) {
                 status = SELF_CLICK;
@@ -307,7 +308,7 @@ public class TeakNotification {
                 try {
                     return q.take();
                 } catch (InterruptedException e) {
-                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                    Log.e(LOG_TAG, Log.getStackTraceString(e));
                 }
                 return null;
             }
@@ -325,7 +326,7 @@ public class TeakNotification {
                 HttpsURLConnection connection = null;
 
                 if (Teak.isDebug) {
-                    Log.d(Teak.LOG_TAG, "Claiming reward id: " + _this.teakRewardId);
+                    Log.d(LOG_TAG, "Claiming reward id: " + _this.teakRewardId);
                 }
 
                 try {
@@ -369,14 +370,14 @@ public class TeakNotification {
                     Reward reward = new Reward(rewardResponse);
 
                     if (Teak.isDebug) {
-                        Log.d(Teak.LOG_TAG, "Reward claim response: " + responseJson.toString(2));
+                        Log.d(LOG_TAG, "Reward claim response: " + responseJson.toString(2));
                     }
 
                     _this.removeFromCache();
 
                     q.offer(reward);
                 } catch (Exception e) {
-                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                    Log.e(LOG_TAG, Log.getStackTraceString(e));
                     q.offer(null);
                 } finally {
                     if (connection != null) {
@@ -405,7 +406,7 @@ public class TeakNotification {
                 try {
                     return q.take();
                 } catch (InterruptedException e) {
-                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                    Log.e(LOG_TAG, Log.getStackTraceString(e));
                 }
                 return null;
             }
@@ -456,7 +457,7 @@ public class TeakNotification {
                 try {
                     return q.take();
                 } catch (InterruptedException e) {
-                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                    Log.e(LOG_TAG, Log.getStackTraceString(e));
                 }
                 return null;
             }
@@ -535,7 +536,7 @@ public class TeakNotification {
             CacheManager.instance().open().insert("inbox", null, values);
             CacheManager.instance().close();
         } catch (Exception e) {
-            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
         }
     }
 
@@ -564,7 +565,7 @@ public class TeakNotification {
             json.put("teakNotifId", Long.valueOf(this.teakNotifId));
             json.putOpt("extras", this.extras);
         } catch (JSONException e) {
-            Log.e(Teak.LOG_TAG, "Error converting TeakNotification to JSON: " + Log.getStackTraceString(e));
+            Log.e(LOG_TAG, "Error converting TeakNotification to JSON: " + Log.getStackTraceString(e));
         }
         return json.toString();
     }
@@ -574,7 +575,7 @@ public class TeakNotification {
             CacheManager.instance().open().delete("inbox", "teak_notification_id = " + this.teakNotifId, null);
             CacheManager.instance().close();
         } catch (Exception e) {
-            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
         }
     }
 
@@ -610,15 +611,15 @@ public class TeakNotification {
             try {
                 notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
             } catch (Exception e) {
-                Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                Log.e(LOG_TAG, Log.getStackTraceString(e));
             }
         }
 
         // Send it out
         if (Teak.isDebug) {
-            Log.d(Teak.LOG_TAG, "Showing Notification");
-            Log.d(Teak.LOG_TAG, "       Teak id: " + teakNotif.teakNotifId);
-            Log.d(Teak.LOG_TAG, "   Platform id: " + teakNotif.platformId);
+            Log.d(LOG_TAG, "Showing Notification");
+            Log.d(LOG_TAG, "       Teak id: " + teakNotif.teakNotifId);
+            Log.d(LOG_TAG, "   Platform id: " + teakNotif.platformId);
         }
         notificationManager.notify(NOTIFICATION_TAG, teakNotif.platformId, nativeNotification);
 
@@ -644,7 +645,7 @@ public class TeakNotification {
             ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
             builder.setSmallIcon(ai.icon);
         } catch (Exception e) {
-            Log.e(Teak.LOG_TAG, "Unable to load icon resource for Notification.");
+            Log.e(LOG_TAG, "Unable to load icon resource for Notification.");
             return null;
         }
 
@@ -698,7 +699,7 @@ public class TeakNotification {
             ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
             smallView.setImageViewResource(R.id("left_image"), ai.icon);
         } catch (Exception e) {
-            Log.e(Teak.LOG_TAG, "Unable to load icon resource for Notification.");
+            Log.e(LOG_TAG, "Unable to load icon resource for Notification.");
             return null;
         }
 
@@ -758,7 +759,7 @@ public class TeakNotification {
                 } catch (Exception ignored) {
                 }
             } else {
-                Log.e(Teak.LOG_TAG, "Unable to load image asset for Notification.");
+                Log.e(LOG_TAG, "Unable to load image asset for Notification.");
                 // Hide pulldown
                 smallView.setViewVisibility(R.id("pulldown_layout"), View.INVISIBLE);
             }
@@ -772,7 +773,7 @@ public class TeakNotification {
 
     static void cancel(Context context, int platformId) {
         if (Teak.isDebug) {
-            Log.d(Teak.LOG_TAG, "Canceling notification id: " + platformId);
+            Log.d(LOG_TAG, "Canceling notification id: " + platformId);
         }
 
         notificationManager.cancel(NOTIFICATION_TAG, platformId);
