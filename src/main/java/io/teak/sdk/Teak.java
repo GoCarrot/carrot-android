@@ -393,18 +393,6 @@ public class Teak extends BroadcastReceiver {
             } else if (newState == Session.State.Configured) {
                 // Submit cached requests
                 CachedRequest.submitCachedRequests(session);
-            } else if(newState == Session.State.UserIdentified) {
-                // TODO: Fix this, maybe device configuration?
-                // Server requesting new push key.
-                /*
-                if (response.optBoolean("reset_push_key", false)) {
-                    SharedPreferences.Editor editor = Teak.preferences.edit();
-                    editor.remove(TEAK_PREFERENCE_APP_VERSION);
-                    editor.remove(TEAK_PREFERENCE_GCM_ID);
-                    editor.apply();
-
-                    checkGCM(true);
-                }*/
             }
         }
     };
