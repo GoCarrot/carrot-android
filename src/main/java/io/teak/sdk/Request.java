@@ -96,7 +96,7 @@ class Request implements Runnable {
             payload.put("appstore_name", session.appConfiguration.installerPackage);
         }
         if (session.deviceConfiguration.deviceId != null) {
-            payload.put("device_id", session.deviceConfiguration);
+            payload.put("device_id", session.deviceConfiguration.deviceId);
         }
         // Add device information to Request common payload
         payload.put("device_manufacturer", session.deviceConfiguration.deviceManufacturer);
