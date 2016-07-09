@@ -627,7 +627,7 @@ public class TeakNotification {
     }
 
     static Notification createNativeNotification(final Context context, Bundle bundle, TeakNotification teakNotificaton) {
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context.getApplicationContext());
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
 
         // Rich text message
         Spanned richMessageText = Html.fromHtml(teakNotificaton.message);

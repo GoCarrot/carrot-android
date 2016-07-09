@@ -71,7 +71,7 @@ class GooglePlay implements IStore {
     //public static final String GET_SKU_DETAILS_ITEM_TYPE_LIST = "ITEM_TYPE_LIST";
 
     public void init(Context context) {
-        mContext = context.getApplicationContext();
+        mContext = context;
 
         mServiceConn = new ServiceConnection() {
             @Override

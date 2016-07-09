@@ -60,7 +60,7 @@ class CacheManager extends SQLiteOpenHelper {
     public static void initialize(@NonNull Context context) {
         synchronized (instanceMutex) {
             if (CacheManager.instance == null) {
-                CacheManager.instance = new CacheManager(context.getApplicationContext());
+                CacheManager.instance = new CacheManager(context);
             }
         }
     }

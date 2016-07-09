@@ -68,7 +68,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
     }
 
     public Raven(@NonNull Context context, @NonNull String appId, @NonNull AppConfiguration appConfiguration, @NonNull DeviceConfiguration deviceConfiguration) {
-        this.applicationContext = context.getApplicationContext();
+        this.applicationContext = context;
         this.appId = appId;
 
         // Fill in as much of the payload template as we can

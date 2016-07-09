@@ -48,7 +48,7 @@ class Amazon implements IStore {
 
             Class<?> purchasingServiceClass = Class.forName("com.amazon.device.iap.PurchasingService");
             Method m = purchasingServiceClass.getMethod("registerListener", Context.class, purchasingListenerClass);
-            m.invoke(null, context.getApplicationContext(), proxy);
+            m.invoke(null, context, proxy);
 
             if (Teak.isDebug) {
                 Field sandbox = purchasingServiceClass.getDeclaredField("IS_SANDBOX_MODE");

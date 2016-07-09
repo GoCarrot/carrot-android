@@ -195,32 +195,34 @@ public class Teak extends BroadcastReceiver {
 
     private static final ActivityLifecycleCallbacks lifecycleCallbacks = new ActivityLifecycleCallbacks() {
         @Override
-        public void onActivityCreated(final Activity activity, Bundle savedInstanceState) {
+        public void onActivityCreated(Activity inActivity, Bundle savedInstanceState) {
+            final Context context = inActivity.getApplicationContext();
+
             // Check for debug build
-            Teak.isDebug = Teak.forceDebug || (0 != (activity.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE));
+            Teak.isDebug = Teak.forceDebug || (0 != (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE));
 
             // App Configuration
-            Teak.appConfiguration = new AppConfiguration(activity);
+            Teak.appConfiguration = new AppConfiguration(context);
 
             // Device configuration
-            Teak.deviceConfiguration = new DeviceConfiguration(activity, Teak.appConfiguration);
+            Teak.deviceConfiguration = new DeviceConfiguration(context, Teak.appConfiguration);
 
             // Ravens
-            Teak.sdkRaven = new Raven(activity, "sdk", Teak.appConfiguration, Teak.deviceConfiguration);
-            Teak.appRaven = new Raven(activity, Teak.appConfiguration.bundleId, Teak.appConfiguration, Teak.deviceConfiguration);
+            Teak.sdkRaven = new Raven(context, "sdk", Teak.appConfiguration, Teak.deviceConfiguration);
+            Teak.appRaven = new Raven(context, Teak.appConfiguration.bundleId, Teak.appConfiguration, Teak.deviceConfiguration);
 
             // Request cache manager
-            CacheManager.initialize(activity);
+            CacheManager.initialize(context);
 
             // Broadcast manager
-            Teak.localBroadcastManager = LocalBroadcastManager.getInstance(activity);
+            Teak.localBroadcastManager = LocalBroadcastManager.getInstance(context);
 
             // Hook in to Session state change events
             Session.addEventListener(Teak.sessionEventListener);
             RemoteConfiguration.addEventListener(Teak.remoteConfigurationEventListener);
 
             // Process launch event
-            Session.processIntent(activity.getIntent(), Teak.appConfiguration, Teak.deviceConfiguration);
+            Session.processIntent(inActivity.getIntent(), Teak.appConfiguration, Teak.deviceConfiguration);
 
             // Applicable store
             if (Teak.appConfiguration.installerPackage != null) {
@@ -242,10 +244,11 @@ public class Teak extends BroadcastReceiver {
                     }
                 }
                 try {
-                    Teak.appStore = (IStore) (clazz != null ? clazz.newInstance() : null);
-                    if (Teak.appStore != null) {
-                        Teak.appStore.init(activity);
+                    IStore store = (IStore) (clazz != null ? clazz.newInstance() : null);
+                    if (store != null) {
+                        store.init(context);
                     }
+                    Teak.appStore = store;
                 } catch (Exception e) {
                     Log.e(LOG_TAG, "Unable to create app store interface. " + Log.getStackTraceString(e));
                     Teak.sdkRaven.reportException(e);
@@ -253,7 +256,7 @@ public class Teak extends BroadcastReceiver {
             }
 
             // Facebook Access Token Broadcaster
-            Teak.facebookAccessTokenBroadcast = new FacebookAccessTokenBroadcast(activity);
+            Teak.facebookAccessTokenBroadcast = new FacebookAccessTokenBroadcast(context);
 
             // Register for local broadcasts
             IntentFilter filter = new IntentFilter();
@@ -312,7 +315,7 @@ public class Teak extends BroadcastReceiver {
 
             RemoteConfiguration.removeEventListener(Teak.remoteConfigurationEventListener);
             Session.removeEventListener(Teak.sessionEventListener);
-            Teak.facebookAccessTokenBroadcast.unregister(activity);
+            Teak.facebookAccessTokenBroadcast.unregister(activity.getApplicationContext());
             Teak.localBroadcastManager.unregisterReceiver(Teak.localBroadcastReceiver);
 
 
@@ -320,7 +323,7 @@ public class Teak extends BroadcastReceiver {
         }
 
         @Override
-        public void onActivityPaused(Activity activity) {
+        public void onActivityPaused(Activity unused) {
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityPaused");
             }
@@ -329,7 +332,7 @@ public class Teak extends BroadcastReceiver {
         }
 
         @Override
-        public void onActivityResumed(Activity activity) {
+        public void onActivityResumed(Activity unused) {
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityResumed");
             }
@@ -363,11 +366,11 @@ public class Teak extends BroadcastReceiver {
         }
 
         @Override
-        public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
+        public void onActivitySaveInstanceState(Activity unused, Bundle outState) {
         }
 
         @Override
-        public void onActivityStopped(Activity activity) {
+        public void onActivityStopped(Activity unused) {
         }
     };
 
@@ -404,7 +407,7 @@ public class Teak extends BroadcastReceiver {
 
     private static BroadcastReceiver localBroadcastReceiver = new BroadcastReceiver() {
         @Override
-        public void onReceive(Context ignored, Intent intent) {
+        public void onReceive(Context unused, Intent intent) {
             String action = intent.getAction();
             if (FacebookAccessTokenBroadcast.UPDATED_ACCESS_TOKEN_INTENT_ACTION.equals(action)) {
                 if (Teak.isDebug) {
@@ -420,7 +423,9 @@ public class Teak extends BroadcastReceiver {
     private static final String GCM_RECEIVE_INTENT_ACTION = "com.google.android.c2dm.intent.RECEIVE";
 
     @Override
-    public void onReceive(Context context, Intent intent) {
+    public void onReceive(Context inContext, Intent intent) {
+        final Context context = inContext.getApplicationContext();
+
         // In case a push comes in
         CacheManager.initialize(context);
 

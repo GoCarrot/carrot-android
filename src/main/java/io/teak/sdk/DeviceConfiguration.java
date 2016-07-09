@@ -14,7 +14,6 @@
  */
 package io.teak.sdk;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
@@ -53,24 +52,22 @@ public class DeviceConfiguration {
     private static final String PREFERENCE_APP_VERSION = "io.teak.sdk.Preferences.AppVersion";
     private static final String PREFERENCE_DEVICE_ID = "io.teak.sdk.Preferences.DeviceId";
 
-    public DeviceConfiguration(@NonNull Activity activity, @NonNull AppConfiguration appConfiguration) {
+    public DeviceConfiguration(@NonNull Context context, @NonNull AppConfiguration appConfiguration) {
         if (android.os.Build.VERSION.RELEASE == null) {
             this.platformString = "android_unknown";
         } else {
             this.platformString = "android_" + android.os.Build.VERSION.RELEASE;
         }
 
-        this.preferences = activity.getSharedPreferences(PREFERENCES_FILE, Context.MODE_PRIVATE);
+        this.preferences = context.getSharedPreferences(PREFERENCES_FILE, Context.MODE_PRIVATE);
         if (this.preferences == null) {
             Log.e(LOG_TAG, "getSharedPreferences() returned null. Some caching is disabled.");
         }
 
-        // TODO: Firebase
-        this.gcm = GoogleCloudMessaging.getInstance(activity.getApplicationContext());
+        this.gcm = GoogleCloudMessaging.getInstance(context);
 
         // Device id
         {
-            String androidId = null;
             String tempDeviceId = null;
             try {
                 tempDeviceId = UUID.nameUUIDFromBytes(android.os.Build.SERIAL.getBytes("utf8")).toString();
@@ -80,7 +77,7 @@ public class DeviceConfiguration {
 
             if (tempDeviceId == null) {
                 try {
-                    androidId = Settings.Secure.getString(activity.getContentResolver(), Settings.Secure.ANDROID_ID);
+                    String androidId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
                     if (androidId.equals("9774d56d682e549c")) {
                         Log.e(LOG_TAG, "Settings.Secure.ANDROID_ID == '9774d56d682e549c', falling back to random UUID stored in preferences.");
                     } else {
@@ -145,7 +142,7 @@ public class DeviceConfiguration {
         }
 
         // Kick off Advertising Info request
-        fetchAdvertisingInfo(activity);
+        fetchAdvertisingInfo(context);
     }
 
     public void reRegisterPushToken(@NonNull AppConfiguration appConfiguration) {
@@ -158,16 +155,16 @@ public class DeviceConfiguration {
         registerForGCM(appConfiguration);
     }
 
-    private void fetchAdvertisingInfo(@NonNull final Activity activity) {
+    private void fetchAdvertisingInfo(@NonNull final Context context) {
         // TODO: This needs to be re-checked in case it's something like SERVICE_UPDATING or SERVICE_VERSION_UPDATE_REQUIRED
-        int googlePlayStatus = GooglePlayServicesUtil.isGooglePlayServicesAvailable(activity);
+        int googlePlayStatus = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
         if (googlePlayStatus == ConnectionResult.SUCCESS) {
             final DeviceConfiguration _this = this;
             new Thread(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        AdvertisingIdClient.Info adInfo = AdvertisingIdClient.getAdvertisingIdInfo(activity);
+                        AdvertisingIdClient.Info adInfo = AdvertisingIdClient.getAdvertisingIdInfo(context);
                         // Inform listeners Ad Info has changed
                         if (adInfo != _this.advertsingInfo) {
                             _this.advertsingInfo = adInfo;

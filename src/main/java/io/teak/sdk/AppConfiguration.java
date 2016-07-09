@@ -14,8 +14,8 @@
  */
 package io.teak.sdk;
 
-import android.app.Activity;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
@@ -37,10 +37,10 @@ public class AppConfiguration {
     private static final String TEAK_APP_ID = "io_teak_app_id";
     private static final String TEAK_GCM_SENDER_ID = "io_teak_gcm_sender_id";
 
-    public AppConfiguration(@NonNull Activity activity) {
+    public AppConfiguration(@NonNull Context context) {
         // Teak App Id
         {
-            this.appId = Helpers.getStringResourceByName(TEAK_APP_ID, activity);
+            this.appId = Helpers.getStringResourceByName(TEAK_APP_ID, context);
             if (this.appId == null) {
                 throw new RuntimeException("Failed to find R.string." + TEAK_APP_ID);
             }
@@ -48,7 +48,7 @@ public class AppConfiguration {
 
         // Teak API Key
         {
-            this.apiKey = Helpers.getStringResourceByName(TEAK_API_KEY, activity);
+            this.apiKey = Helpers.getStringResourceByName(TEAK_API_KEY, context);
             if (this.apiKey == null) {
                 throw new RuntimeException("Failed to find R.string." + TEAK_API_KEY);
             }
@@ -57,7 +57,7 @@ public class AppConfiguration {
         // Push Sender Id
         {
             // TODO: Check ADM vs GCM
-            this.pushSenderId = Helpers.getStringResourceByName(TEAK_GCM_SENDER_ID, activity);
+            this.pushSenderId = Helpers.getStringResourceByName(TEAK_GCM_SENDER_ID, context);
             if (this.pushSenderId == null && Teak.isDebug) {
                 Log.d(LOG_TAG, "R.string." + TEAK_GCM_SENDER_ID + " not present, push notifications disabled.");
             }
@@ -65,13 +65,13 @@ public class AppConfiguration {
 
         // Package Id
         {
-            this.bundleId = activity.getPackageName();
+            this.bundleId = context.getPackageName();
             if (this.bundleId == null) {
                 throw new RuntimeException("Failed to get Bundle Id.");
             }
         }
 
-        PackageManager packageManager = activity.getPackageManager();
+        PackageManager packageManager = context.getPackageManager();
         if (packageManager == null) {
             throw new RuntimeException("Unable to get Package Manager.");
         }
@@ -98,9 +98,9 @@ public class AppConfiguration {
 
         // Tell the Raven service about the app id
         try {
-            Intent intent = new Intent(activity, RavenService.class);
+            Intent intent = new Intent(context, RavenService.class);
             intent.putExtra("appId", this.appId);
-            ComponentName componentName = activity.startService(intent);
+            ComponentName componentName = context.startService(intent);
             if (componentName == null) {
                 Log.e(LOG_TAG, "Unable to communicate with exception reporting service. Please add:\n\t<service android:name=\"io.teak.sdk.service.RavenService\" android:process=\":teak.raven\" android:exported=\"false\"/>\nTo the <application> section of your AndroidManifest.xml");
             } else if(Teak.isDebug) {
