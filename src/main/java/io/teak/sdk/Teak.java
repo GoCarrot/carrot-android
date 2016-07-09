@@ -451,6 +451,9 @@ public class Teak extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        // In case a push comes in
+        CacheManager.initialize(context);
+
         String action = intent.getAction();
 
         if (GCM_RECEIVE_INTENT_ACTION.equals(action)) {

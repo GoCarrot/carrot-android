@@ -19,45 +19,71 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-class CacheManager {
-    private AtomicInteger mOpenCounter = new AtomicInteger();
+class CacheManager extends SQLiteOpenHelper {
+    private AtomicInteger openCounter = new AtomicInteger();
+    private SQLiteDatabase database;
 
-    private static CacheManager mInstance;
-    private static SQLiteOpenHelper mDatabaseHelper;
-    private SQLiteDatabase mDatabase;
+    private static CacheManager instance;
+    private static final Object instanceMutex = new Object();
 
-    public static synchronized void initialize(Context context) {
-        if (mInstance == null) {
-            mInstance = new CacheManager();
-            mDatabaseHelper = new CacheOpenHelper(context);
+    private static final String DATABASE_NAME = "teak.db";
+    private static final int DATABASE_VERSION = 1;
 
-            Log.d(Teak.LOG_TAG, "Creating CacheManager singleton.");
+    public CacheManager(@NonNull Context context) {
+        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+    }
+
+    @Override
+    public void onCreate(SQLiteDatabase database) {
+        database.execSQL(CachedRequest.REQUEST_CACHE_CREATE_SQL);
+        database.execSQL(TeakNotification.INBOX_CACHE_CREATE_SQL);
+    }
+
+    @Override
+    public void onUpgrade(SQLiteDatabase database, int oldVersion, int newVersion) {
+        if (Teak.isDebug) {
+            Log.d(Teak.LOG_TAG, "Upgrading database " + database + " from version " + oldVersion + " to " + newVersion);
+        }
+
+        database.execSQL("DROP TABLE IF EXISTS cache");
+        database.execSQL("DROP TABLE IF EXISTS inbox");
+        onCreate(database);
+    }
+
+    public static void initialize(@NonNull Context context) {
+        synchronized (instanceMutex) {
+            if (CacheManager.instance == null) {
+                CacheManager.instance = new CacheManager(context.getApplicationContext());
+            }
         }
     }
 
-    public static synchronized CacheManager instance() {
-        if (mInstance == null) {
-            throw new IllegalStateException(CacheManager.class.getSimpleName() +
-                    " is not initialized, call onCreate(..) method first.");
-        }
+    public static CacheManager instance() {
+        synchronized (instanceMutex) {
+            if (CacheManager.instance == null) {
+                throw new IllegalStateException(CacheManager.class.getSimpleName() +
+                        " is not initialized, call initialize(..) method first.");
+            }
 
-        return mInstance;
+            return CacheManager.instance;
+        }
     }
 
     public synchronized SQLiteDatabase open() {
-        if (mOpenCounter.incrementAndGet() == 1) {
-            mDatabase = mDatabaseHelper.getWritableDatabase();
+        if (this.openCounter.incrementAndGet() == 1) {
+            this.database = this.getWritableDatabase();
         }
-        return mDatabase;
+        return this.database;
     }
 
     public synchronized void close() {
-        if (mOpenCounter.decrementAndGet() == 0) {
-            mDatabase.close();
+        if (this.openCounter.decrementAndGet() == 0) {
+            this.database.close();
         }
     }
 }
