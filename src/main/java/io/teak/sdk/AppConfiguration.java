@@ -21,6 +21,13 @@ import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+
 import io.teak.sdk.service.RavenService;
 
 public class AppConfiguration {
@@ -108,6 +115,26 @@ public class AppConfiguration {
             }
         } catch (Exception e) {
             Log.e(LOG_TAG, "Error calling startService for exception reporting service: " + Log.getStackTraceString(e));
+        }
+    }
+
+    public Map<String, Object> to_h() {
+        HashMap<String, Object> ret = new HashMap<>();
+        ret.put("appId", this.appId);
+        ret.put("apiKey", this.apiKey);
+        ret.put("pushSenderId", this.pushSenderId);
+        ret.put("appVersion", this.appVersion);
+        ret.put("bundleId", this.bundleId);
+        ret.put("installerPackage", this.installerPackage);
+        return ret;
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return String.format(Locale.US, "%s: %s", super.toString(), new JSONObject(this.to_h()).toString(2));
+        } catch (Exception ignored) {
+            return super.toString();
         }
     }
 }

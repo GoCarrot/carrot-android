@@ -238,6 +238,10 @@ public class Teak extends BroadcastReceiver {
             // App Configuration
             Teak.appConfiguration = new AppConfiguration(context);
 
+            if (Teak.isDebug) {
+                Log.d(LOG_TAG, Teak.appConfiguration.toString());
+            }
+
             // Device configuration
             Teak.deviceConfiguration = new DeviceConfiguration(context, Teak.appConfiguration);
 
@@ -246,6 +250,10 @@ public class Teak extends BroadcastReceiver {
                 Teak.enabled = false;
                 cleanup(inActivity);
                 return;
+            }
+
+            if (Teak.isDebug) {
+                Log.d(LOG_TAG, Teak.deviceConfiguration.toString());
             }
 
             // Hook in to Session state change events
@@ -432,6 +440,10 @@ public class Teak extends BroadcastReceiver {
                 if (!android.os.Debug.isDebuggerConnected()) {
                     Teak.appRaven.setAsUncaughtExceptionHandler();
                 }
+            }
+
+            if (Teak.isDebug) {
+                Log.d(LOG_TAG, configuration.toString());
             }
         }
     };

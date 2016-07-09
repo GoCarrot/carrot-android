@@ -311,6 +311,10 @@ class Session {
             this.previousState = this.state;
             this.state = newState;
 
+            if (Teak.isDebug) {
+                Log.d(LOG_TAG, String.format("Session State transition from %s -> %s.", this.previousState, this.state));
+            }
+
             synchronized (eventListenersMutex) {
                 for (EventListener e : eventListeners) {
                     e.onStateChange(this, this.previousState, this.state);

@@ -22,6 +22,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 class RemoteConfiguration {
     private static final String LOG_TAG = "Teak:RemoteConfig";
@@ -113,4 +114,21 @@ class RemoteConfiguration {
         return null;
     }
     // endregion
+
+    public Map<String, Object> to_h() {
+        HashMap<String, Object> ret = new HashMap<>();
+        ret.put("hostname", this.hostname);
+        ret.put("sdkSentryDsn", this.sdkSentryDsn);
+        ret.put("appSentryDsn", this.appSentryDsn);
+        return ret;
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return String.format(Locale.US, "%s: %s", super.toString(), new JSONObject(this.to_h()).toString(2));
+        } catch (Exception ignored) {
+            return super.toString();
+        }
+    }
 }

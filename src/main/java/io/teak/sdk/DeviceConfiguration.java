@@ -27,8 +27,13 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 
+import org.json.JSONObject;
+
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 public class DeviceConfiguration {
@@ -308,4 +313,24 @@ public class DeviceConfiguration {
         return phrase;
     }
     // endregion
+
+    public Map<String, Object> to_h() {
+        HashMap<String, Object> ret = new HashMap<>();
+        ret.put("gcmId", this.gcmId);
+        ret.put("deviceId", this.deviceId);
+        ret.put("deviceManufacturer", this.deviceManufacturer);
+        ret.put("deviceModel", this.deviceModel);
+        ret.put("deviceFallback", this.deviceFallback);
+        ret.put("platformString", this.platformString);
+        return ret;
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return String.format(Locale.US, "%s: %s", super.toString(), new JSONObject(this.to_h()).toString(2));
+        } catch (Exception ignored) {
+            return super.toString();
+        }
+    }
 }

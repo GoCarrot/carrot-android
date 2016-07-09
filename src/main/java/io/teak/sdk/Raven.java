@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 
@@ -54,16 +55,14 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         }
     }
 
-    HashMap<String, Object> payloadTemplate = new HashMap<>();
-    Context applicationContext;
-    String appId;
-    Thread.UncaughtExceptionHandler previousUncaughtExceptionHandler;
+    private final HashMap<String, Object> payloadTemplate = new HashMap<>();
+    private final Context applicationContext;
+    private final String appId;
+    private Thread.UncaughtExceptionHandler previousUncaughtExceptionHandler;
 
-    static SimpleDateFormat timestampFormatter;
+    private static final SimpleDateFormat timestampFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
 
     static {
-        // Timestamp formatting
-        timestampFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
         timestampFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
@@ -185,6 +184,23 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         }
     }
 
+    public Map<String, Object> to_h() {
+        HashMap<String, Object> ret = new HashMap<>();
+        ret.put("appId", this.appId);
+        ret.put("applicationContext", this.applicationContext);
+        ret.put("payloadTemplate", this.payloadTemplate);
+        return ret;
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return String.format(Locale.US, "%s: %s", super.toString(), new JSONObject(this.to_h()).toString(2));
+        } catch (Exception ignored) {
+            return super.toString();
+        }
+    }
+
     class Report {
         HashMap<String, Object> payload = new HashMap<>();
         Date timestamp = new Date();
@@ -231,12 +247,19 @@ public class Raven implements Thread.UncaughtExceptionHandler {
             }
         }
 
+        public Map<String, Object> to_h() {
+            HashMap<String, Object> ret = new HashMap<>();
+            ret.put("payload", this.payload);
+            ret.put("timestamp", this.timestamp);
+            return ret;
+        }
+
         @Override
         public String toString() {
             try {
-                return new JSONObject(payload).toString(2);
+                return String.format(Locale.US, "%s: %s", super.toString(), new JSONObject(this.to_h()).toString(2));
             } catch (Exception ignored) {
-                return payload.toString();
+                return super.toString();
             }
         }
     }
