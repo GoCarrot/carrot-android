@@ -15,6 +15,7 @@
 package io.teak.sdk;
 
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import org.json.JSONObject;
 
@@ -81,7 +82,7 @@ class RemoteConfiguration {
                         }
                     }
                 } catch (Exception e) {
-                    // TODO: Report error
+                    Log.e(LOG_TAG, "Error processing settings.json " + Log.getStackTraceString(e));
                 }
             }
         }).start();

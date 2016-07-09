@@ -169,6 +169,7 @@ public class DeviceConfiguration {
                 public void run() {
                     try {
                         AdvertisingIdClient.Info adInfo = AdvertisingIdClient.getAdvertisingIdInfo(context);
+
                         // Inform listeners Ad Info has changed
                         if (adInfo != _this.advertsingInfo) {
                             _this.advertsingInfo = adInfo;
