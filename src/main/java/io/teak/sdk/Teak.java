@@ -229,6 +229,7 @@ public class Teak extends BroadcastReceiver {
 
             // Hook in to Session state change events
             Session.addEventListener(Teak.sessionEventListener);
+            RemoteConfiguration.addEventListener(Teak.remoteConfigurationEventListener);
 
             // Process launch event
             Session.processIntent(activity.getIntent(), Teak.appConfiguration, Teak.deviceConfiguration);
@@ -321,6 +322,7 @@ public class Teak extends BroadcastReceiver {
                 Teak.appStore.dispose();
             }
 
+            RemoteConfiguration.removeEventListener(Teak.remoteConfigurationEventListener);
             Session.removeEventListener(Teak.sessionEventListener);
             Teak.facebookAccessTokenBroadcast.unregister(activity);
             LocalBroadcastManager.getInstance(activity).unregisterReceiver(Teak.localBroadcastReceiver);
