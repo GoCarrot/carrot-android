@@ -33,6 +33,8 @@ import org.json.JSONObject;
 
 @SuppressWarnings("unused")
 class Amazon implements IStore {
+    private static final String LOG_TAG = "Teak:Amazon";
+
     HashMap<String, String> skuPriceMap;
     HashMap<String, Object> skuDetailsRequestMap;
 
@@ -46,16 +48,17 @@ class Amazon implements IStore {
 
             Class<?> purchasingServiceClass = Class.forName("com.amazon.device.iap.PurchasingService");
             Method m = purchasingServiceClass.getMethod("registerListener", Context.class, purchasingListenerClass);
-            m.invoke(null, context.getApplicationContext(), proxy);
+            m.invoke(null, context, proxy);
 
             if (Teak.isDebug) {
                 Field sandbox = purchasingServiceClass.getDeclaredField("IS_SANDBOX_MODE");
 
-                Log.d(Teak.LOG_TAG, "Amazon In-App Purchasing 2.0 registered.");
-                Log.d(Teak.LOG_TAG, "   Sandbox Mode: " + sandbox.getBoolean(null));
+                Log.d(LOG_TAG, "Amazon In-App Purchasing 2.0 registered.");
+                Log.d(LOG_TAG, "   Sandbox Mode: " + sandbox.getBoolean(null));
             }
         } catch (Exception e) {
-            Log.e(Teak.LOG_TAG, "Reflection error: " + Log.getStackTraceString(e));
+            Log.e(LOG_TAG, "Reflection error: " + Log.getStackTraceString(e));
+            Teak.sdkRaven.reportException(e);
         }
     }
 
@@ -66,7 +69,8 @@ class Amazon implements IStore {
             Method m = purchasingServiceClass.getMethod("getUserData");
             m.invoke(null);
         } catch (Exception e) {
-            Log.e(Teak.LOG_TAG, "Reflection error: " + Log.getStackTraceString(e));
+            Log.e(LOG_TAG, "Reflection error: " + Log.getStackTraceString(e));
+            Teak.sdkRaven.reportException(e);
         }
     }
 
@@ -92,7 +96,8 @@ class Amazon implements IStore {
             ret.put("price_string", skuPriceMap.get(sku));
             return ret;
         } catch (Exception e) {
-            Log.e(Teak.LOG_TAG, "Reflection error: " + Log.getStackTraceString(e));
+            Log.e(LOG_TAG, "Reflection error: " + Log.getStackTraceString(e));
+            Teak.sdkRaven.reportException(e);
         }
         return null;
     }
@@ -133,13 +138,13 @@ class Amazon implements IStore {
                     String storeMarketplace = m.invoke(userData).toString();
                     Request.dynamicCommonPayload.put("store_marketplace", storeMarketplace);
                     if (Teak.isDebug) {
-                        Log.d(Teak.LOG_TAG, "Amazon Store User Details retrieved:");
-                        Log.d(Teak.LOG_TAG, "       User id: " + storeUserId);
-                        Log.d(Teak.LOG_TAG, "   Marketplace: " + storeMarketplace);
+                        Log.d(LOG_TAG, "Amazon Store User Details retrieved:");
+                        Log.d(LOG_TAG, "       User id: " + storeUserId);
+                        Log.d(LOG_TAG, "   Marketplace: " + storeMarketplace);
                     }
                 } else {
                     if (Teak.isDebug) {
-                        Log.d(Teak.LOG_TAG, "Amazon Store user data query failed, or unsupported.");
+                        Log.d(LOG_TAG, "Amazon Store user data query failed, or unsupported.");
                     }
                 }
 
@@ -157,7 +162,7 @@ class Amazon implements IStore {
                     JSONObject json = (JSONObject) m.invoke(args[0]);
                     Teak.purchaseSucceeded(json);
                 } else {
-                    Teak.purchaseFailed(-1, null);
+                    Teak.purchaseFailed(-1);
                 }
 
                 // onProductDataResponse()
@@ -178,14 +183,14 @@ class Amazon implements IStore {
                     m = productClass.getMethod("getPrice");
 
                     if (Teak.isDebug) {
-                        Log.d(Teak.LOG_TAG, "SKU Details:");
+                        Log.d(LOG_TAG, "SKU Details:");
                     }
 
                     for (Map.Entry<String, Object> entry : skuMap.entrySet()) {
                         String price = m.invoke(entry.getValue()).toString();
                         skuPriceMap.put(entry.getKey(), price);
                         if (Teak.isDebug) {
-                            Log.d(Teak.LOG_TAG, "   " + entry.getKey() + " = " + price);
+                            Log.d(LOG_TAG, "   " + entry.getKey() + " = " + price);
                         }
                     }
 
@@ -195,13 +200,13 @@ class Amazon implements IStore {
                     }
                 } else {
                     if (Teak.isDebug) {
-                        Log.d(Teak.LOG_TAG, "SKU detail query failed.");
+                        Log.d(LOG_TAG, "SKU detail query failed.");
                     }
                 }
             } else {
-                Log.d(Teak.LOG_TAG, "PurchasingListenerInvocationHandler");
-                Log.d(Teak.LOG_TAG, "   method: " + method.getName());
-                Log.d(Teak.LOG_TAG, "     args: " + args.toString());
+                Log.d(LOG_TAG, "PurchasingListenerInvocationHandler");
+                Log.d(LOG_TAG, "   method: " + method.getName());
+                Log.d(LOG_TAG, "     args: " + args.toString());
             }
 
             return null;

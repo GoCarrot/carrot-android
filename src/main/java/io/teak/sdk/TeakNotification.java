@@ -93,6 +93,7 @@ import org.json.JSONException;
  * </pre>
  */
 public class TeakNotification {
+    private static final String LOG_TAG = "Teak:Notification";
 
     /**
      * The 'tag' specified by Teak to the {@link NotificationCompat}
@@ -153,6 +154,11 @@ public class TeakNotification {
      */
     @SuppressWarnings("unused")
     public static TeakNotification byTeakNotifId(String teakNotifId) {
+        if (!Teak.enabled) {
+            Log.e(LOG_TAG, "Teak is disabled, ignoring byTeakNotifId().");
+            return null;
+        }
+
         TeakNotification notif = null;
         String[] inboxReadColumns = {"notification_payload"};
 
@@ -165,14 +171,14 @@ public class TeakNotification {
                 try {
                     notif = new TeakNotification(cursor.getString(0));
                 } catch (Exception e) {
-                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                    Log.e(LOG_TAG, Log.getStackTraceString(e));
                 }
                 cursor.moveToNext();
             }
             cursor.close();
             CacheManager.instance().close();
-        } catch(Exception e) {
-            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+        } catch (Exception e) {
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
         }
 
         return notif;
@@ -256,8 +262,8 @@ public class TeakNotification {
                 try {
                     reward = new JSONObject(json.optString("reward"));
                 } catch (Exception e) {
-                    // TODO: Sentry log this
-                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                    // TODO: Raven log this
+                    Log.e(LOG_TAG, Log.getStackTraceString(e));
                 }
             } else if (SELF_CLICK_STRING.equals(statusString)) {
                 status = SELF_CLICK;
@@ -300,33 +306,39 @@ public class TeakNotification {
      */
     @SuppressWarnings("unused")
     public Future<Reward> consumeNotification() {
-        final TeakNotification notif = this;
-
-        FutureTask<Reward> ret = new FutureTask<>(new Callable<Reward>() {
+        final TeakNotification _this = this;
+        final ArrayBlockingQueue<Reward> q = new ArrayBlockingQueue<>(1);
+        final FutureTask<Reward> ret = new FutureTask<>(new Callable<Reward>() {
             public Reward call() {
-                if (!notif.hasReward()) {
-                    notif.removeFromCache();
-                    return null;
+                try {
+                    return q.take();
+                } catch (InterruptedException e) {
+                    Log.e(LOG_TAG, Log.getStackTraceString(e));
+                }
+                return null;
+            }
+        });
+
+        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+            @Override
+            public void run(Session session) {
+                if (!_this.hasReward()) {
+                    _this.removeFromCache();
+                    q.offer(null);
+                    return;
                 }
 
                 HttpsURLConnection connection = null;
-                String userId;
-                try {
-                    userId = Teak.userId.get();
-                } catch (Exception e) {
-                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
-                    return null;
-                }
 
                 if (Teak.isDebug) {
-                    Log.d(Teak.LOG_TAG, "Claiming reward id: " + notif.teakRewardId);
+                    Log.d(LOG_TAG, "Claiming reward id: " + _this.teakRewardId);
                 }
 
                 try {
                     // https://rewards.gocarrot.com/<<teak_reward_id>>/clicks?clicking_user_id=<<your_user_id>>
-                    String requestBody = "clicking_user_id=" + URLEncoder.encode(userId, "UTF-8");
+                    String requestBody = "clicking_user_id=" + URLEncoder.encode(session.userId(), "UTF-8");
 
-                    URL url = new URL("https://rewards.gocarrot.com/" + notif.teakRewardId + "/clicks");
+                    URL url = new URL("https://rewards.gocarrot.com/" + _this.teakRewardId + "/clicks");
                     connection = (HttpsURLConnection) url.openConnection();
 
                     connection.setRequestProperty("Accept-Charset", "UTF-8");
@@ -363,25 +375,22 @@ public class TeakNotification {
                     Reward reward = new Reward(rewardResponse);
 
                     if (Teak.isDebug) {
-                        Log.d(Teak.LOG_TAG, "Reward claim response: " + responseJson.toString(2));
+                        Log.d(LOG_TAG, "Reward claim response: " + responseJson.toString(2));
                     }
 
-                    notif.removeFromCache();
+                    _this.removeFromCache();
 
-                    return reward;
+                    q.offer(reward);
                 } catch (Exception e) {
-                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                    Log.e(LOG_TAG, Log.getStackTraceString(e));
+                    q.offer(null);
                 } finally {
                     if (connection != null) {
                         connection.disconnect();
                     }
                 }
-
-                return null;
             }
         });
-
-        Teak.asyncExecutor.submit(ret);
 
         return ret;
     }
@@ -389,56 +398,56 @@ public class TeakNotification {
     /**
      * Schedules a push notification for some time in the future.
      *
-     * @param creativeId        The identifier of the notification in the Teak dashboard (will create if not found).
-     * @param defaultMessage    The default message to send, may be over-ridden in the dashboard.
-     * @param delayInSeconds    The delay in seconds from now to send the notification.
+     * @param creativeId     The identifier of the notification in the Teak dashboard (will create if not found).
+     * @param defaultMessage The default message to send, may be over-ridden in the dashboard.
+     * @param delayInSeconds The delay in seconds from now to send the notification.
      * @return The identifier of the scheduled notification (see {@link TeakNotification#cancelNotification(String)} or null.
      */
     @SuppressWarnings("unused")
-    public static FutureTask<String> scheduleNotification(String creativeId, String defaultMessage, long delayInSeconds) {
-        if (!Teak.userId.isDone()) {
-            Log.e(Teak.LOG_TAG, "identifyUser() not yet called, cannot call scheduleNotification().");
+    public static FutureTask<String> scheduleNotification(final String creativeId, final String defaultMessage, final long delayInSeconds) {
+        if (!Teak.enabled) {
+            Log.e(LOG_TAG, "Teak is disabled, ignoring scheduleNotification().");
             return null;
         }
 
         final ArrayBlockingQueue<String> q = new ArrayBlockingQueue<>(1);
-
-        FutureTask<String> ret = new FutureTask<>(new Callable<String>() {
+        final FutureTask<String> ret = new FutureTask<>(new Callable<String>() {
             public String call() {
                 try {
                     return q.take();
                 } catch (InterruptedException e) {
-                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                    Log.e(LOG_TAG, Log.getStackTraceString(e));
                 }
                 return null;
             }
         });
-        Teak.asyncExecutor.submit(ret);
 
-        HashMap<String, Object> payload = new HashMap<>();
-        payload.put("identifier", creativeId);
-        payload.put("message", defaultMessage);
-        payload.put("offset", delayInSeconds);
-        try {
-            payload.put("api_key", Teak.userId.get());
-        } catch (Exception ignored) {
-            q.offer("");
-            return ret;
-        }
-
-        Teak.asyncExecutor.execute(new Request("POST", "gocarrot.com", "/me/local_notify.json", payload) {
+        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
             @Override
-            protected void done(int responseCode, String responseBody) {
-                try {
-                    JSONObject response = new JSONObject(responseBody);
-                    if (response.getString("status").equals("ok")) {
-                        q.offer(response.getJSONObject("event").getString("id"));
-                    } else {
-                        q.offer("");
+            public void run(Session session) {
+                HashMap<String, Object> payload = new HashMap<>();
+                payload.put("identifier", creativeId);
+                payload.put("message", defaultMessage);
+                payload.put("offset", delayInSeconds);
+                payload.put("api_key", session.userId());
+
+                new Request("POST", "gocarrot.com", "/me/local_notify.json", payload, session) {
+                    @Override
+                    protected void done(int responseCode, String responseBody) {
+                        try {
+                            JSONObject response = new JSONObject(responseBody);
+                            if (response.getString("status").equals("ok")) {
+                                q.offer(response.getJSONObject("event").getString("id"));
+                            } else {
+                                q.offer("");
+                            }
+                        } catch (Exception ignored) {
+                            q.offer("");
+                        }
+
+                        ret.run();
                     }
-                } catch (Exception ignored) {
-                    q.offer("");
-                }
+                }.run();
             }
         });
         return ret;
@@ -451,50 +460,50 @@ public class TeakNotification {
      * @return
      */
     @SuppressWarnings("unused")
-    public static FutureTask<String> cancelNotification(String scheduleId) {
-        if (!Teak.userId.isDone()) {
-            Log.e(Teak.LOG_TAG, "identifyUser() not yet called, cannot call cancelNotification().");
+    public static FutureTask<String> cancelNotification(final String scheduleId) {
+        if (!Teak.enabled) {
+            Log.e(LOG_TAG, "Teak is disabled, ignoring cancelNotification().");
             return null;
         }
 
         final ArrayBlockingQueue<String> q = new ArrayBlockingQueue<>(1);
-
-        FutureTask<String> ret = new FutureTask<>(new Callable<String>() {
+        final FutureTask<String> ret = new FutureTask<>(new Callable<String>() {
             public String call() {
                 try {
                     return q.take();
                 } catch (InterruptedException e) {
-                    Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                    Log.e(LOG_TAG, Log.getStackTraceString(e));
                 }
                 return null;
             }
         });
-        Teak.asyncExecutor.submit(ret);
 
-        HashMap<String, Object> payload = new HashMap<>();
-        payload.put("id", scheduleId);
-        try {
-            payload.put("api_key", Teak.userId.get());
-        } catch (Exception ignored) {
-            q.offer("");
-            return ret;
-        }
-
-        Teak.asyncExecutor.execute(new Request("POST", "gocarrot.com", "/me/cancel_local_notify.json", payload) {
+        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
             @Override
-            protected void done(int responseCode, String responseBody) {
-                try {
-                    JSONObject response = new JSONObject(responseBody);
-                    if (response.getString("status").equals("ok")) {
-                        q.offer(response.getJSONObject("event").getString("id"));
-                    } else {
-                        q.offer("");
+            public void run(Session session) {
+                HashMap<String, Object> payload = new HashMap<>();
+                payload.put("id", scheduleId);
+                payload.put("api_key", session.userId());
+
+                new Request("POST", "gocarrot.com", "/me/cancel_local_notify.json", payload, session) {
+                    @Override
+                    protected void done(int responseCode, String responseBody) {
+                        try {
+                            JSONObject response = new JSONObject(responseBody);
+                            if (response.getString("status").equals("ok")) {
+                                q.offer(response.getJSONObject("event").getString("id"));
+                            } else {
+                                q.offer("");
+                            }
+                        } catch (Exception ignored) {
+                            q.offer("");
+                        }
+                        ret.run();
                     }
-                } catch (Exception ignored) {
-                    q.offer("");
-                }
+                }.run();
             }
         });
+
         return ret;
     }
 
@@ -541,8 +550,8 @@ public class TeakNotification {
         try {
             CacheManager.instance().open().insert("inbox", null, values);
             CacheManager.instance().close();
-        } catch(Exception e) {
-            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+        } catch (Exception e) {
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
         }
     }
 
@@ -571,7 +580,7 @@ public class TeakNotification {
             json.put("teakNotifId", Long.valueOf(this.teakNotifId));
             json.putOpt("extras", this.extras);
         } catch (JSONException e) {
-            Log.e(Teak.LOG_TAG, "Error converting TeakNotification to JSON: " + Log.getStackTraceString(e));
+            Log.e(LOG_TAG, "Error converting TeakNotification to JSON: " + Log.getStackTraceString(e));
         }
         return json.toString();
     }
@@ -580,8 +589,8 @@ public class TeakNotification {
         try {
             CacheManager.instance().open().delete("inbox", "teak_notification_id = " + this.teakNotifId, null);
             CacheManager.instance().close();
-        } catch(Exception e) {
-            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+        } catch (Exception e) {
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
         }
     }
 
@@ -596,7 +605,7 @@ public class TeakNotification {
 
         final TeakNotification ret = new TeakNotification(bundle);
 
-        Teak.asyncExecutor.submit(new Runnable() {
+        new Thread(new Runnable() {
             @Override
             public void run() {
                 // Add platformId to bundle
@@ -607,7 +616,7 @@ public class TeakNotification {
                     displayNotification(context, ret, nativeNotification);
                 }
             }
-        });
+        }).start();
 
         return ret;
     }
@@ -617,15 +626,15 @@ public class TeakNotification {
             try {
                 notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
             } catch (Exception e) {
-                Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+                Log.e(LOG_TAG, Log.getStackTraceString(e));
             }
         }
 
         // Send it out
         if (Teak.isDebug) {
-            Log.d(Teak.LOG_TAG, "Showing Notification");
-            Log.d(Teak.LOG_TAG, "       Teak id: " + teakNotif.teakNotifId);
-            Log.d(Teak.LOG_TAG, "   Platform id: " + teakNotif.platformId);
+            Log.d(LOG_TAG, "Showing Notification");
+            Log.d(LOG_TAG, "       Teak id: " + teakNotif.teakNotifId);
+            Log.d(LOG_TAG, "   Platform id: " + teakNotif.platformId);
         }
         notificationManager.notify(NOTIFICATION_TAG, teakNotif.platformId, nativeNotification);
 
@@ -633,7 +642,7 @@ public class TeakNotification {
     }
 
     static Notification createNativeNotification(final Context context, Bundle bundle, TeakNotification teakNotificaton) {
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context.getApplicationContext());
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
 
         // Rich text message
         Spanned richMessageText = Html.fromHtml(teakNotificaton.message);
@@ -651,7 +660,7 @@ public class TeakNotification {
             ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
             builder.setSmallIcon(ai.icon);
         } catch (Exception e) {
-            Log.e(Teak.LOG_TAG, "Unable to load icon resource for Notification.");
+            Log.e(LOG_TAG, "Unable to load icon resource for Notification.");
             return null;
         }
 
@@ -682,6 +691,7 @@ public class TeakNotification {
                 }
                 return ret;
             }
+
             public int layout(String identifier) {
                 int ret = context.getResources().getIdentifier(identifier, "layout", context.getPackageName());
                 if (ret == 0) {
@@ -704,7 +714,7 @@ public class TeakNotification {
             ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
             smallView.setImageViewResource(R.id("left_image"), ai.icon);
         } catch (Exception e) {
-            Log.e(Teak.LOG_TAG, "Unable to load icon resource for Notification.");
+            Log.e(LOG_TAG, "Unable to load icon resource for Notification.");
             return null;
         }
 
@@ -764,7 +774,7 @@ public class TeakNotification {
                 } catch (Exception ignored) {
                 }
             } else {
-                Log.e(Teak.LOG_TAG, "Unable to load image asset for Notification.");
+                Log.e(LOG_TAG, "Unable to load image asset for Notification.");
                 // Hide pulldown
                 smallView.setViewVisibility(R.id("pulldown_layout"), View.INVISIBLE);
             }
@@ -778,7 +788,7 @@ public class TeakNotification {
 
     static void cancel(Context context, int platformId) {
         if (Teak.isDebug) {
-            Log.d(Teak.LOG_TAG, "Canceling notification id: " + platformId);
+            Log.d(LOG_TAG, "Canceling notification id: " + platformId);
         }
 
         notificationManager.cancel(NOTIFICATION_TAG, platformId);

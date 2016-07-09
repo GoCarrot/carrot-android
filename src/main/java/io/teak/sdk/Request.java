@@ -14,6 +14,7 @@
  */
 package io.teak.sdk;
 
+import android.support.annotation.NonNull;
 import android.util.Base64;
 import android.util.Log;
 
@@ -44,62 +45,85 @@ import org.json.JSONArray;
 import java.util.concurrent.ExecutionException;
 
 class Request implements Runnable {
-    protected String endpoint;
-    protected String method;
-    protected Map<String, Object> payload;
-    private String hostname;
+    private static final String LOG_TAG = "Teak:Request";
+
+    private final String endpoint;
+    private final String method;
+    private final String hostname;
+    protected final Map<String, Object> payload;
+    private final Session session;
 
     static Map<String, Object> dynamicCommonPayload = new HashMap<>();
 
-    public Request(String method, String endpoint, Map<String, Object> payload) {
-        this(method, null, endpoint, payload);
-    }
-
-    public Request(String method, String hostname, String endpoint, Map<String, Object> payload) {
+    // Used to send non-cached requests
+    public Request(@NonNull String method, @NonNull String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
         this.method = method;
         this.hostname = hostname;
         this.endpoint = endpoint;
         this.payload = payload;
+        this.session = session;
+
+        addCommonDataToPayload(this.payload, session);
     }
 
-    protected void addCommonPayload(Map<String, Object> payload) throws InterruptedException, ExecutionException {
-        payload.put("game_id", Teak.appId);
+    // Used by the CachedRequest constructor
+    protected Request(@NonNull String method, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
+        this.method = method;
+        this.hostname = null;
+        this.endpoint = endpoint;
+        this.payload = payload;
+        this.session = session;
+
+        addCommonDataToPayload(this.payload, session);
+    }
+
+    // Used by the CachedRequest constructor that instantiates from the SQLite cache
+    protected Request(@NonNull String method, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @NonNull Object alreadyHasCommonPayload) {
+        this.method = method;
+        this.hostname = null;
+        this.endpoint = endpoint;
+        this.payload = payload; // Already has common payload
+        this.session = session;
+    }
+
+    private void addCommonDataToPayload(@NonNull Map<String, Object> payload, @NonNull Session session) {
+        payload.put("game_id", session.appConfiguration.appId);
         payload.put("sdk_version", Teak.SDKVersion);
-        payload.put("sdk_platform", "android_" + android.os.Build.VERSION.RELEASE);
-        payload.put("app_version", String.valueOf(Teak.appVersion));
+        payload.put("sdk_platform", session.deviceConfiguration.platformString);
+        payload.put("app_version", String.valueOf(session.appConfiguration.appVersion));
+        payload.put("bundle_id", session.appConfiguration.bundleId);
+        if (session.appConfiguration.installerPackage != null) {
+            payload.put("appstore_name", session.appConfiguration.installerPackage);
+        }
+        if (session.deviceConfiguration.deviceId != null) {
+            payload.put("device_id", session.deviceConfiguration);
+        }
+        // Add device information to Request common payload
+        payload.put("device_manufacturer", session.deviceConfiguration.deviceManufacturer);
+        payload.put("device_model", session.deviceConfiguration.deviceModel);
+        payload.put("device_fallback", session.deviceConfiguration.deviceFallback);
 
-        payload.putAll(Request.dynamicCommonPayload);
+        payload.putAll(Request.dynamicCommonPayload); // TODO: I don't like this, but it seems ok for now
     }
 
+    @Override
     public void run() {
         HttpsURLConnection connection = null;
-        SecretKeySpec keySpec = new SecretKeySpec(Teak.apiKey.getBytes(), "HmacSHA256");
+        SecretKeySpec keySpec = new SecretKeySpec(this.session.appConfiguration.apiKey.getBytes(), "HmacSHA256");
+        String requestBody;
+
+        String hostnameForEndpoint = this.hostname;
+        if (hostnameForEndpoint == null) {
+            hostnameForEndpoint = this.session.remoteConfiguration.getHostnameForEndpoint(this.endpoint);
+        }
 
         try {
-            String hostname = this.hostname;
-            if (hostname == null) {
-                ServiceConfig serviceConfig = Teak.serviceConfig.get();
-                hostname = serviceConfig.getHostname(this.endpoint);
-            }
-
-            HashMap<String, Object> requestBodyObject = new HashMap<>();
-            if (this.payload != null) {
-                requestBodyObject.putAll(this.payload);
-            }
-
-            // Add common fields
-            addCommonPayload(requestBodyObject);
-
-            if (Teak.isDebug) {
-                Log.d(Teak.LOG_TAG, "Submitting request to '" + this.endpoint + "': " +  new JSONObject(requestBodyObject).toString(2));
-            }
-
-            ArrayList<String> payloadKeys = new ArrayList<>(requestBodyObject.keySet());
+            ArrayList<String> payloadKeys = new ArrayList<>(this.payload.keySet());
             Collections.sort(payloadKeys);
 
-            StringBuilder requestBody = new StringBuilder();
+            StringBuilder builder = new StringBuilder();
             for (String key : payloadKeys) {
-                Object value = requestBodyObject.get(key);
+                Object value = this.payload.get(key);
                 if (value != null) {
                     String valueString;
                     if (value instanceof Map) {
@@ -111,21 +135,21 @@ class Request implements Runnable {
                     } else {
                         valueString = value.toString();
                     }
-                    requestBody.append(key).append("=").append(valueString).append("&");
+                    builder.append(key).append("=").append(valueString).append("&");
                 } else {
-                    Log.e(Teak.LOG_TAG, "Value for key: " + key + " is NULL.");
+                    Log.e(LOG_TAG, "Value for key: " + key + " is null.");
                 }
             }
-            requestBody.deleteCharAt(requestBody.length() - 1);
+            builder.deleteCharAt(builder.length() - 1);
 
-            String stringToSign = this.method + "\n" + hostname + "\n" + this.endpoint + "\n" + requestBody.toString();
+            String stringToSign = this.method + "\n" + hostnameForEndpoint + "\n" + this.endpoint + "\n" + builder.toString();
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(keySpec);
             byte[] result = mac.doFinal(stringToSign.getBytes());
 
-            requestBody = new StringBuilder();
+            builder = new StringBuilder();
             for (String key : payloadKeys) {
-                Object value = requestBodyObject.get(key);
+                Object value = this.payload.get(key);
                 String valueString;
                 if (value instanceof Map) {
                     valueString = new JSONObject((Map) value).toString();
@@ -136,12 +160,23 @@ class Request implements Runnable {
                 } else {
                     valueString = value.toString();
                 }
-                requestBody.append(key).append("=").append(URLEncoder.encode(valueString, "UTF-8")).append("&");
+                builder.append(key).append("=").append(URLEncoder.encode(valueString, "UTF-8")).append("&");
             }
-            requestBody.append("sig=").append(URLEncoder.encode(Base64.encodeToString(result, Base64.NO_WRAP), "UTF-8"));
+            builder.append("sig=").append(URLEncoder.encode(Base64.encodeToString(result, Base64.NO_WRAP), "UTF-8"));
+
+            requestBody = builder.toString();
+        } catch (Exception e) {
+            Log.e(LOG_TAG, "Error signing payload: " + Log.getStackTraceString(e));
+            return;
+        }
+
+        try {
+            if (Teak.isDebug) {
+                Log.d(LOG_TAG, "Submitting request to '" + this.endpoint + "': " + new JSONObject(this.payload).toString(2));
+            }
 
             if (this.method.equalsIgnoreCase("POST")) {
-                URL url = new URL("https://" + hostname + this.endpoint);
+                URL url = new URL("https://" + hostnameForEndpoint + this.endpoint);
                 connection = (HttpsURLConnection) url.openConnection();
 
                 connection.setRequestProperty("Accept-Charset", "UTF-8");
@@ -149,15 +184,15 @@ class Request implements Runnable {
                 connection.setDoOutput(true);
                 connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
                 connection.setRequestProperty("Content-Length",
-                        "" + Integer.toString(requestBody.toString().getBytes().length));
+                        "" + Integer.toString(requestBody.getBytes().length));
 
                 // Send request
                 DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
-                wr.writeBytes(requestBody.toString());
+                wr.writeBytes(requestBody);
                 wr.flush();
                 wr.close();
             } else {
-                URL url = new URL("https://" + hostname + this.endpoint + "?" + requestBody.toString());
+                URL url = new URL("https://" + hostnameForEndpoint + this.endpoint + "?" + requestBody);
                 connection = (HttpsURLConnection) url.openConnection();
                 connection.setRequestProperty("Accept-Charset", "UTF-8");
                 connection.setUseCaches(false);
@@ -185,13 +220,13 @@ class Request implements Runnable {
                     responseText = new JSONObject(response.toString()).toString(2);
                 } catch (Exception ignored) {
                 }
-                Log.d(Teak.LOG_TAG, "Reply from '" + this.endpoint + "': " + responseText);
+                Log.d(LOG_TAG, "Reply from '" + this.endpoint + "': " + responseText);
             }
 
             // For extending classes
             done(connection.getResponseCode(), response.toString());
         } catch (Exception e) {
-            Log.e(Teak.LOG_TAG, Log.getStackTraceString(e));
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
         } finally {
             if (connection != null) {
                 connection.disconnect();
