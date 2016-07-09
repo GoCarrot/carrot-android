@@ -46,40 +46,8 @@ import java.util.Stack;
 import java.util.Date;
 import java.util.HashMap;
 
-import io.teak.sdk.service.RavenService;
-
 /**
- * Working with Teak on Android.
- * <p/>
- * Firstly, add a <code>teak.xml</code> file into your res/values folder.
- * <pre>{@code
- * <?xml version="1.0" encoding="utf-8"?>
- * <resources>
- *   <string name="io_teak_app_id">YOUR TEAK APP ID</string>
- *   <string name="io_teak_api_key">YOUR TEAK API KEY</string>
- * </resources>
- * }</pre>
- * Your Teak App Id and API Key can be found in the Settings for your app on the Teak dashboard.
- * <p/>
- * You may also provide a GCM sender id to Teak, in which case Teak will take care of
- * registering for a GCM key.
- * <pre>{@code
- * <string name="io_teak_gcm_sender_id">YOUR GCM SENDER ID</string>
- * }</pre>
- * <p/>
- * Next, add Teak to your gradle build.
- * <p/>
- * For Unity, open settings.gradle and add the line:
- * <pre>{@code project(':teak').projectDir=new File('teak-android/sdk') }</pre>
- *
- * And then open app/build.gradle and add the following line to dependencies:
- * <pre>{@code compile project(':teak') }</pre>
- *
- * Add the following as the <i>first line</i> of onCreate function of UnityPlayerNativeActivity:
- * <pre>{@code Teak.onCreate(this); }</pre>
- *
- * Add the following as the <i>first line</i> of onActivityResult function of UnityPlayerNativeActivity:
- * <pre>{@code Teak.onActivityResult(requestCode, resultCode, data); }</pre>
+ * Teak
  */
 public class Teak extends BroadcastReceiver {
 
@@ -201,6 +169,7 @@ public class Teak extends BroadcastReceiver {
 
     static boolean isDebug;
     static boolean forceDebug = false;
+
     static HashMap<Integer, Boolean> lifecycleCallbacksRegistered = new HashMap<>();
 
     static IStore appStore;
