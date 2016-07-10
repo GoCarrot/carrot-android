@@ -207,7 +207,7 @@ class Session {
         synchronized (stateMutex) {
             if (this.state == newState) {
                 Log.i(LOG_TAG, String.format("Session State transition to same state (%s). Ignoring.", this.state));
-                return true;
+                return false;
             }
 
             if (!this.state.canTransitionTo(newState)) {
