@@ -26,6 +26,7 @@ import android.content.pm.ApplicationInfo;
 
 import android.net.Uri;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 
 import android.os.Bundle;
@@ -69,7 +70,7 @@ public class Teak extends BroadcastReceiver {
 
         if (activity == null) {
             Log.e(LOG_TAG, "null Activity passed to onCreate, Teak is disabled.");
-            Teak.enabled = false;
+            Teak.setState(State.Disabled);
             return;
         }
 
@@ -85,19 +86,18 @@ public class Teak extends BroadcastReceiver {
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
             Log.e(LOG_TAG, "Teak requires API level 14 to operate. Teak is disabled.");
-            Teak.enabled = false;
+            Teak.setState(State.Disabled);
         } else {
             try {
                 Application application = activity.getApplication();
-                if (!Teak.lifecycleCallbacksRegistered.containsKey(application.hashCode())) {
-                    Teak.lifecycleCallbacksRegistered.put(application.hashCode(), Boolean.TRUE);
-                    application.registerActivityLifecycleCallbacks(Teak.lifecycleCallbacks);
-                } else {
-                    Log.d(LOG_TAG, "Duplicate onCreate call for Application " + application.toString() + ", ignoring.");
+                synchronized (Teak.stateMutex) {
+                    if (Teak.state == State.Allocated) {
+                        application.registerActivityLifecycleCallbacks(Teak.lifecycleCallbacks);
+                    }
                 }
             } catch (Exception e) {
                 Log.e(LOG_TAG, "Failed to register Activity lifecycle callbacks. Teak is disabled. " + Log.getStackTraceString(e));
-                Teak.enabled = false;
+                Teak.setState(State.Disabled);
             }
         }
     }
@@ -116,7 +116,7 @@ public class Teak extends BroadcastReceiver {
             Log.d(LOG_TAG, "Lifecycle - onActivityResult");
         }
 
-        if (Teak.enabled) {
+        if (Teak.isEnabled()) {
             if (data != null) {
                 checkActivityResultForPurchase(resultCode, data);
             }
@@ -135,7 +135,7 @@ public class Teak extends BroadcastReceiver {
             return;
         }
 
-        if (Teak.enabled) {
+        if (Teak.isEnabled()) {
             if (Teak.appConfiguration != null && Teak.deviceConfiguration != null) {
                 Session.processIntent(intent, Teak.appConfiguration, Teak.deviceConfiguration);
             } else {
@@ -162,7 +162,7 @@ public class Teak extends BroadcastReceiver {
             return;
         }
 
-        if (Teak.enabled) {
+        if (Teak.isEnabled()) {
             // Add userId to the Ravens
             Teak.sdkRaven.addUserData("id", userIdentifier);
             Teak.appRaven.addUserData("id", userIdentifier);
@@ -198,7 +198,7 @@ public class Teak extends BroadcastReceiver {
             return;
         }
 
-        if (Teak.enabled) {
+        if (Teak.isEnabled()) {
             HashMap<String, Object> payload = new HashMap<>();
             payload.put("action_type", actionId);
             payload.put("object_type", objectTypeId);
@@ -212,19 +212,89 @@ public class Teak extends BroadcastReceiver {
 
     /**************************************************************************/
 
+    // region State machine
+    public enum State {
+        Disabled("Disabled"),
+        Allocated("Allocated"),
+        Created("Created"),
+        Active("Active"),
+        Paused("Paused"),
+        Destroyed("Destroyed");
+
+        //public static final Integer length = 1 + Destroyed.ordinal();
+
+        private static final State[][] allowedTransitions = {
+                {},
+                {State.Created},
+                {State.Active},
+                {State.Paused},
+                {State.Destroyed, State.Active},
+                {}
+        };
+
+        public final String name;
+
+        State(String name) {
+            this.name = name;
+        }
+
+        public boolean canTransitionTo(State nextState) {
+            if (nextState == State.Disabled) return true;
+
+            boolean ret = false;
+            for (State allowedTransition : allowedTransitions[this.ordinal()]) {
+                if (nextState == allowedTransition) {
+                    ret = true;
+                    break;
+                }
+            }
+            return ret;
+        }
+    }
+
+    private static State state = State.Allocated;
+    private static final Object stateMutex = new Object();
+
+    static boolean isEnabled() {
+        synchronized (Teak.stateMutex) {
+            return (Teak.state != State.Disabled);
+        }
+    }
+
+    private static boolean setState(@NonNull State newState) {
+        synchronized (Teak.stateMutex) {
+            if (Teak.state == newState) {
+                Log.i(LOG_TAG, String.format("Teak State transition to same state (%s). Ignoring.", Teak.state));
+                return false;
+            }
+
+            if (!Teak.state.canTransitionTo(newState)) {
+                Log.e(LOG_TAG, String.format("Invalid Teak State transition (%s -> %s). Ignoring.", Teak.state, newState));
+                return false;
+            }
+
+            if (Teak.isDebug) {
+                Log.d(LOG_TAG, String.format("Teak State transition from %s -> %s.", Teak.state, newState));
+            }
+
+            // TODO: Event listeners
+
+            Teak.state = newState;
+
+            return true;
+        }
+    }
+    // endregion
+
     static final String PREFERENCES_FILE = "io.teak.sdk.Preferences";
 
     static boolean isDebug;
     static DebugConfiguration debugConfiguration;
 
-    static boolean enabled = true;
-
     static Raven sdkRaven;
     static Raven appRaven;
 
     static LocalBroadcastManager localBroadcastManager;
-
-    private static HashMap<Integer, Boolean> lifecycleCallbacksRegistered = new HashMap<>();
 
     private static IStore appStore;
     private static AppConfiguration appConfiguration;
@@ -242,6 +312,8 @@ public class Teak extends BroadcastReceiver {
     private static final ActivityLifecycleCallbacks lifecycleCallbacks = new ActivityLifecycleCallbacks() {
         @Override
         public void onActivityCreated(Activity inActivity, Bundle savedInstanceState) {
+            if (!Teak.setState(State.Created)) return;
+
             final Context context = inActivity.getApplicationContext();
 
             // App Configuration
@@ -256,7 +328,7 @@ public class Teak extends BroadcastReceiver {
 
             // If deviceId is null, we can't operate
             if (Teak.deviceConfiguration.deviceId == null) {
-                Teak.enabled = false;
+                Teak.setState(State.Disabled);
                 cleanup(inActivity);
                 return;
             }
@@ -362,18 +434,13 @@ public class Teak extends BroadcastReceiver {
         }
 
         @Override
-        public void onActivityDestroyed(Activity activity) {
+        public void onActivityDestroyed(Activity unused) {
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityDestroyed");
             }
 
-            Application application = activity.getApplication();
-            if (Teak.lifecycleCallbacksRegistered.containsKey(application.hashCode())) {
-                Teak.lifecycleCallbacksRegistered.remove(application.hashCode());
-                cleanup(activity);
-            } else {
-                Log.d(LOG_TAG, "Duplicate onActivityDestroyed call for Application " + application.toString() + ", ignoring.");
-            }
+            // TODO: Do we want to do cleanup at all?
+            //cleanup(activity);
         }
 
         @Override
@@ -381,8 +448,9 @@ public class Teak extends BroadcastReceiver {
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityPaused");
             }
-
-            Session.onActivityPaused();
+            if (Teak.setState(State.Paused)){
+                Session.onActivityPaused();
+            }
         }
 
         @Override
@@ -391,12 +459,13 @@ public class Teak extends BroadcastReceiver {
                 Log.d(LOG_TAG, "Lifecycle - onActivityResumed");
             }
 
-            // Stores can do work if needed
-            if (Teak.appStore != null) {
-                Teak.appStore.onActivityResumed();
-            }
+            if (Teak.setState(State.Active)) {
+                if (Teak.appStore != null) {
+                    Teak.appStore.onActivityResumed();
+                }
 
-            Session.onActivityResumed(Teak.appConfiguration, Teak.deviceConfiguration);
+                Session.onActivityResumed(Teak.appConfiguration, Teak.deviceConfiguration);
+            }
         }
 
         @Override
@@ -503,7 +572,7 @@ public class Teak extends BroadcastReceiver {
     public void onReceive(Context inContext, Intent intent) {
         final Context context = inContext.getApplicationContext();
 
-        if (!Teak.enabled) {
+        if (!Teak.isEnabled()) {
             Log.e(LOG_TAG, "Teak is disabled, ignoring onReceive().");
             return;
         }
@@ -695,7 +764,7 @@ public class Teak extends BroadcastReceiver {
     }
 
     public static void checkActivityResultForPurchase(int resultCode, Intent data) {
-        if (Teak.enabled) {
+        if (Teak.isEnabled()) {
             if (Teak.appStore != null) {
                 Teak.appStore.checkActivityResultForPurchase(resultCode, data);
             } else {
