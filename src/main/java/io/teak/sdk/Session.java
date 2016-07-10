@@ -272,6 +272,7 @@ class Session {
                         for (WhenUserIdIsReadyRun runnable : userIdReadyRunnableQueue) {
                             new Thread(runnable).start();
                         }
+                        userIdReadyRunnableQueue.clear();
                     }
                 }
                 break;
