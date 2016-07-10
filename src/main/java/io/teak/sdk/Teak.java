@@ -74,6 +74,13 @@ public class Teak extends BroadcastReceiver {
             return;
         }
 
+        {
+            String airSdkVersion = Helpers.getStringResourceByName("io_teak_air_sdk_version", activity.getApplicationContext());
+            if (airSdkVersion != null) {
+                Log.d(LOG_TAG, "Adobe AIR SDK Version: " + airSdkVersion);
+            }
+        }
+
         // Set up debug logging ASAP
         try {
             final Context context = activity.getApplicationContext();
@@ -335,6 +342,11 @@ public class Teak extends BroadcastReceiver {
 
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, Teak.deviceConfiguration.toString());
+            }
+
+            // Display a clickable "report bug" link, as well as a copy/paste block for bug reporting
+            if (Teak.debugConfiguration != null) {
+                Teak.debugConfiguration.printBugReportInfo(context, Teak.appConfiguration, Teak.deviceConfiguration);
             }
 
             // Hook in to Session state change events
