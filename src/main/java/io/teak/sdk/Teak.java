@@ -434,16 +434,6 @@ public class Teak extends BroadcastReceiver {
         }
 
         @Override
-        public void onActivityDestroyed(Activity unused) {
-            if (Teak.isDebug) {
-                Log.d(LOG_TAG, "Lifecycle - onActivityDestroyed");
-            }
-
-            // TODO: Do we want to do cleanup at all?
-            //cleanup(activity);
-        }
-
-        @Override
         public void onActivityPaused(Activity unused) {
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityPaused");
@@ -486,6 +476,10 @@ public class Teak extends BroadcastReceiver {
                     Log.d(LOG_TAG, "Unity Prime31 purchase launched: " + bundle.toString());
                 }
             }
+        }
+
+        @Override
+        public void onActivityDestroyed(Activity unused) {
         }
 
         @Override
