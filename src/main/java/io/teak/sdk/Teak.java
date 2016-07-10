@@ -73,6 +73,16 @@ public class Teak extends BroadcastReceiver {
             return;
         }
 
+        // Set up debug logging ASAP
+        try {
+            final Context context = activity.getApplicationContext();
+            final ApplicationInfo applicationInfo = context.getApplicationInfo();
+            Teak.debugConfiguration = new DebugConfiguration(context);
+            Teak.isDebug = Teak.debugConfiguration.forceDebug || (applicationInfo != null && (0 != (applicationInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE)));
+        } catch (Exception e) {
+            Log.e(LOG_TAG, "Error creating DebugConfiguration. " + Log.getStackTraceString(e));
+        }
+
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
             Log.e(LOG_TAG, "Teak requires API level 14 to operate. Teak is disabled.");
             Teak.enabled = false;
@@ -233,11 +243,6 @@ public class Teak extends BroadcastReceiver {
         @Override
         public void onActivityCreated(Activity inActivity, Bundle savedInstanceState) {
             final Context context = inActivity.getApplicationContext();
-
-            Teak.debugConfiguration = new DebugConfiguration(context);
-
-            // Check for debug build
-            Teak.isDebug = Teak.debugConfiguration.forceDebug || (0 != (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE));
 
             // App Configuration
             Teak.appConfiguration = new AppConfiguration(context);

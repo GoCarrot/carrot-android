@@ -432,7 +432,9 @@ class Session {
 
                                 // Enable verbose logging if flagged
                                 boolean enableVerboseLogging = response.optBoolean("verbose_logging");
-                                Teak.debugConfiguration.setPreferenceForceDebug(enableVerboseLogging);
+                                if (Teak.debugConfiguration != null) {
+                                    Teak.debugConfiguration.setPreferenceForceDebug(enableVerboseLogging);
+                                }
 
                                 // Server requesting new push key.
                                 if (response.optBoolean("reset_push_key", false)) {

@@ -63,9 +63,20 @@ class DeviceConfiguration {
             this.platformString = "android_" + android.os.Build.VERSION.RELEASE;
         }
 
-        this.preferences = context.getSharedPreferences(Teak.PREFERENCES_FILE, Context.MODE_PRIVATE);
-        if (this.preferences == null) {
-            Log.e(LOG_TAG, "getSharedPreferences() returned null. Some caching is disabled.");
+        // Preferences file
+        {
+            SharedPreferences tempPreferences = null;
+            try {
+                tempPreferences = context.getSharedPreferences(Teak.PREFERENCES_FILE, Context.MODE_PRIVATE);
+            } catch (Exception e) {
+                Log.e(LOG_TAG, "Error calling getSharedPreferences(). " + Log.getStackTraceString(e));
+            } finally {
+                this.preferences = tempPreferences;
+            }
+
+            if (this.preferences == null) {
+                Log.e(LOG_TAG, "getSharedPreferences() returned null. Some caching is disabled.");
+            }
         }
 
         this.gcm = GoogleCloudMessaging.getInstance(context);
