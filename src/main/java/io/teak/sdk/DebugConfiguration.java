@@ -109,11 +109,11 @@ class DebugConfiguration {
                     debugInfoMap.put("externalDebugInfo", DebugConfiguration.externalDebugInfo);
                 }
 
-                String debugInfo = new JSONObject(debugInfoMap).toString(2);
+                String debugInfo = new JSONObject(debugInfoMap).toString();
                 Log.d(LOG_TAG, "Please include the following JSON blog with any bug reports you submit: " + debugInfo);
 
                 if (this.bugReportUrl != null) {
-                    Log.d(LOG_TAG, String.format(Locale.US, "Or use this link:\n%s?body=%s", this.bugReportUrl, URLEncoder.encode(debugInfo, "UTF-8")));
+                    Log.d(LOG_TAG, String.format(Locale.US, "Or use this link:\n%s?body=%s", this.bugReportUrl, URLEncoder.encode("DESCRIBE THE ISSUE HERE\n\n" + debugInfo, "UTF-8")));
                 }
             } catch (Exception e) {
                 Log.e(LOG_TAG, "Error in printBugReportInfo() " + Log.getStackTraceString(e));
