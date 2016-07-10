@@ -249,7 +249,7 @@ class Session {
                     RemoteConfiguration.removeEventListener(remoteConfigurationListener);
 
                     if (this.userId != null) {
-                        currentSession.identifyUser();
+                        this.identifyUser();
                     }
                 }
                 break;
@@ -636,7 +636,17 @@ class Session {
     public static Session getCurrentSession(AppConfiguration appConfiguration, DeviceConfiguration deviceConfiguration) {
         synchronized (currentSessionMutex) {
             if (currentSession == null || currentSession.hasExpired()) {
+                Session oldSession = currentSession;
                 currentSession = new Session(appConfiguration, deviceConfiguration);
+
+                // If the old session had a user id assigned, it needs to be passed to the newly created
+                // session. When setState(State.Configured) happens, it will call identifyUser()
+                if (oldSession != null && oldSession.userId != null) {
+                    if (Teak.isDebug) {
+                        Log.d(LOG_TAG, "Previous Session expired, assigning user id '" + oldSession.userId + " to new Session.");
+                    }
+                    setUserId(oldSession.userId);
+                }
             }
             return currentSession;
         }
