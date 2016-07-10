@@ -47,7 +47,7 @@ android.libraryVariants.all { variant ->
         dependsOn variant.javaCompile
         from variant.javaCompile.destinationDir
         exclude '**/R.class', '**/R$*.class', '**/R.html', '**/R.*.html',
-                'com/google/**'
+                'com/**'
         if (variant.buildType.name.equals(BuilderConstants.DEBUG)) {
             archiveName "${archivesBaseName}-${variant.name.replace('Debug', '')}-debug.jar"
         } else {
