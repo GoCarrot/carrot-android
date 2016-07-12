@@ -374,7 +374,6 @@ class Session {
                     HashMap<String, Object> payload = new HashMap<>();
 
                     payload.put("api_key", _this.userId);
-                    payload.put("happened_at", dateIssued.getTime() / 1000); // Milliseconds -> Seconds
 
                     if (_this.state == State.UserIdentified) {
                         payload.put("do_not_track_event", Boolean.TRUE);
