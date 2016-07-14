@@ -43,7 +43,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import java.util.Date;
 import java.util.HashMap;
 
 /**
@@ -320,7 +319,11 @@ public class Teak extends BroadcastReceiver {
     private static final ActivityLifecycleCallbacks lifecycleCallbacks = new ActivityLifecycleCallbacks() {
         @Override
         public void onActivityCreated(Activity inActivity, Bundle savedInstanceState) {
-            if (!Teak.setState(State.Created)) return;
+            if (!Teak.setState(State.Created)) {
+                // Still process launch event
+                Session.processIntent(inActivity.getIntent(), Teak.appConfiguration, Teak.deviceConfiguration);
+                return;
+            }
 
             final Context context = inActivity.getApplicationContext();
 
