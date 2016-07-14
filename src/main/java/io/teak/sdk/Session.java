@@ -71,14 +71,10 @@ class Session {
         public boolean canTransitionTo(State nextState) {
             if (nextState == State.Invalid) return true;
 
-            boolean ret = false;
             for (State allowedTransition : allowedTransitions[this.ordinal()]) {
-                if (nextState == allowedTransition) {
-                    ret = true;
-                    break;
-                }
+                if (nextState == allowedTransition) return true;
             }
-            return ret;
+            return false;
         }
     }
 
