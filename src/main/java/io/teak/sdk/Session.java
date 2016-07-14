@@ -422,7 +422,10 @@ class Session {
                                     _this.countryCode = response.getString("country_code");
                                 }
 
-                                _this.setState(State.UserIdentified);
+                                // Prevent warning for 'do_not_track_event'
+                                if (_this.state != State.UserIdentified) {
+                                    _this.setState(State.UserIdentified);
+                                }
                             } catch (Exception ignored) {
                             }
 
