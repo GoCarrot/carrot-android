@@ -78,9 +78,9 @@ class Session {
         }
     }
 
-    private State state = State.Allocated; // Assign using setState() during copy constructor
-    private State previousState = null;    // Copy during copy constructor
-    private final Object stateMutex = new Object(); // Do not copy during copy constructor
+    private State state = State.Allocated;
+    private State previousState = null;
+    private final Object stateMutex = new Object();
     // endregion
 
     // region Event Listener
@@ -107,26 +107,26 @@ class Session {
     // endregion
 
     // State: Created
-    public final Date startDate; // Do not copy during copy constructor
-    public final AppConfiguration appConfiguration; // Copy during copy constructor
-    public final DeviceConfiguration deviceConfiguration; // Copy during copy constructor
+    public final Date startDate;
+    public final AppConfiguration appConfiguration;
+    public final DeviceConfiguration deviceConfiguration;
 
     // State: Configured
-    public RemoteConfiguration remoteConfiguration; // Copy during copy constructor
+    public RemoteConfiguration remoteConfiguration;
 
     // State: UserIdentified
-    private String userId; // Copy during copy constructor
+    private String userId;
 
-    private ScheduledExecutorService heartbeatService; // Do not copy during copy constructor
-    private String countryCode; // Copy during copy constructor
+    private ScheduledExecutorService heartbeatService;
+    private String countryCode;
 
     // State: Expiring
-    private Date endDate; // Do not copy during copy constructor
+    private Date endDate;
 
     // State Independent
-    private String launchedFromTeakNotifId; // Do not copy during copy constructor
-    private String launchedFromDeepLink;    // Do not copy during copy constructor
-    private ArrayList<String> attributionChain = new ArrayList<>(); // Append during copy constructor
+    private String launchedFromTeakNotifId;
+    private String launchedFromDeepLink;
+    private ArrayList<String> attributionChain = new ArrayList<>();
 
     private Session(AppConfiguration appConfiguration, DeviceConfiguration deviceConfiguration) {
         // State: Created
@@ -141,26 +141,6 @@ class Session {
         DeviceConfiguration.addEventListener(this.deviceConfigurationListener);
 
         setState(State.Created);
-    }
-
-    private Session(@NonNull Session otherSession) {
-        this.startDate = new Date();
-
-        // Add the old session's attribution chain to ours
-        this.attributionChain.addAll(otherSession.attributionChain);
-
-        // Copy over relevant data
-        this.appConfiguration = otherSession.appConfiguration;
-        this.deviceConfiguration = otherSession.deviceConfiguration;
-        this.remoteConfiguration = otherSession.remoteConfiguration;
-        this.previousState = otherSession.previousState;
-        this.userId = otherSession.userId;
-        this.countryCode = otherSession.countryCode;
-
-        DeviceConfiguration.addEventListener(this.deviceConfigurationListener);
-
-        // Assign state
-        setState(otherSession.state);
     }
 
     public boolean hasExpired() {
@@ -183,13 +163,15 @@ class Session {
         synchronized (currentSessionMutex) {
             synchronized (currentSession.stateMutex) {
                 if (currentSession.userId != null && !currentSession.userId.equals(userId)) {
-                    Session newSession = new Session(currentSession);
+                    Session newSession = new Session(currentSession.appConfiguration, currentSession.deviceConfiguration);
+                    newSession.attributionChain.addAll(currentSession.attributionChain);
 
                     currentSession.setState(State.Expiring);
                     currentSession.setState(State.Expired);
 
                     currentSession = newSession;
                 }
+
                 currentSession.userId = userId;
 
                 if (currentSession.state == State.Configured) {
@@ -288,6 +270,8 @@ class Session {
 
                 case Expired: {
                     DeviceConfiguration.removeEventListener(this.deviceConfigurationListener);
+
+                    // TODO: Report Session to server, once we collect that info.
                 }
                 break;
             }
@@ -532,8 +516,12 @@ class Session {
             if (stringsAreNotNullOrEmptyAndAreDifferent(currentSession.launchedFromDeepLink, launchedFromDeepLink) ||
                     stringsAreNotNullOrEmptyAndAreDifferent(currentSession.launchedFromTeakNotifId, launchedFromTeakNotifId)) {
                 Session oldSession = currentSession;
-                currentSession = new Session(currentSession); // Copy constructor will append oldSession's attribution chain
-                oldSession.setState(State.Expired); // Expire after copy constructor so Expired state isn't copied
+                currentSession = new Session(oldSession.appConfiguration, oldSession.deviceConfiguration);
+                currentSession.userId = oldSession.userId;
+                currentSession.attributionChain.addAll(oldSession.attributionChain);
+
+                oldSession.setState(State.Expiring);
+                oldSession.setState(State.Expired);
             }
 
             // Assign attribution
@@ -633,6 +621,7 @@ class Session {
             if (currentSession == null || currentSession.hasExpired()) {
                 Session oldSession = currentSession;
                 currentSession = new Session(appConfiguration, deviceConfiguration);
+                currentSession.attributionChain.addAll(oldSession.attributionChain);
 
                 // If the old session had a user id assigned, it needs to be passed to the newly created
                 // session. When setState(State.Configured) happens, it will call identifyUser()
