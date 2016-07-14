@@ -53,23 +53,25 @@ public class RavenService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        String appId = intent.getStringExtra("appId");
+        if (intent != null) {
+            String appId = intent.getStringExtra("appId");
 
-        if (appId != null && !appId.isEmpty()) {
-            AppReporter appReporter;
-            if (!appReporterMap.containsKey(appId)) {
-                appReporter = new AppReporter(this, appId);
-                appReporterMap.put(appId, appReporter);
-            } else {
-                appReporter = appReporterMap.get(appId);
-            }
+            if (appId != null && !appId.isEmpty()) {
+                AppReporter appReporter;
+                if (!appReporterMap.containsKey(appId)) {
+                    appReporter = new AppReporter(this, appId);
+                    appReporterMap.put(appId, appReporter);
+                } else {
+                    appReporter = appReporterMap.get(appId);
+                }
 
-            String action = intent.getAction();
-            if (action != null && !action.isEmpty()) {
-                if (SET_DSN_INTENT_ACTION.equals(action)) {
-                    appReporter.setDsn(intent);
-                } else if(REPORT_EXCEPTION_INTENT_ACTION.equals(action)) {
-                    appReporter.reportException(intent);
+                String action = intent.getAction();
+                if (action != null && !action.isEmpty()) {
+                    if (SET_DSN_INTENT_ACTION.equals(action)) {
+                        appReporter.setDsn(intent);
+                    } else if (REPORT_EXCEPTION_INTENT_ACTION.equals(action)) {
+                        appReporter.reportException(intent);
+                    }
                 }
             }
         }
