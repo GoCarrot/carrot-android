@@ -84,7 +84,7 @@ class DebugConfiguration {
                 editor.apply();
                 Log.d(LOG_TAG, String.format(Locale.US, "Force debug is now %s, please re-start the app.", forceDebug ? "enabled" : "disabled"));
             } catch (Exception e) {
-                Log.e(LOG_TAG, "Error occured while storing preferences. " + Log.getStackTraceString(e));
+                Log.e(LOG_TAG, "Error occurred while storing preferences. " + Log.getStackTraceString(e));
             }
         }
     }
