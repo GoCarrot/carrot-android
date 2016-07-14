@@ -15,6 +15,7 @@
 package io.teak.sdk;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Base64;
 import android.util.Log;
 
@@ -36,6 +37,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,45 +50,27 @@ class Request implements Runnable {
     private static final String LOG_TAG = "Teak:Request";
 
     private final String endpoint;
-    private final String method;
     private final String hostname;
     protected final Map<String, Object> payload;
     private final Session session;
 
     static Map<String, Object> dynamicCommonPayload = new HashMap<>();
 
-    // Used to send non-cached requests
-    public Request(@NonNull String method, @NonNull String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
-        this.method = method;
+    public Request(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
+        this(null, endpoint, payload, session);
+    }
+
+    public Request(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
         this.hostname = hostname;
         this.endpoint = endpoint;
         this.payload = payload;
         this.session = session;
 
-        addCommonDataToPayload(this.payload, session);
-    }
-
-    // Used by the CachedRequest constructor
-    protected Request(@NonNull String method, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
-        this.method = method;
-        this.hostname = null;
-        this.endpoint = endpoint;
-        this.payload = payload;
-        this.session = session;
-
-        addCommonDataToPayload(this.payload, session);
-    }
-
-    // Used by the CachedRequest constructor that instantiates from the SQLite cache
-    protected Request(@NonNull String method, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @NonNull Object alreadyHasCommonPayload) {
-        this.method = method;
-        this.hostname = null;
-        this.endpoint = endpoint;
-        this.payload = payload; // Already has common payload
-        this.session = session;
-    }
-
-    private void addCommonDataToPayload(@NonNull Map<String, Object> payload, @NonNull Session session) {
+        // Add common data
+        if (session.userId() != null) {
+            payload.put("api_key", session.userId());
+        }
+        payload.put("request_date", new Date().getTime() / 1000); // Milliseconds -> Seconds
         payload.put("game_id", session.appConfiguration.appId);
         payload.put("sdk_version", Teak.SDKVersion);
         payload.put("sdk_platform", session.deviceConfiguration.platformString);
@@ -142,7 +126,7 @@ class Request implements Runnable {
             }
             builder.deleteCharAt(builder.length() - 1);
 
-            String stringToSign = this.method + "\n" + hostnameForEndpoint + "\n" + this.endpoint + "\n" + builder.toString();
+            String stringToSign = "POST\n" + hostnameForEndpoint + "\n" + this.endpoint + "\n" + builder.toString();
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(keySpec);
             byte[] result = mac.doFinal(stringToSign.getBytes());
@@ -175,28 +159,21 @@ class Request implements Runnable {
                 Log.d(LOG_TAG, "Submitting request to '" + this.endpoint + "': " + new JSONObject(this.payload).toString(2));
             }
 
-            if (this.method.equalsIgnoreCase("POST")) {
-                URL url = new URL("https://" + hostnameForEndpoint + this.endpoint);
-                connection = (HttpsURLConnection) url.openConnection();
+            URL url = new URL("https://" + hostnameForEndpoint + this.endpoint);
+            connection = (HttpsURLConnection) url.openConnection();
 
-                connection.setRequestProperty("Accept-Charset", "UTF-8");
-                connection.setUseCaches(false);
-                connection.setDoOutput(true);
-                connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                connection.setRequestProperty("Content-Length",
-                        "" + Integer.toString(requestBody.getBytes().length));
+            connection.setRequestProperty("Accept-Charset", "UTF-8");
+            connection.setUseCaches(false);
+            connection.setDoOutput(true);
+            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            connection.setRequestProperty("Content-Length",
+                    "" + Integer.toString(requestBody.getBytes().length));
 
-                // Send request
-                DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
-                wr.writeBytes(requestBody);
-                wr.flush();
-                wr.close();
-            } else {
-                URL url = new URL("https://" + hostnameForEndpoint + this.endpoint + "?" + requestBody);
-                connection = (HttpsURLConnection) url.openConnection();
-                connection.setRequestProperty("Accept-Charset", "UTF-8");
-                connection.setUseCaches(false);
-            }
+            // Send request
+            DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
+            wr.writeBytes(requestBody);
+            wr.flush();
+            wr.close();
 
             // Get Response
             InputStream is;

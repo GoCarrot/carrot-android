@@ -189,7 +189,7 @@ public class Teak extends BroadcastReceiver {
      * @param objectInstanceId The specific instance of the object, e.g. 'gather-quest-1'
      */
     @SuppressWarnings("unused")
-    public static void trackEvent(String actionId, String objectTypeId, String objectInstanceId) {
+    public static void trackEvent(final String actionId, final String objectTypeId, final String objectInstanceId) {
         if (Teak.isDebug) {
             Log.d(LOG_TAG, "Tracking Event: " + actionId + " - " + objectTypeId + " - " + objectInstanceId);
         }
@@ -206,12 +206,17 @@ public class Teak extends BroadcastReceiver {
         }
 
         if (Teak.isEnabled()) {
-            HashMap<String, Object> payload = new HashMap<>();
-            payload.put("action_type", actionId);
-            payload.put("object_type", objectTypeId);
-            payload.put("object_instance_id", objectInstanceId);
+            Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+                @Override
+                public void run(Session session) {
+                    HashMap<String, Object> payload = new HashMap<>();
+                    payload.put("action_type", actionId);
+                    payload.put("object_type", objectTypeId);
+                    payload.put("object_instance_id", objectInstanceId);
 
-            CachedRequest.submitCachedRequest("/me/events", payload, new Date());
+                    new Request("/me/events", payload, session).run();
+                }
+            });
         } else {
             Log.e(LOG_TAG, "Teak is disabled, ignoring trackEvent().");
         }
@@ -353,9 +358,6 @@ public class Teak extends BroadcastReceiver {
             Teak.sdkRaven = new Raven(context, "sdk", Teak.appConfiguration, Teak.deviceConfiguration);
             Teak.appRaven = new Raven(context, Teak.appConfiguration.bundleId, Teak.appConfiguration, Teak.deviceConfiguration);
 
-            // Request cache manager
-            CacheManager.initialize(context);
-
             // Broadcast manager
             Teak.localBroadcastManager = LocalBroadcastManager.getInstance(context);
 
@@ -411,7 +413,7 @@ public class Teak extends BroadcastReceiver {
             if (Teak.isDebug) {
                 HashMap<String, Object> payload = new HashMap<>();
                 payload.put("id", Teak.appConfiguration.appId);
-                new Thread(new Request("POST", "gocarrot.com", "/games/" + Teak.appConfiguration.appId + "/validate_sig.json", payload, Session.getCurrentSession(Teak.appConfiguration, Teak.deviceConfiguration)) {
+                new Thread(new Request("gocarrot.com", "/games/" + Teak.appConfiguration.appId + "/validate_sig.json", payload, Session.getCurrentSession(Teak.appConfiguration, Teak.deviceConfiguration)) {
                     @Override
                     protected void done(int responseCode, String responseBody) {
                         try {
@@ -505,9 +507,6 @@ public class Teak extends BroadcastReceiver {
             if (newState == Session.State.Created) {
                 // If Session state is now 'Created', we need the configuration from the Teak server
                 RemoteConfiguration.requestConfigurationForApp(session);
-            } else if (newState == Session.State.Configured) {
-                // Submit cached requests
-                CachedRequest.submitCachedRequests(session);
             }
         }
     };
@@ -579,9 +578,6 @@ public class Teak extends BroadcastReceiver {
             return;
         }
 
-        // In case a push comes in
-        CacheManager.initialize(context);
-
         String action = intent.getAction();
 
         if (GCM_RECEIVE_INTENT_ACTION.equals(action)) {
@@ -599,7 +595,7 @@ public class Teak extends BroadcastReceiver {
                     payload.put("user_id", session.userId());
                     payload.put("platform_id", notif.teakNotifId);
 
-                    CachedRequest.submitCachedRequest("/notification_received", payload, new Date());
+                    new Request("/notification_received", payload, session).run();
                 }
             });
         } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX)) {
@@ -625,6 +621,14 @@ public class Teak extends BroadcastReceiver {
                 if (Teak.isDebug) {
                     Log.d(LOG_TAG, "Notification (" + bundle.getString("teakNotifId") + ") opened, NOT auto-launching app (noAutoLaunch flag present, and set to true).");
                 }
+            }
+
+            // Send broadcast
+            // TODO: Update Unity SDK to read teakNotifId from the broadcast intent
+            if (Teak.localBroadcastManager != null) {
+                Intent broadcastEvent = new Intent(TeakNotification.LAUNCHED_FROM_NOTIFICATION_INTENT);
+                broadcastEvent.putExtras(bundle);
+                Teak.localBroadcastManager.sendBroadcast(broadcastEvent);
             }
         } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX)) {
             Bundle bundle = intent.getExtras();
@@ -707,7 +711,7 @@ public class Teak extends BroadcastReceiver {
                         Log.d(LOG_TAG, "Purchase succeeded: " + purchaseData.toString(2));
                     }
 
-                    HashMap<String, Object> payload = new HashMap<>();
+                    final HashMap<String, Object> payload = new HashMap<>();
 
                     if (Teak.appConfiguration.installerPackage == null) {
                         Log.e(LOG_TAG, "Purchase succeded from unknown app store.");
@@ -745,7 +749,12 @@ public class Teak extends BroadcastReceiver {
                         }
                     }
 
-                    CachedRequest.submitCachedRequest("/me/purchase", payload, new Date());
+                    Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+                        @Override
+                        public void run(Session session) {
+                            new Request("/me/purchase", payload, session).run();
+                        }
+                    });
                 } catch (Exception e) {
                     Log.e(LOG_TAG, "Error reporting purchase: " + Log.getStackTraceString(e));
                     Teak.sdkRaven.reportException(e);
@@ -759,10 +768,15 @@ public class Teak extends BroadcastReceiver {
             Log.d(LOG_TAG, "Purchase failed (" + errorCode + ")");
         }
 
-        HashMap<String, Object> payload = new HashMap<>();
+        final HashMap<String, Object> payload = new HashMap<>();
         payload.put("error_code", errorCode);
 
-        CachedRequest.submitCachedRequest("/me/purchase", payload, new Date());
+        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+            @Override
+            public void run(Session session) {
+                new Request("/me/purchase", payload, session).run();
+            }
+        });
     }
 
     public static void checkActivityResultForPurchase(int resultCode, Intent data) {

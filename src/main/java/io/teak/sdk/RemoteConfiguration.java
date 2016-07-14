@@ -66,7 +66,7 @@ class RemoteConfiguration {
         HashMap<String, Object> payload = new HashMap<>();
         payload.put("id", session.appConfiguration.appId);
 
-        new Thread(new Request("POST", "gocarrot.com", "/games/" + session.appConfiguration.appId + "/settings.json", payload, session) {
+        new Thread(new Request("gocarrot.com", "/games/" + session.appConfiguration.appId + "/settings.json", payload, session) {
             @Override
             protected void done(int responseCode, String responseBody) {
                 try {

@@ -129,15 +129,6 @@ public class TeakNotification {
     public static final String LAUNCHED_FROM_NOTIFICATION_INTENT = "io.teak.sdk.TeakNotification.intent.LAUNCHED_FROM_NOTIFICATION";
 
     /**
-     * Check to see if this notification has a reward attached to it.
-     *
-     * @return <code>true</code> if this notification has a reward attached to it.
-     */
-    public boolean hasReward() {
-        return (this.teakRewardId != null && !this.teakRewardId.trim().isEmpty());
-    }
-
-    /**
      * Get optional extra data associated with this notification.
      *
      * @return {@link JSONObject} containing extra data sent by the server.
@@ -147,44 +138,7 @@ public class TeakNotification {
         return this.extras;
     }
 
-    /**
-     * Gets a notification by id.
-     *
-     * @return A {@link TeakNotification} for the provided id, or null if not found.
-     */
-    @SuppressWarnings("unused")
-    public static TeakNotification byTeakNotifId(String teakNotifId) {
-        if (!Teak.isEnabled()) {
-            Log.e(LOG_TAG, "Teak is disabled, ignoring byTeakNotifId().");
-            return null;
-        }
-
-        TeakNotification notif = null;
-        String[] inboxReadColumns = {"notification_payload"};
-
-        try {
-            Cursor cursor = CacheManager.instance().open().query("inbox", inboxReadColumns,
-                    "teak_notification_id=?", new String[]{teakNotifId}, null, null, null);
-
-            cursor.moveToFirst();
-            if (!cursor.isAfterLast()) {
-                try {
-                    notif = new TeakNotification(cursor.getString(0));
-                } catch (Exception e) {
-                    Log.e(LOG_TAG, Log.getStackTraceString(e));
-                }
-                cursor.moveToNext();
-            }
-            cursor.close();
-            CacheManager.instance().close();
-        } catch (Exception e) {
-            Log.e(LOG_TAG, Log.getStackTraceString(e));
-        }
-
-        return notif;
-    }
-
-    public class Reward {
+    public static class Reward {
 
         /**
          * An unknown error occured while processing the reward.
@@ -254,8 +208,11 @@ public class TeakNotification {
          */
         public JSONObject reward;
 
+        public JSONObject originalJson;
+
         Reward(JSONObject json) {
             String statusString = json.optString("status");
+            this.originalJson = json;
 
             if (GRANT_REWARD_STRING.equals(statusString)) {
                 status = GRANT_REWARD;
@@ -294,105 +251,102 @@ public class TeakNotification {
         private static final String EXCEED_MAX_CLICKS_FOR_DAY_STRING = "exceed_max_clicks_for_day";
         private static final String EXPIRED_STRING = "expired";
         private static final String INVALID_POST_STRING = "invalid_post";
-    }
 
-    /**
-     * Consumes the notification, removing it from the Inbox, and returns a {@link Reward}.
-     * <p/>
-     * <p>The <code>Reward</code> will be <code>null</code> if there is no reward associated
-     * with the notification.</p>
-     *
-     * @return A {@link Future} which will contain the reward that should be granted, or <code>null</code> if there is no associated reward.
-     */
-    @SuppressWarnings("unused")
-    public Future<Reward> consumeNotification() {
-        final TeakNotification _this = this;
-        final ArrayBlockingQueue<Reward> q = new ArrayBlockingQueue<>(1);
-        final FutureTask<Reward> ret = new FutureTask<>(new Callable<Reward>() {
-            public Reward call() {
-                try {
-                    return q.take();
-                } catch (InterruptedException e) {
-                    Log.e(LOG_TAG, Log.getStackTraceString(e));
-                }
+        /**
+         * @return A {@link Future} which will contain the reward that should be granted, or <code>null</code> if there is no associated reward.
+         */
+        @SuppressWarnings("unused")
+        public static Future<Reward> rewardFromRewardId(final String teakRewardId) {
+            if (!Teak.isEnabled()) {
+                Log.e(LOG_TAG, "Teak is disabled, ignoring rewardFromRewardId().");
                 return null;
             }
-        });
 
-        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
-            @Override
-            public void run(Session session) {
-                if (!_this.hasReward()) {
-                    _this.removeFromCache();
-                    q.offer(null);
-                    return;
-                }
+            if (teakRewardId == null || teakRewardId.isEmpty()) {
+                Log.e(LOG_TAG, "teakRewardId cannot be null or empty");
+                return null;
+            }
 
-                HttpsURLConnection connection = null;
-
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "Claiming reward id: " + _this.teakRewardId);
-                }
-
-                try {
-                    // https://rewards.gocarrot.com/<<teak_reward_id>>/clicks?clicking_user_id=<<your_user_id>>
-                    String requestBody = "clicking_user_id=" + URLEncoder.encode(session.userId(), "UTF-8");
-
-                    URL url = new URL("https://rewards.gocarrot.com/" + _this.teakRewardId + "/clicks");
-                    connection = (HttpsURLConnection) url.openConnection();
-
-                    connection.setRequestProperty("Accept-Charset", "UTF-8");
-                    connection.setUseCaches(false);
-                    connection.setDoOutput(true);
-                    connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                    connection.setRequestProperty("Content-Length",
-                            "" + Integer.toString(requestBody.getBytes().length));
-
-                    // Send request
-                    DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
-                    wr.writeBytes(requestBody);
-                    wr.flush();
-                    wr.close();
-
-                    // Get Response
-                    InputStream is;
-                    if (connection.getResponseCode() < 400) {
-                        is = connection.getInputStream();
-                    } else {
-                        is = connection.getErrorStream();
+            final ArrayBlockingQueue<Reward> q = new ArrayBlockingQueue<>(1);
+            final FutureTask<Reward> ret = new FutureTask<>(new Callable<Reward>() {
+                public Reward call() {
+                    try {
+                        return q.take();
+                    } catch (InterruptedException e) {
+                        Log.e(LOG_TAG, Log.getStackTraceString(e));
                     }
-                    BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-                    String line;
-                    StringBuilder response = new StringBuilder();
-                    while ((line = rd.readLine()) != null) {
-                        response.append(line);
-                        response.append('\r');
-                    }
-                    rd.close();
+                    return null;
+                }
+            });
+            new Thread(ret).start();
 
-                    JSONObject responseJson = new JSONObject(response.toString());
-                    JSONObject rewardResponse = responseJson.optJSONObject("response");
-                    Reward reward = new Reward(rewardResponse);
+            Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+                @Override
+                public void run(Session session) {
+                    HttpsURLConnection connection = null;
 
                     if (Teak.isDebug) {
-                        Log.d(LOG_TAG, "Reward claim response: " + responseJson.toString(2));
+                        Log.d(LOG_TAG, "Claiming reward id: " + teakRewardId);
                     }
 
-                    _this.removeFromCache();
+                    try {
+                        // https://rewards.gocarrot.com/<<teak_reward_id>>/clicks?clicking_user_id=<<your_user_id>>
+                        String requestBody = "clicking_user_id=" + URLEncoder.encode(session.userId(), "UTF-8");
 
-                    q.offer(reward);
-                } catch (Exception e) {
-                    Log.e(LOG_TAG, Log.getStackTraceString(e));
-                    q.offer(null);
-                } finally {
-                    if (connection != null) {
-                        connection.disconnect();
+                        URL url = new URL("https://rewards.gocarrot.com/" + teakRewardId + "/clicks");
+                        connection = (HttpsURLConnection) url.openConnection();
+
+                        connection.setRequestProperty("Accept-Charset", "UTF-8");
+                        connection.setUseCaches(false);
+                        connection.setDoOutput(true);
+                        connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                        connection.setRequestProperty("Content-Length",
+                                "" + Integer.toString(requestBody.getBytes().length));
+
+                        // Send request
+                        DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
+                        wr.writeBytes(requestBody);
+                        wr.flush();
+                        wr.close();
+
+                        // Get Response
+                        InputStream is;
+                        if (connection.getResponseCode() < 400) {
+                            is = connection.getInputStream();
+                        } else {
+                            is = connection.getErrorStream();
+                        }
+                        BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+                        String line;
+                        StringBuilder response = new StringBuilder();
+                        while ((line = rd.readLine()) != null) {
+                            response.append(line);
+                            response.append('\r');
+                        }
+                        rd.close();
+
+                        JSONObject responseJson = new JSONObject(response.toString());
+                        JSONObject rewardResponse = responseJson.optJSONObject("response");
+                        Reward reward = new Reward(rewardResponse);
+
+                        if (Teak.isDebug) {
+                            Log.d(LOG_TAG, "Reward claim response: " + responseJson.toString(2));
+                        }
+
+                        q.offer(reward);
+                    } catch (Exception e) {
+                        Log.e(LOG_TAG, Log.getStackTraceString(e));
+                        q.offer(null);
+                    } finally {
+                        if (connection != null) {
+                            connection.disconnect();
+                        }
                     }
                 }
-            }
-        });
+            });
 
-        return ret;
+            return ret;
+        }
     }
 
     /**
@@ -407,6 +361,16 @@ public class TeakNotification {
     public static FutureTask<String> scheduleNotification(final String creativeId, final String defaultMessage, final long delayInSeconds) {
         if (!Teak.isEnabled()) {
             Log.e(LOG_TAG, "Teak is disabled, ignoring scheduleNotification().");
+            return null;
+        }
+
+        if (creativeId == null || creativeId.isEmpty()) {
+            Log.e(LOG_TAG, "creativeId cannot be null or empty");
+            return null;
+        }
+
+        if (defaultMessage == null || defaultMessage.isEmpty()) {
+            Log.e(LOG_TAG, "defaultMessage cannot be null or empty");
             return null;
         }
 
@@ -429,9 +393,8 @@ public class TeakNotification {
                 payload.put("identifier", creativeId);
                 payload.put("message", defaultMessage);
                 payload.put("offset", delayInSeconds);
-                payload.put("api_key", session.userId());
 
-                new Request("POST", "gocarrot.com", "/me/local_notify.json", payload, session) {
+                new Request("/me/local_notify.json", payload, session) {
                     @Override
                     protected void done(int responseCode, String responseBody) {
                         try {
@@ -466,6 +429,11 @@ public class TeakNotification {
             return null;
         }
 
+        if (scheduleId == null || scheduleId.isEmpty()) {
+            Log.e(LOG_TAG, "scheduleId cannot be null or empty");
+            return null;
+        }
+
         final ArrayBlockingQueue<String> q = new ArrayBlockingQueue<>(1);
         final FutureTask<String> ret = new FutureTask<>(new Callable<String>() {
             public String call() {
@@ -483,9 +451,8 @@ public class TeakNotification {
             public void run(Session session) {
                 HashMap<String, Object> payload = new HashMap<>();
                 payload.put("id", scheduleId);
-                payload.put("api_key", session.userId());
 
-                new Request("POST", "gocarrot.com", "/me/cancel_local_notify.json", payload, session) {
+                new Request("/me/cancel_local_notify.json", payload, session) {
                     @Override
                     protected void done(int responseCode, String responseBody) {
                         try {
@@ -541,57 +508,6 @@ public class TeakNotification {
         }
 
         this.platformId = new Random().nextInt();
-
-        ContentValues values = new ContentValues();
-        values.put("teak_notification_id", this.teakNotifId);
-        values.put("android_id", this.platformId);
-        values.put("notification_payload", this.toJson());
-
-        try {
-            CacheManager.instance().open().insert("inbox", null, values);
-            CacheManager.instance().close();
-        } catch (Exception e) {
-            Log.e(LOG_TAG, Log.getStackTraceString(e));
-        }
-    }
-
-    private TeakNotification(String json) throws JSONException {
-        JSONObject contents = new JSONObject(json);
-
-        this.message = contents.getString("message");
-        this.longText = contents.optString("longText");
-        this.teakRewardId = contents.optString("teakRewardId");
-        this.imageAssetA = contents.optString("imageAssetA");
-        this.deepLink = contents.optString("deepLink");
-        this.platformId = contents.getInt("platformId");
-        this.teakNotifId = contents.getLong("teakNotifId");
-        this.extras = contents.optJSONObject("extras");
-    }
-
-    private String toJson() {
-        JSONObject json = new JSONObject();
-        try {
-            json.put("message", this.message);
-            json.putOpt("longText", this.longText);
-            json.putOpt("imageAssetA", this.imageAssetA);
-            json.putOpt("deepLink", this.deepLink);
-            json.putOpt("teakRewardId", this.teakRewardId);
-            json.put("platformId", Integer.valueOf(this.platformId));
-            json.put("teakNotifId", Long.valueOf(this.teakNotifId));
-            json.putOpt("extras", this.extras);
-        } catch (JSONException e) {
-            Log.e(LOG_TAG, "Error converting TeakNotification to JSON: " + Log.getStackTraceString(e));
-        }
-        return json.toString();
-    }
-
-    private void removeFromCache() {
-        try {
-            CacheManager.instance().open().delete("inbox", "teak_notification_id = " + this.teakNotifId, null);
-            CacheManager.instance().close();
-        } catch (Exception e) {
-            Log.e(LOG_TAG, Log.getStackTraceString(e));
-        }
     }
 
     static NotificationManager notificationManager;

@@ -345,15 +345,12 @@ class Session {
     }
 
     private void identifyUser() {
-        final Date dateIssued = new Date();
         final Session _this = this;
 
         new Thread(new Runnable() {
             public void run() {
                 synchronized (_this.stateMutex) {
                     HashMap<String, Object> payload = new HashMap<>();
-
-                    payload.put("api_key", _this.userId);
 
                     if (_this.state == State.UserIdentified) {
                         payload.put("do_not_track_event", Boolean.TRUE);
@@ -402,7 +399,7 @@ class Session {
                     Log.d(LOG_TAG, "        Timezone: " + tzOffset);
                     Log.d(LOG_TAG, "          Locale: " + locale);
 
-                    new CachedRequest.IdentifyUserRequest("/games/" + _this.appConfiguration.appId + "/users.json", payload, dateIssued, _this, _this.userId) {
+                    new Request("/games/" + _this.appConfiguration.appId + "/users.json", payload, _this) {
                         @Override
                         protected void done(int responseCode, String responseBody) {
                             try {
@@ -531,14 +528,6 @@ class Session {
             } else if (launchedFromTeakNotifId != null && !launchedFromTeakNotifId.isEmpty()) {
                 currentSession.launchedFromTeakNotifId = launchedFromTeakNotifId;
                 currentSession.attributionChain.add(launchedFromTeakNotifId);
-
-                // Send broadcast
-                // TODO: Update Unity SDK to read teakNotifId from the broadcast intent
-                if (Teak.localBroadcastManager != null) {
-                    Intent broadcastEvent = new Intent(TeakNotification.LAUNCHED_FROM_NOTIFICATION_INTENT);
-                    broadcastEvent.putExtra("teakNotifId", currentSession.launchedFromTeakNotifId);
-                    Teak.localBroadcastManager.sendBroadcast(broadcastEvent);
-                }
             }
         }
     }
@@ -605,9 +594,6 @@ class Session {
 
     // region Accessors
     public String userId() {
-        if (this.state != State.UserIdentified) {
-            Log.e(LOG_TAG, "Called userId() without checking for state == State.UserIdentified");
-        }
         return userId;
     }
     // endregion
