@@ -29,12 +29,16 @@ import com.google.android.gms.gcm.GoogleCloudMessaging;
 
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.FutureTask;
 
 class DeviceConfiguration {
     private static final String LOG_TAG = "Teak:DeviceConfig";
@@ -49,14 +53,14 @@ class DeviceConfiguration {
 
     public AdvertisingIdClient.Info advertsingInfo;
 
-    private GoogleCloudMessaging gcm;
+    private FutureTask<GoogleCloudMessaging> gcm;
     private SharedPreferences preferences;
 
     private static final String PREFERENCE_GCM_ID = "io.teak.sdk.Preferences.GcmId";
     private static final String PREFERENCE_APP_VERSION = "io.teak.sdk.Preferences.AppVersion";
     private static final String PREFERENCE_DEVICE_ID = "io.teak.sdk.Preferences.DeviceId";
 
-    public DeviceConfiguration(@NonNull Context context, @NonNull AppConfiguration appConfiguration) {
+    public DeviceConfiguration(@NonNull final Context context, @NonNull AppConfiguration appConfiguration) {
         if (android.os.Build.VERSION.RELEASE == null) {
             this.platformString = "android_unknown";
         } else {
@@ -78,8 +82,6 @@ class DeviceConfiguration {
                 Log.e(LOG_TAG, "getSharedPreferences() returned null. Some caching is disabled.");
             }
         }
-
-        this.gcm = GoogleCloudMessaging.getInstance(context);
 
         // Device model/manufacturer
         // https://raw.githubusercontent.com/jaredrummler/AndroidDeviceNames/master/library/src/main/java/com/jaredrummler/android/device/DeviceName.java
@@ -152,13 +154,21 @@ class DeviceConfiguration {
                 }
                 this.gcmId = storedGcmId;
                 displayGCMDebugMessage();
-            } else {
-                registerForGCM(appConfiguration);
             }
-        } else {
-            // Register each time
+        }
+
+        this.gcm = new FutureTask<>(new RetriableTask<>(100, 2000L, new Callable<GoogleCloudMessaging>() {
+            @Override
+            public GoogleCloudMessaging call() throws Exception {
+                return GoogleCloudMessaging.getInstance(context);
+            }
+        }));
+        new Thread(this.gcm).start();
+
+        if (this.gcmId == null) {
             registerForGCM(appConfiguration);
         }
+
 
         // Kick off Advertising Info request
         fetchAdvertisingInfo(context);
@@ -175,15 +185,28 @@ class DeviceConfiguration {
     }
 
     private void fetchAdvertisingInfo(@NonNull final Context context) {
+        final DeviceConfiguration _this = this;
+        final FutureTask<AdvertisingIdClient.Info> adInfoFuture = new FutureTask<>(new RetriableTask<>(100, 7000L, new Callable<AdvertisingIdClient.Info>() {
+            @Override
+            public AdvertisingIdClient.Info call() throws Exception {
+                int googlePlayStatus = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
+                if (googlePlayStatus == ConnectionResult.SUCCESS) {
+                    return AdvertisingIdClient.getAdvertisingIdInfo(context);
+                }
+                throw new Exception("Retrying GooglePlayServicesUtil.isGooglePlayServicesAvailable()");
+            }
+        }));
+        new Thread(adInfoFuture).start();
+
         // TODO: This needs to be re-checked in case it's something like SERVICE_UPDATING or SERVICE_VERSION_UPDATE_REQUIRED
         int googlePlayStatus = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
         if (googlePlayStatus == ConnectionResult.SUCCESS) {
-            final DeviceConfiguration _this = this;
+
             new Thread(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        AdvertisingIdClient.Info adInfo = AdvertisingIdClient.getAdvertisingIdInfo(context);
+                        AdvertisingIdClient.Info adInfo = adInfoFuture.get();
 
                         // Inform listeners Ad Info has changed
                         if (adInfo != _this.advertsingInfo) {
@@ -207,16 +230,25 @@ class DeviceConfiguration {
     private void registerForGCM(@NonNull final AppConfiguration appConfiguration) {
         try {
             if (appConfiguration.pushSenderId != null) {
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "Registering for GCM with sender id: " + appConfiguration.pushSenderId);
-                }
-
-                // Register for GCM in the background
                 final DeviceConfiguration _this = this;
+
+                final FutureTask<String> gcmRegistration = new FutureTask<>(new RetriableTask<>(100, 7000L, new Callable<String>() {
+                    @Override
+                    public String call() throws Exception {
+                        GoogleCloudMessaging gcm = _this.gcm.get();
+
+                        if (Teak.isDebug) {
+                            Log.d(LOG_TAG, "Registering for GCM with sender id: " + appConfiguration.pushSenderId);
+                        }
+                        return gcm.register(appConfiguration.pushSenderId);
+                    }
+                }));
+                new Thread(gcmRegistration).start();
+
                 new Thread(new Runnable() {
                     public void run() {
                         try {
-                            String registration = _this.gcm.register(appConfiguration.pushSenderId);
+                            String registration = gcmRegistration.get();
 
                             if (registration == null) {
                                 Log.e(LOG_TAG, "Got null token during GCM registration.");
@@ -243,7 +275,6 @@ class DeviceConfiguration {
                             displayGCMDebugMessage();
                         } catch (Exception e) {
                             Log.e(LOG_TAG, Log.getStackTraceString(e));
-                            // TODO: exponential back-off, re-register
                         }
                     }
                 }).start();
@@ -341,6 +372,33 @@ class DeviceConfiguration {
             return String.format(Locale.US, "%s: %s", super.toString(), new JSONObject(this.to_h()).toString(2));
         } catch (Exception ignored) {
             return super.toString();
+        }
+    }
+
+    public class RetriableTask<T> implements Callable<T> {
+        private final Callable<T> wrappedTask;
+        private final int tries;
+        private final long retryDelay;
+
+        public RetriableTask(final int tries, final long retryDelay, final Callable<T> taskToWrap) {
+            this.wrappedTask = taskToWrap;
+            this.tries = tries;
+            this.retryDelay = retryDelay;
+        }
+
+        public T call() throws Exception {
+            int triesLeft = this.tries;
+            while (true) {
+                try {
+                    return this.wrappedTask.call();
+                } catch (final CancellationException | InterruptedException e) {
+                    throw e;
+                } catch (final Exception e) {
+                    triesLeft--;
+                    if (triesLeft == 0) throw e;
+                    if (this.retryDelay > 0) Thread.sleep(this.retryDelay);
+                }
+            }
         }
     }
 }
