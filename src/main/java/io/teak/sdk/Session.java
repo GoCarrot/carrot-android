@@ -621,7 +621,10 @@ class Session {
             if (currentSession == null || currentSession.hasExpired()) {
                 Session oldSession = currentSession;
                 currentSession = new Session(appConfiguration, deviceConfiguration);
-                currentSession.attributionChain.addAll(oldSession.attributionChain);
+
+                if (oldSession != null) {
+                    currentSession.attributionChain.addAll(oldSession.attributionChain);
+                }
 
                 // If the old session had a user id assigned, it needs to be passed to the newly created
                 // session. When setState(State.Configured) happens, it will call identifyUser()
