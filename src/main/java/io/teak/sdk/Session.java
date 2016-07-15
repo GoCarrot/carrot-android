@@ -499,6 +499,9 @@ class Session {
             String launchedFromDeepLink = null;
             if (intentDataString != null && !intentDataString.isEmpty()) {
                 launchedFromDeepLink = intentDataString;
+                if (Teak.isDebug) {
+                    Log.d(LOG_TAG, "Launch from deep link: " + launchedFromDeepLink);
+                }
             }
 
             // Check for launch via notification
@@ -508,6 +511,9 @@ class Session {
                 String teakNotifId = bundle.getString("teakNotifId");
                 if (teakNotifId != null && !teakNotifId.isEmpty()) {
                     launchedFromTeakNotifId = teakNotifId;
+                    if (Teak.isDebug) {
+                        Log.d(LOG_TAG, "Launch from Teak notification: " + launchedFromTeakNotifId);
+                    }
                 }
             }
 
