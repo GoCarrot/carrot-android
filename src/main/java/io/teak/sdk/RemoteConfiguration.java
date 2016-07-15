@@ -73,9 +73,9 @@ class RemoteConfiguration {
                     JSONObject response = new JSONObject(responseBody);
 
                     RemoteConfiguration configuration = new RemoteConfiguration(session.appConfiguration,
-                            response.optString("auth", "gocarrot.com"),
-                            nullInsteadOfEmpty(response.optString("sdk_sentry_dsn", null)),
-                            nullInsteadOfEmpty(response.optString("app_sentry_dsn", null)));
+                            response.isNull("auth") ? "gocarrot.com" : response.getString("auth"),
+                            nullInsteadOfEmpty(response.isNull("sdk_sentry_dsn") ? null : response.getString("sdk_sentry_dsn")),
+                            nullInsteadOfEmpty(response.isNull("app_sentry_dsn") ? null : response.getString("app_sentry_dsn")));
 
                     synchronized (eventListenersMutex) {
                         for (EventListener e : RemoteConfiguration.eventListeners) {

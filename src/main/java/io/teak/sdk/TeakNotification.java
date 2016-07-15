@@ -16,44 +16,22 @@ package io.teak.sdk;
 
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
-import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.Build;
 import android.os.Bundle;
 
 import android.content.Intent;
 import android.content.Context;
-import android.content.ContentValues;
-import android.content.pm.PackageManager;
-import android.content.pm.ApplicationInfo;
-
-import android.database.Cursor;
-import android.database.DatabaseUtils;
 
 import android.app.Notification;
-import android.app.PendingIntent;
 
 import android.support.v4.content.LocalBroadcastManager;
-import android.text.Html;
-import android.text.Spanned;
-import android.view.View;
-import android.widget.RemoteViews;
-
 import android.support.v4.app.NotificationCompat;
 
 import android.util.Log;
 import android.util.SparseArray;
 
-import java.io.BufferedInputStream;
-import java.lang.reflect.Field;
-import java.net.URI;
-import java.net.URLConnection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Random;
-import java.util.ArrayList;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Future;
@@ -211,13 +189,18 @@ public class TeakNotification {
         public JSONObject originalJson;
 
         Reward(JSONObject json) {
-            String statusString = json.optString("status");
+            String statusString = "";
+            // Try/catch is unneeded practically, but needed to compile
+            try {
+                statusString = json.isNull("status") ? "" : json.getString("status");
+            } catch (Exception ignored) {
+            }
             this.originalJson = json;
 
             if (GRANT_REWARD_STRING.equals(statusString)) {
                 status = GRANT_REWARD;
                 try {
-                    reward = new JSONObject(json.optString("reward"));
+                    reward = new JSONObject(json.getString("reward"));
                 } catch (Exception e) {
                     // TODO: Raven log this
                     Log.e(LOG_TAG, Log.getStackTraceString(e));
