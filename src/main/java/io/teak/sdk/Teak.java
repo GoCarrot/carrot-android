@@ -85,7 +85,7 @@ public class Teak extends BroadcastReceiver {
             final Context context = activity.getApplicationContext();
             final ApplicationInfo applicationInfo = context.getApplicationInfo();
             Teak.debugConfiguration = new DebugConfiguration(context);
-            Teak.isDebug = Teak.debugConfiguration.forceDebug || (applicationInfo != null && (0 != (applicationInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE)));
+            Teak.isDebug = Teak.forceDebug || Teak.debugConfiguration.forceDebug || (applicationInfo != null && (0 != (applicationInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE)));
         } catch (Exception e) {
             Log.e(LOG_TAG, "Error creating DebugConfiguration. " + Log.getStackTraceString(e));
         }
@@ -294,6 +294,8 @@ public class Teak extends BroadcastReceiver {
     // endregion
 
     static final String PREFERENCES_FILE = "io.teak.sdk.Preferences";
+
+    public static boolean forceDebug;
 
     static boolean isDebug;
     static DebugConfiguration debugConfiguration;
