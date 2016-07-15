@@ -3,6 +3,7 @@
     <style name="Teak.Notification.MessageText" parent="android:TextAppearance.StatusBar.EventContent" />
 
     <style name="Teak.Notification.MessageText.v21">
+        <item name="android:fontFamily">sans-serif</item>
         <item name="android:textColor">#8a000000</item>
         <item name="android:textSize">14sp</item>
     </style>
