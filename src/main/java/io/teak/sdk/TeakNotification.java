@@ -526,6 +526,7 @@ public class TeakNotification {
                 notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
             } catch (Exception e) {
                 Log.e(LOG_TAG, Log.getStackTraceString(e));
+                return;
             }
         }
 
@@ -541,6 +542,15 @@ public class TeakNotification {
     }
 
     static void cancel(Context context, int platformId) {
+        if (notificationManager == null) {
+            try {
+                notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            } catch (Exception e) {
+                Log.e(LOG_TAG, Log.getStackTraceString(e));
+                return;
+            }
+        }
+
         if (Teak.isDebug) {
             Log.d(LOG_TAG, "Canceling notification id: " + platformId);
         }

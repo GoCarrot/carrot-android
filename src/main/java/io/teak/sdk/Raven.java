@@ -177,6 +177,11 @@ public class Raven implements Thread.UncaughtExceptionHandler {
 
     public synchronized void addUserData(@NonNull String key, Object value) {
         @SuppressWarnings("unchecked") HashMap<String, Object> user = (HashMap<String, Object>) payloadTemplate.get("user");
+        if (user == null) {
+            user = new HashMap<>();
+            payloadTemplate.put("user", user);
+        }
+
         if (value != null) {
             user.put(key, value);
         } else {
