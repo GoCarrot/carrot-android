@@ -20,7 +20,6 @@ import android.app.Application.ActivityLifecycleCallbacks;
 
 import android.content.Intent;
 import android.content.Context;
-import android.content.IntentFilter;
 import android.content.BroadcastReceiver;
 import android.content.pm.ApplicationInfo;
 
@@ -35,13 +34,8 @@ import android.util.Log;
 
 import org.json.JSONObject;
 
-import java.lang.InterruptedException;
-
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ArrayBlockingQueue;
 
 import java.util.HashMap;
 
@@ -598,7 +592,6 @@ public class Teak extends BroadcastReceiver {
             }
 
             // Send broadcast
-            // TODO: Update Unity SDK to read teakNotifId from the broadcast intent
             if (Teak.localBroadcastManager != null) {
                 Intent broadcastEvent = new Intent(TeakNotification.LAUNCHED_FROM_NOTIFICATION_INTENT);
                 broadcastEvent.putExtras(bundle);
@@ -608,6 +601,7 @@ public class Teak extends BroadcastReceiver {
             Bundle bundle = intent.getExtras();
             TeakNotification.cancel(context, bundle.getInt("platformId"));
         }
+
     }
 
     /**************************************************************************/
