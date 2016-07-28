@@ -309,9 +309,6 @@ public class Teak extends BroadcastReceiver {
     private static AppConfiguration appConfiguration;
     private static DeviceConfiguration deviceConfiguration;
 
-    // TODO: The Facebook stuff should be moved around a bit
-    static FutureTask<String> facebookAccessToken;
-    static ArrayBlockingQueue<String> facebookAccessTokenQueue;
     private static FacebookAccessTokenBroadcast facebookAccessTokenBroadcast;
 
     private static ExecutorService asyncExecutor = Executors.newCachedThreadPool();
@@ -354,6 +351,9 @@ public class Teak extends BroadcastReceiver {
             if (Teak.debugConfiguration != null) {
                 Teak.debugConfiguration.printBugReportInfo(context, Teak.appConfiguration, Teak.deviceConfiguration);
             }
+
+            // Facebook Access Token Broadcaster
+            Teak.facebookAccessTokenBroadcast = new FacebookAccessTokenBroadcast(context);
 
             // Hook in to Session state change events
             Session.addEventListener(Teak.sessionEventListener);
@@ -399,20 +399,6 @@ public class Teak extends BroadcastReceiver {
                     Teak.sdkRaven.reportException(e);
                 }
             }
-
-            // Facebook Access Token Broadcaster
-            Teak.facebookAccessTokenBroadcast = new FacebookAccessTokenBroadcast(context);
-
-            // Register for local broadcasts
-            IntentFilter filter = new IntentFilter();
-            filter.addAction(FacebookAccessTokenBroadcast.UPDATED_ACCESS_TOKEN_INTENT_ACTION);
-            Teak.localBroadcastManager.registerReceiver(Teak.localBroadcastReceiver, filter);
-
-            // Producer/Consumer Queues
-            Teak.facebookAccessTokenQueue = new ArrayBlockingQueue<>(1);
-
-            // Facebook Access Token
-            createFacebookAccessTokenFuture();
 
             // Validate the app id/key via "/games/#{@appId}/validate_sig.json"
             if (Teak.isDebug) {
@@ -538,19 +524,6 @@ public class Teak extends BroadcastReceiver {
         }
     };
 
-    private static BroadcastReceiver localBroadcastReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context unused, Intent intent) {
-            String action = intent.getAction();
-            if (FacebookAccessTokenBroadcast.UPDATED_ACCESS_TOKEN_INTENT_ACTION.equals(action)) {
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "Facebook Access Token updated.");
-                }
-                createFacebookAccessTokenFuture();
-            }
-        }
-    };
-
     private static void cleanup(Activity activity) {
         if (Teak.appStore != null) {
             Teak.appStore.dispose();
@@ -561,10 +534,6 @@ public class Teak extends BroadcastReceiver {
 
         if (Teak.facebookAccessTokenBroadcast != null) {
             Teak.facebookAccessTokenBroadcast.unregister(activity.getApplicationContext());
-        }
-
-        if (Teak.localBroadcastManager != null) {
-            Teak.localBroadcastManager.unregisterReceiver(Teak.localBroadcastReceiver);
         }
 
         activity.getApplication().unregisterActivityLifecycleCallbacks(Teak.lifecycleCallbacks);
@@ -639,20 +608,6 @@ public class Teak extends BroadcastReceiver {
             Bundle bundle = intent.getExtras();
             TeakNotification.cancel(context, bundle.getInt("platformId"));
         }
-    }
-
-    static void createFacebookAccessTokenFuture() {
-        Teak.facebookAccessToken = new FutureTask<>(new Callable<String>() {
-            public String call() {
-                try {
-                    return Teak.facebookAccessTokenQueue.take();
-                } catch (InterruptedException e) {
-                    Log.e(LOG_TAG, Log.getStackTraceString(e));
-                }
-                return null;
-            }
-        });
-        Teak.asyncExecutor.submit(Teak.facebookAccessToken);
     }
 
     /**************************************************************************/

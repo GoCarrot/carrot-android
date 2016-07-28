@@ -66,16 +66,9 @@ class FacebookAccessTokenBroadcast {
             }
 
             if (accessTokenString != null) {
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "Facebook Access Token: " + accessTokenString);
-                }
-
-                // If this is updating an existing access token, re-run the task
-                if (Teak.facebookAccessToken.isDone()) {
-                    broadcastManager.sendBroadcast(new Intent(UPDATED_ACCESS_TOKEN_INTENT_ACTION));
-                }
-
-                Teak.facebookAccessTokenQueue.offer(accessTokenString);
+                Intent updateAccessTokenIntent = new Intent(UPDATED_ACCESS_TOKEN_INTENT_ACTION);
+                updateAccessTokenIntent.putExtra("accessToken", accessTokenString);
+                broadcastManager.sendBroadcast(updateAccessTokenIntent);
             }
         }
     };

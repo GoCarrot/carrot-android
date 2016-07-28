@@ -14,7 +14,10 @@
  */
 package io.teak.sdk;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -119,6 +122,7 @@ class Session {
 
     private ScheduledExecutorService heartbeatService;
     private String countryCode;
+    private String facebookAccessToken;
 
     // State: Expiring
     private Date endDate;
@@ -139,6 +143,10 @@ class Session {
         this.deviceConfiguration = deviceConfiguration;
 
         DeviceConfiguration.addEventListener(this.deviceConfigurationListener);
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(FacebookAccessTokenBroadcast.UPDATED_ACCESS_TOKEN_INTENT_ACTION);
+        Teak.localBroadcastManager.registerReceiver(this.facebookBroadcastReceiver, filter);
 
         setState(State.Created);
     }
@@ -270,6 +278,9 @@ class Session {
 
                 case Expired: {
                     DeviceConfiguration.removeEventListener(this.deviceConfigurationListener);
+                    if (Teak.localBroadcastManager != null) {
+                        Teak.localBroadcastManager.unregisterReceiver(this.facebookBroadcastReceiver);
+                    }
 
                     // TODO: Report Session to server, once we collect that info.
                 }
@@ -373,12 +384,8 @@ class Session {
                         payload.put("android_limit_ad_tracking", _this.deviceConfiguration.advertsingInfo.isLimitAdTrackingEnabled());
                     }
 
-                    try {
-                        String accessToken = Teak.facebookAccessToken.get(5L, TimeUnit.SECONDS);
-                        if (accessToken != null) {
-                            payload.put("access_token", accessToken);
-                        }
-                    } catch (Exception ignored) {
+                    if (_this.facebookAccessToken != null) {
+                        payload.put("access_token", _this.facebookAccessToken);
                     }
 
                     if (_this.launchedFromTeakNotifId != null) {
@@ -570,6 +577,27 @@ class Session {
             synchronized (stateMutex) {
                 if (state == State.UserIdentified) {
                     identifyUser();
+                }
+            }
+        }
+    };
+
+    /**
+     * Used to listen for Facebook Access Token update
+     */
+    private BroadcastReceiver facebookBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context unused, Intent intent) {
+            String action = intent.getAction();
+            if (FacebookAccessTokenBroadcast.UPDATED_ACCESS_TOKEN_INTENT_ACTION.equals(action)) {
+                facebookAccessToken = intent.getStringExtra("accessToken");
+                if (Teak.isDebug) {
+                    Log.d(LOG_TAG, "Facebook Access Token updated: " + facebookAccessToken);
+                }
+                synchronized (stateMutex) {
+                    if (state == State.UserIdentified) {
+                        identifyUser();
+                    }
                 }
             }
         }
