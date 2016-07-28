@@ -110,7 +110,7 @@ class DebugConfiguration {
                 }
 
                 String debugInfo = new JSONObject(debugInfoMap).toString();
-                Log.d(LOG_TAG, "Please include the following JSON blog with any bug reports you submit: " + debugInfo);
+                Log.d(LOG_TAG, "Please include the following JSON blob with any bug reports you submit: " + debugInfo);
 
                 if (this.bugReportUrl != null) {
                     Log.d(LOG_TAG, String.format(Locale.US, "Or use this link:\n%s?body=%s", this.bugReportUrl, URLEncoder.encode("DESCRIBE THE ISSUE HERE\n\n" + debugInfo, "UTF-8")));
