@@ -320,7 +320,8 @@ class DeviceConfiguration {
                                 "&device_manufacturer=" + URLEncoder.encode(_this.deviceManufacturer, "UTF-8") +
                                 "&device_model=" + URLEncoder.encode(_this.deviceModel, "UTF-8") +
                                 "&device_fallback=" + URLEncoder.encode(_this.deviceFallback, "UTF-8") +
-                                "&bundle_id=" + URLEncoder.encode(session.appConfiguration.bundleId, "UTF-8");
+                                "&bundle_id=" + URLEncoder.encode(session.appConfiguration.bundleId, "UTF-8") +
+                                "&device_id=" + URLEncoder.encode(_this.deviceId, "UTF-8");
 
                         Log.d(LOG_TAG, "If you want to debug or test push notifications on this device please click the link below, or copy/paste into your browser:");
                         Log.d(LOG_TAG, "    " + urlString);
