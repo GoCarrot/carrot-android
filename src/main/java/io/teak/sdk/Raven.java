@@ -124,6 +124,10 @@ public class Raven implements Thread.UncaughtExceptionHandler {
     }
 
     public void reportException(Throwable t) {
+        if (t == null) {
+            return;
+        }
+
         HashMap<String, Object> additions = new HashMap<>();
         ArrayList<Object> exceptions = new ArrayList<>();
         HashMap<String, Object> exception = new HashMap<>();
@@ -171,8 +175,12 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         exceptions.add(exception);
         additions.put("exception", exceptions);
 
-        Report report = new Report(t.getMessage(), Level.ERROR, additions);
-        report.sendToService();
+        try {
+            Report report = new Report(t.getMessage(), Level.ERROR, additions);
+            report.sendToService();
+        } catch (Exception e) {
+            Log.e(LOG_TAG, "Unable to report Teak SDK exception. " + Log.getStackTraceString(t) + "\n" + Log.getStackTraceString(e));
+        }
     }
 
     public synchronized void addUserData(@NonNull String key, Object value) {
@@ -210,7 +218,11 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         HashMap<String, Object> payload = new HashMap<>();
         Date timestamp = new Date();
 
-        public Report(@NonNull String message, @NonNull Level level, HashMap<String, Object> additions) {
+        public Report(String message, @NonNull Level level, HashMap<String, Object> additions) {
+            if (message == null || message.length() < 1) {
+                message = "undefined";
+            }
+
             payload.put("event_id", UUID.randomUUID().toString().replace("-", ""));
             payload.put("message", message.substring(0, Math.min(message.length(), 1000)));
 
