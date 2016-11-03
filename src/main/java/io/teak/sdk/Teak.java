@@ -34,10 +34,12 @@ import android.util.Log;
 
 import org.json.JSONObject;
 
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 
 import java.util.HashMap;
+import java.util.concurrent.Future;
 
 /**
  * Teak
@@ -581,8 +583,15 @@ public class Teak extends BroadcastReceiver {
                 launchIntent.addCategory("android.intent.category.LAUNCHER");
                 launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 launchIntent.putExtras(bundle);
-                if (bundle.getString("deepLink") != null) {
-                    launchIntent.setData(Uri.parse(bundle.getString("deepLink")));
+                if (bundle.getString("teakDeepLink") != null) {
+                    Uri teakDeepLink = Uri.parse(bundle.getString("teakDeepLink"));
+                    HashMap<String, List<String>> teakDeepLinkQueryParameters = new HashMap<>();
+                    for (String key : teakDeepLink.getQueryParameterNames()) {
+                        teakDeepLinkQueryParameters.put(key, teakDeepLink.getQueryParameters(key));
+                    }
+                    launchIntent.putExtra("teakDeepLinkQueryParameters", teakDeepLinkQueryParameters);
+                    launchIntent.putExtra("teakDeepLinkPath", teakDeepLink.getPath());
+                    launchIntent.setData(teakDeepLink);
                 }
                 context.startActivity(launchIntent);
             } else {
@@ -593,9 +602,33 @@ public class Teak extends BroadcastReceiver {
 
             // Send broadcast
             if (Teak.localBroadcastManager != null) {
-                Intent broadcastEvent = new Intent(TeakNotification.LAUNCHED_FROM_NOTIFICATION_INTENT);
+                final Intent broadcastEvent = new Intent(TeakNotification.LAUNCHED_FROM_NOTIFICATION_INTENT);
                 broadcastEvent.putExtras(bundle);
-                Teak.localBroadcastManager.sendBroadcast(broadcastEvent);
+
+                String teakRewardId = bundle.getString("teakRewardId");
+                if (teakRewardId != null) {
+                    final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
+                    if(rewardFuture != null) {
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    TeakNotification.Reward reward = rewardFuture.get();
+                                    String rewardJson = reward.originalJson.toString();
+                                    broadcastEvent.putExtra("teakRewardJson", rewardJson);
+                                } catch(Exception e) {
+                                    Log.e(LOG_TAG, Log.getStackTraceString(e));
+                                } finally {
+                                    Teak.localBroadcastManager.sendBroadcast(broadcastEvent);
+                                }
+                            }
+                        }).start();
+                    } else {
+                        Teak.localBroadcastManager.sendBroadcast(broadcastEvent);
+                    }
+                } else {
+                    Teak.localBroadcastManager.sendBroadcast(broadcastEvent);
+                }
             }
         } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX)) {
             Bundle bundle = intent.getExtras();

@@ -465,7 +465,7 @@ public class TeakNotification {
     String longText;
     String teakRewardId;
     String imageAssetA;
-    String deepLink;
+    String teakDeepLink;
     int platformId;
     long teakNotifId;
     JSONObject extras;
@@ -477,7 +477,7 @@ public class TeakNotification {
         this.longText = bundle.getString("longText");
         this.teakRewardId = bundle.getString("teakRewardId");
         this.imageAssetA = bundle.getString("imageAssetA");
-        this.deepLink = bundle.getString("deepLink");
+        this.teakDeepLink = bundle.getString("teakDeepLink");
         try {
             this.extras = bundle.getString("extras") == null ? null : new JSONObject(bundle.getString("extras"));
         } catch (JSONException e) {
