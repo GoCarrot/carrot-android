@@ -40,8 +40,8 @@ class Helpers {
         return null;
     }
 
-    static Map<String, Object> jsonToMap(JSONObject json) throws JSONException {
-        Map<String, Object> retMap = new HashMap<>();
+    static HashMap<String, Object> jsonToMap(JSONObject json) throws JSONException {
+        HashMap<String, Object> retMap = new HashMap<>();
 
         if (json != JSONObject.NULL) {
             retMap = toMap(json);
@@ -49,8 +49,8 @@ class Helpers {
         return retMap;
     }
 
-    private static Map<String, Object> toMap(JSONObject object) throws JSONException {
-        Map<String, Object> map = new HashMap<>();
+    private static HashMap<String, Object> toMap(JSONObject object) throws JSONException {
+        HashMap<String, Object> map = new HashMap<>();
 
         Iterator keysItr = object.keys();
         while (keysItr.hasNext()) {

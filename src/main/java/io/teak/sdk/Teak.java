@@ -585,12 +585,6 @@ public class Teak extends BroadcastReceiver {
                 launchIntent.putExtras(bundle);
                 if (bundle.getString("teakDeepLink") != null) {
                     Uri teakDeepLink = Uri.parse(bundle.getString("teakDeepLink"));
-                    HashMap<String, List<String>> teakDeepLinkQueryParameters = new HashMap<>();
-                    for (String key : teakDeepLink.getQueryParameterNames()) {
-                        teakDeepLinkQueryParameters.put(key, teakDeepLink.getQueryParameters(key));
-                    }
-                    launchIntent.putExtra("teakDeepLinkQueryParameters", teakDeepLinkQueryParameters);
-                    launchIntent.putExtra("teakDeepLinkPath", teakDeepLink.getPath());
                     launchIntent.setData(teakDeepLink);
                 }
                 context.startActivity(launchIntent);
@@ -604,6 +598,16 @@ public class Teak extends BroadcastReceiver {
             if (Teak.localBroadcastManager != null) {
                 final Intent broadcastEvent = new Intent(TeakNotification.LAUNCHED_FROM_NOTIFICATION_INTENT);
                 broadcastEvent.putExtras(bundle);
+                if (bundle.getString("teakDeepLink") != null) {
+                    Uri teakDeepLink = Uri.parse(bundle.getString("teakDeepLink"));
+                    HashMap<String, List<String>> teakDeepLinkQueryParameters = new HashMap<>();
+                    for (String key : teakDeepLink.getQueryParameterNames()) {
+                        teakDeepLinkQueryParameters.put(key, teakDeepLink.getQueryParameters(key));
+                    }
+                    broadcastEvent.putExtra("teakDeepLinkQueryParameters", teakDeepLinkQueryParameters);
+                    broadcastEvent.putExtra("teakDeepLinkQueryParametersJson", new JSONObject(teakDeepLinkQueryParameters).toString());
+                    broadcastEvent.putExtra("teakDeepLinkPath", teakDeepLink.getPath());
+                }
 
                 String teakRewardId = bundle.getString("teakRewardId");
                 if (teakRewardId != null) {
@@ -614,8 +618,8 @@ public class Teak extends BroadcastReceiver {
                             public void run() {
                                 try {
                                     TeakNotification.Reward reward = rewardFuture.get();
-                                    String rewardJson = reward.originalJson.toString();
-                                    broadcastEvent.putExtra("teakRewardJson", rewardJson);
+                                    broadcastEvent.putExtra("teakRewardJson", reward.originalJson.toString());
+                                    broadcastEvent.putExtra("teakReward", Helpers.jsonToMap(reward.originalJson));
                                 } catch(Exception e) {
                                     Log.e(LOG_TAG, Log.getStackTraceString(e));
                                 } finally {
