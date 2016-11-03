@@ -310,7 +310,15 @@ public class TeakNotification {
 
                         JSONObject responseJson = new JSONObject(response.toString());
                         JSONObject rewardResponse = responseJson.optJSONObject("response");
-                        Reward reward = new Reward(rewardResponse);
+
+                        JSONObject fullParsedResponse = new JSONObject();
+                        fullParsedResponse.put("status", rewardResponse.get("status"));
+                        if(rewardResponse.optJSONObject("reward") != null) {
+                            fullParsedResponse.put("reward", rewardResponse.get("reward"));
+                        } else if(rewardResponse.opt("reward") != null) {
+                            fullParsedResponse.put("reward", new JSONObject(rewardResponse.getString("reward")));
+                        }
+                        Reward reward = new Reward(fullParsedResponse);
 
                         if (Teak.isDebug) {
                             Log.d(LOG_TAG, "Reward claim response: " + responseJson.toString(2));
