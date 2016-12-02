@@ -22,6 +22,7 @@ import android.util.Log;
 
 import org.json.JSONObject;
 
+import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -126,6 +127,10 @@ public class Raven implements Thread.UncaughtExceptionHandler {
     public void reportException(Throwable t) {
         if (t == null) {
             return;
+        }
+
+        if (t instanceof InvocationTargetException && t.getCause() != null) {
+            t = t.getCause();
         }
 
         HashMap<String, Object> additions = new HashMap<>();
