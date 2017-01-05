@@ -6,4 +6,3 @@ docs/
 local.properties
 .gradle/
 infer-out/
-example/
