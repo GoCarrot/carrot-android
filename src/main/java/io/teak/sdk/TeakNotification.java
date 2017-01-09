@@ -392,8 +392,10 @@ public class TeakNotification {
                             JSONObject response = new JSONObject(responseBody);
                             if (response.getString("status").equals("ok")) {
                                 q.offer(response.getJSONObject("event").getString("id"));
+                                Log.d(LOG_TAG, "Scheduled notification with id " + response.getJSONObject("event").getString("id"));
                             } else {
                                 q.offer("");
+                                Log.d(LOG_TAG, "Error scheduling notification " + response.toString());
                             }
                         } catch (Exception ignored) {
                             q.offer("");
