@@ -154,7 +154,7 @@ class Session {
     public boolean hasExpired() {
         synchronized (stateMutex) {
             if (this.state == State.Expiring &&
-                    (new Date().getTime() - currentSession.endDate.getTime() > SAME_SESSION_TIME_DELTA)) {
+                    (new Date().getTime() - this.endDate.getTime() > SAME_SESSION_TIME_DELTA)) {
                 setState(State.Expired);
             }
             return (this.state == State.Expired);
