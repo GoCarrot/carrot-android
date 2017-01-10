@@ -551,10 +551,15 @@ public class Teak extends BroadcastReceiver {
         String action = intent.getAction();
 
         if (GCM_RECEIVE_INTENT_ACTION.equals(action)) {
-            final TeakNotification notif = TeakNotification.remoteNotificationFromIntent(context, intent);
-            if (notif == null) {
-                return;
+            Bundle bundle = intent.getExtras();
+            TeakNotification notif = null;
+            if (bundle.getBoolean("teakShowInForeground", false) || Session.isExpiringOrExpired()) {
+                notif = TeakNotification.remoteNotificationFromIntent(context, intent);
+                if (notif == null) {
+                    return;
+                }
             }
+            final long teakNotifId =  notif == null ? 0 : notif.teakNotifId;
 
             // Send Notification Received Metric
             Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
@@ -563,7 +568,11 @@ public class Teak extends BroadcastReceiver {
                     HashMap<String, Object> payload = new HashMap<>();
                     payload.put("app_id", session.appConfiguration.appId);
                     payload.put("user_id", session.userId());
-                    payload.put("platform_id", notif.teakNotifId);
+                    payload.put("platform_id", teakNotifId);
+
+                    if (teakNotifId == 0) {
+                        payload.put("impression", false);
+                    }
 
                     new Request("/notification_received", payload, session).run();
                 }

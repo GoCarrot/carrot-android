@@ -161,6 +161,12 @@ class Session {
         }
     }
 
+    public static boolean isExpiringOrExpired() {
+        synchronized (currentSessionMutex) {
+            return currentSession == null || currentSession.hasExpired() || currentSession.state == State.Expiring;
+        }
+    }
+
     public static void setUserId(@NonNull String userId) {
         if (userId.isEmpty()) {
             Log.e(LOG_TAG, "User Id can not be null or empty.");
