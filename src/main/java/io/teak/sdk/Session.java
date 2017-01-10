@@ -667,6 +667,12 @@ class Session {
             return currentSession;
         }
     }
+
+    public static Session getCurrentSessionOrNull() {
+        synchronized (currentSessionMutex) {
+            return currentSession;
+        }
+    }
     // endregion
 
     // region Helpers

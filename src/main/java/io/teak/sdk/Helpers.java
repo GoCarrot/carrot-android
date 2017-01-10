@@ -17,6 +17,7 @@ package io.teak.sdk;
 import android.content.Context;
 
 import android.os.Build;
+import android.os.Bundle;
 import android.text.TextUtils;
 
 import org.json.JSONObject;
@@ -38,6 +39,14 @@ class Helpers {
         } catch (Exception ignored) {
         }
         return null;
+    }
+
+    static boolean getBooleanFromBundle(Bundle b, String key) {
+        String boolAsStringMaybe = b.getString(key);
+        if (boolAsStringMaybe != null) {
+            return Boolean.parseBoolean(boolAsStringMaybe);
+        }
+        return b.getBoolean(key);
     }
 
     static HashMap<String, Object> jsonToMap(JSONObject json) throws JSONException {
