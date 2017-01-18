@@ -303,7 +303,7 @@ public class Teak extends BroadcastReceiver {
 
     private static IStore appStore;
     private static AppConfiguration appConfiguration;
-    private static DeviceConfiguration deviceConfiguration;
+    static DeviceConfiguration deviceConfiguration;
 
     private static FacebookAccessTokenBroadcast facebookAccessTokenBroadcast;
 
@@ -539,6 +539,37 @@ public class Teak extends BroadcastReceiver {
 
     private static final String GCM_RECEIVE_INTENT_ACTION = "com.google.android.c2dm.intent.RECEIVE";
 
+    static void handlePushNotificationReceived(Context context, Intent intent) {
+        Bundle bundle = intent.getExtras();
+        TeakNotification notif = null;
+        boolean showInForeground = Helpers.getBooleanFromBundle(bundle, "teakShowInForeground");
+        if (showInForeground || Session.isExpiringOrExpired()) {
+            notif = TeakNotification.remoteNotificationFromIntent(context, intent);
+            if (notif == null) {
+                return;
+            }
+        }
+        final long teakNotifId = notif == null ? 0 : notif.teakNotifId;
+        final String teakUserId = bundle.getString("teakUserId", null);
+
+        if (teakUserId == null) {
+            return;
+        }
+
+        // Send Notification Received Metric
+        Session session = Session.getCurrentSessionOrNull();
+        HashMap<String, Object> payload = new HashMap<>();
+        payload.put("app_id", Teak.appConfiguration.appId);
+        payload.put("user_id", teakUserId);
+        payload.put("platform_id", teakNotifId);
+
+        if (teakNotifId == 0) {
+            payload.put("impression", false);
+        }
+
+        new Thread(new Request("/notification_received", payload, session)).start();
+    }
+
     @Override
     public void onReceive(Context inContext, Intent intent) {
         final Context context = inContext.getApplicationContext();
@@ -551,34 +582,7 @@ public class Teak extends BroadcastReceiver {
         String action = intent.getAction();
 
         if (GCM_RECEIVE_INTENT_ACTION.equals(action)) {
-            Bundle bundle = intent.getExtras();
-            TeakNotification notif = null;
-            boolean showInForeground = Helpers.getBooleanFromBundle(bundle, "teakShowInForeground");
-            if (showInForeground || Session.isExpiringOrExpired()) {
-                notif = TeakNotification.remoteNotificationFromIntent(context, intent);
-                if (notif == null) {
-                    return;
-                }
-            }
-            final long teakNotifId = notif == null ? 0 : notif.teakNotifId;
-            final String teakUserId = bundle.getString("teakUserId", null);
-
-            if (teakUserId == null) {
-                return;
-            }
-
-            // Send Notification Received Metric
-            Session session = Session.getCurrentSessionOrNull();
-            HashMap<String, Object> payload = new HashMap<>();
-            payload.put("app_id", Teak.appConfiguration.appId);
-            payload.put("user_id", teakUserId);
-            payload.put("platform_id", teakNotifId);
-
-            if (teakNotifId == 0) {
-                payload.put("impression", false);
-            }
-
-            new Thread(new Request("/notification_received", payload, session)).start();
+            Teak.handlePushNotificationReceived(context, intent);
         } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX)) {
             Bundle bundle = intent.getExtras();
 

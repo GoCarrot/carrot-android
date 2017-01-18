@@ -404,8 +404,10 @@ class Session {
 
                     if (_this.deviceConfiguration.gcmId != null) {
                         payload.put("gcm_push_key", _this.deviceConfiguration.gcmId);
-                    } else {
-                        payload.put("gcm_push_key", "");
+                    }
+
+                    if (_this.deviceConfiguration.admId != null) {
+                        payload.put("adm_push_key", _this.deviceConfiguration.admId);
                     }
 
                     Log.d(LOG_TAG, "Identifying user: " + _this.userId);
@@ -570,7 +572,7 @@ class Session {
      */
     private DeviceConfiguration.EventListener deviceConfigurationListener = new DeviceConfiguration.EventListener() {
         @Override
-        public void onGCMIdChanged(DeviceConfiguration deviceConfiguration) {
+        public void onPushIdChanged(DeviceConfiguration deviceConfiguration) {
             synchronized (stateMutex) {
                 if (state == State.UserIdentified) {
                     identifyUser();

@@ -22,6 +22,7 @@ import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.amazon.device.messaging.ADM;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
@@ -29,7 +30,6 @@ import com.google.android.gms.gcm.GoogleCloudMessaging;
 
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,6 +44,9 @@ class DeviceConfiguration {
     private static final String LOG_TAG = "Teak:DeviceConfig";
 
     public String gcmId;
+    public String admId;
+
+    public final boolean admIsSupported;
 
     public final String deviceId;
     public final String deviceManufacturer;
@@ -55,6 +58,7 @@ class DeviceConfiguration {
 
     private FutureTask<GoogleCloudMessaging> gcm;
     private SharedPreferences preferences;
+    private Object admInstance;
 
     private static final String PREFERENCE_GCM_ID = "io.teak.sdk.Preferences.GcmId";
     private static final String PREFERENCE_APP_VERSION = "io.teak.sdk.Preferences.AppVersion";
@@ -65,6 +69,17 @@ class DeviceConfiguration {
             this.platformString = "android_unknown";
         } else {
             this.platformString = "android_" + android.os.Build.VERSION.RELEASE;
+        }
+
+        // ADM support
+        {
+            boolean tempAdmSupported = false;
+            try {
+                Class.forName("com.amazon.device.messaging.ADM");
+                tempAdmSupported = new ADM(context).isSupported();
+            } catch (Exception ignored) {
+            }
+            this.admIsSupported = tempAdmSupported;
         }
 
         // Preferences file
@@ -143,45 +158,68 @@ class DeviceConfiguration {
             }
         }
 
-        // Kick off GCM request
-        if (this.preferences != null) {
-            int storedAppVersion = this.preferences.getInt(PREFERENCE_APP_VERSION, 0);
-            String storedGcmId = this.preferences.getString(PREFERENCE_GCM_ID, null);
-            if (storedAppVersion == appConfiguration.appVersion && storedGcmId != null) {
-                // No need to get a new one, so put it on the blocking queue
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "GCM Id found in cache: " + storedGcmId);
+        // Listen for ADM messages if ADM is available
+        if (this.admIsSupported) {
+            if (this.admIsSupported) {
+                ADM adm = new ADM(context);
+                this.admInstance = adm;
+                if (adm.getRegistrationId() == null) {
+                    if (Teak.isDebug) {
+                        Log.d(LOG_TAG, "ADM supported, starting registration.");
+                    }
+                    adm.startRegister();
+                } else {
+                    this.admId = adm.getRegistrationId();
+                    if (Teak.isDebug) {
+                        Log.d(LOG_TAG, "ADM Id found in cache: " + this.admId);
+                    }
                 }
-                this.gcmId = storedGcmId;
-                displayGCMDebugMessage();
+            }
+        } else {
+            // Kick off GCM request
+            if (this.preferences != null) {
+                int storedAppVersion = this.preferences.getInt(PREFERENCE_APP_VERSION, 0);
+                String storedGcmId = this.preferences.getString(PREFERENCE_GCM_ID, null);
+                if (storedAppVersion == appConfiguration.appVersion && storedGcmId != null) {
+                    // No need to get a new one, so put it on the blocking queue
+                    if (Teak.isDebug) {
+                        Log.d(LOG_TAG, "GCM Id found in cache: " + storedGcmId);
+                    }
+                    this.gcmId = storedGcmId;
+                    displayPushDebugMessage();
+                }
+            }
+
+            this.gcm = new FutureTask<>(new RetriableTask<>(100, 2000L, new Callable<GoogleCloudMessaging>() {
+                @Override
+                public GoogleCloudMessaging call() throws Exception {
+                    return GoogleCloudMessaging.getInstance(context);
+                }
+            }));
+            new Thread(this.gcm).start();
+
+            if (this.gcmId == null) {
+                registerForGCM(appConfiguration);
             }
         }
-
-        this.gcm = new FutureTask<>(new RetriableTask<>(100, 2000L, new Callable<GoogleCloudMessaging>() {
-            @Override
-            public GoogleCloudMessaging call() throws Exception {
-                return GoogleCloudMessaging.getInstance(context);
-            }
-        }));
-        new Thread(this.gcm).start();
-
-        if (this.gcmId == null) {
-            registerForGCM(appConfiguration);
-        }
-
 
         // Kick off Advertising Info request
         fetchAdvertisingInfo(context);
     }
 
     public void reRegisterPushToken(@NonNull AppConfiguration appConfiguration) {
-        if (this.preferences != null) {
-            SharedPreferences.Editor editor = this.preferences.edit();
-            editor.putInt(PREFERENCE_APP_VERSION, 0);
-            editor.putString(PREFERENCE_GCM_ID, null);
-            editor.apply();
+        if (this.admIsSupported) {
+            ADM adm = (ADM)this.admInstance;
+            adm.startRegister();
+        } else {
+            if (this.preferences != null) {
+                SharedPreferences.Editor editor = this.preferences.edit();
+                editor.putInt(PREFERENCE_APP_VERSION, 0);
+                editor.putString(PREFERENCE_GCM_ID, null);
+                editor.apply();
+            }
+            registerForGCM(appConfiguration);
         }
-        registerForGCM(appConfiguration);
     }
 
     private void fetchAdvertisingInfo(@NonNull final Context context) {
@@ -265,14 +303,10 @@ class DeviceConfiguration {
                             // Inform event listeners GCM is here
                             if (!registration.equals(gcmId)) {
                                 _this.gcmId = registration;
-                                synchronized (eventListenersMutex) {
-                                    for (EventListener e : eventListeners) {
-                                        e.onGCMIdChanged(_this);
-                                    }
-                                }
+                                _this.notifyPushIdChangedListeners();
                             }
 
-                            displayGCMDebugMessage();
+                            displayPushDebugMessage();
                         } catch (Exception e) {
                             Log.e(LOG_TAG, Log.getStackTraceString(e));
                         }
@@ -283,9 +317,18 @@ class DeviceConfiguration {
         }
     }
 
+    public void notifyPushIdChangedListeners() {
+            synchronized (eventListenersMutex) {
+                for (EventListener e : eventListeners) {
+                    e.onPushIdChanged(this);
+                }
+            }
+    }
+
     // region Event Listener
     public interface EventListener {
-        void onGCMIdChanged(DeviceConfiguration deviceConfiguration);
+        void onPushIdChanged(DeviceConfiguration deviceConfiguration);
+
         void onAdvertisingInfoChanged(DeviceConfiguration deviceConfiguration);
     }
 
@@ -307,7 +350,7 @@ class DeviceConfiguration {
     }
     // endregion
 
-    private void displayGCMDebugMessage() {
+    private void displayPushDebugMessage() {
         if (Teak.isDebug) {
             final DeviceConfiguration _this = this;
             Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
@@ -316,12 +359,19 @@ class DeviceConfiguration {
                     try {
                         String urlString = "https://app.teak.io/apps/" + session.appConfiguration.appId + "/test_accounts/new" +
                                 "?api_key=" + URLEncoder.encode(session.userId(), "UTF-8") +
-                                "&gcm_push_key=" + URLEncoder.encode(_this.gcmId, "UTF-8") +
                                 "&device_manufacturer=" + URLEncoder.encode(_this.deviceManufacturer, "UTF-8") +
                                 "&device_model=" + URLEncoder.encode(_this.deviceModel, "UTF-8") +
                                 "&device_fallback=" + URLEncoder.encode(_this.deviceFallback, "UTF-8") +
                                 "&bundle_id=" + URLEncoder.encode(session.appConfiguration.bundleId, "UTF-8") +
                                 "&device_id=" + URLEncoder.encode(_this.deviceId, "UTF-8");
+
+                        if (_this.gcmId != null) {
+                            urlString += "&gcm_push_key=" + URLEncoder.encode(_this.gcmId, "UTF-8");
+                        }
+
+                        if (_this.admId != null) {
+                            urlString += "&adm_push_key=" + URLEncoder.encode(_this.admId, "UTF-8");
+                        }
 
                         Log.d(LOG_TAG, "If you want to debug or test push notifications on this device please click the link below, or copy/paste into your browser:");
                         Log.d(LOG_TAG, "    " + urlString);
