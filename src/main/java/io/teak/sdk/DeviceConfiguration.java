@@ -14,6 +14,7 @@
  */
 package io.teak.sdk;
 
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
@@ -160,19 +161,17 @@ class DeviceConfiguration {
 
         // Listen for ADM messages if ADM is available
         if (this.admIsSupported) {
-            if (this.admIsSupported) {
-                ADM adm = new ADM(context);
-                this.admInstance = adm;
-                if (adm.getRegistrationId() == null) {
-                    if (Teak.isDebug) {
-                        Log.d(LOG_TAG, "ADM supported, starting registration.");
-                    }
-                    adm.startRegister();
-                } else {
-                    this.admId = adm.getRegistrationId();
-                    if (Teak.isDebug) {
-                        Log.d(LOG_TAG, "ADM Id found in cache: " + this.admId);
-                    }
+            ADM adm = new ADM(context);
+            this.admInstance = adm;
+            if (adm.getRegistrationId() == null) {
+                if (Teak.isDebug) {
+                    Log.d(LOG_TAG, "ADM supported, starting registration.");
+                }
+                adm.startRegister();
+            } else {
+                this.admId = adm.getRegistrationId();
+                if (Teak.isDebug) {
+                    Log.d(LOG_TAG, "ADM Id found in cache: " + this.admId);
                 }
             }
         } else {
@@ -209,7 +208,7 @@ class DeviceConfiguration {
 
     public void reRegisterPushToken(@NonNull AppConfiguration appConfiguration) {
         if (this.admIsSupported) {
-            ADM adm = (ADM)this.admInstance;
+            ADM adm = (ADM) this.admInstance;
             adm.startRegister();
         } else {
             if (this.preferences != null) {
@@ -230,6 +229,14 @@ class DeviceConfiguration {
                 int googlePlayStatus = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
                 if (googlePlayStatus == ConnectionResult.SUCCESS) {
                     return AdvertisingIdClient.getAdvertisingIdInfo(context);
+                } else if (_this.admIsSupported) {
+                    try {
+                        ContentResolver cr = context.getContentResolver();
+                        boolean limitAdTracking = Settings.Secure.getInt(cr, "limit_ad_tracking") != 0;
+                        String advertisingID = Settings.Secure.getString(cr, "advertising_id");
+                        return new AdvertisingIdClient.Info(advertisingID, limitAdTracking);
+                    } catch (Exception ignored) {
+                    }
                 }
                 throw new Exception("Retrying GooglePlayServicesUtil.isGooglePlayServicesAvailable()");
             }
@@ -318,11 +325,11 @@ class DeviceConfiguration {
     }
 
     public void notifyPushIdChangedListeners() {
-            synchronized (eventListenersMutex) {
-                for (EventListener e : eventListeners) {
-                    e.onPushIdChanged(this);
-                }
+        synchronized (eventListenersMutex) {
+            for (EventListener e : eventListeners) {
+                e.onPushIdChanged(this);
             }
+        }
     }
 
     // region Event Listener
