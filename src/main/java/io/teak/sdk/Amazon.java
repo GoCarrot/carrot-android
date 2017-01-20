@@ -19,59 +19,42 @@ import android.util.Log;
 import android.content.Intent;
 import android.content.Context;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Proxy;
-import java.lang.reflect.Method;
-import java.lang.reflect.InvocationHandler;
+import com.amazon.device.iap.PurchasingListener;
+import com.amazon.device.iap.PurchasingService;
+import com.amazon.device.iap.model.Product;
+import com.amazon.device.iap.model.ProductDataResponse;
+import com.amazon.device.iap.model.PurchaseResponse;
+import com.amazon.device.iap.model.PurchaseUpdatesResponse;
+import com.amazon.device.iap.model.RequestId;
+import com.amazon.device.iap.model.UserData;
+import com.amazon.device.iap.model.UserDataResponse;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.HashSet;
 import java.util.HashMap;
+import java.util.concurrent.ArrayBlockingQueue;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 @SuppressWarnings("unused")
 class Amazon implements IStore {
     private static final String LOG_TAG = "Teak:Amazon";
 
-    HashMap<String, String> skuPriceMap;
-    HashMap<String, Object> skuDetailsRequestMap;
+    HashMap<RequestId, ArrayBlockingQueue<String>> skuDetailsRequestMap;
 
     public void init(Context context) {
         skuDetailsRequestMap = new HashMap<>();
-        skuPriceMap = new HashMap<>();
-        try {
-            Class<?> purchasingListenerClass = Class.forName("com.amazon.device.iap.PurchasingListener");
-            InvocationHandler handler = new PurchasingListenerInvocationHandler();
-            Object proxy = Proxy.newProxyInstance(purchasingListenerClass.getClassLoader(), new Class[]{purchasingListenerClass}, handler);
+        PurchasingService.registerListener(context, new TeakPurchasingListener());
 
-            Class<?> purchasingServiceClass = Class.forName("com.amazon.device.iap.PurchasingService");
-            Method m = purchasingServiceClass.getMethod("registerListener", Context.class, purchasingListenerClass);
-            m.invoke(null, context, proxy);
-
-            if (Teak.isDebug) {
-                Field sandbox = purchasingServiceClass.getDeclaredField("IS_SANDBOX_MODE");
-
-                Log.d(LOG_TAG, "Amazon In-App Purchasing 2.0 registered.");
-                Log.d(LOG_TAG, "   Sandbox Mode: " + sandbox.getBoolean(null));
-            }
-        } catch (Exception e) {
-            Log.e(LOG_TAG, "Reflection error: " + Log.getStackTraceString(e));
-            Teak.sdkRaven.reportException(e);
+        if (Teak.isDebug) {
+            Log.d(LOG_TAG, "Amazon In-App Purchasing 2.0 registered.");
+            Log.d(LOG_TAG, "   Sandbox Mode: " + PurchasingService.IS_SANDBOX_MODE);
         }
     }
 
     public void onActivityResumed() {
-        // Get user data and insert it into the dynamic common payload
-        try {
-            Class<?> purchasingServiceClass = Class.forName("com.amazon.device.iap.PurchasingService");
-            Method m = purchasingServiceClass.getMethod("getUserData");
-            m.invoke(null);
-        } catch (Exception e) {
-            Log.e(LOG_TAG, "Reflection error: " + Log.getStackTraceString(e));
-            Teak.sdkRaven.reportException(e);
-        }
+        PurchasingService.getUserData();
     }
 
     public void dispose() {
@@ -79,27 +62,21 @@ class Amazon implements IStore {
     }
 
     public JSONObject querySkuDetails(String sku) {
+        HashSet<String> skus = new HashSet<>();
+        skus.add(sku);
+        RequestId requestId = PurchasingService.getProductData(skus);
+        ArrayBlockingQueue<String> queue = new ArrayBlockingQueue<>(1);
+
+        skuDetailsRequestMap.put(requestId, queue);
         try {
-            Class<?> purchasingServiceClass = Class.forName("com.amazon.device.iap.PurchasingService");
-            Method m = purchasingServiceClass.getMethod("getProductData", Set.class);
-            HashSet<String> skus = new HashSet<>();
-            skus.add(sku);
-            Object requestId = m.invoke(null, skus);
-
-            skuDetailsRequestMap.put(requestId.toString(), requestId);
-            synchronized (requestId) {
-                requestId.wait();
-            }
-            skuDetailsRequestMap.remove(requestId.toString());
-
             JSONObject ret = new JSONObject();
-            ret.put("price_string", skuPriceMap.get(sku));
+            ret.put("price_string", queue.take());
+            skuDetailsRequestMap.remove(requestId);
             return ret;
         } catch (Exception e) {
-            Log.e(LOG_TAG, "Reflection error: " + Log.getStackTraceString(e));
-            Teak.sdkRaven.reportException(e);
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
+            return null;
         }
-        return null;
     }
 
     public void checkActivityResultForPurchase(int resultCode, Intent data) {
@@ -110,106 +87,72 @@ class Amazon implements IStore {
         return true;
     }
 
-    // com.amazon.device.iap.PurchasingListener
-    class PurchasingListenerInvocationHandler implements InvocationHandler {
-        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    class TeakPurchasingListener implements PurchasingListener {
+        @Override
+        public void onUserDataResponse(UserDataResponse userDataResponse) {
+            if (userDataResponse.getRequestStatus() == UserDataResponse.RequestStatus.SUCCESSFUL) {
+                UserData userData = userDataResponse.getUserData();
 
-            // toString()
-            if (method.getName().equals("toString")) {
-                return "io.teak.sdk.Amazon$PurchasingListenerInvocationHandler";
+                String storeUserId = userData.getUserId();
+                String storeMarketplace = userData.getMarketplace();
+                Request.dynamicCommonPayload.put("store_user_id", storeUserId);
+                Request.dynamicCommonPayload.put("store_marketplace", storeMarketplace);
+                if (Teak.isDebug) {
+                    Log.d(LOG_TAG, "Amazon Store User Details retrieved:");
+                    Log.d(LOG_TAG, "       User id: " + storeUserId);
+                    Log.d(LOG_TAG, "   Marketplace: " + storeMarketplace);
+                }
+            } else {
+                if (Teak.isDebug) {
+                    Log.d(LOG_TAG, "Amazon Store user data query failed, or unsupported.");
+                }
+            }
+        }
 
-                // onUserDataResponse()
-            } else if (method.getName().equals("onUserDataResponse")) {
-                Class<?> userDataResponseClass = Class.forName("com.amazon.device.iap.model.UserDataResponse");
-                Method m = userDataResponseClass.getMethod("getRequestStatus");
-                Object requestStatus = m.invoke(args[0]);
+        @Override
+        public void onProductDataResponse(ProductDataResponse productDataResponse) {
+            RequestId requestId = productDataResponse.getRequestId();
+            ArrayBlockingQueue<String> queue = skuDetailsRequestMap.get(requestId);
 
-                Class<?> userDataResponseRequestStatusClass = Class.forName("com.amazon.device.iap.model.UserDataResponse$RequestStatus");
-                Field success = userDataResponseRequestStatusClass.getDeclaredField("SUCCESSFUL");
+            if (productDataResponse.getRequestStatus() == ProductDataResponse.RequestStatus.SUCCESSFUL) {
+                Map<String, Product> skuMap = productDataResponse.getProductData();
 
-                if (requestStatus.equals(success.get(null))) {
-                    m = userDataResponseClass.getMethod("getUserData");
-                    Object userData = m.invoke(args[0]);
-                    Class<?> userDataClass = Class.forName("com.amazon.device.iap.model.UserData");
-                    m = userDataClass.getMethod("getUserId");
-                    String storeUserId = m.invoke(userData).toString();
-                    Request.dynamicCommonPayload.put("store_user_id", storeUserId);
-                    m = userDataClass.getMethod("getMarketplace");
-                    String storeMarketplace = m.invoke(userData).toString();
-                    Request.dynamicCommonPayload.put("store_marketplace", storeMarketplace);
-                    if (Teak.isDebug) {
-                        Log.d(LOG_TAG, "Amazon Store User Details retrieved:");
-                        Log.d(LOG_TAG, "       User id: " + storeUserId);
-                        Log.d(LOG_TAG, "   Marketplace: " + storeMarketplace);
-                    }
-                } else {
-                    if (Teak.isDebug) {
-                        Log.d(LOG_TAG, "Amazon Store user data query failed, or unsupported.");
-                    }
+                if (Teak.isDebug) {
+                    Log.d(LOG_TAG, "SKU Details:");
                 }
 
-                // onPurchaseResponse()
-            } else if (method.getName().equals("onPurchaseResponse")) {
-                Class<?> purchaseResponseClass = Class.forName("com.amazon.device.iap.model.PurchaseResponse");
-                Method m = purchaseResponseClass.getMethod("getRequestStatus");
-                Object requestStatus = m.invoke(args[0]);
-
-                Class<?> purchaseResponseRequestStatusClass = Class.forName("com.amazon.device.iap.model.PurchaseResponse$RequestStatus");
-                Field success = purchaseResponseRequestStatusClass.getDeclaredField("SUCCESSFUL");
-
-                if (requestStatus.equals(success.get(null))) {
-                    m = purchaseResponseClass.getMethod("toJSON");
-                    JSONObject json = (JSONObject) m.invoke(args[0]);
-                    Teak.purchaseSucceeded(json);
-                } else {
-                    Teak.purchaseFailed(-1);
-                }
-
-                // onProductDataResponse()
-            } else if (method.getName().equals("onProductDataResponse")) {
-                Class<?> productDataResponseClass = Class.forName("com.amazon.device.iap.model.ProductDataResponse");
-                Method m = productDataResponseClass.getMethod("getRequestStatus");
-                Object requestStatus = m.invoke(args[0]);
-                m = productDataResponseClass.getMethod("getRequestId");
-                Object requestId = m.invoke(args[0]);
-
-                Class<?> productDataResponseRequestStatusClass = Class.forName("com.amazon.device.iap.model.ProductDataResponse$RequestStatus");
-                Field success = productDataResponseRequestStatusClass.getDeclaredField("SUCCESSFUL");
-
-                if (requestStatus.equals(success.get(null))) {
-                    m = productDataResponseClass.getMethod("getProductData");
-                    @SuppressWarnings("unchecked") Map<String, Object> skuMap = (Map<String, Object>) m.invoke(args[0]);
-                    Class<?> productClass = Class.forName("com.amazon.device.iap.model.Product");
-                    m = productClass.getMethod("getPrice");
-
+                for (Map.Entry<String, Product> entry : skuMap.entrySet()) {
+                    String price = entry.getValue().getPrice();
+                    queue.offer(price);
                     if (Teak.isDebug) {
-                        Log.d(LOG_TAG, "SKU Details:");
-                    }
-
-                    for (Map.Entry<String, Object> entry : skuMap.entrySet()) {
-                        String price = m.invoke(entry.getValue()).toString();
-                        skuPriceMap.put(entry.getKey(), price);
-                        if (Teak.isDebug) {
-                            Log.d(LOG_TAG, "   " + entry.getKey() + " = " + price);
-                        }
-                    }
-
-                    Object lock = skuDetailsRequestMap.get(requestId.toString());
-                    synchronized (lock) {
-                        lock.notify();
-                    }
-                } else {
-                    if (Teak.isDebug) {
-                        Log.d(LOG_TAG, "SKU detail query failed.");
+                        Log.d(LOG_TAG, "   " + entry.getKey() + " = " + price);
                     }
                 }
             } else {
-                Log.d(LOG_TAG, "PurchasingListenerInvocationHandler");
-                Log.d(LOG_TAG, "   method: " + method.getName());
-                Log.d(LOG_TAG, "     args: " + args.toString());
+                if (Teak.isDebug) {
+                    Log.d(LOG_TAG, "SKU detail query failed.");
+                }
             }
+        }
 
-            return null;
+        @Override
+        public void onPurchaseResponse(PurchaseResponse purchaseResponse) {
+            if (purchaseResponse.getRequestStatus() == PurchaseResponse.RequestStatus.SUCCESSFUL) {
+                try {
+                    JSONObject json = purchaseResponse.toJSON();
+                    Teak.purchaseSucceeded(json);
+                } catch (Exception e) {
+                    Log.e(LOG_TAG, Log.getStackTraceString(e));
+                    Teak.purchaseFailed(-1);
+                }
+            } else {
+                Teak.purchaseFailed(-1);
+            }
+        }
+
+        @Override
+        public void onPurchaseUpdatesResponse(PurchaseUpdatesResponse purchaseUpdatesResponse) {
+
         }
     }
 }
