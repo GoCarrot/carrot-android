@@ -370,10 +370,18 @@ public class Teak extends BroadcastReceiver {
                 Class<?> clazz = null;
                 if (Teak.appConfiguration.installerPackage.equals("com.amazon.venezia")) {
                     try {
-                        clazz = Class.forName("io.teak.sdk.Amazon");
+                        clazz = Class.forName("com.amazon.device.iap.PurchasingListener");
                     } catch (Exception e) {
-                        Log.e(LOG_TAG, "Couldn't find Teak's Amazon app store handler. " + Log.getStackTraceString(e));
-                        Teak.sdkRaven.reportException(e);
+                        Log.e(LOG_TAG, "Amazon store detected, but app does not include in-app purchasing JAR.");
+                    }
+
+                    if (clazz != null) {
+                        try {
+                            clazz = Class.forName("io.teak.sdk.Amazon");
+                        } catch (Exception e) {
+                            Log.e(LOG_TAG, "Couldn't find Teak's Amazon app store handler. " + Log.getStackTraceString(e));
+                            Teak.sdkRaven.reportException(e);
+                        }
                     }
                 } else {
                     // Default to Google Play
@@ -435,7 +443,7 @@ public class Teak extends BroadcastReceiver {
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityPaused");
             }
-            if (Teak.setState(State.Paused)){
+            if (Teak.setState(State.Paused)) {
                 Session.onActivityPaused();
             }
         }
@@ -627,7 +635,7 @@ public class Teak extends BroadcastReceiver {
                 String teakRewardId = bundle.getString("teakRewardId");
                 if (teakRewardId != null) {
                     final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
-                    if(rewardFuture != null) {
+                    if (rewardFuture != null) {
                         new Thread(new Runnable() {
                             @Override
                             public void run() {
@@ -635,7 +643,7 @@ public class Teak extends BroadcastReceiver {
                                     TeakNotification.Reward reward = rewardFuture.get();
                                     broadcastEvent.putExtra("teakRewardJson", reward.originalJson.toString());
                                     broadcastEvent.putExtra("teakReward", Helpers.jsonToMap(reward.originalJson));
-                                } catch(Exception e) {
+                                } catch (Exception e) {
                                     Log.e(LOG_TAG, Log.getStackTraceString(e));
                                 } finally {
                                     Teak.localBroadcastManager.sendBroadcast(broadcastEvent);
