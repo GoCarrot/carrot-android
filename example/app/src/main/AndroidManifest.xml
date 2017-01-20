@@ -1,9 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:amazon="http://schemas.amazon.com/apk/res/android"
     package="com.teakio.pushtest">
     <permission android:name="com.teakio.pushtest" android:protectionLevel="signature"/>
     <uses-permission android:name="com.teakio.pushtest.permission.C2D_MESSAGE"/>
     <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE"/>
+
+    <!-- ADM Stuff -->
+    <permission
+        android:name="com.teakio.pushtest.permission.RECEIVE_ADM_MESSAGE"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="com.teakio.pushtest.permission.RECEIVE_ADM_MESSAGE" />
+    <uses-permission android:name="com.amazon.device.messaging.permission.RECEIVE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- End ADM Stuff -->
 
     <application
         android:allowBackup="true"
@@ -26,6 +36,22 @@
                 <action android:name="com.teakio.pushtest.intent.TEAK_NOTIFICATION_CLEARED" />
                 <category android:name="com.teakio.pushtest" />
             </intent-filter>
+        </receiver>
+
+        <amazon:enable-feature
+            android:name="com.amazon.device.messaging"
+            android:required="false"/>
+        <service android:name="io.teak.sdk.ADMMessageHandler"
+            android:exported="false" />
+        <receiver
+            android:name="io.teak.sdk.ADMMessageHandler$MessageAlertReceiver"
+            android:permission="com.amazon.device.messaging.permission.SEND" >
+            <intent-filter>
+                <action android:name="com.amazon.device.messaging.intent.REGISTRATION" />
+                <action android:name="com.amazon.device.messaging.intent.RECEIVE" />
+                <category android:name="com.teakio.pushtest" />
+            </intent-filter>
+
         </receiver>
     </application>
 </manifest>
