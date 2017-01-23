@@ -14,6 +14,7 @@
  */
 package io.teak.sdk;
 
+import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 import android.util.Base64;
@@ -113,7 +114,7 @@ public class ADMMessageHandler extends ADMMessageHandlerBase {
                     Log.i(LOG_TAG, "[✓] App package name matches package name inside 'api_key.txt'");
 
                     // Make sure the signature matches
-                    Signature[] sigs = getApplicationContext().getPackageManager().getPackageInfo(getApplicationContext().getPackageName(), PackageManager.GET_SIGNATURES).signatures;
+                    @SuppressLint("PackageManagerGetSignatures") Signature[] sigs = getApplicationContext().getPackageManager().getPackageInfo(getApplicationContext().getPackageName(), PackageManager.GET_SIGNATURES).signatures;
                     for (Signature sig : sigs) {
                         if (json.has("appsigSha256")) {
                             String sigSha256 = formatSig(sig, "SHA-256");
