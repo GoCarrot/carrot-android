@@ -18,6 +18,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -552,6 +553,11 @@ class Session {
             } else if (launchedFromTeakNotifId != null && !launchedFromTeakNotifId.isEmpty()) {
                 currentSession.launchedFromTeakNotifId = launchedFromTeakNotifId;
                 currentSession.attributionChain.add(launchedFromTeakNotifId);
+            }
+
+            // See if TeakLinks can do anything with the deep link
+            if (launchedFromDeepLink != null) {
+                Link.processUri(Uri.parse(launchedFromDeepLink));
             }
         }
     }
