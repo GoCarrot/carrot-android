@@ -557,7 +557,13 @@ class Session {
 
             // See if TeakLinks can do anything with the deep link
             if (launchedFromDeepLink != null) {
-                Link.processUri(Uri.parse(launchedFromDeepLink));
+                final String deepLinkString = launchedFromDeepLink;
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Link.processUri(Uri.parse(deepLinkString));
+                    }
+                }).start();
             }
         }
     }
