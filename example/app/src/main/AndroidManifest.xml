@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:amazon="http://schemas.amazon.com/apk/res/android"
     package="com.teakio.pushtest">
+    <uses-permission android:name="com.android.vending.BILLING" />
+
     <permission android:name="com.teakio.pushtest" android:protectionLevel="signature"/>
     <uses-permission android:name="com.teakio.pushtest.permission.C2D_MESSAGE"/>
     <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE"/>
