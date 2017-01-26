@@ -35,8 +35,8 @@ import com.google.code.regexp.Matcher;
 
 import dalvik.system.DexFile;
 
-public class Link {
-    private static final String LOG_TAG = "Teak:Link";
+public class DeepLink {
+    private static final String LOG_TAG = "Teak:DeepLink";
 
     private static String[] getClassesOfPackage(Context context, String packageName) {
         ArrayList<String> classes = new ArrayList<String>();
@@ -105,7 +105,7 @@ public class Link {
                     }
 
                     Pattern regex = Pattern.compile(pattern);
-                    routes.put(regex, new Link(regex, method));
+                    routes.put(regex, new DeepLink(regex, method));
                 }
             }
         }
@@ -115,9 +115,9 @@ public class Link {
         if (uri == null) return false;
         String uriMatchString = String.format("/%s%s", uri.getAuthority(), uri.getPath());
 
-        for (Map.Entry<Pattern, Link> entry : routes.entrySet()) {
+        for (Map.Entry<Pattern, DeepLink> entry : routes.entrySet()) {
             Pattern key = entry.getKey();
-            Link value = entry.getValue();
+            DeepLink value = entry.getValue();
 
             if(!value.method.isAccessible()) {
                 value.method.setAccessible(true);
@@ -147,12 +147,12 @@ public class Link {
         return false;
     }
 
-    private static final Map<Pattern, Link> routes = new HashMap<>();
+    private static final Map<Pattern, DeepLink> routes = new HashMap<>();
 
     private final Pattern regex;
     private final Method method;
 
-    protected Link(Pattern regex, Method method) {
+    protected DeepLink(Pattern regex, Method method) {
         this.regex = regex;
         this.method = method;
     }

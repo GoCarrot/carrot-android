@@ -563,7 +563,7 @@ class Session {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        Link.processUri(Uri.parse(deepLinkString));
+                        DeepLink.processUri(Uri.parse(deepLinkString));
                     }
                 }).start();
             }
