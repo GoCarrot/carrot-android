@@ -83,6 +83,10 @@ class Amazon implements IStore {
         // None
     }
 
+    public void launchPurchaseFlowForSKU(String sku) {
+        Log.d(LOG_TAG, "TODO: launchPurchaseFlowForSKU: " + sku);
+    }
+
     public boolean ignorePluginPurchaseEvents() {
         return true;
     }

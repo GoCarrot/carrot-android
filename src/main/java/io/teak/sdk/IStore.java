@@ -31,4 +31,6 @@ public interface IStore {
     void checkActivityResultForPurchase(int resultCode, Intent data);
 
     boolean ignorePluginPurchaseEvents();
+
+    void launchPurchaseFlowForSKU(String sku);
 }
