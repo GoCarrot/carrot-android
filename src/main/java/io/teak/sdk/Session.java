@@ -550,7 +550,9 @@ class Session {
             if (launchedFromDeepLink != null && !launchedFromDeepLink.isEmpty()) {
                 currentSession.launchedFromDeepLink = launchedFromDeepLink;
                 currentSession.attributionChain.add(launchedFromDeepLink);
-            } else if (launchedFromTeakNotifId != null && !launchedFromTeakNotifId.isEmpty()) {
+            }
+
+            if (launchedFromTeakNotifId != null && !launchedFromTeakNotifId.isEmpty()) {
                 currentSession.launchedFromTeakNotifId = launchedFromTeakNotifId;
                 currentSession.attributionChain.add(launchedFromTeakNotifId);
             }
