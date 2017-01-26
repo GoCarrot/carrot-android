@@ -386,9 +386,9 @@ class Session {
                     String locale = Locale.getDefault().toString();
                     payload.put("locale", locale);
 
-                    if (_this.deviceConfiguration.advertsingInfo != null) {
-                        payload.put("android_ad_id", _this.deviceConfiguration.advertsingInfo.getId());
-                        payload.put("android_limit_ad_tracking", _this.deviceConfiguration.advertsingInfo.isLimitAdTrackingEnabled());
+                    if (_this.deviceConfiguration.advertisingId != null) {
+                        payload.put("android_ad_id", _this.deviceConfiguration.advertisingId);
+                        payload.put("android_limit_ad_tracking", _this.deviceConfiguration.limitAdTracking);
                     }
 
                     if (_this.facebookAccessToken != null) {

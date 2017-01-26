@@ -48,6 +48,7 @@ class DeviceConfiguration {
     public String admId;
 
     public final boolean admIsSupported;
+    public final boolean googlePlayIsSupported;
 
     public final String deviceId;
     public final String deviceManufacturer;
@@ -55,7 +56,8 @@ class DeviceConfiguration {
     public final String deviceFallback;
     public final String platformString;
 
-    public AdvertisingIdClient.Info advertsingInfo;
+    public String advertisingId;
+    public boolean limitAdTracking;
 
     private FutureTask<GoogleCloudMessaging> gcm;
     private SharedPreferences preferences;
@@ -81,6 +83,17 @@ class DeviceConfiguration {
             } catch (Exception ignored) {
             }
             this.admIsSupported = tempAdmSupported;
+        }
+
+        // Google Play support
+        {
+            boolean tempGooglePlaySupported = false;
+            try {
+                Class.forName("com.google.android.gms.common.GooglePlayServicesUtil");
+                tempGooglePlaySupported = true;
+            } catch (Exception ignored) {
+            }
+            this.googlePlayIsSupported = tempGooglePlaySupported;
         }
 
         // Preferences file
@@ -222,53 +235,67 @@ class DeviceConfiguration {
     }
 
     private void fetchAdvertisingInfo(@NonNull final Context context) {
-        final DeviceConfiguration _this = this;
-        final FutureTask<AdvertisingIdClient.Info> adInfoFuture = new FutureTask<>(new RetriableTask<>(100, 7000L, new Callable<AdvertisingIdClient.Info>() {
-            @Override
-            public AdvertisingIdClient.Info call() throws Exception {
-                int googlePlayStatus = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
-                if (googlePlayStatus == ConnectionResult.SUCCESS) {
-                    return AdvertisingIdClient.getAdvertisingIdInfo(context);
-                } else if (_this.admIsSupported) {
-                    try {
-                        ContentResolver cr = context.getContentResolver();
-                        boolean limitAdTracking = Settings.Secure.getInt(cr, "limit_ad_tracking") != 0;
-                        String advertisingID = Settings.Secure.getString(cr, "advertising_id");
-                        return new AdvertisingIdClient.Info(advertisingID, limitAdTracking);
-                    } catch (Exception ignored) {
+        if (this.admIsSupported) {
+            try {
+                ContentResolver cr = context.getContentResolver();
+                boolean limitAdTracking = Settings.Secure.getInt(cr, "limit_ad_tracking") != 0;
+                String advertisingId = Settings.Secure.getString(cr, "advertising_id");
+
+                if (!advertisingId.equals(this.advertisingId) || limitAdTracking != this.limitAdTracking) {
+                    this.limitAdTracking = limitAdTracking;
+                    this.advertisingId = advertisingId;
+                    synchronized (eventListenersMutex) {
+                        for (EventListener e : eventListeners) {
+                            e.onAdvertisingInfoChanged(this);
+                        }
                     }
                 }
-                throw new Exception("Retrying GooglePlayServicesUtil.isGooglePlayServicesAvailable()");
+            } catch (Exception ignored) {
             }
-        }));
-        new Thread(adInfoFuture).start();
-
-        // TODO: This needs to be re-checked in case it's something like SERVICE_UPDATING or SERVICE_VERSION_UPDATE_REQUIRED
-        int googlePlayStatus = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
-        if (googlePlayStatus == ConnectionResult.SUCCESS) {
-
-            new Thread(new Runnable() {
+        } else if (this.googlePlayIsSupported) {
+            final DeviceConfiguration _this = this;
+            final FutureTask<AdvertisingIdClient.Info> adInfoFuture = new FutureTask<>(new RetriableTask<>(100, 7000L, new Callable<AdvertisingIdClient.Info>() {
                 @Override
-                public void run() {
-                    try {
-                        AdvertisingIdClient.Info adInfo = adInfoFuture.get();
+                public AdvertisingIdClient.Info call() throws Exception {
+                    if (_this.googlePlayIsSupported) {
+                        if (GooglePlayServicesUtil.isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS) {
+                            return AdvertisingIdClient.getAdvertisingIdInfo(context);
+                        }
+                        throw new Exception("Retrying GooglePlayServicesUtil.isGooglePlayServicesAvailable()");
+                    }
+                    return null;
+                }
+            }));
+            new Thread(adInfoFuture).start();
 
-                        // Inform listeners Ad Info has changed
-                        if (adInfo != _this.advertsingInfo) {
-                            _this.advertsingInfo = adInfo;
-                            synchronized (eventListenersMutex) {
-                                for (EventListener e : eventListeners) {
-                                    e.onAdvertisingInfoChanged(_this);
+            // TODO: This needs to be re-checked in case it's something like SERVICE_UPDATING or SERVICE_VERSION_UPDATE_REQUIRED
+            if (GooglePlayServicesUtil.isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            AdvertisingIdClient.Info adInfo = adInfoFuture.get();
+
+                            // Inform listeners Ad Info has changed
+                            if (!_this.advertisingId.equals(adInfo.getId()) ||
+                                    _this.limitAdTracking != adInfo.isLimitAdTrackingEnabled()) {
+                                _this.advertisingId = adInfo.getId();
+                                _this.limitAdTracking = adInfo.isLimitAdTrackingEnabled();
+
+                                synchronized (eventListenersMutex) {
+                                    for (EventListener e : eventListeners) {
+                                        e.onAdvertisingInfoChanged(_this);
+                                    }
                                 }
                             }
-                        }
-                    } catch (Exception e) {
-                        if (Teak.isDebug) {
-                            Log.e(LOG_TAG, "Couldn't get Google Play Advertising Information.");
+                        } catch (Exception e) {
+                            if (Teak.isDebug) {
+                                Log.e(LOG_TAG, "Couldn't get Google Play Advertising Information.");
+                            }
                         }
                     }
-                }
-            }).start();
+                }).start();
+            }
         }
     }
 
