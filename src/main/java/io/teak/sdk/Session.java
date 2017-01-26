@@ -535,8 +535,8 @@ class Session {
 
             // If the current session has a launch from deep link/notification, and there is a new
             // deep link/notification, it's a new session
-            if (stringsAreNotNullOrEmptyAndAreDifferent(currentSession.launchedFromDeepLink, launchedFromDeepLink) ||
-                    stringsAreNotNullOrEmptyAndAreDifferent(currentSession.launchedFromTeakNotifId, launchedFromTeakNotifId)) {
+            if (attributionStringsAreDifferent(currentSession.launchedFromDeepLink, launchedFromDeepLink) ||
+                    attributionStringsAreDifferent(currentSession.launchedFromTeakNotifId, launchedFromTeakNotifId)) {
                 Session oldSession = currentSession;
                 currentSession = new Session(oldSession.appConfiguration, oldSession.deviceConfiguration);
                 currentSession.userId = oldSession.userId;
@@ -692,10 +692,9 @@ class Session {
     // endregion
 
     // region Helpers
-    private static boolean stringsAreNotNullOrEmptyAndAreDifferent(String currentValue, String newValue) {
-        return (currentValue != null && !currentValue.isEmpty() &&
-                newValue != null && !newValue.isEmpty() &&
-                !currentValue.equals(newValue));
+    private static boolean attributionStringsAreDifferent(String currentValue, String newValue) {
+        return (newValue != null && !newValue.equals(currentValue)) ||
+                (currentValue != null && !currentValue.equals(newValue));
     }
     // endregion
 }
