@@ -128,7 +128,8 @@ dependencies {
     compile files ('libs/named-regexp-0.2.4.jar')
 
     // Google Play files
-    compile 'com.google.android.gms:play-services-gcm:10.0.1'
+    compile 'com.google.android.gms:play-services-gcm:7.0.0'
+    compile 'com.google.android.gms:play-services-ads:7.0.0'
 
     // Amazon files, compile-time only dependencies
     provided files('libs/amazon-device-messaging-1.0.1.jar')

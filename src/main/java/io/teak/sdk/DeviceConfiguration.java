@@ -24,6 +24,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.amazon.device.messaging.ADM;
+
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
