@@ -257,13 +257,10 @@ class DeviceConfiguration {
             final FutureTask<AdvertisingIdClient.Info> adInfoFuture = new FutureTask<>(new RetriableTask<>(100, 7000L, new Callable<AdvertisingIdClient.Info>() {
                 @Override
                 public AdvertisingIdClient.Info call() throws Exception {
-                    if (_this.googlePlayIsSupported) {
-                        if (GooglePlayServicesUtil.isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS) {
-                            return AdvertisingIdClient.getAdvertisingIdInfo(context);
-                        }
-                        throw new Exception("Retrying GooglePlayServicesUtil.isGooglePlayServicesAvailable()");
+                    if (GooglePlayServicesUtil.isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS) {
+                        return AdvertisingIdClient.getAdvertisingIdInfo(context);
                     }
-                    return null;
+                    throw new Exception("Retrying GooglePlayServicesUtil.isGooglePlayServicesAvailable()");
                 }
             }));
             new Thread(adInfoFuture).start();
