@@ -20,8 +20,6 @@ import io.teak.sdk.TeakNotification;
 
 import android.view.View;
 
-import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.gcm.GoogleCloudMessaging;
 import com.android.vending.billing.IInAppBillingService;
 
 
@@ -115,11 +113,6 @@ public class MainActivity extends AppCompatActivity {
         Teak.onCreate(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        if (GooglePlayServicesUtil.isGooglePlayServicesAvailable(this) == 0) {
-            GoogleCloudMessaging gcm = GoogleCloudMessaging.getInstance(this);
-            Log.d(LOG_TAG, "I guess stuff is ok? " + gcm);
-        }
 
         // Register the BroadcastReceiver defined above to listen for notification launches
         IntentFilter filter = new IntentFilter();
