@@ -622,16 +622,18 @@ public class Teak extends BroadcastReceiver {
 
         // Send Notification Received Metric
         Session session = Session.getCurrentSessionOrNull();
-        HashMap<String, Object> payload = new HashMap<>();
-        payload.put("app_id", Teak.appConfiguration.appId);
-        payload.put("user_id", teakUserId);
-        payload.put("platform_id", teakNotifId);
+        if (session != null) {
+            HashMap<String, Object> payload = new HashMap<>();
+            payload.put("app_id", Teak.appConfiguration.appId);
+            payload.put("user_id", teakUserId);
+            payload.put("platform_id", teakNotifId);
 
-        if (teakNotifId == 0) {
-            payload.put("impression", false);
+            if (teakNotifId == 0) {
+                payload.put("impression", false);
+            }
+
+            new Thread(new Request("/notification_received", payload, session)).start();
         }
-
-        new Thread(new Request("/notification_received", payload, session)).start();
     }
 
     @Override
