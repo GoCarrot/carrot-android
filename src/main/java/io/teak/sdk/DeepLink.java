@@ -30,9 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.code.regexp.Pattern;
-import com.google.code.regexp.Matcher;
-
 import dalvik.system.DexFile;
 
 public class DeepLink {
