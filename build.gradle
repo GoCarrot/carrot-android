@@ -125,8 +125,6 @@ android {
 }
 
 dependencies {
-    compile files ('libs/named-regexp-0.2.4.jar')
-
     // Google Play files
     compile 'com.google.android.gms:play-services-gcm:7.0.0'
     compile 'com.google.android.gms:play-services-ads:7.0.0'
