@@ -492,7 +492,7 @@ public class Teak extends BroadcastReceiver {
                             }
                             broadcastEvent.putExtra("teakDeepLinkQueryParameters", teakDeepLinkQueryParameters);
                             broadcastEvent.putExtra("teakDeepLinkQueryParametersJson", new JSONObject(teakDeepLinkQueryParameters).toString());
-                            broadcastEvent.putExtra("teakDeepLinkPath", teakDeepLink.getPath());
+                            broadcastEvent.putExtra("teakDeepLinkPath", String.format("/%s%s", teakDeepLink.getAuthority(), teakDeepLink.getPath()));
                         }
 
                         String teakRewardId = bundle.getString("teakRewardId");
