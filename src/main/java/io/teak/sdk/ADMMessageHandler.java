@@ -124,11 +124,17 @@ public class ADMMessageHandler extends ADMMessageHandlerBase {
                                 throw new Exception("App signature SHA-256 does not match api_key.txt");
                             }
                             Log.i(LOG_TAG, "[✓] App signature matches signature inside 'api_key.txt'");
+                        } else if (json.has("appsig")) {
+                            String sigMd5 = formatSig(sig, "MD5");
+                            if (!sigMd5.equalsIgnoreCase(json.getString("appsig"))) {
+                                Log.e(LOG_TAG, "           App MD5:" + sigMd5);
+                                Log.e(LOG_TAG, "   api_key.txt MD5:" + json.getString("appsig"));
+                                throw new Exception("App signature MD5 does not match api_key.txt");
+                            }
                         } else {
-                            // TODO: What would old version contain? 'appsig' == md5?
                             String sigMd5 = formatSig(sig, "MD5");
                             String sigSha256 = formatSig(sig, "SHA-256");
-                            Log.w(LOG_TAG, "Couldn't find 'appsigSha256' please ensure that your API key matches one of the following signatures:");
+                            Log.w(LOG_TAG, "Couldn't find 'appsigSha256' or 'appsig' please ensure that your API key matches one of the following signatures:");
                             Log.w(LOG_TAG, "       MD5:" + sigMd5);
                             Log.w(LOG_TAG, "   SHA-256:" + sigSha256);
                         }
