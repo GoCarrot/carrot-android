@@ -175,18 +175,7 @@ public class TeakNotification {
          */
         public int status;
 
-        /**
-         * The reward(s) to grant, or <code>null</code>.
-         * <p/>
-         * <p>The reward(s) contained are in the format:
-         * <code>{
-         * “internal_id” : quantity,
-         * “another_internal_id” : anotherQuantity
-         * }</code></p>
-         */
-        public JSONObject reward;
-
-        public JSONObject originalJson;
+        public JSONObject json;
 
         Reward(JSONObject json) {
             String statusString = "";
@@ -195,16 +184,10 @@ public class TeakNotification {
                 statusString = json.isNull("status") ? "" : json.getString("status");
             } catch (Exception ignored) {
             }
-            this.originalJson = json;
+            this.json = json;
 
             if (GRANT_REWARD_STRING.equals(statusString)) {
                 status = GRANT_REWARD;
-                try {
-                    reward = new JSONObject(json.getString("reward"));
-                } catch (Exception e) {
-                    // TODO: Raven log this
-                    Log.e(LOG_TAG, Log.getStackTraceString(e));
-                }
             } else if (SELF_CLICK_STRING.equals(statusString)) {
                 status = SELF_CLICK;
             } else if (ALREADY_CLICKED_STRING.equals(statusString)) {
@@ -224,7 +207,7 @@ public class TeakNotification {
 
         @Override
         public String toString() {
-            return String.format(Locale.US, "%s{status: %d, reward: %s}", super.toString(), status, reward == null ? "null" : reward.toString());
+            return String.format(Locale.US, "%s{status: %d, json: %s}", super.toString(), status, json == null ? "null" : json.toString());
         }
 
         private static final String GRANT_REWARD_STRING = "grant_reward";
