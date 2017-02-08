@@ -445,7 +445,9 @@ class Session {
                                 }
 
                                 // Prevent warning for 'do_not_track_event'
-                                if (_this.state != State.UserIdentified) {
+                                if (_this.state == State.Expiring) {
+                                    _this.previousState = State.UserIdentified;
+                                } else if (_this.state != State.UserIdentified) {
                                     _this.setState(State.UserIdentified);
                                 }
                             } catch (Exception ignored) {
