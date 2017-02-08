@@ -152,6 +152,13 @@ class Session {
         setState(State.Created);
     }
 
+    private Session(@NonNull Session session) {
+        this(session.appConfiguration, session.deviceConfiguration);
+
+        this.userId = session.userId;
+        this.attributionChain.addAll(session.attributionChain);
+    }
+
     public boolean hasExpired() {
         synchronized (stateMutex) {
             if (this.state == State.Expiring &&
@@ -178,8 +185,7 @@ class Session {
         synchronized (currentSessionMutex) {
             synchronized (currentSession.stateMutex) {
                 if (currentSession.userId != null && !currentSession.userId.equals(userId)) {
-                    Session newSession = new Session(currentSession.appConfiguration, currentSession.deviceConfiguration);
-                    newSession.attributionChain.addAll(currentSession.attributionChain);
+                    Session newSession = new Session(currentSession);
 
                     currentSession.setState(State.Expiring);
                     currentSession.setState(State.Expired);
@@ -538,9 +544,7 @@ class Session {
             if (attributionStringsAreDifferent(currentSession.launchedFromDeepLink, launchedFromDeepLink) ||
                     attributionStringsAreDifferent(currentSession.launchedFromTeakNotifId, launchedFromTeakNotifId)) {
                 Session oldSession = currentSession;
-                currentSession = new Session(oldSession.appConfiguration, oldSession.deviceConfiguration);
-                currentSession.userId = oldSession.userId;
-                currentSession.attributionChain.addAll(oldSession.attributionChain);
+                currentSession = new Session(oldSession);
 
                 oldSession.setState(State.Expiring);
                 oldSession.setState(State.Expired);
