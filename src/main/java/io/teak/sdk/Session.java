@@ -545,7 +545,7 @@ class Session {
             // deep link/notification, it's a new session
             if ((attributionStringsAreDifferent(currentSession.launchedFromDeepLink, launchedFromDeepLink) ||
                     attributionStringsAreDifferent(currentSession.launchedFromTeakNotifId, launchedFromTeakNotifId)) &&
-                    (currentSession.state == State.Configured || currentSession.state == State.UserIdentified)) {
+                    (currentSession.state != State.Allocated && currentSession.state != State.Created)) {
                 Session oldSession = currentSession;
                 currentSession = new Session(oldSession);
 
