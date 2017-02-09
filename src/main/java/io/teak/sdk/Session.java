@@ -249,9 +249,15 @@ class Session {
 
                     RemoteConfiguration.removeEventListener(remoteConfigurationListener);
 
-                    if (this.userId != null) {
-                        this.identifyUser();
-                    }
+                    final Session _this = this;
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (_this.userId != null) {
+                                _this.identifyUser();
+                            }
+                        }
+                    }).start();
                 }
                 break;
 
