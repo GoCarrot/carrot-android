@@ -50,6 +50,7 @@ class Session {
         Allocated("Allocated"),
         Created("Created"),
         Configured("Configured"),
+        IdentifyingUser("IdentifyingUser"),
         UserIdentified("UserIdentified"),
         Expiring("Expiring"),
         Expired("Expired");
@@ -60,9 +61,10 @@ class Session {
                 {},
                 {State.Created, State.Expiring},
                 {State.Configured, State.Expiring},
+                {State.IdentifyingUser, State.Expiring},
                 {State.UserIdentified, State.Expiring},
                 {State.Expiring},
-                {State.Created, State.Configured, State.UserIdentified, State.Expired},
+                {State.Created, State.Configured, State.IdentifyingUser, State.UserIdentified, State.Expired},
                 {}
         };
 
@@ -253,11 +255,15 @@ class Session {
                 }
                 break;
 
-                case UserIdentified: {
+                case IdentifyingUser: {
                     if (this.userId == null) {
                         invalidValuesForTransition.add(new Object[]{"userId", "null"});
                         break;
                     }
+                }
+                break;
+
+                case UserIdentified: {
 
                     // Start heartbeat, heartbeat service should be null right now
                     if (this.heartbeatService != null) {
@@ -374,6 +380,10 @@ class Session {
         new Thread(new Runnable() {
             public void run() {
                 synchronized (_this.stateMutex) {
+                    if (_this.state != State.UserIdentified && !_this.setState(State.IdentifyingUser)) {
+                        return;
+                    }
+
                     HashMap<String, Object> payload = new HashMap<>();
 
                     if (_this.state == State.UserIdentified) {
