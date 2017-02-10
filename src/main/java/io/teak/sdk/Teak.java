@@ -36,6 +36,7 @@ import org.json.JSONObject;
 
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 
@@ -363,14 +364,15 @@ public class Teak extends BroadcastReceiver {
             // Broadcast manager
             Teak.localBroadcastManager = LocalBroadcastManager.getInstance(context);
 
-            // Parse Teak for deep link routes
-            try {
-                for (Method method : Teak.DeepLinkRoutes.class.getDeclaredMethods()) {
-                    DeepLink.validateAnnotations(method, false);
+            // Register teak_internal routes
+            DeepLink.registerRoute("/teak_internal/store/:sku", "", "", new DeepLink.Call() {
+                @Override
+                public void call(Map<String, Object> params) {
+                    if (Teak.appStore != null) {
+                        Teak.appStore.launchPurchaseFlowForSKU((String)params.get("sku"));
+                    }
                 }
-            } catch (Exception e) {
-                Log.e(LOG_TAG, Log.getStackTraceString(e));
-            }
+            });
 
             // Process launch event
             Session.processIntent(inActivity.getIntent(), Teak.appConfiguration, Teak.deviceConfiguration);
@@ -676,15 +678,6 @@ public class Teak extends BroadcastReceiver {
     }
 
     /**************************************************************************/
-
-    private static class DeepLinkRoutes {
-        @TeakLink("/teak_internal/store/:arg0")
-        private static void launchDefaultPurchaseFlowForSku(String arg0) {
-            if (Teak.appStore != null) {
-                Teak.appStore.launchPurchaseFlowForSKU(arg0);
-            }
-        }
-    }
 
     @SuppressWarnings("unused")
     private static void openIABPurchaseSucceeded(String json) {

@@ -15,7 +15,6 @@ import android.util.Log;
 
 import io.teak.sdk.DeepLink;
 import io.teak.sdk.Teak;
-import io.teak.sdk.TeakLink;
 import io.teak.sdk.TeakNotification;
 
 import android.view.View;
@@ -28,6 +27,7 @@ import org.json.JSONObject;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     public static final String LOG_TAG = "Teak:Example";
@@ -121,13 +121,27 @@ public class MainActivity extends AppCompatActivity {
 
         Teak.identifyUser("demo-app-thingy-3");
 
-        try {
-            for (Method method : MainActivity.class.getDeclaredMethods()) {
-                DeepLink.validateAnnotations(method, false);
+        DeepLink.registerRoute("/store/:sku", "Store", "Link directly to purchase an item", new DeepLink.Call() {
+
+            @Override
+            public void call(Map<String, Object> parameters) {
+                final String sku = (String)parameters.get("sku");
+
+                Log.d(LOG_TAG, "IT called the thing! " + sku);
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Bundle buyIntentBundle = mService.getBuyIntent(3, mThis.getPackageName(), sku, "inapp", "");
+                            PendingIntent pendingIntent = buyIntentBundle.getParcelable("BUY_INTENT");
+                            mThis.startIntentSenderForResult(pendingIntent.getIntentSender(), 1001, new Intent(), 0, 0, 0);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
             }
-        } catch (Exception e) {
-            Log.e(LOG_TAG, Log.getStackTraceString(e));
-        }
+        });
 
         // com.teakio.pushtest.dollar
         mThis = this;
@@ -145,21 +159,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @TeakLink("/store/:arg0")
+    //@TeakLink("/store/:arg0")
     static void fooBar(final String arg0) {
-        Log.d(LOG_TAG, "IT called the thing! " + arg0);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Bundle buyIntentBundle = mService.getBuyIntent(3, mThis.getPackageName(), arg0, "inapp", "");
-                    PendingIntent pendingIntent = buyIntentBundle.getParcelable("BUY_INTENT");
-                    mThis.startIntentSenderForResult(pendingIntent.getIntentSender(), 1001, new Intent(), 0, 0, 0);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
+
     }
 
     @Override
@@ -207,6 +209,21 @@ public class MainActivity extends AppCompatActivity {
 
     public void testNotification(View view) {
         TeakNotification.scheduleNotification("test", "Some text!", 5);
+    }
+
+    public void makePurchase(View view) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Bundle buyIntentBundle = mService.getBuyIntent(3, mThis.getPackageName(), "com.teakio.pushtest.dollar", "inapp", "");
+                    PendingIntent pendingIntent = buyIntentBundle.getParcelable("BUY_INTENT");
+                    mThis.startIntentSenderForResult(pendingIntent.getIntentSender(), 1001, new Intent(), 0, 0, 0);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
     public void crashApp(View view) {

@@ -14,98 +14,59 @@
  */
 package io.teak.sdk;
 
-import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 
-import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import dalvik.system.DexFile;
-
 public class DeepLink {
-    private static final String LOG_TAG = "Teak:DeepLink";
-
-    private static String[] getClassesOfPackage(Context context, String packageName) {
-        ArrayList<String> classes = new ArrayList<String>();
-        try {
-            String packageCodePath = context.getPackageCodePath();
-            DexFile df = new DexFile(packageCodePath);
-            for (Enumeration<String> iter = df.entries(); iter.hasMoreElements(); ) {
-                String className = iter.nextElement();
-                if (className.contains(packageName)) {
-                    classes.add(className.substring(className.lastIndexOf(".") + 1, className.length()));
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return classes.toArray(new String[classes.size()]);
+    public static abstract class Call {
+        public abstract void call(Map<String, Object> parameters);
     }
 
-    public static void validateAnnotations(Method method, boolean noValidate) {
-        // Methods must have String parameters and/or a single Map<String, Object>
-        Annotation[] annotations = method.getDeclaredAnnotations();
+    private static final String LOG_TAG = "Teak:DeepLink";
 
-        for (Annotation annotation : annotations) {
-            if (annotation instanceof TeakLink) {
-                if (!Modifier.isStatic(method.getModifiers())) {
-                    throw new IllegalArgumentException("Method: " + method.getName() + " is not static, @TeakLink will not work properly.");
-                } else {
-                    TeakLink teakLink = (TeakLink) annotation;
-
-                    // https://github.com/rkh/mustermann/blob/master/mustermann-simple/lib/mustermann/simple.rb
-                    StringBuffer patternString = new StringBuffer();
-                    Pattern escape = Pattern.compile("[^\\?\\%\\\\/\\:\\*\\w]");
-                    Matcher matcher = escape.matcher(teakLink.value());
-                    while (matcher.find()) {
-                        matcher.appendReplacement(patternString, java.util.regex.Pattern.quote(matcher.group()));
-                    }
-                    matcher.appendTail(patternString);
-                    String pattern = patternString.toString();
-
-                    List<String> dupeCheck = new ArrayList<>();
-                    Pattern compile = Pattern.compile("((:\\w+)|\\*)");
-                    patternString = new StringBuffer();
-                    matcher = compile.matcher(pattern);
-                    while (matcher.find()) {
-                        if (!matcher.group().substring(1).startsWith("arg")){
-                            throw new IllegalArgumentException("Variable names must be 'arg0', 'arg1' etc due to Java");
-                        } else if (matcher.group().equals("*")) {
-                            // 'splat' behavior could be bad to support from a debugging standpoint
-                            throw new IllegalArgumentException("'splat' functionality is not supported by TeakLinks. Method: " + method);
-                            // return "(?<splat>.*?)";
-                        }
-                        dupeCheck.add(matcher.group().substring(1));
-                        matcher.appendReplacement(patternString, "(?<" + matcher.group().substring(1) + ">[^/?#]+)");
-                    }
-                    matcher.appendTail(patternString);
-                    pattern = patternString.toString();
-
-                    if (!noValidate) {
-                        // Check for duplicate capture group names
-                        Set<String> set = new HashSet<>(dupeCheck);
-
-                        if (set.size() < dupeCheck.size()) {
-                            throw new IllegalArgumentException("Duplicate variable names in TeakLink for method: " + method);
-                        }
-                    }
-
-                    Pattern regex = Pattern.compile(pattern);
-                    routes.put(regex, new DeepLink(regex, method));
-                }
-            }
+    public static void registerRoute(String route, String name, String description, Call call) {
+        // https://github.com/rkh/mustermann/blob/master/mustermann-simple/lib/mustermann/simple.rb
+        StringBuffer patternString = new StringBuffer();
+        Pattern escape = Pattern.compile("[^\\?\\%\\\\/\\:\\*\\w]");
+        Matcher matcher = escape.matcher(route);
+        while (matcher.find()) {
+            matcher.appendReplacement(patternString, java.util.regex.Pattern.quote(matcher.group()));
         }
+        matcher.appendTail(patternString);
+        String pattern = patternString.toString();
+
+        List<String> groupNames = new ArrayList<>();
+        Pattern compile = Pattern.compile("((:\\w+)|\\*)");
+        patternString = new StringBuffer();
+        matcher = compile.matcher(pattern);
+        while (matcher.find()) {
+            if (matcher.group().equals("*")) {
+                // 'splat' behavior could be bad to support from a debugging standpoint
+                throw new IllegalArgumentException("'splat' functionality is not supported by TeakLinks. Route: " + route);
+                // return "(?<splat>.*?)";
+            }
+            groupNames.add(matcher.group().substring(1));
+            matcher.appendReplacement(patternString, "(?<" + matcher.group().substring(1) + ">[^/?#]+)");
+        }
+        matcher.appendTail(patternString);
+        pattern = patternString.toString();
+
+        // Check for duplicate capture group names
+        Set<String> set = new HashSet<>(groupNames);
+
+        if (set.size() < groupNames.size()) {
+            throw new IllegalArgumentException("Duplicate variable names in TeakLink for route: " + route);
+        }
+
+        Pattern regex = Pattern.compile(pattern);
+        routes.put(regex, new DeepLink(route, call, groupNames, name, description));
     }
 
     public static boolean processUri(Uri uri) {
@@ -116,24 +77,20 @@ public class DeepLink {
             Pattern key = entry.getKey();
             DeepLink value = entry.getValue();
 
-            if(!value.method.isAccessible()) {
-                value.method.setAccessible(true);
-            }
-
             Matcher matcher = key.matcher(uriMatchString);
             if (matcher.matches()) {
-                Class<?>[] paramTypes = value.method.getParameterTypes();
-                Object[] params = new Object[paramTypes.length];
-                for(int i = 0; i < paramTypes.length; i++) {
+                Map<String, Object> parameterDict = new HashMap<>();
+                for (String name : value.groupNames) {
                     try {
-                        params[i] = matcher.group("arg" + i);
+                        parameterDict.put(name, matcher.group(name));
                     } catch (Exception e) {
                         Log.e(LOG_TAG, Log.getStackTraceString(e));
                         return false;
                     }
                 }
+
                 try {
-                    value.method.invoke(null, params);
+                    value.call.call(parameterDict);
                 } catch (Exception e) {
                     Log.e(LOG_TAG, Log.getStackTraceString(e));
                     return false;
@@ -146,11 +103,17 @@ public class DeepLink {
 
     private static final Map<Pattern, DeepLink> routes = new HashMap<>();
 
-    private final Pattern regex;
-    private final Method method;
+    private final String route;
+    private final Call call;
+    private final List<String> groupNames;
+    private final String name;
+    private final String description;
 
-    protected DeepLink(Pattern regex, Method method) {
-        this.regex = regex;
-        this.method = method;
+    protected DeepLink(String route, Call call, List<String> groupNames, String name, String description) {
+        this.route = route;
+        this.call = call;
+        this.groupNames = groupNames;
+        this.name = name;
+        this.description = description;
     }
 }
