@@ -14,6 +14,10 @@ deployment:
       - aws s3 cp build/outputs/aar/teak-api_lt_21.aar s3://teak-build-artifacts/android/teak-api_lt_21-`cat VERSION`.aar --acl public-read
       - aws s3 cp build/outputs/aar/teak-api_lt_21.aar s3://teak-build-artifacts/android/teak-api_lt_21.aar --acl public-read
 test:
+  override:
+    - pwd
+    - ls
+    - ls build/
   post:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/
     - find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
