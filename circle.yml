@@ -1,7 +1,15 @@
-general:
-  artifacts:
-    - "build/outputs/aar"
-    - "build/distributions"
+deployment:
+  prod:
+    branch: master
+    commands:
+      - aws s3 cp build/distributions/teak-api_gteq_21.zip s3://teak-build-artifacts/android/teak-api_gteq_21-`cat VERSION`.zip --acl public-read
+      - aws s3 cp build/distributions/teak-api_gteq_21.zip s3://teak-build-artifacts/android/teak-api_gteq_21.zip --acl public-read
+      - aws s3 cp build/distributions/teak-api_lt_21.zip s3://teak-build-artifacts/android/teak-api_lt_21-`cat VERSION`.zip --acl public-read
+      - aws s3 cp build/distributions/teak-api_lt_21.zip s3://teak-build-artifacts/android/teak-api_lt_21.zip --acl public-read
+      - aws s3 cp build/outputs/aar/teak-api_gteq_21.aar s3://teak-build-artifacts/android/teak-api_gteq_21-`cat VERSION`.aar --acl public-read
+      - aws s3 cp build/outputs/aar/teak-api_gteq_21.aar s3://teak-build-artifacts/android/teak-api_gteq_21.aar --acl public-read
+      - aws s3 cp build/outputs/aar/teak-api_lt_21.aar s3://teak-build-artifacts/android/teak-api_lt_21-`cat VERSION`.aar --acl public-read
+      - aws s3 cp build/outputs/aar/teak-api_lt_21.aar s3://teak-build-artifacts/android/teak-api_lt_21.aar --acl public-read
 test:
   post:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/
