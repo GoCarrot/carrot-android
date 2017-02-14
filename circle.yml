@@ -1,3 +1,7 @@
+general:
+  artifacts:
+    - "build/outputs/aar"
+    - "build/distributions"
 test:
   post:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/
