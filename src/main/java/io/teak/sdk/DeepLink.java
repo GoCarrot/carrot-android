@@ -101,6 +101,19 @@ public class DeepLink {
         return false;
     }
 
+    static List<Map<String, String>> getRouteNamesAndDescriptions() {
+        List<Map<String, String>> routeNamesAndDescriptions = new ArrayList<>();
+        for (Map.Entry<Pattern, DeepLink> entry : routes.entrySet()) {
+            DeepLink link = entry.getValue();
+            if (link.name != null && !link.name.isEmpty()) {
+                Map<String, String> item = new HashMap<>();
+                item.put(link.name, link.description == null ? "" : link.description);
+                routeNamesAndDescriptions.add(item);
+            }
+        }
+        return routeNamesAndDescriptions;
+    }
+
     private static final Map<Pattern, DeepLink> routes = new HashMap<>();
 
     private final String route;

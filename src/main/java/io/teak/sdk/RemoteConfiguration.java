@@ -65,6 +65,7 @@ class RemoteConfiguration {
     public static void requestConfigurationForApp(final Session session) {
         HashMap<String, Object> payload = new HashMap<>();
         payload.put("id", session.appConfiguration.appId);
+        payload.put("deep_link_routes", DeepLink.getRouteNamesAndDescriptions());
 
         new Thread(new Request("gocarrot.com", "/games/" + session.appConfiguration.appId + "/settings.json", payload, session) {
             @Override
