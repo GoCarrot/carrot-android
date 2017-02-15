@@ -1,10 +1,8 @@
-machine:
-  environment:
-    VERSION_STRING: `git describe --tags --always`
 deployment:
   prod:
     branch: master
     commands:
+      - export VERSION_STRING=`git describe --tags --always`
       - aws s3 cp build/distributions/teak-api_gteq_21.zip s3://teak-build-artifacts/android/teak-api_gteq_21-${VERSION_STRING}.zip --acl public-read
       - aws s3 cp build/distributions/teak-api_gteq_21.zip s3://teak-build-artifacts/android/teak-api_gteq_21.zip --acl public-read
       - aws s3 cp build/distributions/teak-api_lt_21.zip s3://teak-build-artifacts/android/teak-api_lt_21-${VERSION_STRING}.zip --acl public-read
