@@ -65,6 +65,7 @@ class DeviceConfiguration {
     private Object admInstance;
 
     private static final String PREFERENCE_GCM_ID = "io.teak.sdk.Preferences.GcmId";
+    private static final String PREFERENCE_GCM_SENDER_ID = "io.teak.sdk.Preferences.GcmSenderId";
     private static final String PREFERENCE_APP_VERSION = "io.teak.sdk.Preferences.AppVersion";
     private static final String PREFERENCE_DEVICE_ID = "io.teak.sdk.Preferences.DeviceId";
 
@@ -193,7 +194,10 @@ class DeviceConfiguration {
             if (this.preferences != null) {
                 int storedAppVersion = this.preferences.getInt(PREFERENCE_APP_VERSION, 0);
                 String storedGcmId = this.preferences.getString(PREFERENCE_GCM_ID, null);
-                if (storedAppVersion == appConfiguration.appVersion && storedGcmId != null) {
+                String storedGcmSenderId = this.preferences.getString(PREFERENCE_GCM_SENDER_ID, null);
+                if (storedAppVersion == appConfiguration.appVersion &&
+                        storedGcmSenderId != null && storedGcmSenderId.equals(appConfiguration.pushSenderId) &&
+                        storedGcmId != null) {
                     // No need to get a new one, so put it on the blocking queue
                     if (Teak.isDebug) {
                         Log.d(LOG_TAG, "GCM Id found in cache: " + storedGcmId);
@@ -229,6 +233,7 @@ class DeviceConfiguration {
                 SharedPreferences.Editor editor = this.preferences.edit();
                 editor.putInt(PREFERENCE_APP_VERSION, 0);
                 editor.putString(PREFERENCE_GCM_ID, null);
+                editor.putString(PREFERENCE_GCM_SENDER_ID, null);
                 editor.apply();
             }
             registerForGCM(appConfiguration);
@@ -329,6 +334,7 @@ class DeviceConfiguration {
                                 SharedPreferences.Editor editor = _this.preferences.edit();
                                 editor.putInt(PREFERENCE_APP_VERSION, appConfiguration.appVersion);
                                 editor.putString(PREFERENCE_GCM_ID, registration);
+                                editor.putString(PREFERENCE_GCM_SENDER_ID, appConfiguration.pushSenderId);
                                 editor.apply();
                             }
 
