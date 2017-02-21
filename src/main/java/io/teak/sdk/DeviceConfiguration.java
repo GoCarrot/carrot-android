@@ -63,6 +63,9 @@ class DeviceConfiguration {
     private FutureTask<GoogleCloudMessaging> gcm;
     private SharedPreferences preferences;
     private Object admInstance;
+    private String gcmSenderId;
+
+    private final AppConfiguration appConfiguration;
 
     private static final String PREFERENCE_GCM_ID = "io.teak.sdk.Preferences.GcmId";
     private static final String PREFERENCE_GCM_SENDER_ID = "io.teak.sdk.Preferences.GcmSenderId";
@@ -75,6 +78,8 @@ class DeviceConfiguration {
         } else {
             this.platformString = "android_" + android.os.Build.VERSION.RELEASE;
         }
+
+        this.appConfiguration = appConfiguration;
 
         // ADM support
         {
@@ -190,23 +195,6 @@ class DeviceConfiguration {
                 }
             }
         } else {
-            // Kick off GCM request
-            if (this.preferences != null) {
-                int storedAppVersion = this.preferences.getInt(PREFERENCE_APP_VERSION, 0);
-                String storedGcmId = this.preferences.getString(PREFERENCE_GCM_ID, null);
-                String storedGcmSenderId = this.preferences.getString(PREFERENCE_GCM_SENDER_ID, null);
-                if (storedAppVersion == appConfiguration.appVersion &&
-                        storedGcmSenderId != null && storedGcmSenderId.equals(appConfiguration.pushSenderId) &&
-                        storedGcmId != null) {
-                    // No need to get a new one, so put it on the blocking queue
-                    if (Teak.isDebug) {
-                        Log.d(LOG_TAG, "GCM Id found in cache: " + storedGcmId);
-                    }
-                    this.gcmId = storedGcmId;
-                    displayPushDebugMessage();
-                }
-            }
-
             this.gcm = new FutureTask<>(new RetriableTask<>(100, 2000L, new Callable<GoogleCloudMessaging>() {
                 @Override
                 public GoogleCloudMessaging call() throws Exception {
@@ -215,14 +203,41 @@ class DeviceConfiguration {
             }));
             new Thread(this.gcm).start();
 
-            if (this.gcmId == null) {
-                registerForGCM(appConfiguration);
-            }
+            RemoteConfiguration.addEventListener(this.remoteConfigurationEventListener);
         }
 
         // Kick off Advertising Info request
         fetchAdvertisingInfo(context);
     }
+
+    private final RemoteConfiguration.EventListener remoteConfigurationEventListener = new RemoteConfiguration.EventListener() {
+        @Override
+        public void onConfigurationReady(RemoteConfiguration configuration) {
+            // GCM sender id
+            gcmSenderId = configuration.gcmSenderId == null ? appConfiguration.pushSenderId : configuration.gcmSenderId;
+
+            // Kick off GCM request
+            if (preferences != null) {
+                int storedAppVersion = preferences.getInt(PREFERENCE_APP_VERSION, 0);
+                String storedGcmId = preferences.getString(PREFERENCE_GCM_ID, null);
+                String storedGcmSenderId = preferences.getString(PREFERENCE_GCM_SENDER_ID, null);
+                if (storedAppVersion == appConfiguration.appVersion &&
+                        storedGcmSenderId != null && storedGcmSenderId.equals(gcmSenderId) &&
+                        storedGcmId != null) {
+                    // No need to get a new one, so put it on the blocking queue
+                    if (Teak.isDebug) {
+                        Log.d(LOG_TAG, "GCM Id found in cache: " + storedGcmId);
+                    }
+                    gcmId = storedGcmId;
+                    displayPushDebugMessage();
+                }
+            }
+
+            if (gcmId == null) {
+                registerForGCM(appConfiguration);
+            }
+        }
+    };
 
     public void reRegisterPushToken(@NonNull AppConfiguration appConfiguration) {
         if (this.admIsSupported) {
@@ -304,7 +319,7 @@ class DeviceConfiguration {
 
     private void registerForGCM(@NonNull final AppConfiguration appConfiguration) {
         try {
-            if (appConfiguration.pushSenderId != null) {
+            if (gcmSenderId != null) {
                 final DeviceConfiguration _this = this;
 
                 final FutureTask<String> gcmRegistration = new FutureTask<>(new RetriableTask<>(100, 7000L, new Callable<String>() {
@@ -313,9 +328,9 @@ class DeviceConfiguration {
                         GoogleCloudMessaging gcm = _this.gcm.get();
 
                         if (Teak.isDebug) {
-                            Log.d(LOG_TAG, "Registering for GCM with sender id: " + appConfiguration.pushSenderId);
+                            Log.d(LOG_TAG, "Registering for GCM with sender id: " + gcmSenderId);
                         }
-                        return gcm.register(appConfiguration.pushSenderId);
+                        return gcm.register(gcmSenderId);
                     }
                 }));
                 new Thread(gcmRegistration).start();
@@ -334,7 +349,7 @@ class DeviceConfiguration {
                                 SharedPreferences.Editor editor = _this.preferences.edit();
                                 editor.putInt(PREFERENCE_APP_VERSION, appConfiguration.appVersion);
                                 editor.putString(PREFERENCE_GCM_ID, registration);
-                                editor.putString(PREFERENCE_GCM_SENDER_ID, appConfiguration.pushSenderId);
+                                editor.putString(PREFERENCE_GCM_SENDER_ID, gcmSenderId);
                                 editor.apply();
                             }
 
