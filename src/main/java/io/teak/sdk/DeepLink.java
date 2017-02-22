@@ -107,7 +107,9 @@ public class DeepLink {
             DeepLink link = entry.getValue();
             if (link.name != null && !link.name.isEmpty()) {
                 Map<String, String> item = new HashMap<>();
-                item.put(link.name, link.description == null ? "" : link.description);
+                item.put("name", link.name);
+                item.put("description", link.description == null ? "" : link.description);
+                item.put("route", link.route);
                 routeNamesAndDescriptions.add(item);
             }
         }
