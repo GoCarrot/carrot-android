@@ -29,8 +29,9 @@ class RemoteConfiguration {
 
     public final AppConfiguration appConfiguration;
     private final String hostname;
-    private final String sdkSentryDsn;
-    private final String appSentryDsn;
+    public final String sdkSentryDsn;
+    public final String appSentryDsn;
+    public final String gcmSenderId;
 
     // region Event Listener
     public interface EventListener {
@@ -55,11 +56,12 @@ class RemoteConfiguration {
     }
     // endregion
 
-    private RemoteConfiguration(@NonNull AppConfiguration appConfiguration, @NonNull String hostname, String sdkSentryDsn, String appSentryDsn) {
+    private RemoteConfiguration(@NonNull AppConfiguration appConfiguration, @NonNull String hostname, String sdkSentryDsn, String appSentryDsn, String gcmSenderId) {
         this.appConfiguration = appConfiguration;
         this.hostname = hostname;
         this.appSentryDsn = appSentryDsn;
         this.sdkSentryDsn = sdkSentryDsn;
+        this.gcmSenderId = gcmSenderId;
     }
 
     public static void requestConfigurationForApp(final Session session) {
@@ -76,7 +78,8 @@ class RemoteConfiguration {
                     RemoteConfiguration configuration = new RemoteConfiguration(session.appConfiguration,
                             response.isNull("auth") ? "gocarrot.com" : response.getString("auth"),
                             nullInsteadOfEmpty(response.isNull("sdk_sentry_dsn") ? null : response.getString("sdk_sentry_dsn")),
-                            nullInsteadOfEmpty(response.isNull("app_sentry_dsn") ? null : response.getString("app_sentry_dsn")));
+                            nullInsteadOfEmpty(response.isNull("app_sentry_dsn") ? null : response.getString("app_sentry_dsn")),
+                            nullInsteadOfEmpty(response.isNull("gcm_sender_id") ? null : response.getString("gcm_sender_id")));
 
                     synchronized (eventListenersMutex) {
                         for (EventListener e : RemoteConfiguration.eventListeners) {
@@ -96,14 +99,6 @@ class RemoteConfiguration {
             return "parsnip.gocarrot.com";
         }
         return this.hostname;
-    }
-
-    public String sdkSentryDSN() {
-        return this.sdkSentryDsn;
-    }
-
-    public String appSentryDSN() {
-        return this.appSentryDsn;
     }
     // endregion
 

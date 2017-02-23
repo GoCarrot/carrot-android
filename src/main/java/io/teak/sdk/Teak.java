@@ -562,12 +562,12 @@ public class Teak extends BroadcastReceiver {
         @Override
         public void onConfigurationReady(RemoteConfiguration configuration) {
             // Begin exception reporting, if enabled
-            if (configuration.sdkSentryDSN() != null) {
-                Teak.sdkRaven.setDsn(configuration.sdkSentryDSN());
+            if (configuration.sdkSentryDsn != null) {
+                Teak.sdkRaven.setDsn(configuration.sdkSentryDsn);
             }
 
-            if (configuration.appSentryDSN() != null) {
-                Teak.appRaven.setDsn(configuration.appSentryDSN());
+            if (configuration.appSentryDsn != null) {
+                Teak.appRaven.setDsn(configuration.appSentryDsn);
 
                 if (!android.os.Debug.isDebuggerConnected()) {
                     Teak.appRaven.setAsUncaughtExceptionHandler();
