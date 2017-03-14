@@ -18,6 +18,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -31,6 +32,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -549,7 +551,7 @@ class Session {
      *
      * @param intent Incoming Intent to process.
      */
-    public static void processIntent(Intent intent, @NonNull AppConfiguration appConfiguration, @NonNull DeviceConfiguration deviceConfiguration) {
+    public static void processIntent(Intent intent, @NonNull final AppConfiguration appConfiguration, @NonNull DeviceConfiguration deviceConfiguration) {
         if (intent == null) return;
 
         synchronized (currentSessionMutex) {
@@ -608,7 +610,14 @@ class Session {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        DeepLink.processUri(Uri.parse(deepLinkString));
+                        Uri uri = Uri.parse(deepLinkString);
+                        if (!DeepLink.processUri(uri)) {
+                            Intent uriIntent = new Intent(Intent.ACTION_VIEW, uri);
+                            List<ResolveInfo> resolvedActivities = appConfiguration.packageManager.queryIntentActivities(uriIntent, 0);
+                            if (resolvedActivities.size() > 0) {
+                                appConfiguration.applicationContext.startActivity(uriIntent);
+                            }
+                        }
                     }
                 }).start();
             }
