@@ -65,37 +65,47 @@ public class DeepLink {
             throw new IllegalArgumentException("Duplicate variable names in TeakLink for route: " + route);
         }
 
-        Pattern regex = Pattern.compile(pattern);
-        routes.put(regex, new DeepLink(route, call, groupNames, name, description));
+        final Pattern regex = Pattern.compile(pattern);
+        final DeepLink link = new DeepLink(route, call, groupNames, name, description);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                synchronized (routes) {
+                    routes.put(regex, link);
+                }
+            }
+        }).start();
     }
 
     public static boolean processUri(Uri uri) {
         if (uri == null) return false;
         String uriMatchString = String.format("/%s%s", uri.getAuthority(), uri.getPath());
 
-        for (Map.Entry<Pattern, DeepLink> entry : routes.entrySet()) {
-            Pattern key = entry.getKey();
-            DeepLink value = entry.getValue();
+        synchronized (routes) {
+            for (Map.Entry<Pattern, DeepLink> entry : routes.entrySet()) {
+                Pattern key = entry.getKey();
+                DeepLink value = entry.getValue();
 
-            Matcher matcher = key.matcher(uriMatchString);
-            if (matcher.matches()) {
-                Map<String, Object> parameterDict = new HashMap<>();
-                for (String name : value.groupNames) {
+                Matcher matcher = key.matcher(uriMatchString);
+                if (matcher.matches()) {
+                    Map<String, Object> parameterDict = new HashMap<>();
+                    for (String name : value.groupNames) {
+                        try {
+                            parameterDict.put(name, matcher.group(name));
+                        } catch (Exception e) {
+                            Log.e(LOG_TAG, Log.getStackTraceString(e));
+                            return false;
+                        }
+                    }
+
                     try {
-                        parameterDict.put(name, matcher.group(name));
+                        value.call.call(parameterDict);
                     } catch (Exception e) {
                         Log.e(LOG_TAG, Log.getStackTraceString(e));
                         return false;
                     }
+                    return true;
                 }
-
-                try {
-                    value.call.call(parameterDict);
-                } catch (Exception e) {
-                    Log.e(LOG_TAG, Log.getStackTraceString(e));
-                    return false;
-                }
-                return true;
             }
         }
         return false;
@@ -103,14 +113,16 @@ public class DeepLink {
 
     static List<Map<String, String>> getRouteNamesAndDescriptions() {
         List<Map<String, String>> routeNamesAndDescriptions = new ArrayList<>();
-        for (Map.Entry<Pattern, DeepLink> entry : routes.entrySet()) {
-            DeepLink link = entry.getValue();
-            if (link.name != null && !link.name.isEmpty()) {
-                Map<String, String> item = new HashMap<>();
-                item.put("name", link.name);
-                item.put("description", link.description == null ? "" : link.description);
-                item.put("route", link.route);
-                routeNamesAndDescriptions.add(item);
+        synchronized (routes) {
+            for (Map.Entry<Pattern, DeepLink> entry : routes.entrySet()) {
+                DeepLink link = entry.getValue();
+                if (link.name != null && !link.name.isEmpty()) {
+                    Map<String, String> item = new HashMap<>();
+                    item.put("name", link.name);
+                    item.put("description", link.description == null ? "" : link.description);
+                    item.put("route", link.route);
+                    routeNamesAndDescriptions.add(item);
+                }
             }
         }
         return routeNamesAndDescriptions;
