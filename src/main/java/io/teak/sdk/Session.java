@@ -570,16 +570,18 @@ class Session {
 
             // Check for launch via notification
             Bundle bundle = intent.getExtras();
-            String launchedFromTeakNotifId = null;
+            String teakNotifId = null;
             if (bundle != null) {
-                String teakNotifId = bundle.getString("teakNotifId");
+                teakNotifId = bundle.getString("teakNotifId");
                 if (teakNotifId != null && !teakNotifId.isEmpty()) {
-                    launchedFromTeakNotifId = teakNotifId;
                     if (Teak.isDebug) {
-                        Log.d(LOG_TAG, "Launch from Teak notification: " + launchedFromTeakNotifId);
+                        Log.d(LOG_TAG, "Launch from Teak notification: " + teakNotifId);
                     }
+                } else {
+                    teakNotifId = null;
                 }
             }
+            final String launchedFromTeakNotifId = teakNotifId;
 
             // If the current session has a launch from deep link/notification, and there is a new
             // deep link/notification, it's a new session
@@ -611,8 +613,11 @@ class Session {
                     @Override
                     public void run() {
                         Uri uri = Uri.parse(deepLinkString);
-                        if (!DeepLink.processUri(uri)) {
+                        if (!DeepLink.processUri(uri) && launchedFromTeakNotifId != null) {
+                            // If this was a deep link from a Teak Notification, then go ahead and
+                            // try to find another app to launch.
                             Intent uriIntent = new Intent(Intent.ACTION_VIEW, uri);
+                            uriIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                             List<ResolveInfo> resolvedActivities = appConfiguration.packageManager.queryIntentActivities(uriIntent, 0);
                             if (resolvedActivities.size() > 0) {
                                 appConfiguration.applicationContext.startActivity(uriIntent);
