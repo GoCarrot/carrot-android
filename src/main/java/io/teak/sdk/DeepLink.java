@@ -79,14 +79,14 @@ public class DeepLink {
 
     public static boolean processUri(Uri uri) {
         if (uri == null) return false;
-        String uriMatchString = String.format("/%s%s", uri.getAuthority(), uri.getPath());
+        // TODO: Check uri.getAuthority(), and if it exists, make sure it matches one we care about
 
         synchronized (routes) {
             for (Map.Entry<Pattern, DeepLink> entry : routes.entrySet()) {
                 Pattern key = entry.getKey();
                 DeepLink value = entry.getValue();
 
-                Matcher matcher = key.matcher(uriMatchString);
+                Matcher matcher = key.matcher(uri.getPath());
                 if (matcher.matches()) {
                     Map<String, Object> parameterDict = new HashMap<>();
                     for (String name : value.groupNames) {
@@ -96,6 +96,11 @@ public class DeepLink {
                             Log.e(LOG_TAG, Log.getStackTraceString(e));
                             return false;
                         }
+                    }
+
+                    // Add the query parameters, allow them to overwrite path parameters
+                    for (String name : uri.getQueryParameterNames()) {
+                        parameterDict.put(name, uri.getQueryParameter(name));
                     }
 
                     try {
