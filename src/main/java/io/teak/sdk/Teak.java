@@ -524,25 +524,7 @@ public class Teak extends BroadcastReceiver {
         }
 
         @Override
-        public void onActivityStarted(Activity activity) {
-            if (activity != Teak.mainActivity) return;
-
-            if (Teak.isDebug) {
-                Log.d(LOG_TAG, "Lifecycle - onActivityStarted: " + activity.toString());
-            }
-
-            // OpenIAB & Prime31, need to store off the SKU for the purchase failed case
-            if (activity.getClass().getName().equals("org.onepf.openiab.UnityProxyActivity")) {
-                Bundle bundle = activity.getIntent().getExtras();
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "Unity OpenIAB purchase launched: " + bundle.toString());
-                }
-            } else if (activity.getClass().getName().equals("com.prime31.GoogleIABProxyActivity")) {
-                Bundle bundle = activity.getIntent().getExtras();
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "Unity Prime31 purchase launched: " + bundle.toString());
-                }
-            }
+        public void onActivityStarted(Activity unused) {
         }
 
         @Override
