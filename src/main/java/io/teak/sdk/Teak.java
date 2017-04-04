@@ -63,6 +63,7 @@ public class Teak extends BroadcastReceiver {
      * @param activity The main <code>Activity</code> of your app.
      */
     public static void onCreate(Activity activity) {
+        Teak.mainActivity = activity;
         Log.d(LOG_TAG, "Android SDK Version: " + Teak.SDKVersion);
 
         if (activity == null) {
@@ -303,6 +304,7 @@ public class Teak extends BroadcastReceiver {
 
     static LocalBroadcastManager localBroadcastManager;
 
+    private static Activity mainActivity;
     private static IStore appStore;
     private static AppConfiguration appConfiguration;
     static DeviceConfiguration deviceConfiguration;
@@ -316,6 +318,8 @@ public class Teak extends BroadcastReceiver {
     private static final ActivityLifecycleCallbacks lifecycleCallbacks = new ActivityLifecycleCallbacks() {
         @Override
         public void onActivityCreated(Activity inActivity, Bundle savedInstanceState) {
+            if (inActivity != Teak.mainActivity) return;
+
             if (!Teak.setState(State.Created)) {
                 // Still process launch event
                 Session.processIntent(inActivity.getIntent(), Teak.appConfiguration, Teak.deviceConfiguration);
@@ -456,7 +460,9 @@ public class Teak extends BroadcastReceiver {
         }
 
         @Override
-        public void onActivityPaused(Activity unused) {
+        public void onActivityPaused(Activity activity) {
+            if (activity != Teak.mainActivity) return;
+
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityPaused");
             }
@@ -467,6 +473,8 @@ public class Teak extends BroadcastReceiver {
 
         @Override
         public void onActivityResumed(Activity activity) {
+            if (activity != Teak.mainActivity) return;
+
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityResumed");
             }
@@ -517,6 +525,8 @@ public class Teak extends BroadcastReceiver {
 
         @Override
         public void onActivityStarted(Activity activity) {
+            if (activity != Teak.mainActivity) return;
+
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityStarted: " + activity.toString());
             }
