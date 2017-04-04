@@ -617,7 +617,6 @@ class Session {
                             // If this was a deep link from a Teak Notification, then go ahead and
                             // try to find another app to launch.
                             Intent uriIntent = new Intent(Intent.ACTION_VIEW, uri);
-                            uriIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                             List<ResolveInfo> resolvedActivities = appConfiguration.packageManager.queryIntentActivities(uriIntent, 0);
                             if (resolvedActivities.size() > 0) {
                                 appConfiguration.applicationContext.startActivity(uriIntent);
