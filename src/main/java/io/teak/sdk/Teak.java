@@ -420,34 +420,6 @@ public class Teak extends BroadcastReceiver {
                 }
             }
 
-            {
-                // Get/create Session always.
-                final Session session = Session.getCurrentSession(Teak.appConfiguration, Teak.deviceConfiguration);
-
-                // Validate the app id/key via "/games/#{@appId}/validate_sig.json"
-                if (Teak.isDebug) {
-                    HashMap<String, Object> payload = new HashMap<>();
-                    payload.put("id", Teak.appConfiguration.appId);
-                    new Thread(new Request("gocarrot.com", "/games/" + Teak.appConfiguration.appId + "/validate_sig.json", payload, session) {
-                        @Override
-                        protected void done(int responseCode, String responseBody) {
-                            try {
-                                JSONObject response = new JSONObject(responseBody);
-                                if (response.has("error")) {
-                                    JSONObject error = response.getJSONObject("error");
-                                    Log.e(LOG_TAG, "Error in Teak configuration: " + error.getString("message"));
-                                } else {
-                                    Log.d(LOG_TAG, "Teak configuration valid for: " + response.getString("name"));
-                                }
-                            } catch (Exception e) {
-                                Log.e(LOG_TAG, "Error during app validation: " + Log.getStackTraceString(e));
-                            }
-                            super.done(responseCode, responseBody);
-                        }
-                    }).start();
-                }
-            }
-
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityCreated");
                 Log.d(LOG_TAG, "        App Id: " + Teak.appConfiguration.appId);
