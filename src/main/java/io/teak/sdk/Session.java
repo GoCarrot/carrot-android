@@ -137,6 +137,9 @@ class Session {
     private String launchedFromDeepLink;
     private ArrayList<String> attributionChain = new ArrayList<>();
 
+    // For cases where setUserId() is called before a Session has been created
+    private static String pendingUserId;
+
     private Session(AppConfiguration appConfiguration, DeviceConfiguration deviceConfiguration) {
         // State: Created
         // Valid data:
@@ -187,20 +190,24 @@ class Session {
 
         // If the user id has changed, create a new session
         synchronized (currentSessionMutex) {
-            synchronized (currentSession.stateMutex) {
-                if (currentSession.userId != null && !currentSession.userId.equals(userId)) {
-                    Session newSession = new Session(currentSession);
+            if (currentSession == null) {
+                Session.pendingUserId = userId;
+            } else {
+                synchronized (currentSession.stateMutex) {
+                    if (currentSession.userId != null && !currentSession.userId.equals(userId)) {
+                        Session newSession = new Session(currentSession);
 
-                    currentSession.setState(State.Expiring);
-                    currentSession.setState(State.Expired);
+                        currentSession.setState(State.Expiring);
+                        currentSession.setState(State.Expired);
 
-                    currentSession = newSession;
-                }
+                        currentSession = newSession;
+                    }
 
-                currentSession.userId = userId;
+                    currentSession.userId = userId;
 
-                if (currentSession.state == State.Configured) {
-                    currentSession.identifyUser();
+                    if (currentSession.state == State.Configured) {
+                        currentSession.identifyUser();
+                    }
                 }
             }
         }
@@ -717,15 +724,18 @@ class Session {
 
                 if (oldSession != null) {
                     currentSession.attributionChain.addAll(oldSession.attributionChain);
-                }
 
-                // If the old session had a user id assigned, it needs to be passed to the newly created
-                // session. When setState(State.Configured) happens, it will call identifyUser()
-                if (oldSession != null && oldSession.userId != null) {
-                    if (Teak.isDebug) {
-                        Log.d(LOG_TAG, "Previous Session expired, assigning user id '" + oldSession.userId + " to new Session.");
+                    // If the old session had a user id assigned, it needs to be passed to the newly created
+                    // session. When setState(State.Configured) happens, it will call identifyUser()
+                    if (oldSession.userId != null) {
+                        if (Teak.isDebug) {
+                            Log.d(LOG_TAG, "Previous Session expired, assigning user id '" + oldSession.userId + " to new Session.");
+                        }
+                        setUserId(oldSession.userId);
                     }
-                    setUserId(oldSession.userId);
+                } else if (Session.pendingUserId != null) {
+                    setUserId(Session.pendingUserId);
+                    Session.pendingUserId = null;
                 }
             }
             return currentSession;
