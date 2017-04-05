@@ -99,7 +99,9 @@ public class Teak extends BroadcastReceiver {
             if ((ai.launchMode & ActivityInfo.LAUNCH_SINGLE_INSTANCE) == 0 &&
                 (ai.launchMode & ActivityInfo.LAUNCH_SINGLE_TASK) == 0 &&
                 (ai.launchMode & ActivityInfo.LAUNCH_SINGLE_TOP) == 0) {
-                Log.w(LOG_TAG, "The android:launchMode of this activity is not set to 'singleTask', 'singleTop' or 'singleInstance'. This could cause undesired behavior.");
+                if (Teak.isDebug) {
+                    Log.w(LOG_TAG, "The android:launchMode of this activity is not set to 'singleTask', 'singleTop' or 'singleInstance'. This could cause undesired behavior.");
+                }
             }
         } catch (Exception e) {
             Log.e(LOG_TAG, Log.getStackTraceString(e));
