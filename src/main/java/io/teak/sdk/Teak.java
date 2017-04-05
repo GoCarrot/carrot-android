@@ -622,7 +622,7 @@ public class Teak extends BroadcastReceiver {
                 }
                 Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
                 launchIntent.addCategory("android.intent.category.LAUNCHER");
-                launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 launchIntent.putExtras(bundle);
                 if (bundle.getString("teakDeepLink") != null) {
                     Uri teakDeepLink = Uri.parse(bundle.getString("teakDeepLink"));
