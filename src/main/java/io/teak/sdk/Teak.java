@@ -18,11 +18,14 @@ import android.app.Activity;
 import android.app.Application;
 import android.app.Application.ActivityLifecycleCallbacks;
 
+import android.content.ComponentName;
 import android.content.Intent;
 import android.content.Context;
 import android.content.BroadcastReceiver;
+import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.support.annotation.NonNull;
@@ -34,8 +37,6 @@ import android.util.Log;
 
 import org.json.JSONObject;
 
-import java.lang.reflect.Method;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
@@ -87,6 +88,21 @@ public class Teak extends BroadcastReceiver {
             Teak.isDebug = Teak.forceDebug || Teak.debugConfiguration.forceDebug || (applicationInfo != null && (0 != (applicationInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE)));
         } catch (Exception e) {
             Log.e(LOG_TAG, "Error creating DebugConfiguration. " + Log.getStackTraceString(e));
+        }
+
+        // Check the launch mode of the activity
+        try {
+            ComponentName cn = new ComponentName(activity, activity.getClass());
+            ActivityInfo ai = activity.getPackageManager().getActivityInfo(cn, PackageManager.GET_META_DATA);
+            // (LAUNCH_SINGLE_INSTANCE == LAUNCH_SINGLE_TASK | LAUNCH_SINGLE_TOP) but let's not
+            // assume that those values will stay the same
+            if ((ai.launchMode & ActivityInfo.LAUNCH_SINGLE_INSTANCE) == 0 &&
+                (ai.launchMode & ActivityInfo.LAUNCH_SINGLE_TASK) == 0 &&
+                (ai.launchMode & ActivityInfo.LAUNCH_SINGLE_TOP) == 0) {
+                Log.w(LOG_TAG, "The android:launchMode of this activity is not set to 'singleTask', 'singleTop' or 'singleInstance'. This could cause undesired behavior.");
+            }
+        } catch (Exception e) {
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
         }
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
