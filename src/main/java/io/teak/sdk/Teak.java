@@ -130,25 +130,16 @@ public class Teak extends BroadcastReceiver {
         }
     }
 
+    /**
+     * @deprecated call {@link Activity#setIntent(Intent)} inside your {@link Activity#onNewIntent(Intent)}.
+     */
+    @Deprecated
     public static void onNewIntent(Intent intent) {
         if (Teak.isDebug) {
             Log.d(LOG_TAG, "Lifecycle - onNewIntent");
         }
 
-        if (intent == null) {
-            Log.e(LOG_TAG, "null Intent passed to onNewIntent, ignoring.");
-            return;
-        }
-
-        if (Teak.isEnabled()) {
-            if (Teak.appConfiguration != null && Teak.deviceConfiguration != null) {
-                Session.processIntent(intent, Teak.appConfiguration, Teak.deviceConfiguration);
-            } else {
-                Log.e(LOG_TAG, "App Configuration and/or Device Configuration are null, cannot process onNewIntent().");
-            }
-        } else {
-            Log.e(LOG_TAG, "Teak is disabled, ignoring onNewIntent().");
-        }
+        Teak.mainActivity.setIntent(intent);
     }
 
     /**
@@ -319,12 +310,7 @@ public class Teak extends BroadcastReceiver {
         @Override
         public void onActivityCreated(Activity inActivity, Bundle savedInstanceState) {
             if (inActivity != Teak.mainActivity) return;
-
-            if (!Teak.setState(State.Created)) {
-                // Still process launch event
-                Session.processIntent(inActivity.getIntent(), Teak.appConfiguration, Teak.deviceConfiguration);
-                return;
-            }
+            if (!Teak.setState(State.Created)) return;
 
             final Context context = inActivity.getApplicationContext();
 
@@ -377,9 +363,6 @@ public class Teak extends BroadcastReceiver {
                     }
                 }
             });
-
-            // Process launch event
-            Session.processIntent(inActivity.getIntent(), Teak.appConfiguration, Teak.deviceConfiguration);
 
             // Applicable store
             if (Teak.appConfiguration.installerPackage != null) {
@@ -456,9 +439,10 @@ public class Teak extends BroadcastReceiver {
                     Teak.appStore.onActivityResumed();
                 }
 
-                Session.onActivityResumed(Teak.appConfiguration, Teak.deviceConfiguration);
-
                 Intent intent = activity.getIntent();
+
+                Session.onActivityResumed(intent, Teak.appConfiguration, Teak.deviceConfiguration);
+
                 if (intent != null && intent.getExtras() != null && intent.hasExtra("teakNotifId")) {
                     Bundle bundle = intent.getExtras();
 

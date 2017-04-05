@@ -544,92 +544,6 @@ class Session {
 
 
     /**
-     * Process an Intent and assign new values for launching from a deep link or Teak notification.
-     * <p/>
-     * If currentSession was launched via a deep link or notification, and the incoming intent has
-     * a new (non null/empty) value. Create a new Session, cloning state from the old one.
-     *
-     * @param intent Incoming Intent to process.
-     */
-    public static void processIntent(Intent intent, @NonNull final AppConfiguration appConfiguration, @NonNull DeviceConfiguration deviceConfiguration) {
-        if (intent == null) return;
-
-        synchronized (currentSessionMutex) {
-            // Call getCurrentSession() so the null || Expired logic stays in one place
-            getCurrentSession(appConfiguration, deviceConfiguration);
-
-            // Check for launch via deep link
-            String intentDataString = intent.getDataString();
-            String launchedFromDeepLink = null;
-            if (intentDataString != null && !intentDataString.isEmpty()) {
-                launchedFromDeepLink = intentDataString;
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "Launch from deep link: " + launchedFromDeepLink);
-                }
-            }
-
-            // Check for launch via notification
-            Bundle bundle = intent.getExtras();
-            String teakNotifId = null;
-            if (bundle != null) {
-                teakNotifId = bundle.getString("teakNotifId");
-                if (teakNotifId != null && !teakNotifId.isEmpty()) {
-                    if (Teak.isDebug) {
-                        Log.d(LOG_TAG, "Launch from Teak notification: " + teakNotifId);
-                    }
-                } else {
-                    teakNotifId = null;
-                }
-            }
-            final String launchedFromTeakNotifId = teakNotifId;
-
-            // If the current session has a launch from deep link/notification, and there is a new
-            // deep link/notification, it's a new session
-            if ((attributionStringsAreDifferent(currentSession.launchedFromDeepLink, launchedFromDeepLink) ||
-                    attributionStringsAreDifferent(currentSession.launchedFromTeakNotifId, launchedFromTeakNotifId)) &&
-                    (currentSession.state != State.Allocated && currentSession.state != State.Created)) {
-                Session oldSession = currentSession;
-                currentSession = new Session(oldSession);
-
-                oldSession.setState(State.Expiring);
-                oldSession.setState(State.Expired);
-            }
-
-            // Assign attribution
-            if (launchedFromDeepLink != null && !launchedFromDeepLink.isEmpty()) {
-                currentSession.launchedFromDeepLink = launchedFromDeepLink;
-                currentSession.attributionChain.add(launchedFromDeepLink);
-            }
-
-            if (launchedFromTeakNotifId != null && !launchedFromTeakNotifId.isEmpty()) {
-                currentSession.launchedFromTeakNotifId = launchedFromTeakNotifId;
-                currentSession.attributionChain.add(launchedFromTeakNotifId);
-            }
-
-            // See if TeakLinks can do anything with the deep link
-            if (launchedFromDeepLink != null) {
-                final String deepLinkString = launchedFromDeepLink;
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Uri uri = Uri.parse(deepLinkString);
-                        if (!DeepLink.processUri(uri) && launchedFromTeakNotifId != null) {
-                            // If this was a deep link from a Teak Notification, then go ahead and
-                            // try to find another app to launch.
-                            Intent uriIntent = new Intent(Intent.ACTION_VIEW, uri);
-                            uriIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            List<ResolveInfo> resolvedActivities = appConfiguration.packageManager.queryIntentActivities(uriIntent, 0);
-                            if (resolvedActivities.size() > 0) {
-                                appConfiguration.applicationContext.startActivity(uriIntent);
-                            }
-                        }
-                    }
-                }).start();
-            }
-        }
-    }
-
-    /**
      * Used to listen for when remote configuration is ready
      */
     private RemoteConfiguration.EventListener remoteConfigurationListener = new RemoteConfiguration.EventListener() {
@@ -696,16 +610,91 @@ class Session {
     /**
      * Called by Teak lifecycle when activity is resumed, reset state on current session if it's 'Expiring'
      */
-    public static void onActivityResumed(AppConfiguration appConfiguration, DeviceConfiguration deviceConfiguration) {
+    public static void onActivityResumed(Intent intent, final AppConfiguration appConfiguration, final DeviceConfiguration deviceConfiguration) {
         synchronized (currentSessionMutex) {
             // Call getCurrentSession() so the null || Expired logic stays in one place
             getCurrentSession(appConfiguration, deviceConfiguration);
 
-            // Reset state on current session, if it is expiring
-            synchronized (currentSession.stateMutex) {
-                if (currentSession.state == State.Expiring) {
-                    currentSession.setState(currentSession.previousState);
+            // Check intent for attribution
+            String launchedFromTeakNotifId = null;
+            String launchedFromDeepLink = null;
+            if (intent != null) {
+                // Check for launch via deep link
+                String intentDataString = intent.getDataString();
+                if (intentDataString != null && !intentDataString.isEmpty()) {
+                    launchedFromDeepLink = intentDataString;
+                    if (Teak.isDebug) {
+                        Log.d(LOG_TAG, "Launch from deep link: " + launchedFromDeepLink);
+                    }
                 }
+
+                // Check for launch via notification
+                Bundle bundle = intent.getExtras();
+                if (bundle != null) {
+                    String teakNotifId = bundle.getString("teakNotifId");
+                    if (teakNotifId != null && !teakNotifId.isEmpty()) {
+                        launchedFromTeakNotifId = teakNotifId;
+                        if (Teak.isDebug) {
+                            Log.d(LOG_TAG, "Launch from Teak notification: " + teakNotifId);
+                        }
+                    } else {
+                        teakNotifId = null;
+                    }
+                }
+            }
+
+            // If the current session has a launch from deep link/notification, and there is a new
+            // deep link/notification, it's a new session
+            if ((attributionStringsAreDifferent(currentSession.launchedFromDeepLink, launchedFromDeepLink) ||
+                    attributionStringsAreDifferent(currentSession.launchedFromTeakNotifId, launchedFromTeakNotifId)) &&
+                    (currentSession.state != State.Allocated && currentSession.state != State.Created)) {
+                Session oldSession = currentSession;
+                currentSession = new Session(oldSession);
+
+                synchronized (oldSession.stateMutex) {
+                    oldSession.setState(State.Expiring);
+                    oldSession.setState(State.Expired);
+                }
+            } else {
+                // Reset state on current session, if it is expiring
+                synchronized (currentSession.stateMutex) {
+                    if (currentSession.state == State.Expiring) {
+                        currentSession.setState(currentSession.previousState);
+                    }
+                }
+            }
+
+            // Assign attribution
+            if (launchedFromDeepLink != null && !launchedFromDeepLink.isEmpty()) {
+                currentSession.launchedFromDeepLink = launchedFromDeepLink;
+                currentSession.attributionChain.add(launchedFromDeepLink);
+            }
+
+            if (launchedFromTeakNotifId != null && !launchedFromTeakNotifId.isEmpty()) {
+                currentSession.launchedFromTeakNotifId = launchedFromTeakNotifId;
+                currentSession.attributionChain.add(launchedFromTeakNotifId);
+            }
+
+            // See if TeakLinks can do anything with the deep link
+            if (launchedFromDeepLink != null) {
+                final String deepLinkString = launchedFromDeepLink;
+                final String teakNotifIdString = launchedFromTeakNotifId;
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Uri uri = Uri.parse(deepLinkString);
+                        if (!DeepLink.processUri(uri) && teakNotifIdString != null) {
+                            // If this was a deep link from a Teak Notification, then go ahead and
+                            // try to find another app to launch.
+                            Intent uriIntent = new Intent(Intent.ACTION_VIEW, uri);
+                            uriIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            List<ResolveInfo> resolvedActivities = appConfiguration.packageManager.queryIntentActivities(uriIntent, 0);
+                            if (resolvedActivities.size() > 0) {
+                                appConfiguration.applicationContext.startActivity(uriIntent);
+                            }
+                        }
+                    }
+                }).start();
             }
         }
     }
@@ -720,7 +709,7 @@ class Session {
     private static Session currentSession;
     private static final Object currentSessionMutex = new Object();
 
-    public static Session getCurrentSession(AppConfiguration appConfiguration, DeviceConfiguration deviceConfiguration) {
+    private static Session getCurrentSession(AppConfiguration appConfiguration, DeviceConfiguration deviceConfiguration) {
         synchronized (currentSessionMutex) {
             if (currentSession == null || currentSession.hasExpired()) {
                 Session oldSession = currentSession;
