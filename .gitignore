@@ -6,3 +6,8 @@ docs/
 local.properties
 .gradle/
 infer-out/
+
+example/.idea
+example/calabash/screenshot*
+example/calabash/test_servers/
+example/calabash/.irb-history
