@@ -23,6 +23,7 @@ Before do |scenario|
   else
     FeatureMemory.invocation += 1
   end
+  exec_adb('logcat -c')
 end
 
 FeatureMemory = Struct.new(:feature, :invocation).new
