@@ -47,7 +47,7 @@ import org.json.JSONArray;
 import java.util.concurrent.ExecutionException;
 
 class Request implements Runnable {
-    private static final String LOG_TAG = "Teak:Request";
+    private static final String LOG_TAG = "Teak.Request";
 
     private final String endpoint;
     private final String hostname;

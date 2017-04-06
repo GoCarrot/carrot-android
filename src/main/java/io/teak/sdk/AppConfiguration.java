@@ -30,7 +30,7 @@ import java.util.Map;
 import io.teak.sdk.service.RavenService;
 
 class AppConfiguration {
-    private static final String LOG_TAG = "Teak:AppConfig";
+    private static final String LOG_TAG = "Teak.AppConfig";
 
     public final String appId;
     public final String apiKey;

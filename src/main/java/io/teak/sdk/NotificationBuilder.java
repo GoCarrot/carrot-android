@@ -41,7 +41,7 @@ import java.net.URLConnection;
 import java.util.Random;
 
 class NotificationBuilder {
-    private static final String LOG_TAG = "Teak:NotifBuilder:>=21";
+    private static final String LOG_TAG = "Teak.NotifBuilder.gteq21";
 
     public static Notification createNativeNotification(final Context context, Bundle bundle, TeakNotification teakNotificaton) {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context);

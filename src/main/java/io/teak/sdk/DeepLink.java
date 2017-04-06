@@ -29,7 +29,7 @@ public class DeepLink {
         public abstract void call(Map<String, Object> parameters);
     }
 
-    private static final String LOG_TAG = "Teak:DeepLink";
+    private static final String LOG_TAG = "Teak.DeepLink";
 
     public static void registerRoute(String route, String name, String description, Call call) {
         // https://github.com/rkh/mustermann/blob/master/mustermann-simple/lib/mustermann/simple.rb

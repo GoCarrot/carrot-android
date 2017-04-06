@@ -17,7 +17,7 @@ package io.teak.sdk;
 import android.util.Log;
 
 class Uncaught implements Thread.UncaughtExceptionHandler {
-    private static final String LOG_TAG = "Teak:Uncaught";
+    private static final String LOG_TAG = "Teak.Uncaught";
 
     Thread.UncaughtExceptionHandler previousUncaughtExceptionHandler;
     Thread createdOnThread;

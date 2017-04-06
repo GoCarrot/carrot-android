@@ -31,7 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
-    public static final String LOG_TAG = "Teak:Example";
+    public static final String LOG_TAG = "Teak.Example";
 
     // This is an example of a BroadcastReceiver that listens for launches from push notifications
     // and any rewards or deep links attached to them.

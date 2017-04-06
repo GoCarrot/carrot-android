@@ -43,7 +43,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.FutureTask;
 
 class DeviceConfiguration {
-    private static final String LOG_TAG = "Teak:DeviceConfig";
+    private static final String LOG_TAG = "Teak.DeviceConfig";
 
     public String gcmId;
     public String admId;

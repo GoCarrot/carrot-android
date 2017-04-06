@@ -35,7 +35,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ADMMessageHandler extends ADMMessageHandlerBase {
-    private static final String LOG_TAG = "Teak:ADMMessageHandler";
+    private static final String LOG_TAG = "Teak.ADMMessageHandler";
 
     @Override
     protected void onMessage(Intent intent) {

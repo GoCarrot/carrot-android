@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Locale;
 
 class DebugConfiguration {
-    private static final String LOG_TAG = "Teak:DebugConfig";
+    private static final String LOG_TAG = "Teak.DebugConfig";
 
     private static final String PREFERENCE_FORCE_DEBUG = "io.teak.sdk.Preferences.ForceDebug";
 

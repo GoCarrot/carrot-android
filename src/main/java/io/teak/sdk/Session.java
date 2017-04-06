@@ -53,7 +53,7 @@ import java.util.concurrent.TimeoutException;
 import javax.net.ssl.HttpsURLConnection;
 
 class Session {
-    private static final String LOG_TAG = "Teak:Session";
+    private static final String LOG_TAG = "Teak.Session";
     private static final long SAME_SESSION_TIME_DELTA = 120000;
 
     // region State machine

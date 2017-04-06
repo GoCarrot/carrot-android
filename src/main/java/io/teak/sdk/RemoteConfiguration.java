@@ -25,7 +25,7 @@ import java.util.Locale;
 import java.util.Map;
 
 class RemoteConfiguration {
-    private static final String LOG_TAG = "Teak:RemoteConfig";
+    private static final String LOG_TAG = "Teak.RemoteConfig";
 
     public final AppConfiguration appConfiguration;
     private final String hostname;

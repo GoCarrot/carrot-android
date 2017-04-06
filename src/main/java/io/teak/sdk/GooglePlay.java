@@ -38,7 +38,7 @@ import org.json.JSONObject;
 
 @SuppressWarnings("unused")
 class GooglePlay implements IStore {
-    private static final String LOG_TAG = "Teak:GooglePlay";
+    private static final String LOG_TAG = "Teak.GooglePlay";
 
     Object mService;
     ServiceConnection mServiceConn;

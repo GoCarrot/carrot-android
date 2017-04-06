@@ -25,7 +25,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 class FacebookAccessTokenBroadcast {
-    private final String LOG_TAG = "Teak:Facebook";
+    private final String LOG_TAG = "Teak.Facebook";
 
     LocalBroadcastManager broadcastManager;
 

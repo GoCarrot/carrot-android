@@ -35,7 +35,7 @@ import java.util.UUID;
 import io.teak.sdk.service.RavenService;
 
 public class Raven implements Thread.UncaughtExceptionHandler {
-    public static final String LOG_TAG = "Teak:Raven";
+    public static final String LOG_TAG = "Teak.Raven";
 
     public enum Level {
         FATAL("fatal"),

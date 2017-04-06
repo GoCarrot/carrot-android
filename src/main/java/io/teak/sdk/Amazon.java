@@ -39,7 +39,7 @@ import org.json.JSONObject;
 
 @SuppressWarnings("unused")
 class Amazon implements IStore {
-    private static final String LOG_TAG = "Teak:Amazon";
+    private static final String LOG_TAG = "Teak.Amazon";
 
     HashMap<RequestId, ArrayBlockingQueue<String>> skuDetailsRequestMap;
 

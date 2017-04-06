@@ -71,7 +71,7 @@ import org.json.JSONException;
  * </pre>
  */
 public class TeakNotification {
-    private static final String LOG_TAG = "Teak:Notification";
+    private static final String LOG_TAG = "Teak.Notification";
 
     /**
      * The 'tag' specified by Teak to the {@link NotificationCompat}
