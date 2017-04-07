@@ -1,4 +1,4 @@
-Feature: Teak Lifecycle
+Feature: App Lifecycle
 
   Scenario: Basic app lifecycle
     Given I see "Teak Example"
