@@ -95,9 +95,6 @@ class RemoteConfiguration {
 
     // region Accessors
     public String getHostnameForEndpoint(@NonNull String endpoint) {
-        if (endpoint.equals("/notification_received")) {
-            return "parsnip.gocarrot.com";
-        }
         return this.hostname;
     }
     // endregion

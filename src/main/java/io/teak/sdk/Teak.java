@@ -628,7 +628,7 @@ public class Teak extends BroadcastReceiver {
                 payload.put("impression", false);
             }
 
-            new Thread(new Request("/notification_received", payload, session)).start();
+            new Thread(new Request("parsnip.gocarrot.com", "/notification_received", payload, session)).start();
         }
     }
 
