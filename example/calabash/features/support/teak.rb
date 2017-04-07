@@ -12,15 +12,12 @@ def get_teak_request_or_reply_json(request_or_reply, type)
   stdout, stderr, status = exec_adb("logcat -d -s \"Teak.#{request_or_reply == :request ? "Request" : "Reply"}\"")
   request_or_reply_string = :request ? "Submitting request to" : "Reply from"
   regexp = case type
-    when :users
-      /#{request_or_reply_string} \'\/games\/(?:\d+)\/users\.json\'\: (.*)/
-    when :settings
-      /#{request_or_reply_string} \'\/games\/(?:\d+)\/settings\.json\'\: (.*)/
+    when :users, :settings
+      /#{request_or_reply_string} \'\/games\/(?:\d+)\/#{type}\.json\'\: (.*)/
     else
-      /#{request_or_reply_string} \'\/games\/(?:\d+)\/settings\.json\'\: (.*)/
+      /#{request_or_reply_string} \'\/me\/#{type}\.json\'\: (.*)/
   end
-
-  stdout.scan(regexp).map{ |x| JSON.parse(x.first) }.last
+  stdout.scan(regexp).map{ |x| JSON.parse(x.first) }
 end
 
 def get_current_teak_session_state
