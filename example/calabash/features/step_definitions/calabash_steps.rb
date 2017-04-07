@@ -18,12 +18,20 @@ When(/^I (?:re)?launch the app(?: again)?$/) do
   exec_adb("shell monkey -p #{package_name(default_device.app_path)} -c android.intent.category.LAUNCHER 1")
 end
 
-Then(/^I insult Android$/) do
-  puts InsultGenerator.random_insult
+Then(/^the forground activity should be "([^"]*?)"$/) do |pkg|
+  foreground_should_be(pkg)
 end
 
-Then(/^I fast-forward (\d+) seconds$/) do |seconds|
-  puts "Fast forwarding #{seconds} seconds!"
+Then(/^my app should be in the foreground$/) do
+  foreground_should_be(package_name(default_device.app_path))
+end
+
+Then(/^I should be on the home screen$/) do
+  foreground_should_be("com.sec.android.app.launcher")
+end
+
+Then(/^I insult Android$/) do
+  puts InsultGenerator.random_insult
 end
 
 Then(/^the Teak state should be "([^"]*?)"$/) do |state|
@@ -32,6 +40,21 @@ Then(/^the Teak state should be "([^"]*?)"$/) do |state|
 end
 
 Then(/^the Teak Session state should be "([^"]*?)"$/) do |state|
-  current_state = get_current_teak_session_state
+  current_state = get_current_teak_session_state.last
   fail "Current state is #{current_state}." unless current_state == state
+end
+
+Then(/^the Teak Session state should have transitioned from "([^"]*?)"$/) do |state|
+  other_state = get_current_teak_session_state.first
+  fail "Current state transitioned from #{other_state}." unless other_state == state
+end
+
+Given(/^the Teak Session timeout is (\d+) seconds$/) do |value|
+  backdoor "integrationTestTimeout", (value.to_i * 1000).to_s
+end
+
+Then(/^I wait for the Teak Session state to be "([^"]*?)"$/) do |state|
+  wait_for() do
+    get_current_teak_session_state.last == state
+  end
 end
