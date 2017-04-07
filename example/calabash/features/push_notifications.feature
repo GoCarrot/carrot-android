@@ -6,4 +6,6 @@ Feature: Push Notifications
     When I press the home button
       Then I should be on the home screen
     When I click a notification with "Some text!"
-      Then I should see "Teak Example"
+      Then my app should be in the foreground
+      And I should see "Teak Example"
+      And the current Teak session user JSON should have "teak_notif_id"
