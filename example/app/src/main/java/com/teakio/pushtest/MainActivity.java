@@ -25,7 +25,7 @@ import com.android.vending.billing.IInAppBillingService;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.lang.reflect.Method;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -61,6 +61,18 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
+
+    // For automated integration testing
+    public void integrationTestTimeout(String timeout) {
+        try {
+            Class c = Class.forName("io.teak.sdk.Session");
+            Field field = c.getDeclaredField("SAME_SESSION_TIME_DELTA");
+            field.setAccessible(true);
+            field.set(null, Integer.parseInt(timeout));
+        } catch (Exception e){
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
+        }
+    }
 
     static AppCompatActivity mThis;
     static IInAppBillingService mService;
