@@ -304,7 +304,7 @@ public class TeakNotification {
                         Reward reward = new Reward(fullParsedResponse);
 
                         if (Teak.isDebug) {
-                            Log.d(LOG_TAG, "Reward claim response: " + responseJson.toString(2));
+                            Log.d(LOG_TAG, "Reward claim response: " + Teak.formatJSONForLogging(responseJson));
                         }
 
                         q.offer(reward);

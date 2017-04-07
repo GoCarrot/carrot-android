@@ -220,7 +220,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void attachBaseContext(Context base) {
-        Log.d(LOG_TAG, "Attach base context!");
+        Teak.jsonLogIndentation = 0; // TODO: If running under Calabash
         super.attachBaseContext(base);
     }
 

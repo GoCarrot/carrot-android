@@ -226,7 +226,7 @@ class GooglePlay implements IStore {
             if (responseList != null && responseList.size() == 1) {
                 JSONObject ret = new JSONObject(responseList.get(0));
                 if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "SKU Details: " + ret.toString(2));
+                    Log.d(LOG_TAG, "SKU Details: " + Teak.formatJSONForLogging(ret));
                 }
                 return ret;
             } else {

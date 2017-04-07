@@ -135,7 +135,7 @@ class AppConfiguration {
     @Override
     public String toString() {
         try {
-            return String.format(Locale.US, "%s: %s", super.toString(), new JSONObject(this.to_h()).toString(2));
+            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.to_h())));
         } catch (Exception ignored) {
             return super.toString();
         }

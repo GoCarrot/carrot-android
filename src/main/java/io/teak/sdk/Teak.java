@@ -35,6 +35,7 @@ import android.os.Bundle;
 
 import android.util.Log;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Map;
@@ -321,6 +322,17 @@ public class Teak extends BroadcastReceiver {
     private static FacebookAccessTokenBroadcast facebookAccessTokenBroadcast;
 
     private static ExecutorService asyncExecutor = Executors.newCachedThreadPool();
+
+    // region Debug Output Formatter
+    public static int jsonLogIndentation = 2;
+    static String formatJSONForLogging(JSONObject obj) throws JSONException {
+        if (jsonLogIndentation > 0) {
+            return obj.toString(jsonLogIndentation);
+        } else {
+            return obj.toString();
+        }
+    }
+    // endregion
 
     /**************************************************************************/
 
@@ -650,7 +662,7 @@ public class Teak extends BroadcastReceiver {
         try {
             JSONObject purchase = new JSONObject(json);
             if (Teak.isDebug) {
-                Log.d(LOG_TAG, "OpenIAB purchase succeeded: " + purchase.toString(2));
+                Log.d(LOG_TAG, "OpenIAB purchase succeeded: " + Teak.formatJSONForLogging(purchase));
             }
 
             if (Teak.appStore != null && Teak.appStore.ignorePluginPurchaseEvents()) {
@@ -672,7 +684,7 @@ public class Teak extends BroadcastReceiver {
         try {
             JSONObject originalJson = new JSONObject(json);
             if (Teak.isDebug) {
-                Log.d(LOG_TAG, "Prime31 purchase succeeded: " + originalJson.toString(2));
+                Log.d(LOG_TAG, "Prime31 purchase succeeded: " + Teak.formatJSONForLogging(originalJson));
             }
 
             if (Teak.appStore != null && Teak.appStore.ignorePluginPurchaseEvents()) {
@@ -701,7 +713,7 @@ public class Teak extends BroadcastReceiver {
             public void run() {
                 try {
                     if (Teak.isDebug) {
-                        Log.d(LOG_TAG, "Purchase succeeded: " + purchaseData.toString(2));
+                        Log.d(LOG_TAG, "Purchase succeeded: " + Teak.formatJSONForLogging(purchaseData));
                     }
 
                     final HashMap<String, Object> payload = new HashMap<>();

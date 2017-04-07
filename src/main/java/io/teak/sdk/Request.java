@@ -156,7 +156,7 @@ class Request implements Runnable {
 
         try {
             if (Teak.isDebug) {
-                Log.d(LOG_TAG, "Submitting request to '" + this.endpoint + "': " + new JSONObject(this.payload).toString(2));
+                Log.d(LOG_TAG, "Submitting request to '" + this.endpoint + "': " + Teak.formatJSONForLogging(new JSONObject(this.payload)));
             }
 
             URL url = new URL("https://" + hostnameForEndpoint + this.endpoint);
@@ -194,7 +194,7 @@ class Request implements Runnable {
             if (Teak.isDebug) {
                 String responseText = response.toString();
                 try {
-                    responseText = new JSONObject(response.toString()).toString(2);
+                    responseText = Teak.formatJSONForLogging(new JSONObject(response.toString()));
                 } catch (Exception ignored) {
                 }
                 Log.d(LOG_TAG, "Reply from '" + this.endpoint + "': " + responseText);
