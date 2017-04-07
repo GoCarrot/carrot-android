@@ -26,4 +26,8 @@ Before do |scenario|
   exec_adb('logcat -c')
 end
 
+After do |scenario|
+  exec_adb('logcat -c')
+end
+
 FeatureMemory = Struct.new(:feature, :invocation).new
