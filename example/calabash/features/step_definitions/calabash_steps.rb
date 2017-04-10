@@ -66,3 +66,7 @@ Then(/^the current Teak session user JSON should have "([^"]*?)"$/) do |value|
   puts json_blob[value] if json_blob[value]
   fail "#{value} not found in #{json_blob}" unless json_blob[value]
 end
+
+Then(/^the OS kills my app$/)do
+  exec_adb("shell am kill #{package_name(default_device.app_path)}")
+end
