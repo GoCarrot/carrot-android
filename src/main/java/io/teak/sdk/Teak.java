@@ -357,7 +357,7 @@ public class Teak extends BroadcastReceiver {
             // If deviceId is null, we can't operate
             if (Teak.deviceConfiguration.deviceId == null) {
                 Teak.setState(State.Disabled);
-                cleanup(inActivity);
+                Teak.cleanup(inActivity);
                 return;
             }
 
