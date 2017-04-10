@@ -326,8 +326,8 @@ public class Teak extends BroadcastReceiver {
     // region Debug Output Formatter
     public static int jsonLogIndentation = 2;
     static String formatJSONForLogging(JSONObject obj) throws JSONException {
-        if (jsonLogIndentation > 0) {
-            return obj.toString(jsonLogIndentation);
+        if (Teak.jsonLogIndentation > 0) {
+            return obj.toString(Teak.jsonLogIndentation);
         } else {
             return obj.toString();
         }
