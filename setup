@@ -14,14 +14,10 @@ fi
 if [ "$(which ant)" == "" ]; then brew install ant; fi
 if [ "$(which mvn)" == "" ]; then brew install maven; fi
 if [ "$(which android)" == "" ]; then
-  if [ ! -e "$(brew --prefix android-sdk)" ]; then
-    brew cask install android-sdk
-  else
-    brew cask link android-sdk
-  fi
+  brew cask install android-sdk
 fi
 
-ANDROID_HOME=$(brew cask --prefix android-sdk)
+ANDROID_HOME=/usr/local/Caskroom/android-sdk
 export ANDROID_HOME
 
 echo y | android update sdk --all --no-ui --filter 'tools,platform-tools'

@@ -2,7 +2,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-ANDROID_HOME=$(brew --prefix android-sdk)
+ANDROID_HOME=/usr/local/Caskroom/android-sdk
 export ANDROID_HOME
 
 ./gradlew assemble
