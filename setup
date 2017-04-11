@@ -3,6 +3,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 brew update
+brew tap caskroom/cask
 
 # TODO: Ensure both Brew and Caskroom are set up.
 if [ "$(which java)" == "" ]; then
@@ -14,9 +15,9 @@ if [ "$(which ant)" == "" ]; then brew install ant; fi
 if [ "$(which mvn)" == "" ]; then brew install maven; fi
 if [ "$(which android)" == "" ]; then
   if [ ! -e "$(brew --prefix android-sdk)" ]; then
-    brew install android-sdk
+    brew cask install android-sdk
   else
-    brew link android-sdk
+    brew cask link android-sdk
   fi
 fi
 
