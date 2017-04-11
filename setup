@@ -21,7 +21,7 @@ if [ "$(which android)" == "" ]; then
   fi
 fi
 
-ANDROID_HOME=$(brew --prefix android-sdk)
+ANDROID_HOME=$(brew cask --prefix android-sdk)
 export ANDROID_HOME
 
 echo y | android update sdk --all --no-ui --filter 'tools,platform-tools'
