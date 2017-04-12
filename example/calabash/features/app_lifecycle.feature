@@ -1,7 +1,7 @@
 Feature: App Lifecycle
 
   Scenario: Basic app lifecycle
-    Given I see "Teak Example"
+    Given my app is in the foreground
       Then the Teak state should be "Active"
     When I press the home button
       Then I should be on the home screen
@@ -9,10 +9,9 @@ Feature: App Lifecycle
     When I launch the app again
       Then my app should be in the foreground
       And the Teak state should be "Active"
-      And I should see "Teak Example"
 
   Scenario: Teak Session expiration
-    Given I see "Teak Example"
+    Given my app is in the foreground
       Then I wait for the Teak Session state to be "UserIdentified"
     When I press the home button
       Then I should be on the home screen
@@ -27,6 +26,5 @@ Feature: App Lifecycle
       And I wait for 5 seconds
     When I launch the app again
       Then my app should be in the foreground
-      And I should see "Teak Example"
       Then I wait for the Teak Session state to be "UserIdentified"
       And the Teak Session state should have transitioned from "IdentifyingUser"
