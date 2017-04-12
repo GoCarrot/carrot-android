@@ -7,8 +7,8 @@ err=0
 (
   cd example
   ./gradlew assemble
+)
+(
   cd calabash
-  calabash-android resign ../app/build/outputs/apk/app-debug.apk
-  calabash-android build ../app/build/outputs/apk/app-debug.apk
-  calabash-android run ../app/build/outputs/apk/app-debug.apk --quiet
+  calabash-android run ../example/app/build/outputs/apk/app-debug.apk --format pretty --quiet
 )

@@ -8,6 +8,6 @@ local.properties
 infer-out/
 
 example/.idea
-example/calabash/screenshot*
-example/calabash/test_servers/
-example/calabash/.irb-history
+calabash/screenshot*
+calabash/test_servers/
+calabash/.irb-history
