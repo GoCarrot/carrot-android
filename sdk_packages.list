@@ -1,0 +1,4 @@
+build-tools;23.0.2
+platforms;android-23
+extras;google;m2repository
+extras;android;m2repository

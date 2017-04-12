@@ -17,11 +17,8 @@ if [ "$(which android)" == "" ]; then
   brew cask install android-sdk
 fi
 
-ANDROID_HOME=/usr/local/Caskroom/android-sdk
+ANDROID_HOME=/usr/local/share/android-sdk
 export ANDROID_HOME
 
+sdkmanager --package_file=sdk_packages.list
 echo y | android update sdk --all --no-ui --filter 'tools,platform-tools'
-echo y | android update sdk --all --no-ui --filter 'android-23'
-echo y | android update sdk --all --no-ui --filter 'build-tools-23.0.2'
-echo y | android update sdk --all --no-ui --filter 'extra-google-m2repository'
-echo y | android update sdk --all --no-ui --filter 'extra-android-m2repository'
