@@ -385,10 +385,8 @@ class Session {
                     connection.setRequestProperty("Accept-Charset", "UTF-8");
                     connection.setUseCaches(false);
 
-                    int responseCode = connection.getResponseCode();
-                    if (Teak.isDebug) {
-                        Log.v(LOG_TAG, "Heartbeat response code: " + responseCode);
-                    }
+                    // Otherwise it will close the connection before waiting for it to finish
+                    @SuppressWarnings("unused") int responseCode = connection.getResponseCode();
                 } catch (Exception e) {
                     Log.e(LOG_TAG, Log.getStackTraceString(e));
                 } finally {
