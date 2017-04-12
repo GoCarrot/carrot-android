@@ -39,12 +39,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import org.json.JSONObject;
 import org.json.JSONArray;
-
-import java.util.concurrent.ExecutionException;
 
 class Request implements Runnable {
     private static final String LOG_TAG = "Teak.Request";
@@ -156,7 +155,7 @@ class Request implements Runnable {
 
         try {
             if (Teak.isDebug) {
-                Log.d(LOG_TAG, "Submitting request to '" + this.endpoint + "': " + Teak.formatJSONForLogging(new JSONObject(this.payload)));
+                Log.d(LOG_TAG, "Request@" + Integer.toHexString(this.hashCode()) + ": " + Teak.formatJSONForLogging(new JSONObject(this.to_h())));
             }
 
             URL url = new URL("https://" + hostnameForEndpoint + this.endpoint);
@@ -192,12 +191,10 @@ class Request implements Runnable {
             rd.close();
 
             if (Teak.isDebug) {
-                String responseText = response.toString();
-                try {
-                    responseText = Teak.formatJSONForLogging(new JSONObject(response.toString()));
-                } catch (Exception ignored) {
-                }
-                Log.d(LOG_TAG, "Reply from '" + this.endpoint + "': " + responseText);
+                JSONObject debugOut = new JSONObject(this.to_h());
+                debugOut.remove("payload");
+                debugOut.put("payload", new JSONObject(response.toString()));
+                Log.d(LOG_TAG, "Reply@" + Integer.toHexString(this.hashCode()) + ": " + Teak.formatJSONForLogging(debugOut));
             }
 
             // For extending classes
@@ -212,5 +209,23 @@ class Request implements Runnable {
     }
 
     protected void done(int responseCode, String responseBody) {
+    }
+
+    public Map<String, Object> to_h() {
+        HashMap<String, Object> map = new HashMap<>();
+        map.put("hostname", this.hostname);
+        map.put("endpoint", this.endpoint);
+        map.put("session", Integer.toHexString(this.session.hashCode()));
+        map.put("payload", this.payload);
+        return map;
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.to_h())));
+        } catch (Exception ignored) {
+            return super.toString();
+        }
     }
 }

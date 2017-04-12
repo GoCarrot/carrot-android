@@ -93,16 +93,7 @@ class DebugConfiguration {
         if (Teak.isDebug) {
             try {
                 HashMap<String, Object> debugInfoMap = new HashMap<>();
-
-                HashMap<String, Object> sdkInfo = new HashMap<>();
-                sdkInfo.put("teakAndroidVersion", Teak.SDKVersion);
-
-                String airSdkVersion = Helpers.getStringResourceByName("io_teak_air_sdk_version", context);
-                if (airSdkVersion != null) {
-                    sdkInfo.put("teakAirVersion", airSdkVersion);
-                }
-
-                debugInfoMap.put("sdk", sdkInfo);
+                debugInfoMap.put("sdk", Teak.to_h());
                 debugInfoMap.put("appConfiguration", appConfiguration.to_h());
                 debugInfoMap.put("deviceConfiguration", deviceConfiguration.to_h());
                 if (!DebugConfiguration.externalDebugInfo.isEmpty()) {

@@ -57,6 +57,38 @@ public class Teak extends BroadcastReceiver {
     public static final String SDKVersion = io.teak.sdk.BuildConfig.VERSION_NAME;
 
     /**
+     * Force debug print on/off.
+     */
+    public static boolean forceDebug;
+
+    /**
+     * @return Description of the Teak SDK as Hash
+     */
+    public static Map<String, Object> to_h() {
+        HashMap<String, Object> map = new HashMap<>();
+        map.put("android", Teak.SDKVersion);
+        if (Teak.mainActivity != null) {
+            String airSdkVersion = Helpers.getStringResourceByName("io_teak_air_sdk_version", Teak.mainActivity.getApplicationContext());
+            if (airSdkVersion != null) {
+                map.put("adobeAir", airSdkVersion);
+            }
+        }
+        return map;
+    }
+
+    /**
+     * @return JSON Description of the Teak SDK
+     */
+    public static String to_json() {
+        String debugOutput = "{}";
+        try {
+            debugOutput = new JSONObject(Teak.to_h()).toString();
+        } catch (Exception ignored){
+        }
+        return String.format("io.teak.sdk.Teak@%s: %s", Integer.toHexString(Teak.stateMutex.hashCode()), debugOutput);
+    }
+
+    /**
      * Initialize Teak and tell it to listen to the lifecycle events of {@link Activity}.
      * <p/>
      * <p>Call this function from the {@link Activity#onCreate} function of your <code>Activity</code>
@@ -66,19 +98,12 @@ public class Teak extends BroadcastReceiver {
      */
     public static void onCreate(Activity activity) {
         Teak.mainActivity = activity;
-        Log.d(LOG_TAG, "Android SDK Version: " + Teak.SDKVersion);
+        Log.d(LOG_TAG, Teak.to_json());
 
         if (activity == null) {
             Log.e(LOG_TAG, "null Activity passed to onCreate, Teak is disabled.");
             Teak.setState(State.Disabled);
             return;
-        }
-
-        {
-            String airSdkVersion = Helpers.getStringResourceByName("io_teak_air_sdk_version", activity.getApplicationContext());
-            if (airSdkVersion != null) {
-                Log.d(LOG_TAG, "Adobe AIR SDK Version: " + airSdkVersion);
-            }
         }
 
         // Set up debug logging ASAP
@@ -137,7 +162,7 @@ public class Teak extends BroadcastReceiver {
      */
     public static void onActivityResult(@SuppressWarnings("unused") int requestCode, int resultCode, Intent data) {
         if (Teak.isDebug) {
-            Log.d(LOG_TAG, "Lifecycle - onActivityResult");
+            Log.d(LOG_TAG, String.format("Lifecycle@%s: {\"callback\": \"onActivityResult\"}", Integer.toHexString(Teak.stateMutex.hashCode())));
         }
 
         if (Teak.isEnabled()) {
@@ -153,9 +178,10 @@ public class Teak extends BroadcastReceiver {
      * @deprecated call {@link Activity#setIntent(Intent)} inside your {@link Activity#onNewIntent(Intent)}.
      */
     @Deprecated
+    @SuppressWarnings("unused")
     public static void onNewIntent(Intent intent) {
         if (Teak.isDebug) {
-            Log.d(LOG_TAG, "Lifecycle - onNewIntent");
+            Log.d(LOG_TAG, String.format("Lifecycle@%s: {\"callback\": \"onNewIntent\"}", Integer.toHexString(Teak.stateMutex.hashCode())));
         }
 
         Teak.mainActivity.setIntent(intent);
@@ -170,7 +196,7 @@ public class Teak extends BroadcastReceiver {
      */
     public static void identifyUser(String userIdentifier) {
         // Always show this debug output.
-        Log.d(LOG_TAG, "identifyUser(): " + userIdentifier);
+        Log.d(LOG_TAG, String.format("IdentifyUser@%s: {\"userId\": \"%s\"}", Integer.toHexString(Teak.stateMutex.hashCode()), userIdentifier));
 
         if (userIdentifier == null || userIdentifier.isEmpty()) {
             Log.e(LOG_TAG, "User identifier can not be null or empty.");
@@ -290,7 +316,8 @@ public class Teak extends BroadcastReceiver {
             }
 
             if (Teak.isDebug) {
-                Log.d(LOG_TAG, String.format("Teak State transition from %s -> %s.", Teak.state, newState));
+                Log.d(LOG_TAG, String.format("State@%s: {\"previousState\": \"%s\", \"state\": \"%s\"}",
+                        Integer.toHexString(Teak.stateMutex.hashCode()), Teak.state, newState));
             }
 
             // TODO: Event listeners
@@ -303,8 +330,6 @@ public class Teak extends BroadcastReceiver {
     // endregion
 
     static final String PREFERENCES_FILE = "io.teak.sdk.Preferences";
-
-    public static boolean forceDebug;
 
     static boolean isDebug;
     static DebugConfiguration debugConfiguration;
@@ -434,13 +459,23 @@ public class Teak extends BroadcastReceiver {
             }
 
             if (Teak.isDebug) {
-                Log.d(LOG_TAG, "Lifecycle - onActivityCreated");
-                Log.d(LOG_TAG, "        App Id: " + Teak.appConfiguration.appId);
-                Log.d(LOG_TAG, "       Api Key: " + Teak.appConfiguration.apiKey);
-                Log.d(LOG_TAG, "   App Version: " + Teak.appConfiguration.appVersion);
-                if (Teak.appConfiguration.installerPackage != null) {
-                    Log.d(LOG_TAG, "     App Store: " + Teak.appConfiguration.installerPackage);
+                HashMap<String, Object> map = new HashMap<>();
+                map.put("callback", "onActivityCreated");
+                map.put("appConfiguration", Integer.toHexString(Teak.appConfiguration.hashCode()));
+                map.put("deviceConfiguration", Integer.toHexString(Teak.deviceConfiguration.hashCode()));
+
+                // Duplicate these, for ease of manual debugging
+                map.put("appId", Teak.appConfiguration.appId);
+                map.put("apiKey", Teak.appConfiguration.apiKey);
+                map.put("appVersion", Teak.appConfiguration.appVersion);
+                map.put("appStore", Teak.appConfiguration.installerPackage);
+
+                String debugOutput = "{}";
+                try {
+                    debugOutput = Teak.formatJSONForLogging(new JSONObject(map));
+                } catch (Exception ignored){
                 }
+                Log.d(LOG_TAG, String.format("Lifecycle@%s: %s", Integer.toHexString(Teak.stateMutex.hashCode()), debugOutput));
             }
         }
 
@@ -449,7 +484,7 @@ public class Teak extends BroadcastReceiver {
             if (activity != Teak.mainActivity) return;
 
             if (Teak.isDebug) {
-                Log.d(LOG_TAG, "Lifecycle - onActivityPaused");
+                Log.d(LOG_TAG, String.format("Lifecycle@%s: {\"callback\": \"onActivityPaused\"}", Integer.toHexString(Teak.stateMutex.hashCode())));
             }
             if (Teak.setState(State.Paused)) {
                 Session.onActivityPaused();
@@ -461,7 +496,7 @@ public class Teak extends BroadcastReceiver {
             if (activity != Teak.mainActivity) return;
 
             if (Teak.isDebug) {
-                Log.d(LOG_TAG, "Lifecycle - onActivityResumed");
+                Log.d(LOG_TAG, String.format("Lifecycle@%s: {\"callback\": \"onActivityResumed\"}", Integer.toHexString(Teak.stateMutex.hashCode())));
             }
 
             if (Teak.setState(State.Active)) {
@@ -630,10 +665,11 @@ public class Teak extends BroadcastReceiver {
             TeakNotification.cancel(context, bundle.getInt("platformId"));
 
             // Launch the app
-            if (!Helpers.getBooleanFromBundle(bundle, "noAutolaunch")) {
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "Notification (" + bundle.getString("teakNotifId") + ") opened, auto-launching app.");
-                }
+            boolean autoLaunch = !Helpers.getBooleanFromBundle(bundle, "noAutolaunch");
+            if (Teak.isDebug) {
+                Log.d(LOG_TAG, String.format("Notification@%s: {\"teakNotifId\": \"%s\", \"autoLaunch\"=%b}", Integer.toHexString(Teak.stateMutex.hashCode()), bundle.getString("teakNotifId"), autoLaunch));
+            }
+            if (autoLaunch) {
                 Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
                 launchIntent.addCategory("android.intent.category.LAUNCHER");
                 launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -643,10 +679,6 @@ public class Teak extends BroadcastReceiver {
                     launchIntent.setData(teakDeepLink);
                 }
                 context.startActivity(launchIntent);
-            } else {
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "Notification (" + bundle.getString("teakNotifId") + ") opened, NOT auto-launching app (noAutoLaunch flag present, and set to true).");
-                }
             }
         } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX)) {
             Bundle bundle = intent.getExtras();
