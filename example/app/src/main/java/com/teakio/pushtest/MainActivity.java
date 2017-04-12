@@ -21,11 +21,8 @@ import android.view.View;
 
 import com.android.vending.billing.IInAppBillingService;
 
-
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -62,19 +59,121 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    // For automated integration testing
-    public void integrationTestTimeout(String timeout) {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        Teak.onCreate(this);
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        // Register the BroadcastReceiver defined above to listen for notification launches
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(TeakNotification.LAUNCHED_FROM_NOTIFICATION_INTENT);
+        LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, filter);
+
+        Teak.identifyUser("demo-app-thingy-3");
+
+        // Create a deep link route that opens the Google Play store to a specific SKU in your game
+        final AppCompatActivity _this = this;
+        DeepLink.registerRoute("/store/:sku", "Store", "Link directly to purchase an item", new DeepLink.Call() {
+
+            @Override
+            public void call(Map<String, Object> parameters) {
+                String sku = (String)parameters.get("sku");
+                showPurchaseDialogForSku(sku);
+            }
+        });
+
+        // Binding the in app billing service
+        Intent serviceIntent = new Intent("com.android.vending.billing.InAppBillingService.BIND");
+        serviceIntent.setPackage("com.android.vending");
+        bindService(serviceIntent, mServiceConn, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        // Call setIntent() for Teak
+        setIntent(intent);
+        super.onNewIntent(intent);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // Call onActivityResult() for Teak
+        Teak.onActivityResult(requestCode, resultCode, data);
+        super.onActivityResult(requestCode, resultCode, data);
+
+        // If your In App Purchase activity needs to be modified to call Teak, you can do this
+        // easily without needing to import Teak (useful for other libraries, etc).
+        /*
         try {
-            Class c = Class.forName("io.teak.sdk.Session");
-            Field field = c.getDeclaredField("SAME_SESSION_TIME_DELTA");
-            field.setAccessible(true);
-            field.set(null, Integer.parseInt(timeout));
-        } catch (Exception e){
-            Log.e(LOG_TAG, Log.getStackTraceString(e));
+            Class<?> cls = Class.forName("io.teak.sdk.Teak");
+            Method m = cls.getMethod("checkActivityResultForPurchase", int.class, Intent.class);
+            m.invoke(null, resultCode, data);
+        } catch (Exception ignored) {} */
+
+        if (requestCode == 1001) {
+            int responseCode = data.getIntExtra("RESPONSE_CODE", 0);
+            String purchaseData = data.getStringExtra("INAPP_PURCHASE_DATA");
+            String dataSignature = data.getStringExtra("INAPP_DATA_SIGNATURE");
+
+            if (resultCode == RESULT_OK) {
+                try {
+                    JSONObject jo = new JSONObject(purchaseData);
+                    String sku = jo.getString("productId");
+                    int response = mService.consumePurchase(3, getPackageName(), jo.getString("purchaseToken"));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
-    static AppCompatActivity mThis;
+    ///////
+    // Not required for Teak integration
+
+    private void showPurchaseDialogForSku(final String sku) {
+        final AppCompatActivity _this = this;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Bundle buyIntentBundle = mService.getBuyIntent(3, _this.getPackageName(), sku, "inapp", "");
+                    PendingIntent pendingIntent = buyIntentBundle.getParcelable("BUY_INTENT");
+                    _this.startIntentSenderForResult(pendingIntent.getIntentSender(), 1001, new Intent(), 0, 0, 0);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+    }
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        Teak.jsonLogIndentation = 0; // TODO: If running under Calabash
+        super.attachBaseContext(newBase);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if (mService != null) {
+            unbindService(mServiceConn);
+        }
+    }
+
+    public void testNotification(View view) {
+        TeakNotification.scheduleNotification("test", "Some text!", 5);
+    }
+
+    public void makePurchase(View view) {
+        showPurchaseDialogForSku("com.teakio.pushtest.dollar");
+    }
+
+    public void crashApp(View view) {
+        throw new RuntimeException("I crashed the app!");
+    }
+
     static IInAppBillingService mService;
     ServiceConnection mServiceConn = new ServiceConnection() {
         @Override
@@ -120,130 +219,4 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        Teak.onCreate(this);
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        // Register the BroadcastReceiver defined above to listen for notification launches
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(TeakNotification.LAUNCHED_FROM_NOTIFICATION_INTENT);
-        LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, filter);
-
-        Teak.identifyUser("demo-app-thingy-3");
-
-        DeepLink.registerRoute("/store/:sku", "Store", "Link directly to purchase an item", new DeepLink.Call() {
-
-            @Override
-            public void call(Map<String, Object> parameters) {
-                try {
-                    Log.d(LOG_TAG, new JSONObject(parameters).toString(2));
-                } catch (JSONException ignored) {
-                }
-                final String sku = (String)parameters.get("sku");
-
-                Log.d(LOG_TAG, "IT called the thing! " + sku);
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            Bundle buyIntentBundle = mService.getBuyIntent(3, mThis.getPackageName(), sku, "inapp", "");
-                            PendingIntent pendingIntent = buyIntentBundle.getParcelable("BUY_INTENT");
-                            mThis.startIntentSenderForResult(pendingIntent.getIntentSender(), 1001, new Intent(), 0, 0, 0);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }).start();
-            }
-        });
-
-        // com.teakio.pushtest.dollar
-        mThis = this;
-        Intent serviceIntent = new Intent("com.android.vending.billing.InAppBillingService.BIND");
-        serviceIntent.setPackage("com.android.vending");
-        bindService(serviceIntent, mServiceConn, Context.BIND_AUTO_CREATE);
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-
-        if (mService != null) {
-            unbindService(mServiceConn);
-        }
-    }
-
-    //@TeakLink("/store/:arg0")
-    static void fooBar(final String arg0) {
-
-    }
-
-    @Override
-    protected void onNewIntent(Intent intent) {
-        Teak.onNewIntent(intent);
-        super.onNewIntent(intent);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        Teak.onActivityResult(requestCode, resultCode, data);
-        super.onActivityResult(requestCode, resultCode, data);
-
-        // If your In App Purchase activity needs to be modified to call Teak, you can do this
-        // easily without needing to import Teak (useful for other libraries, etc).
-        /*
-        try {
-            Class<?> cls = Class.forName("io.teak.sdk.Teak");
-            Method m = cls.getMethod("checkActivityResultForPurchase", int.class, Intent.class);
-            m.invoke(null, resultCode, data);
-        } catch (Exception ignored) {} */
-
-        if (requestCode == 1001) {
-            int responseCode = data.getIntExtra("RESPONSE_CODE", 0);
-            String purchaseData = data.getStringExtra("INAPP_PURCHASE_DATA");
-            String dataSignature = data.getStringExtra("INAPP_DATA_SIGNATURE");
-
-            if (resultCode == RESULT_OK) {
-                try {
-                    JSONObject jo = new JSONObject(purchaseData);
-                    String sku = jo.getString("productId");
-                    int response = mService.consumePurchase(3, getPackageName(), jo.getString("purchaseToken"));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    @Override
-    protected void attachBaseContext(Context base) {
-        Teak.jsonLogIndentation = 0; // TODO: If running under Calabash
-        super.attachBaseContext(base);
-    }
-
-    public void testNotification(View view) {
-        TeakNotification.scheduleNotification("test", "Some text!", 5);
-    }
-
-    public void makePurchase(View view) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Bundle buyIntentBundle = mService.getBuyIntent(3, mThis.getPackageName(), "com.teakio.pushtest.dollar", "inapp", "");
-                    PendingIntent pendingIntent = buyIntentBundle.getParcelable("BUY_INTENT");
-                    mThis.startIntentSenderForResult(pendingIntent.getIntentSender(), 1001, new Intent(), 0, 0, 0);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
-    }
-
-    public void crashApp(View view) {
-        throw new RuntimeException("I crashed the app!");
-    }
 }
