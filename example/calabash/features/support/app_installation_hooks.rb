@@ -20,14 +20,13 @@ Before do |scenario|
     install_app(ENV['APP_PATH'])
     FeatureMemory.feature = feature
     FeatureMemory.invocation = 1
+
+    puts "CLEARING DEVICE LOGS"
+    exec_adb('logcat -c')
+    $logs_cleared = true
   else
     FeatureMemory.invocation += 1
   end
-  exec_adb('logcat -c')
-end
-
-After do |scenario|
-  exec_adb('logcat -c')
 end
 
 FeatureMemory = Struct.new(:feature, :invocation).new
