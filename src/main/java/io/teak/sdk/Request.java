@@ -193,7 +193,11 @@ class Request implements Runnable {
             if (Teak.isDebug) {
                 JSONObject debugOut = new JSONObject(this.to_h());
                 debugOut.remove("payload");
-                debugOut.put("payload", new JSONObject(response.toString()));
+                try {
+                    debugOut.put("payload", new JSONObject(response.toString()));
+                } catch (Exception ignored) {
+                    debugOut.put("payload", "{}");
+                }
                 Log.d(LOG_TAG, "Reply@" + Integer.toHexString(this.hashCode()) + ": " + Teak.formatJSONForLogging(debugOut));
             }
 
