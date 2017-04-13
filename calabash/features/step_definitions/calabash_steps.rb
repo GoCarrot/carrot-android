@@ -80,4 +80,8 @@ end
 
 Then(/^the OS kills my app$/)do
   exec_adb("shell am kill #{package_name(default_device.app_path)}")
+
+  # Check if app is still running
+  stdout, stderr, status = exec_adb("shell ps | grep #{package_name(default_device.app_path)}")
+  puts "App is still running, background kill simulation only works for test apps running in their own process." unless stdout.empty?
 end
