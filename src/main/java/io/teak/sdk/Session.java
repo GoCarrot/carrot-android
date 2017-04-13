@@ -740,9 +740,6 @@ class Session {
                     // If the old session had a user id assigned, it needs to be passed to the newly created
                     // session. When setState(State.Configured) happens, it will call identifyUser()
                     if (oldSession.userId != null) {
-                        if (Teak.isDebug) {
-                            Log.d(LOG_TAG, "Previous Session expired, assigning user id '" + oldSession.userId + " to new Session.");
-                        }
                         setUserId(oldSession.userId);
                     }
                 } else if (Session.pendingUserId != null) {
