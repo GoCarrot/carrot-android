@@ -23,6 +23,7 @@ import com.android.vending.billing.IInAppBillingService;
 
 import org.json.JSONObject;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -163,7 +164,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void testNotification(View view) {
-        TeakNotification.scheduleNotification("test", "Some text!", 5);
+        scheduleTestNotification("test", "Some text!", "5");
     }
 
     public void makePurchase(View view) {
@@ -172,6 +173,21 @@ public class MainActivity extends AppCompatActivity {
 
     public void crashApp(View view) {
         throw new RuntimeException("I crashed the app!");
+    }
+
+    public void integrationTestTimeout(String timeout) {
+        try {
+            Class c = Class.forName("io.teak.sdk.Session");
+            Field field = c.getDeclaredField("SAME_SESSION_TIME_DELTA");
+            field.setAccessible(true);
+            field.set(null, Integer.parseInt(timeout));
+        } catch (Exception e) {
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
+        }
+    }
+
+    public void scheduleTestNotification(String id, String defaultText, String delay) {
+        TeakNotification.scheduleNotification(id, defaultText, Integer.parseInt(delay));
     }
 
     static IInAppBillingService mService;
