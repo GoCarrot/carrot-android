@@ -2,7 +2,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-brew update
 brew tap caskroom/cask
 
 # TODO: Ensure both Brew and Caskroom are set up.
