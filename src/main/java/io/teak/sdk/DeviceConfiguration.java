@@ -226,6 +226,9 @@ class DeviceConfiguration {
                         storedGcmSenderId != null && storedGcmSenderId.equals(gcmSenderId) &&
                         storedGcmId != null) {
                     // No need to get a new one, so put it on the blocking queue
+                    if (Teak.isDebug) {
+                        Log.v(LOG_TAG, "GCM Id found in cache: " + storedGcmId);
+                    }
                     gcmId = storedGcmId;
                     displayPushDebugMessage();
                 }
