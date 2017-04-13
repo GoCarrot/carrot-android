@@ -2,7 +2,9 @@ require_relative 'teak_run_history'
 
 def get_teak_run_history
   stdout, stderr, status = exec_adb('logcat -d -s "Teak:D" "Teak.Session:D" "Teak.Request:D"')
-  TeakRunHistory.new(stdout)
+  teak_run_history = TeakRunHistory.new
+  teak_run_history.read_lines(stdout)
+  teak_run_history
 end
 
 def forground_activity_package_name

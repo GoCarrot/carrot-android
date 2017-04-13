@@ -1,8 +1,11 @@
+require 'date'
+require 'json'
+
 class TeakRunHistory
   attr_reader :sdk_version, :app_configuration, :device_configuration,
     :state_transitions, :lifecycle_events, :sessions
 
-  def initialize(stdout)
+  def initialize
     @sdk_version = nil
     @app_configuration = nil
     @device_configuration = nil
@@ -11,10 +14,13 @@ class TeakRunHistory
     @state_transitions = [[nil, "Allocated"]]
     @lifecycle_events = []
     @sessions = []
+  end
 
-    stdout.each_line do |line|
-      new_log_line(line)
+  def read_lines(lines, event_stream = EventStream.new)
+    lines.each_line do |line|
+      event_stream = new_log_line(line, event_stream)
     end
+    event_stream
   end
 
   def current_state
@@ -25,7 +31,7 @@ class TeakRunHistory
     @sessions.last
   end
 
-  def new_log_line(line)
+  def new_log_line(line, event_stream = EventStream.new)
     case line
     # Teak
     when /([A-Z]) Teak(?:\s*)\: (.*)/ # $1 is D/W/E/V, $2 is the event
@@ -35,12 +41,13 @@ class TeakRunHistory
         @id = $1
         json = JSON.parse($2)
         @sdk_version = json["android"]
+        event_stream.emit({component: :teak, action: :create})
       when /^State@([a-fA-F0-9]+)\: (.*)/
         raise "Teak got re-created #{@id} -> #{$1}" unless $1 == @id
-        on_new_state(JSON.parse($2))
+        event_stream = on_new_state(JSON.parse($2), event_stream)
       when /^Lifecycle@([a-fA-F0-9]+)\: (.*)/
         raise "Teak got re-created #{@id} -> #{$1}" unless $1 == @id
-        on_new_lifecycle(JSON.parse($2))
+        event_stream = on_new_lifecycle(JSON.parse($2), event_stream)
       when /^io\.teak\.sdk\.AppConfiguration@([a-fA-F0-9]+)\: (.*)/
         raise "Duplicate app configuration created" unless not @app_configurations.has_key?($1)
         @app_configurations[$1] = JSON.parse($2)
@@ -59,7 +66,7 @@ class TeakRunHistory
 
     # Teak.Session
     when /([A-Z]) Teak.Session(?:\s*)\: (.*)/ # $1 is D/W/E/V, $2 is the event
-      session = Session.new_event($2, current_session, @sessions)
+      session, event_stream = Session.new_event($2, current_session, @sessions, event_stream)
       if current_session == nil or session.id != current_session.id
         raise "#{event}\nDuplicate session created" unless @sessions.find_all { |s| s.id == session.id }.empty?
         @sessions << session
@@ -73,12 +80,12 @@ class TeakRunHistory
         json = JSON.parse($2)
         session = @sessions.find { |s| s.id == json["session"] }
         raise "Session #{$1} not found" unless session != nil
-        session.attach_request($1, json)
+        event_stream = session.attach_request($1, json, event_stream)
       when /^Reply@([a-fA-F0-9]+)\: (.*)/
         json = JSON.parse($2)
         session = @sessions.find { |s| s.id == json["session"] }
         raise "Session #{$1} not found" unless session != nil
-        session.attach_reply($1, json)
+        event_stream = session.attach_reply($1, json, event_stream)
       else
         puts "Unrecognized Teak.Request event: #{event}"
       end
@@ -87,16 +94,18 @@ class TeakRunHistory
     when /^-/, /^\s*$/
       # Ignore
     else
-        puts "Unrecognized log line: #{line}"
+        #puts "Unrecognized log line: #{line}"
     end
+    event_stream
   end
 
-  def on_new_state(json)
+  def on_new_state(json, event_stream)
     raise "State transition consistency failed, current state is '#{current_state}', expected '#{json["previousState"]}'" unless current_state == json["previousState"]
     @state_transitions << [json["previousState"], json["state"]]
+    event_stream
   end
 
-  def on_new_lifecycle(json)
+  def on_new_lifecycle(json, event_stream)
     case json["callback"]
       when "onActivityCreated"
         raise "Unknown device configuration" unless @device_configurations.has_key?(json["deviceConfiguration"])
@@ -110,6 +119,7 @@ class TeakRunHistory
         json = {"callback": "onActivityCreated"}
     end
     @lifecycle_events << json
+    event_stream
   end
 
   def to_h
@@ -142,7 +152,7 @@ class TeakRunHistory
       @state_transitions.last.last
     end
 
-    def attach_request(id, json)
+    def attach_request(id, json, event_stream)
       raise "Duplicate request created #{id}" unless not @requests.has_key?(id)
       @requests[id] = {
         request: json,
@@ -157,15 +167,17 @@ class TeakRunHistory
           raise "Additional payload does not specify 'do_not_track_event'" unless json["payload"].has_key?("do_not_track_event")
         end
       end
+      event_stream
     end
 
-    def attach_reply(id, json)
+    def attach_reply(id, json, event_stream)
       raise "Reply for non-existent request #{id}" unless @requests.has_key?(id)
       raise "Duplicate reply created #{id}" unless @requests[id][:reply] == nil
       @requests[id][:reply] = json
+      event_stream
     end
 
-    def self.new_event(event, current_session, sessions)
+    def self.new_event(event, current_session, sessions, event_stream)
       case event
       when /^io.teak.sdk.Session@([a-fA-F0-9]+)\: (.*)/
         json = JSON.parse($2)
@@ -173,7 +185,7 @@ class TeakRunHistory
       when /^State@([a-fA-F0-9]+)\: (.*)/
         session = sessions.find { |s| s.id == $1 }
         raise "State transition for non-existent session" unless session != nil
-        session.on_new_state(JSON.parse($2))
+        event_stream = session.on_new_state(JSON.parse($2), event_stream)
       when /^Heartbeat@([a-fA-F0-9]+)\: (.*)/
         raise "Heartbeat for nil session" unless current_session != nil
         raise "Heartbeat for non-current session" unless current_session.id == $1
@@ -185,12 +197,13 @@ class TeakRunHistory
       else
         puts "Unrecognized Teak.Session event: #{event}"
       end
-      current_session
+      [current_session, event_stream]
     end
 
-    def on_new_state(json)
+    def on_new_state(json, event_stream)
       raise "State transition consistency failed" unless current_state == json["previousState"]
       @state_transitions << [json["previousState"], json["state"]]
+      event_stream
     end
 
     def to_h
@@ -201,6 +214,32 @@ class TeakRunHistory
         user_id: @user_id,
         start_date: @start_date
       }
+    end
+  end
+
+  class EventStream
+    attr_reader :events
+
+    def initialize
+      @events = []
+    end
+
+    def emit(event)
+      @events << event
+    end
+
+    def to_a
+      @events
+    end
+
+    def human_readable
+      return nil if @events.empty?
+      JSON.pretty_generate(@events)
+    end
+
+    class Event
+      def initialize
+      end
     end
   end
 end
