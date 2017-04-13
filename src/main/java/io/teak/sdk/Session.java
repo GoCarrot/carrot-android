@@ -219,7 +219,10 @@ class Session {
 
     private boolean setState(@NonNull State newState) {
         synchronized (stateMutex) {
-            if (this.state == newState) return false;
+            if (this.state == newState) {
+                Log.i(LOG_TAG, String.format("Session State transition to same state (%s). Ignoring.", this.state));
+                return false;
+            }
 
             if (!this.state.canTransitionTo(newState)) {
                 Log.e(LOG_TAG, String.format("Invalid Session State transition (%s -> %s). Ignoring.", this.state, newState));
