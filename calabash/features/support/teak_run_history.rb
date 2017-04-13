@@ -51,16 +51,36 @@ class TeakRunHistory
         # io.teak.sdk.RemoteConfiguration@2c5e229: {"sdkSentryDsn":"https:\/\/e6c3532197014a0583871ac4464c352b:41adc48a749944b180e88afdc6b5932c@sentry.io\/141792","appSentryDsn":null,"hostname":"gocarrot.com"}
       when /^IdentifyUser@([a-fA-F0-9]+)\: (.*)/
         # IdentifyUser@36c6cad: {"userId": "demo-app-thingy-3"}
+      when /^Notification@([a-fA-F0-9]+)\: (.*)/
+        # Notification@1e480ea: {"teakNotifId": "852321299714932736", "autoLaunch"=true}
       else
         puts "Unrecognized Teak event: #{event}"
       end
 
     # Teak.Session
     when /([A-Z]) Teak.Session(?:\s*)\: (.*)/ # $1 is D/W/E/V, $2 is the event
-      session = Session.new_event($2, current_session)
+      session = Session.new_event($2, current_session, @sessions)
       if current_session == nil or session.id != current_session.id
         raise "#{event}\nDuplicate session created" unless @sessions.find_all { |s| s.id == session.id }.empty?
         @sessions << session
+      end
+
+    # Teak.Request
+    when /([A-Z]) Teak.Request(?:\s*)\: (.*)/ # $1 is D/W/E/V, $2 is the event
+      event = $2
+      case event
+      when /^Request@([a-fA-F0-9]+)\: (.*)/
+        json = JSON.parse($2)
+        session = @sessions.find { |s| s.id == json["session"] }
+        raise "Session #{$1} not found" unless session != nil
+        session.attach_request($1, json)
+      when /^Reply@([a-fA-F0-9]+)\: (.*)/
+        json = JSON.parse($2)
+        session = @sessions.find { |s| s.id == json["session"] }
+        raise "Session #{$1} not found" unless session != nil
+        session.attach_reply($1, json)
+      else
+        puts "Unrecognized Teak.Request event: #{event}"
       end
 
     # --------- beginning of main/system or all whitespace
@@ -106,7 +126,7 @@ class TeakRunHistory
   end
 
   class Session
-    attr_reader :id, :state_transitions, :user_id, :heartbeats
+    attr_reader :id, :state_transitions, :user_id, :heartbeats, :requests, :attribution_payload
 
     def initialize(id, start_date)
       @id = id
@@ -114,21 +134,46 @@ class TeakRunHistory
       @start_date = start_date
       @state_transitions = [[nil, "Allocated"]]
       @heartbeats = []
+      @requests = {}
+      @attribution_payload = nil
     end
 
     def current_state
       @state_transitions.last.last
     end
 
-    def self.new_event(event, current_session)
+    def attach_request(id, json)
+      raise "Duplicate request created #{id}" unless not @requests.has_key?(id)
+      @requests[id] = {
+        request: json,
+        reply: nil
+      }
+
+      if json["endpoint"].match(/\/games\/(?:\d+)\/users\.json/)
+        if @attribution_payload == nil
+          raise "Attribution payload contains 'do_not_track_event'" unless not json["payload"].has_key?("do_not_track_event")
+          @attribution_payload = json["payload"]
+        else
+          raise "Additional payload does not specify 'do_not_track_event'" unless json["payload"].has_key?("do_not_track_event")
+        end
+      end
+    end
+
+    def attach_reply(id, json)
+      raise "Reply for non-existent request #{id}" unless @requests.has_key?(id)
+      raise "Duplicate reply created #{id}" unless @requests[id][:reply] == nil
+      @requests[id][:reply] = json
+    end
+
+    def self.new_event(event, current_session, sessions)
       case event
       when /^io.teak.sdk.Session@([a-fA-F0-9]+)\: (.*)/
         json = JSON.parse($2)
         current_session = self.new($1, DateTime.strptime(json["startDate"].to_s,'%s'))
       when /^State@([a-fA-F0-9]+)\: (.*)/
-        raise "State transition for nil session" unless current_session != nil
-        raise "State transition for non-current session" unless current_session.id == $1
-        current_session.on_new_state(JSON.parse($2))
+        session = sessions.find { |s| s.id == $1 }
+        raise "State transition for non-existent session" unless session != nil
+        session.on_new_state(JSON.parse($2))
       when /^Heartbeat@([a-fA-F0-9]+)\: (.*)/
         raise "Heartbeat for nil session" unless current_session != nil
         raise "Heartbeat for non-current session" unless current_session.id == $1

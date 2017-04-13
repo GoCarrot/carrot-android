@@ -8,7 +8,7 @@ Feature: Push Notifications
       And I wait for 5 seconds
     When I click a notification with "Calabash Local Push"
       Then my app should be in the foreground
-      And the current Teak session user JSON should have "teak_notif_id"
+      And the current Teak session attribution should have "teak_notif_id"
 
   Scenario: I receive push notifications with a killed app
     Given I want a notification that says "Calabash Local Push" in 5 seconds
@@ -18,4 +18,4 @@ Feature: Push Notifications
       And I wait for 5 seconds
     When I click a notification with "Calabash Local Push"
       Then my app should be in the foreground
-      And the current Teak session user JSON should have "teak_notif_id"
+      And the current Teak session attribution should have "teak_notif_id"

@@ -72,8 +72,8 @@ Then(/^I (?:want|schedule) a notification that says "([^"]*?)" in (\d+) seconds$
   backdoor "scheduleTestNotification", ["calabash_#{Digest::SHA1.hexdigest(message)}", message, delay]
 end
 
-Then(/^the current Teak session user JSON should have "([^"]*?)"$/) do |value|
-  json_blob = get_teak_request_or_reply_json(:request, :users).last
+Then(/^the current Teak session attribution should have "([^"]*?)"$/) do |value|
+  json_blob = get_teak_run_history.current_session.attribution_payload
   puts json_blob[value] if json_blob[value]
   fail "#{value} not found in #{json_blob}" unless json_blob[value]
 end

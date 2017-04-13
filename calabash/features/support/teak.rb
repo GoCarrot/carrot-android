@@ -1,20 +1,8 @@
 require_relative 'teak_run_history'
 
 def get_teak_run_history
-  stdout, stderr, status = exec_adb('logcat -d -s "Teak" "Teak.Session"')
+  stdout, stderr, status = exec_adb('logcat -d -s "Teak:D" "Teak.Session:D" "Teak.Request:D"')
   TeakRunHistory.new(stdout)
-end
-
-def get_teak_request_or_reply_json(request_or_reply, type)
-  stdout, stderr, status = exec_adb("logcat -d -s \"Teak.#{request_or_reply == :request ? "Request" : "Reply"}\"")
-  request_or_reply_string = :request ? "Submitting request to" : "Reply from"
-  regexp = case type
-    when :users, :settings
-      /#{request_or_reply_string} \'\/games\/(?:\d+)\/#{type}\.json\'\: (.*)/
-    else
-      /#{request_or_reply_string} \'\/me\/#{type}\.json\'\: (.*)/
-  end
-  stdout.scan(regexp).map{ |x| JSON.parse(x.first) }
 end
 
 def forground_activity_package_name
