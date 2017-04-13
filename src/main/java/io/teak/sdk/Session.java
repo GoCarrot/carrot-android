@@ -220,7 +220,7 @@ class Session {
     private boolean setState(@NonNull State newState) {
         synchronized (stateMutex) {
             if (this.state == newState) {
-                Log.i(LOG_TAG, String.format("Session State transition to same state (%s). Ignoring.", this.state));
+                Log.v(LOG_TAG, String.format("Session State transition to same state (%s). Ignoring.", this.state));
                 return false;
             }
 
@@ -643,7 +643,7 @@ class Session {
                 if (intentDataString != null && !intentDataString.isEmpty()) {
                     launchedFromDeepLink = intentDataString;
                     if (Teak.isDebug) {
-                        Log.d(LOG_TAG, "Launch from deep link: " + launchedFromDeepLink);
+                        Log.v(LOG_TAG, "Launch from deep link: " + launchedFromDeepLink);
                     }
                 }
 
@@ -654,7 +654,7 @@ class Session {
                     if (teakNotifId != null && !teakNotifId.isEmpty()) {
                         launchedFromTeakNotifId = teakNotifId;
                         if (Teak.isDebug) {
-                            Log.d(LOG_TAG, "Launch from Teak notification: " + teakNotifId);
+                            Log.v(LOG_TAG, "Launch from Teak notification: " + teakNotifId);
                         }
                     } else {
                         teakNotifId = null;
@@ -741,7 +741,7 @@ class Session {
                     // session. When setState(State.Configured) happens, it will call identifyUser()
                     if (oldSession.userId != null) {
                         if (Teak.isDebug) {
-                            Log.d(LOG_TAG, "Previous Session expired, assigning user id '" + oldSession.userId + " to new Session.");
+                            Log.v(LOG_TAG, "Previous Session expired, assigning user id '" + oldSession.userId + " to new Session.");
                         }
                         setUserId(oldSession.userId);
                     }
