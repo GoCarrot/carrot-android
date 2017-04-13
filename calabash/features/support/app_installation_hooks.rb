@@ -20,10 +20,6 @@ Before do |scenario|
     install_app(ENV['APP_PATH'])
     FeatureMemory.feature = feature
     FeatureMemory.invocation = 1
-
-    puts "CLEARING DEVICE LOGS"
-    exec_adb('logcat -c')
-    $logs_cleared = true
   else
     FeatureMemory.invocation += 1
   end
