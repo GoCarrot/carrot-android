@@ -1,8 +1,8 @@
-require_relative 'teak_run_history'
+require 'teak_dev_tools'
 
 def get_teak_run_history
   stdout, stderr, status = exec_adb('logcat -d -s "Teak:D" "Teak.Session:D" "Teak.Request:D"')
-  teak_run_history = TeakRunHistory.new
+  teak_run_history = TeakDevTools::RunHistory.new
   teak_run_history.read_lines(stdout)
   teak_run_history
 end

@@ -4,6 +4,12 @@ GIT
   specs:
     insult_generator (0.0.1)
 
+PATH
+  remote: /Users/pat/Code/teak_dev_tools
+  specs:
+    teak_dev_tools (0.1.0)
+      hashdiff
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -57,9 +63,9 @@ PLATFORMS
 
 DEPENDENCIES
   calabash-android (= 0.7.2)
-  hashdiff
   insult_generator!
   nokogiri
+  teak_dev_tools!
 
 BUNDLED WITH
    1.14.6
