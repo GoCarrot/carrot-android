@@ -1,7 +1,81 @@
 require 'date'
 require 'json'
+require 'hashdiff'
 
-class TeakRunHistory
+class Snapshottable
+  def snapshot
+    @snapshot = to_h
+  end
+
+  def snapshot_diff
+    @snapshot ||= {}
+    HashDiff.diff(@snapshot, to_h)
+  end
+end
+
+class TeakRunHistory < Snapshottable
+
+  class EventStream
+    attr_reader :events
+
+    def initialize
+      @events = []
+    end
+
+    def << (event)
+      @events << event
+      self
+    end
+
+    def to_a
+      @events
+    end
+
+    def to_s
+      return nil if @events.empty?
+      @events.map { |event|  event.to_s }.join("\n")
+    end
+
+    class Event
+      attr_reader :component, :action, :description, :delta
+
+      def initialize(component, action, description, delta, human_readable_keys)
+        @component = component
+        @action = action
+        @description = description
+        @delta = delta
+        @human_readable_keys = human_readable_keys
+      end
+
+      def to_s
+        human_readable_deltas = self.delta == nil ? [] : self.delta.reject { |delta| @human_readable_keys.include?(delta[1]) }
+        return self.description if human_readable_deltas.empty?
+
+"""#{self.description}
+  #{human_readable_deltas.map { |delta|
+    case delta[0]
+    when "~"
+      if delta[2] == nil
+        if delta[3].is_a? String
+          "#{delta[1]} assigned '#{delta[3]}'"
+        else
+          "#{delta[1]} assigned {\n#{JSON.pretty_generate(delta[3]).lines.slice(1..-1).map { |line| line.insert(0, "  ") }.join}"
+        end
+      else
+        if delta[3].is_a? String
+          "#{delta[1]} changed from '#{delta[2]}' to '#{delta[3]}'"
+        else
+           "#{delta[1]} changed from {\n#{JSON.pretty_generate(delta[2]).lines.slice(1..-1).map { |line| line.insert(0, "  ") }.join}\nto {\n#{JSON.pretty_generate(delta[3]).lines.slice(1..-1).map { |line| line.insert(0, "  ") }.join}"
+        end
+      end
+    when "+", "-"
+      JSON.pretty_generate(delta)
+    end
+}.join("\n  ")}"""
+      end
+    end
+  end
+
   attr_reader :sdk_version, :app_configuration, :device_configuration,
     :state_transitions, :lifecycle_events, :sessions
 
@@ -38,10 +112,11 @@ class TeakRunHistory
       event = $2
       case event
       when /^io\.teak\.sdk\.Teak@([a-fA-F0-9]+)\: (.*)/
+        snapshot
         @id = $1
         json = JSON.parse($2)
         @sdk_version = json["android"]
-        event_stream.emit({component: :teak, action: :create})
+        event_stream << Event.new(:initalized, "Initialized Teak", snapshot_diff)
       when /^State@([a-fA-F0-9]+)\: (.*)/
         raise "Teak got re-created #{@id} -> #{$1}" unless $1 == @id
         event_stream = on_new_state(JSON.parse($2), event_stream)
@@ -100,12 +175,14 @@ class TeakRunHistory
   end
 
   def on_new_state(json, event_stream)
+    snapshot
     raise "State transition consistency failed, current state is '#{current_state}', expected '#{json["previousState"]}'" unless current_state == json["previousState"]
     @state_transitions << [json["previousState"], json["state"]]
-    event_stream
+    event_stream << Event.new(:state_change, "State Transition", snapshot_diff)
   end
 
   def on_new_lifecycle(json, event_stream)
+    snapshot
     case json["callback"]
       when "onActivityCreated"
         raise "Unknown device configuration" unless @device_configurations.has_key?(json["deviceConfiguration"])
@@ -116,10 +193,16 @@ class TeakRunHistory
         @app_configuration = @app_configurations[json["appConfiguration"]]
 
         # The rest of the json info is available in the app/device configuration
-        json = {"callback": "onActivityCreated"}
+        json = {"callback" => "onActivityCreated"}
     end
     @lifecycle_events << json
-    event_stream
+    event_stream << Event.new(:lifecycle, "Lifecycle - #{json["callback"]}", snapshot_diff)
+  end
+
+  class Event < EventStream::Event
+    def initialize(action, description, delta)
+      super(:teak, action, description, delta, [:id, :sdk_version, :current_state, :app_configuration, :device_configuration, :current_session])
+    end
   end
 
   def to_h
@@ -135,7 +218,7 @@ class TeakRunHistory
     }
   end
 
-  class Session
+  class Session < Snapshottable
     attr_reader :id, :state_transitions, :user_id, :heartbeats, :requests, :attribution_payload
 
     def initialize(id, start_date)
@@ -182,6 +265,7 @@ class TeakRunHistory
       when /^io.teak.sdk.Session@([a-fA-F0-9]+)\: (.*)/
         json = JSON.parse($2)
         current_session = self.new($1, DateTime.strptime(json["startDate"].to_s,'%s'))
+        event_stream << Event.new(:initalized, "Session Created", current_session.snapshot_diff)
       when /^State@([a-fA-F0-9]+)\: (.*)/
         session = sessions.find { |s| s.id == $1 }
         raise "State transition for non-existent session" unless session != nil
@@ -206,6 +290,12 @@ class TeakRunHistory
       event_stream
     end
 
+    class Event < EventStream::Event
+      def initialize(action, description, delta)
+        super(:teak_session, action, description, delta, [:id, :current_state, :start_date, :user_id])
+      end
+    end
+
     def to_h
       {
         id: @id,
@@ -214,32 +304,6 @@ class TeakRunHistory
         user_id: @user_id,
         start_date: @start_date
       }
-    end
-  end
-
-  class EventStream
-    attr_reader :events
-
-    def initialize
-      @events = []
-    end
-
-    def emit(event)
-      @events << event
-    end
-
-    def to_a
-      @events
-    end
-
-    def human_readable
-      return nil if @events.empty?
-      JSON.pretty_generate(@events)
-    end
-
-    class Event
-      def initialize
-      end
     end
   end
 end

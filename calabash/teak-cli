@@ -8,7 +8,7 @@ require_relative 'features/support/teak_run_history'
 # escaped bash color codes
 cyan = "\e[96m"
 red = "\e[31m"
-bold_underline = "\e[1;4m"
+bold_underline = "\e[1m"
 reset_color = "\e[0m"
 
 STDIN.sync = true
@@ -42,9 +42,9 @@ while line
 
   begin
     event_stream = teak_run_history.new_log_line(line, event_stream)
-    output_line = event_stream.human_readable
+    output_line = event_stream.to_s
   rescue => e
-    output_line = e
+    output_line = e.to_s
     output_line_color = red
   end
 
@@ -52,12 +52,11 @@ while line
     # Indent
     output_line = output_line.lines.map{|line| line.insert(0, "  ")}.join
 
-    # Turn the output to red starting at the first character.
+    # Color the event stream/error
     output_line.insert(0, output_line_color)
-    # Reset the text color back to what it was at the end of the
-    # line.
     output_line.insert(-1, "#{reset_color}\n")
 
+    # Bold-underline the source line
     line.insert(0, bold_underline)
     line.insert(-1, reset_color)
     output_line.insert(0, "#{line}\n")
