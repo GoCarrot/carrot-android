@@ -13,12 +13,6 @@ And(/^I verify no notifications? with "([^"]*)"(?: and "([^"]*)")?(?: with (\d+)
 end
 ###
 
-Given(/^I want Teak to parse$/) do
-  teak_run_history = get_teak_run_history
-  puts JSON.pretty_generate(teak_run_history.to_h)
-  #puts "Current teak state #{teak_run_history.current_state}"
-end
-
 When(/^I press the home button$/) do
   exec_adb('shell input keyevent KEYCODE_HOME')
 end
