@@ -349,7 +349,7 @@ public class Teak extends BroadcastReceiver {
     private static ExecutorService asyncExecutor = Executors.newCachedThreadPool();
 
     // region Debug Output Formatter
-    public static int jsonLogIndentation = 2;
+    public static int jsonLogIndentation = 0;
     static String formatJSONForLogging(JSONObject obj) throws JSONException {
         if (Teak.jsonLogIndentation > 0) {
             return obj.toString(Teak.jsonLogIndentation);

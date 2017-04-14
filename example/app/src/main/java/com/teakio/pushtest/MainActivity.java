@@ -149,12 +149,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void attachBaseContext(Context newBase) {
-        Teak.jsonLogIndentation = 0; // TODO: If running under Calabash
-        super.attachBaseContext(newBase);
-    }
-
-    @Override
     protected void onDestroy() {
         super.onDestroy();
 
