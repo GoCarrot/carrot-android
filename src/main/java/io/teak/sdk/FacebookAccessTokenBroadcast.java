@@ -48,20 +48,22 @@ class FacebookAccessTokenBroadcast {
             }
 
             String accessTokenString = null;
-            if (facebook_3_x_BroadcastAction.equals(action)) {
+            if (facebook_3_x_BroadcastAction != null && facebook_3_x_BroadcastAction.equals(action)) {
                 try {
                     Object session = com_facebook_Session_getActiveSession.invoke(null);
                     accessTokenString = (String) com_facebook_Session_getAccessToken.invoke(session);
                 } catch (Exception e) {
                     Log.e(LOG_TAG, "Failed to get Facebook Access Token, error: " + Log.getStackTraceString(e));
                 }
-            } else if (facebook_4_x_BroadcastAction.equals(action)) {
+            } else if (facebook_4_x_BroadcastAction != null && facebook_4_x_BroadcastAction.equals(action)) {
                 Object accessToken = intent.getParcelableExtra(FACEBOOK_4_x_NEW_ACCESS_TOKEN_KEY);
 
-                try {
-                    accessTokenString = (String) com_facebook_AccessToken_getToken.invoke(accessToken);
-                } catch (Exception e) {
-                    Log.e(LOG_TAG, "Failed to get Facebook Access Token, error: " + Log.getStackTraceString(e));
+                if (accessToken != null) {
+                    try {
+                        accessTokenString = (String) com_facebook_AccessToken_getToken.invoke(accessToken);
+                    } catch (Exception e) {
+                        Log.e(LOG_TAG, "Failed to get Facebook Access Token, error: " + Log.getStackTraceString(e));
+                    }
                 }
             }
 
