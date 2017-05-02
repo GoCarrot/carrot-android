@@ -519,6 +519,28 @@ class Session {
         }
     }
 
+    public static void whenUserIdIsOrWasReadyRun(@NonNull SessionRunnable runnable) {
+        synchronized (currentSessionMutex) {
+            if (currentSession == null) {
+                synchronized (userIdReadyRunnableQueueMutex) {
+                    userIdReadyRunnableQueue.add(new WhenUserIdIsReadyRun(runnable));
+                }
+            } else {
+                synchronized (currentSession.stateMutex) {
+                    if (currentSession.state == State.UserIdentified ||
+                            (currentSession.state == State.Expiring && currentSession.previousState == State.UserIdentified)) {
+                        new Thread(new WhenUserIdIsReadyRun(runnable)).start();
+                    } else {
+                        synchronized (userIdReadyRunnableQueueMutex) {
+                            userIdReadyRunnableQueue.add(new WhenUserIdIsReadyRun(runnable));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
     /**
      * Process an Intent and assign new values for launching from a deep link or Teak notification.
      * <p/>

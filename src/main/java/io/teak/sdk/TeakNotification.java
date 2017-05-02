@@ -360,7 +360,7 @@ public class TeakNotification {
             }
         });
 
-        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+        Session.whenUserIdIsOrWasReadyRun(new Session.SessionRunnable() {
             @Override
             public void run(Session session) {
                 HashMap<String, Object> payload = new HashMap<>();
@@ -422,7 +422,7 @@ public class TeakNotification {
             }
         });
 
-        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+        Session.whenUserIdIsOrWasReadyRun(new Session.SessionRunnable() {
             @Override
             public void run(Session session) {
                 HashMap<String, Object> payload = new HashMap<>();
