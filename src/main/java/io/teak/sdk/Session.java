@@ -26,6 +26,9 @@ import android.util.Log;
 
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.text.DecimalFormat;
@@ -617,80 +620,128 @@ class Session {
     /**
      * Called by Teak lifecycle when activity is resumed, reset state on current session if it's 'Expiring'
      */
-    public static void onActivityResumed(Intent intent, final AppConfiguration appConfiguration, final DeviceConfiguration deviceConfiguration) {
-        synchronized (currentSessionMutex) {
-            // Call getCurrentSession() so the null || Expired logic stays in one place
-            getCurrentSession(appConfiguration, deviceConfiguration);
+    public static void onActivityResumed(final Intent intent, final AppConfiguration appConfiguration, final DeviceConfiguration deviceConfiguration) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                synchronized (currentSessionMutex) {
+                    // Call getCurrentSession() so the null || Expired logic stays in one place
+                    getCurrentSession(appConfiguration, deviceConfiguration);
 
-            // Check intent for attribution
-            String launchedFromTeakNotifId = null;
-            String launchedFromDeepLink = null;
-            if (intent != null) {
-                // Check for launch via deep link
-                String intentDataString = intent.getDataString();
-                if (intentDataString != null && !intentDataString.isEmpty()) {
-                    launchedFromDeepLink = intentDataString;
-                    if (Teak.isDebug) {
-                        Log.d(LOG_TAG, "Launch from deep link: " + launchedFromDeepLink);
+                    // Check intent for attribution
+                    String launchedFromTeakNotifId = null;
+                    String launchedFromDeepLink = null;
+                    if (intent != null) {
+                        // Check for launch via deep link
+                        String intentDataString = intent.getDataString();
+                        if (intentDataString != null && !intentDataString.isEmpty()) {
+                            launchedFromDeepLink = intentDataString;
+                            if (Teak.isDebug) {
+                                Log.d(LOG_TAG, "Launch from deep link: " + launchedFromDeepLink);
+                            }
+
+                            // Try and resolve any Teak links
+                            Uri uri = Uri.parse(launchedFromDeepLink);
+                            if (uri != null && (uri.getScheme().equals("http") || uri.getScheme().equals("https"))) {
+                                HttpsURLConnection connection = null;
+                                try {
+                                    Uri.Builder httpsUri = uri.buildUpon();
+                                    httpsUri.scheme("https");
+                                    URL url = new URL(httpsUri.build().toString());
+                                    connection = (HttpsURLConnection) url.openConnection();
+                                    connection.setRequestProperty("Accept-Charset", "UTF-8");
+                                    connection.setRequestProperty("X-Teak-DeviceType", "API");
+
+                                    // Get Response
+                                    InputStream is;
+                                    if (connection.getResponseCode() < 400) {
+                                        is = connection.getInputStream();
+                                    } else {
+                                        is = connection.getErrorStream();
+                                    }
+                                    BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+                                    String line;
+                                    StringBuilder response = new StringBuilder();
+                                    while ((line = rd.readLine()) != null) {
+                                        response.append(line);
+                                        response.append('\r');
+                                    }
+                                    rd.close();
+
+                                    String responseText = response.toString();
+                                    try {
+                                        JSONObject teakData = new JSONObject(response.toString());
+                                        responseText = teakData.toString(2);
+                                        if (teakData.getString("AndroidPath") != null) {
+                                            launchedFromDeepLink = String.format(Locale.US, "teak%s://%s", appConfiguration.appId, teakData.getString("AndroidPath"));
+                                        }
+                                    } catch (Exception ignored) {
+                                    }
+
+                                    if (Teak.isDebug) {
+                                        Log.d(LOG_TAG, responseText);
+                                    }
+                                } catch (Exception e) {
+                                    Log.e(LOG_TAG, Log.getStackTraceString(e));
+                                } finally {
+                                    if (connection != null) {
+                                        connection.disconnect();
+                                    }
+                                }
+                            }
+                        }
+
+                        // Check for launch via notification
+                        Bundle bundle = intent.getExtras();
+                        if (bundle != null) {
+                            String teakNotifId = bundle.getString("teakNotifId");
+                            if (teakNotifId != null && !teakNotifId.isEmpty()) {
+                                launchedFromTeakNotifId = teakNotifId;
+                                if (Teak.isDebug) {
+                                    Log.d(LOG_TAG, "Launch from Teak notification: " + teakNotifId);
+                                }
+                            } else {
+                                teakNotifId = null;
+                            }
+                        }
                     }
-                }
 
-                // Check for launch via notification
-                Bundle bundle = intent.getExtras();
-                if (bundle != null) {
-                    String teakNotifId = bundle.getString("teakNotifId");
-                    if (teakNotifId != null && !teakNotifId.isEmpty()) {
-                        launchedFromTeakNotifId = teakNotifId;
-                        if (Teak.isDebug) {
-                            Log.d(LOG_TAG, "Launch from Teak notification: " + teakNotifId);
+                    // If the current session has a launch from deep link/notification, and there is a new
+                    // deep link/notification, it's a new session
+                    if ((attributionStringsAreDifferent(currentSession.launchedFromDeepLink, launchedFromDeepLink) ||
+                            attributionStringsAreDifferent(currentSession.launchedFromTeakNotifId, launchedFromTeakNotifId)) &&
+                            (currentSession.state != State.Allocated && currentSession.state != State.Created)) {
+                        Session oldSession = currentSession;
+                        currentSession = new Session(oldSession);
+
+                        synchronized (oldSession.stateMutex) {
+                            oldSession.setState(State.Expiring);
+                            oldSession.setState(State.Expired);
                         }
                     } else {
-                        teakNotifId = null;
+                        // Reset state on current session, if it is expiring
+                        synchronized (currentSession.stateMutex) {
+                            if (currentSession.state == State.Expiring) {
+                                currentSession.setState(currentSession.previousState);
+                            }
+                        }
                     }
-                }
-            }
 
-            // If the current session has a launch from deep link/notification, and there is a new
-            // deep link/notification, it's a new session
-            if ((attributionStringsAreDifferent(currentSession.launchedFromDeepLink, launchedFromDeepLink) ||
-                    attributionStringsAreDifferent(currentSession.launchedFromTeakNotifId, launchedFromTeakNotifId)) &&
-                    (currentSession.state != State.Allocated && currentSession.state != State.Created)) {
-                Session oldSession = currentSession;
-                currentSession = new Session(oldSession);
-
-                synchronized (oldSession.stateMutex) {
-                    oldSession.setState(State.Expiring);
-                    oldSession.setState(State.Expired);
-                }
-            } else {
-                // Reset state on current session, if it is expiring
-                synchronized (currentSession.stateMutex) {
-                    if (currentSession.state == State.Expiring) {
-                        currentSession.setState(currentSession.previousState);
+                    // Assign attribution
+                    if (launchedFromDeepLink != null && !launchedFromDeepLink.isEmpty()) {
+                        currentSession.launchedFromDeepLink = launchedFromDeepLink;
+                        currentSession.attributionChain.add(launchedFromDeepLink);
                     }
-                }
-            }
 
-            // Assign attribution
-            if (launchedFromDeepLink != null && !launchedFromDeepLink.isEmpty()) {
-                currentSession.launchedFromDeepLink = launchedFromDeepLink;
-                currentSession.attributionChain.add(launchedFromDeepLink);
-            }
+                    if (launchedFromTeakNotifId != null && !launchedFromTeakNotifId.isEmpty()) {
+                        currentSession.launchedFromTeakNotifId = launchedFromTeakNotifId;
+                        currentSession.attributionChain.add(launchedFromTeakNotifId);
+                    }
 
-            if (launchedFromTeakNotifId != null && !launchedFromTeakNotifId.isEmpty()) {
-                currentSession.launchedFromTeakNotifId = launchedFromTeakNotifId;
-                currentSession.attributionChain.add(launchedFromTeakNotifId);
-            }
-
-            // See if TeakLinks can do anything with the deep link
-            if (launchedFromDeepLink != null) {
-                final String deepLinkString = launchedFromDeepLink;
-                final String teakNotifIdString = launchedFromTeakNotifId;
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Uri uri = Uri.parse(deepLinkString);
-                        if (!DeepLink.processUri(uri) && teakNotifIdString != null) {
+                    // See if TeakLinks can do anything with the deep link
+                    if (launchedFromDeepLink != null) {
+                        Uri uri = Uri.parse(launchedFromDeepLink);
+                        if (!DeepLink.processUri(uri) && launchedFromTeakNotifId != null) {
                             // If this was a deep link from a Teak Notification, then go ahead and
                             // try to find another app to launch.
                             Intent uriIntent = new Intent(Intent.ACTION_VIEW, uri);
@@ -701,9 +752,9 @@ class Session {
                             }
                         }
                     }
-                }).start();
+                }
             }
-        }
+        }).start();
     }
 
     // region Accessors
