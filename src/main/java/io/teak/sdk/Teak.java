@@ -38,6 +38,7 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.security.InvalidParameterException;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
@@ -77,18 +78,6 @@ public class Teak extends BroadcastReceiver {
     }
 
     /**
-     * @return JSON Description of the Teak SDK
-     */
-    public static String to_json() {
-        String debugOutput = "{}";
-        try {
-            debugOutput = new JSONObject(Teak.to_h()).toString();
-        } catch (Exception ignored){
-        }
-        return String.format("io.teak.sdk.Teak@%s: %s", Integer.toHexString(Teak.stateMutex.hashCode()), debugOutput);
-    }
-
-    /**
      * Initialize Teak and tell it to listen to the lifecycle events of {@link Activity}.
      * <p/>
      * <p>Call this function from the {@link Activity#onCreate} function of your <code>Activity</code>
@@ -98,22 +87,20 @@ public class Teak extends BroadcastReceiver {
      */
     public static void onCreate(Activity activity) {
         Teak.mainActivity = activity;
-        Log.d(LOG_TAG, Teak.to_json());
+        Teak.log.useSdk(Teak.to_h());
 
         if (activity == null) {
-            Log.e(LOG_TAG, "null Activity passed to onCreate, Teak is disabled.");
-            Teak.setState(State.Disabled);
-            return;
+            throw new InvalidParameterException("null Activity passed to Teak.onCreate");
         }
 
         // Set up debug logging ASAP
         try {
-            final Context context = activity.getApplicationContext();
+            final Context context = Teak.mainActivity.getApplicationContext();
             final ApplicationInfo applicationInfo = context.getApplicationInfo();
             Teak.debugConfiguration = new DebugConfiguration(context);
             Teak.isDebug = Teak.forceDebug || Teak.debugConfiguration.forceDebug || (applicationInfo != null && (0 != (applicationInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE)));
         } catch (Exception e) {
-            Log.e(LOG_TAG, "Error creating DebugConfiguration. " + Log.getStackTraceString(e));
+            Teak.log.exception(e);
         }
 
         // Check the launch mode of the activity
@@ -130,7 +117,7 @@ public class Teak extends BroadcastReceiver {
                 }
             }
         } catch (Exception e) {
-            Log.e(LOG_TAG, Log.getStackTraceString(e));
+            Teak.log.exception(e);
         }
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
@@ -145,7 +132,7 @@ public class Teak extends BroadcastReceiver {
                     }
                 }
             } catch (Exception e) {
-                Log.e(LOG_TAG, "Failed to register Activity lifecycle callbacks. Teak is disabled. " + Log.getStackTraceString(e));
+                Teak.log.exception(e);
                 Teak.setState(State.Disabled);
             }
         }
@@ -334,6 +321,9 @@ public class Teak extends BroadcastReceiver {
     static boolean isDebug;
     static DebugConfiguration debugConfiguration;
 
+    public static int jsonLogIndentation = 0;
+    static io.teak.sdk.Log log = new io.teak.sdk.Log(Teak.LOG_TAG, Teak.jsonLogIndentation);
+
     static Raven sdkRaven;
     static Raven appRaven;
 
@@ -349,7 +339,6 @@ public class Teak extends BroadcastReceiver {
     private static ExecutorService asyncExecutor = Executors.newCachedThreadPool();
 
     // region Debug Output Formatter
-    public static int jsonLogIndentation = 0;
     static String formatJSONForLogging(JSONObject obj) throws JSONException {
         if (Teak.jsonLogIndentation > 0) {
             return obj.toString(Teak.jsonLogIndentation);
@@ -405,6 +394,10 @@ public class Teak extends BroadcastReceiver {
             // Ravens
             Teak.sdkRaven = new Raven(context, "sdk", Teak.appConfiguration, Teak.deviceConfiguration);
             Teak.appRaven = new Raven(context, Teak.appConfiguration.bundleId, Teak.appConfiguration, Teak.deviceConfiguration);
+
+            // Add the log runId to the Ravens so we can line up logs and exception reports
+            Teak.sdkRaven.addUserData("log_run_id", Teak.log.runId);
+            Teak.appRaven.addUserData("log_run_id", Teak.log.runId);
 
             // Broadcast manager
             Teak.localBroadcastManager = LocalBroadcastManager.getInstance(context);
