@@ -124,17 +124,11 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         applicationContext.startService(intent);
     }
 
-    public void reportException(Throwable t) {
-        if (t == null) {
-            return;
-        }
-
+    public static Map<String, Object> throwableToMap(Throwable t) {
         if (t instanceof InvocationTargetException && t.getCause() != null) {
             t = t.getCause();
         }
 
-        HashMap<String, Object> additions = new HashMap<>();
-        ArrayList<Object> exceptions = new ArrayList<>();
         HashMap<String, Object> exception = new HashMap<>();
 
         exception.put("type", t.getClass().getSimpleName());
@@ -176,6 +170,22 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         stacktrace.put("frames", stackFrames);
 
         exception.put("stacktrace", stacktrace);
+
+        return exception;
+    }
+
+    public void reportException(Throwable t) {
+        if (t == null) {
+            return;
+        }
+
+        if (t instanceof InvocationTargetException && t.getCause() != null) {
+            t = t.getCause();
+        }
+
+        HashMap<String, Object> additions = new HashMap<>();
+        ArrayList<Object> exceptions = new ArrayList<>();
+        Map<String, Object> exception = Raven.throwableToMap(t);
 
         exceptions.add(exception);
         additions.put("exception", exceptions);
