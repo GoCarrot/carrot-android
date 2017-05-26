@@ -758,7 +758,12 @@ class Session {
                             Intent uriIntent = new Intent(Intent.ACTION_VIEW, uri);
                             uriIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                             List<ResolveInfo> resolvedActivities = appConfiguration.packageManager.queryIntentActivities(uriIntent, 0);
-                            if (resolvedActivities.size() > 0) {
+                            boolean safeToRedirect = true;
+                            for (ResolveInfo info : resolvedActivities) {
+                                Log.d(LOG_TAG, "" + info.activityInfo.packageName);
+                                safeToRedirect &= !appConfiguration.bundleId.equalsIgnoreCase(info.activityInfo.packageName);
+                            }
+                            if (resolvedActivities.size() > 0 && safeToRedirect) {
                                 appConfiguration.applicationContext.startActivity(uriIntent);
                             }
                         }
