@@ -37,6 +37,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -136,9 +137,8 @@ class Session {
     private Date endDate;
 
     // State Independent
-    private String launchedFromTeakNotifId;
-    private String launchedFromDeepLink;
-    private ArrayList<String> attributionChain = new ArrayList<>();
+    private Map<String, Object> launchAttribution = new HashMap<>();
+    private ArrayList<Map<String, Object>> attributionChain = new ArrayList<>();
 
     // For cases where setUserId() is called before a Session has been created
     private static String pendingUserId;
@@ -429,12 +429,8 @@ class Session {
                         payload.put("access_token", _this.facebookAccessToken);
                     }
 
-                    if (_this.launchedFromTeakNotifId != null) {
-                        payload.put("teak_notif_id", Long.valueOf(_this.launchedFromTeakNotifId));
-                    }
-
-                    if (_this.launchedFromDeepLink != null) {
-                        payload.put("deep_link", _this.launchedFromDeepLink);
+                    for (Map.Entry<String, Object> entry : _this.launchAttribution.entrySet()) {
+                        payload.put(entry.getKey(), entry.getValue());
                     }
 
                     if (_this.deviceConfiguration.gcmId != null) {
@@ -628,15 +624,27 @@ class Session {
                     // Call getCurrentSession() so the null || Expired logic stays in one place
                     getCurrentSession(appConfiguration, deviceConfiguration);
 
+                    // Launch attribution contents
+                    HashMap<String, Object> launchAttribution = new HashMap<String, Object>();
+
                     // Check intent for attribution
-                    String launchedFromTeakNotifId = null;
                     String launchedFromDeepLink = null;
                     if (intent != null) {
-                        // Check for launch via deep link
-                        String intentDataString = intent.getDataString();
-                        if (intentDataString != null && !intentDataString.isEmpty()) {
-                            launchedFromDeepLink = intentDataString;
+                        // Check for an install referrer
+                        String installReferrer = null;
+                        if (intent.getStringExtra("referrer") != null && !intent.getStringExtra("referrer").isEmpty()) {
+                            installReferrer = intent.getStringExtra("referrer");
                             if (Teak.isDebug) {
+                                Log.d(LOG_TAG, "Install referrer: " + installReferrer);
+                            }
+                        }
+
+                        // Check for launch via deep link, process install referrer
+                        String intentDataString = intent.getDataString();
+                        if (installReferrer != null ||
+                                (intentDataString != null && !intentDataString.isEmpty())) {
+                            launchedFromDeepLink = intentDataString;
+                            if (launchedFromDeepLink != null && Teak.isDebug) {
                                 Log.d(LOG_TAG, "Launch from deep link: " + launchedFromDeepLink);
                             }
 
@@ -696,24 +704,38 @@ class Session {
                         if (bundle != null) {
                             String teakNotifId = bundle.getString("teakNotifId");
                             if (teakNotifId != null && !teakNotifId.isEmpty()) {
-                                launchedFromTeakNotifId = teakNotifId;
+                                // Assign notification launch attribution
+                                launchAttribution.put("teak_notif_id", Long.valueOf(teakNotifId));
                                 if (Teak.isDebug) {
                                     Log.d(LOG_TAG, "Launch from Teak notification: " + teakNotifId);
                                 }
-                            } else {
-                                teakNotifId = null;
                             }
                         }
                     }
 
-                    // If the current session has a launch from deep link/notification, and there is a new
-                    // deep link/notification, it's a new session
-                    if ((attributionStringsAreDifferent(currentSession.launchedFromDeepLink, launchedFromDeepLink) ||
-                            attributionStringsAreDifferent(currentSession.launchedFromTeakNotifId, launchedFromTeakNotifId)) &&
+                    // Assign deep link attribution
+                    if (launchedFromDeepLink != null && !launchedFromDeepLink.isEmpty()) {
+                        launchAttribution.put("deep_link", launchedFromDeepLink);
+                        Uri uri = Uri.parse(launchedFromDeepLink);
+                        for (String name : uri.getQueryParameterNames()) {
+                            if (name.startsWith("teak_")) {
+                                List<String> values = uri.getQueryParameters(name);
+                                if (values.size() > 1) {
+                                    launchAttribution.put(name, values);
+                                } else {
+                                    launchAttribution.put(name, values.get(0));
+                                }
+                            }
+                        }
+                    }
+
+                    // If the current session has a launch different attribution, it's a new session
+                    if (!launchAttribution.equals(currentSession.launchAttribution) &&
                             (currentSession.state != State.Allocated && currentSession.state != State.Created)) {
                         Session oldSession = currentSession;
                         currentSession = new Session(oldSession);
-
+                        currentSession.launchAttribution = launchAttribution;
+                        currentSession.attributionChain.add(launchAttribution);
                         synchronized (oldSession.stateMutex) {
                             oldSession.setState(State.Expiring);
                             oldSession.setState(State.Expired);
@@ -727,21 +749,10 @@ class Session {
                         }
                     }
 
-                    // Assign attribution
-                    if (launchedFromDeepLink != null && !launchedFromDeepLink.isEmpty()) {
-                        currentSession.launchedFromDeepLink = launchedFromDeepLink;
-                        currentSession.attributionChain.add(launchedFromDeepLink);
-                    }
-
-                    if (launchedFromTeakNotifId != null && !launchedFromTeakNotifId.isEmpty()) {
-                        currentSession.launchedFromTeakNotifId = launchedFromTeakNotifId;
-                        currentSession.attributionChain.add(launchedFromTeakNotifId);
-                    }
-
                     // See if TeakLinks can do anything with the deep link
                     if (launchedFromDeepLink != null) {
                         Uri uri = Uri.parse(launchedFromDeepLink);
-                        if (!DeepLink.processUri(uri) && launchedFromTeakNotifId != null) {
+                        if (!DeepLink.processUri(uri) && launchAttribution.get("teak_notif_id") != null) {
                             // If this was a deep link from a Teak Notification, then go ahead and
                             // try to find another app to launch.
                             Intent uriIntent = new Intent(Intent.ACTION_VIEW, uri);
