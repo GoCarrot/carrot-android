@@ -203,6 +203,9 @@ class Session {
                         currentSession.setState(State.Expiring);
                         currentSession.setState(State.Expired);
 
+                        newSession.launchAttribution = currentSession.launchAttribution;
+                        newSession.attributionChain.add(currentSession.launchAttribution);
+
                         currentSession = newSession;
                     }
 
