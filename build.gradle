@@ -60,7 +60,6 @@ android.libraryVariants.all { variant ->
     artifacts.add('archives', task("zip${variant.name.capitalize()}", type: Zip) {
         description "Bundles .jar file and res/**.xml into a ZIP file for $variant.name."
         dependsOn jarTask
-        def flavor
         if (variant.buildType.name.equals(BuilderConstants.DEBUG)) {
             archiveName "${archivesBaseName}-${variant.name}.zip"
         } else {
@@ -72,7 +71,7 @@ android.libraryVariants.all { variant ->
             rename(Pattern.quote(jarTask.archivePath.name), "teak.jar")
         }
 
-        from fileTree(dir: "src/${flavor}", include: 'res/**')
+        from fileTree(dir: "src/main", include: 'res/**')
     })
 
     // Rename AARs
