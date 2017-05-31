@@ -49,9 +49,9 @@ android.libraryVariants.all { variant ->
         exclude '**/R.class', '**/R$*.class', '**/R.html', '**/R.*.html',
                 'com/**'
         if (variant.buildType.name.equals(BuilderConstants.DEBUG)) {
-            archiveName "${archivesBaseName}-${variant.name.replace('Debug', '')}-debug.jar"
+            archiveName "${archivesBaseName}-${variant.name}.jar"
         } else {
-            archiveName "${archivesBaseName}-${variant.name.replace('Release', '')}.jar"
+            archiveName "${archivesBaseName}-${variant.name}.jar"
         }
     }
     artifacts.add('archives', jarTask)
@@ -62,11 +62,9 @@ android.libraryVariants.all { variant ->
         dependsOn jarTask
         def flavor
         if (variant.buildType.name.equals(BuilderConstants.DEBUG)) {
-            flavor = variant.name.replace('Debug', '')
-            archiveName "${archivesBaseName}-${flavor}-debug.zip"
+            archiveName "${archivesBaseName}-${variant.name}.zip"
         } else {
-            flavor = variant.name.replace('Release', '')
-            archiveName "${archivesBaseName}-${flavor}.zip"
+            archiveName "${archivesBaseName}-${variant.name}.zip"
         }
 
         from(jarTask.archivePath) {
@@ -83,9 +81,9 @@ android.libraryVariants.all { variant ->
         if (outputFile != null && outputFile.name.endsWith('.aar')) {
             def fileName
             if (variant.buildType.name.equals(BuilderConstants.DEBUG)) {
-                fileName = "${archivesBaseName}-${variant.name.replace('Debug', '')}-debug.aar"
+                fileName = "${archivesBaseName}-${variant.name}.aar"
             } else {
-                fileName = "${archivesBaseName}-${variant.name.replace('Release', '')}.aar"
+                fileName = "${archivesBaseName}-${variant.name}.aar"
             }
             output.outputFile = new File(outputFile.parent, fileName)
         }
@@ -106,9 +104,6 @@ android {
     compileSdkVersion 23
     buildToolsVersion "23.0.2"
 
-    defaultPublishConfig "api_gteq_21Release"
-    publishNonDefault true
-
     defaultConfig {
         minSdkVersion 14
         targetSdkVersion 23
@@ -116,11 +111,6 @@ android {
         versionName getVersionName()
         consumerProguardFiles 'proguard.txt'
         archivesBaseName = 'teak'
-    }
-
-    productFlavors {
-        api_lt_21
-        api_gteq_21
     }
 }
 
