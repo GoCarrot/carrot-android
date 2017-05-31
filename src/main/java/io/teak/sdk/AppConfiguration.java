@@ -38,12 +38,16 @@ class AppConfiguration {
     public final int appVersion;
     public final String bundleId;
     public final String installerPackage;
+    public final PackageManager packageManager;
+    public final Context applicationContext;
 
     private static final String TEAK_API_KEY = "io_teak_api_key";
     private static final String TEAK_APP_ID = "io_teak_app_id";
     private static final String TEAK_GCM_SENDER_ID = "io_teak_gcm_sender_id";
 
     public AppConfiguration(@NonNull Context context) {
+        this.applicationContext = context.getApplicationContext();
+
         // Teak App Id
         {
             this.appId = Helpers.getStringResourceByName(TEAK_APP_ID, context);
@@ -77,8 +81,8 @@ class AppConfiguration {
             }
         }
 
-        PackageManager packageManager = context.getPackageManager();
-        if (packageManager == null) {
+        this.packageManager = context.getPackageManager();
+        if (this.packageManager == null) {
             throw new RuntimeException("Unable to get Package Manager.");
         }
 
@@ -86,7 +90,7 @@ class AppConfiguration {
         {
             int tempAppVersion = 0;
             try {
-                tempAppVersion = packageManager.getPackageInfo(this.bundleId, 0).versionCode;
+                tempAppVersion = this.packageManager.getPackageInfo(this.bundleId, 0).versionCode;
             } catch (Exception e) {
                 Log.e(LOG_TAG, "Error getting App Version: " + Log.getStackTraceString(e));
             } finally {
@@ -96,7 +100,7 @@ class AppConfiguration {
 
         // Get the installer package
         {
-            this.installerPackage = packageManager.getInstallerPackageName(this.bundleId);
+            this.installerPackage = this.packageManager.getInstallerPackageName(this.bundleId);
             if (this.installerPackage == null) {
                 Log.e(LOG_TAG, "Installer package (Store) is null, purchase tracking disabled.");
             }

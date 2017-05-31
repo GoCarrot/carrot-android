@@ -7,7 +7,7 @@ android {
     defaultConfig {
         applicationId "com.teakio.pushtest"
         minSdkVersion 14
-        targetSdkVersion 18
+        targetSdkVersion 23
         versionCode 1
         versionName "1.0"
     }
@@ -24,5 +24,6 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:23.1.1'
 
-    compile project(path: ':teak', configuration: 'api_lt_21Release')
+    //compile project(path: ':teak', configuration: 'api_lt_21Release')
+    compile project(path: ':teak', configuration: 'api_gteq_21Release')
 }

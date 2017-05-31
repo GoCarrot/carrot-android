@@ -57,11 +57,12 @@ class DeviceConfiguration {
     public final String deviceFallback;
     public final String platformString;
 
+    public final SharedPreferences preferences;
+
     public String advertisingId;
     public boolean limitAdTracking;
 
     private FutureTask<GoogleCloudMessaging> gcm;
-    private SharedPreferences preferences;
     private Object admInstance;
     private String gcmSenderId;
 

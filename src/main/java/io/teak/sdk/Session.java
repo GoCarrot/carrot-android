@@ -18,6 +18,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -25,18 +27,28 @@ import android.util.Log;
 
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -131,9 +143,12 @@ class Session {
     private Date endDate;
 
     // State Independent
-    private String launchedFromTeakNotifId;
-    private String launchedFromDeepLink;
-    private ArrayList<String> attributionChain = new ArrayList<>();
+    private Future<Map<String, Object>> launchAttribution = null;
+
+    // For cases where setUserId() is called before a Session has been created
+    private static String pendingUserId;
+
+    private static final String PREFERENCE_FIRST_RUN = "io.teak.sdk.Preferences.FirstRun";
 
     private Session(AppConfiguration appConfiguration, DeviceConfiguration deviceConfiguration) {
         // State: Created
@@ -158,7 +173,6 @@ class Session {
         this(session.appConfiguration, session.deviceConfiguration);
 
         this.userId = session.userId;
-        this.attributionChain.addAll(session.attributionChain);
     }
 
     public boolean hasExpired() {
@@ -185,20 +199,26 @@ class Session {
 
         // If the user id has changed, create a new session
         synchronized (currentSessionMutex) {
-            synchronized (currentSession.stateMutex) {
-                if (currentSession.userId != null && !currentSession.userId.equals(userId)) {
-                    Session newSession = new Session(currentSession);
+            if (currentSession == null) {
+                Session.pendingUserId = userId;
+            } else {
+                synchronized (currentSession.stateMutex) {
+                    if (currentSession.userId != null && !currentSession.userId.equals(userId)) {
+                        Session newSession = new Session(currentSession);
 
-                    currentSession.setState(State.Expiring);
-                    currentSession.setState(State.Expired);
+                        currentSession.setState(State.Expiring);
+                        currentSession.setState(State.Expired);
 
-                    currentSession = newSession;
-                }
+                        newSession.launchAttribution = currentSession.launchAttribution;
 
-                currentSession.userId = userId;
+                        currentSession = newSession;
+                    }
 
-                if (currentSession.state == State.Configured) {
-                    currentSession.identifyUser();
+                    currentSession.userId = userId;
+
+                    if (currentSession.state == State.Configured) {
+                        currentSession.identifyUser();
+                    }
                 }
             }
         }
@@ -417,12 +437,15 @@ class Session {
                         payload.put("access_token", _this.facebookAccessToken);
                     }
 
-                    if (_this.launchedFromTeakNotifId != null) {
-                        payload.put("teak_notif_id", Long.valueOf(_this.launchedFromTeakNotifId));
+                    Map<String, Object> attribution = new HashMap<>();
+                    if (_this.launchAttribution != null) {
+                        try {
+                            attribution = _this.launchAttribution.get(5, TimeUnit.SECONDS);
+                        } catch (Exception ignored) {
+                        }
                     }
-
-                    if (_this.launchedFromDeepLink != null) {
-                        payload.put("deep_link", _this.launchedFromDeepLink);
+                    for (Map.Entry<String, Object> entry : attribution.entrySet()) {
+                        payload.put(entry.getKey(), entry.getValue());
                     }
 
                     if (_this.deviceConfiguration.gcmId != null) {
@@ -542,80 +565,6 @@ class Session {
 
 
     /**
-     * Process an Intent and assign new values for launching from a deep link or Teak notification.
-     * <p/>
-     * If currentSession was launched via a deep link or notification, and the incoming intent has
-     * a new (non null/empty) value. Create a new Session, cloning state from the old one.
-     *
-     * @param intent Incoming Intent to process.
-     */
-    public static void processIntent(Intent intent, @NonNull AppConfiguration appConfiguration, @NonNull DeviceConfiguration deviceConfiguration) {
-        if (intent == null) return;
-
-        synchronized (currentSessionMutex) {
-            // Call getCurrentSession() so the null || Expired logic stays in one place
-            getCurrentSession(appConfiguration, deviceConfiguration);
-
-            // Check for launch via deep link
-            String intentDataString = intent.getDataString();
-            String launchedFromDeepLink = null;
-            if (intentDataString != null && !intentDataString.isEmpty()) {
-                launchedFromDeepLink = intentDataString;
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "Launch from deep link: " + launchedFromDeepLink);
-                }
-            }
-
-            // Check for launch via notification
-            Bundle bundle = intent.getExtras();
-            String launchedFromTeakNotifId = null;
-            if (bundle != null) {
-                String teakNotifId = bundle.getString("teakNotifId");
-                if (teakNotifId != null && !teakNotifId.isEmpty()) {
-                    launchedFromTeakNotifId = teakNotifId;
-                    if (Teak.isDebug) {
-                        Log.d(LOG_TAG, "Launch from Teak notification: " + launchedFromTeakNotifId);
-                    }
-                }
-            }
-
-            // If the current session has a launch from deep link/notification, and there is a new
-            // deep link/notification, it's a new session
-            if ((attributionStringsAreDifferent(currentSession.launchedFromDeepLink, launchedFromDeepLink) ||
-                    attributionStringsAreDifferent(currentSession.launchedFromTeakNotifId, launchedFromTeakNotifId)) &&
-                    (currentSession.state != State.Allocated && currentSession.state != State.Created)) {
-                Session oldSession = currentSession;
-                currentSession = new Session(oldSession);
-
-                oldSession.setState(State.Expiring);
-                oldSession.setState(State.Expired);
-            }
-
-            // Assign attribution
-            if (launchedFromDeepLink != null && !launchedFromDeepLink.isEmpty()) {
-                currentSession.launchedFromDeepLink = launchedFromDeepLink;
-                currentSession.attributionChain.add(launchedFromDeepLink);
-            }
-
-            if (launchedFromTeakNotifId != null && !launchedFromTeakNotifId.isEmpty()) {
-                currentSession.launchedFromTeakNotifId = launchedFromTeakNotifId;
-                currentSession.attributionChain.add(launchedFromTeakNotifId);
-            }
-
-            // See if TeakLinks can do anything with the deep link
-            if (launchedFromDeepLink != null) {
-                final String deepLinkString = launchedFromDeepLink;
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        DeepLink.processUri(Uri.parse(deepLinkString));
-                    }
-                }).start();
-            }
-        }
-    }
-
-    /**
      * Used to listen for when remote configuration is ready
      */
     private RemoteConfiguration.EventListener remoteConfigurationListener = new RemoteConfiguration.EventListener() {
@@ -682,18 +631,268 @@ class Session {
     /**
      * Called by Teak lifecycle when activity is resumed, reset state on current session if it's 'Expiring'
      */
-    public static void onActivityResumed(AppConfiguration appConfiguration, DeviceConfiguration deviceConfiguration) {
+    public static void onActivityResumed(final Intent intent, final AppConfiguration appConfiguration, final DeviceConfiguration deviceConfiguration) {
+        // Call getCurrentSession() so the null || Expired logic stays in one place
         synchronized (currentSessionMutex) {
-            // Call getCurrentSession() so the null || Expired logic stays in one place
             getCurrentSession(appConfiguration, deviceConfiguration);
 
-            // Reset state on current session, if it is expiring
-            synchronized (currentSession.stateMutex) {
-                if (currentSession.state == State.Expiring) {
-                    currentSession.setState(currentSession.previousState);
+            // Check and see if this is (probably) the first time this app has been ever launched
+            boolean isFirstLaunch = false;
+            if (deviceConfiguration.preferences != null) {
+                long firstLaunch = deviceConfiguration.preferences.getLong(PREFERENCE_FIRST_RUN, 0);
+                if (firstLaunch == 0) {
+                    firstLaunch = new Date().getTime() / 1000;
+                    SharedPreferences.Editor editor = deviceConfiguration.preferences.edit();
+                    editor.putLong(PREFERENCE_FIRST_RUN, firstLaunch);
+                    editor.apply();
+                    isFirstLaunch = true;
+                }
+            }
+
+            // If this is the first launch, see if the InstallReferrerReceiver has anything for us.
+            Future<String> deepLinkURL = null;
+            if (isFirstLaunch) {
+                FutureTask<String> referrerPollTask = new FutureTask<>(new Callable<String>() {
+                    @Override
+                    public String call() throws Exception {
+                        long startTime = System.nanoTime();
+                        String referralString = InstallReferrerReceiver.installReferrerQueue.poll();
+                        while(referralString == null) {
+                            Thread.sleep(100);
+                            referralString = InstallReferrerReceiver.installReferrerQueue.poll();
+                            long elapsedTime = System.nanoTime() - startTime;
+                            if (elapsedTime / 1000000000 > 10) break;
+                        }
+                        return referralString;
+                    }
+                });
+                new Thread(referrerPollTask).start();
+                deepLinkURL = referrerPollTask;
+            } else {
+                // Otherwise see if there's a deep link in the intent
+                final String intentDataString = intent.getDataString();
+                if (intentDataString != null && !intentDataString.isEmpty()) {
+                    if (Teak.isDebug) {
+                        Log.d(LOG_TAG, "Launch from deep link: " + intentDataString);
+                    }
+                    deepLinkURL = new Future<String>() {
+                        @Override
+                        public boolean cancel(boolean b) {
+                            return false;
+                        }
+
+                        @Override
+                        public boolean isCancelled() {
+                            return false;
+                        }
+
+                        @Override
+                        public boolean isDone() {
+                            return true;
+                        }
+
+                        @Override
+                        public String get() throws InterruptedException, ExecutionException {
+                            return intentDataString;
+                        }
+
+                        @Override
+                        public String get(long l, @NonNull TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
+                            return get();
+                        }
+                    };
+                }
+            }
+
+            //
+            final Future<Map<String, Object>> deepLinkAttribution;
+            if (deepLinkURL != null) {
+                deepLinkAttribution = attributionForDeepLink(deepLinkURL, appConfiguration);
+            } else {
+                deepLinkAttribution = null;
+            }
+
+            // Check for launch via notification
+            String nonFinalTeakNotifId = null;
+            Bundle bundle = intent.getExtras();
+            if (bundle != null) {
+                String teakNotifId = bundle.getString("teakNotifId");
+                if (teakNotifId != null && !teakNotifId.isEmpty()) {
+                    nonFinalTeakNotifId = teakNotifId;
+                }
+            }
+            final String teakNotifId = nonFinalTeakNotifId;
+
+            // Get the session attribution
+            final Future<Map<String, Object>> sessionAttribution;
+            if (teakNotifId != null) {
+                if (Teak.isDebug) {
+                    Log.d(LOG_TAG, "Launch from Teak notification: " + teakNotifId);
+                }
+                sessionAttribution = new Future<Map<String, Object>>() {
+                    @Override
+                    public boolean cancel(boolean b) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isCancelled() {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isDone() {
+                        return true;
+                    }
+
+                    @Override
+                    public Map<String, Object> get() throws InterruptedException, ExecutionException {
+                        Map<String, Object> returnValue = new HashMap<>();
+                        returnValue.put("teak_notif_id", teakNotifId);
+                        return returnValue;
+                    }
+
+                    @Override
+                    public Map<String, Object> get(long l, @NonNull TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
+                        return get();
+                    }
+                };
+            } else if (deepLinkAttribution != null) {
+                sessionAttribution = deepLinkAttribution;
+            } else {
+                sessionAttribution = null;
+            }
+
+            // If there is any deep link, see if we handle the link
+            if (deepLinkAttribution != null) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Resolve the deepLinkAttribution future
+                        try {
+                            Map<String, Object> attribution = deepLinkAttribution.get(5, TimeUnit.SECONDS);
+                            Uri uri = Uri.parse((String) attribution.get("deep_link"));
+
+                            // See if TeakLinks can do anything with the deep link
+                            if (!DeepLink.processUri(uri) && teakNotifId != null) {
+                                // If this was a deep link from a Teak Notification, then go ahead and
+                                // try to find a different app to launch.
+                                Intent uriIntent = new Intent(Intent.ACTION_VIEW, uri);
+                                uriIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                List<ResolveInfo> resolvedActivities = appConfiguration.packageManager.queryIntentActivities(uriIntent, 0);
+                                boolean safeToRedirect = true;
+                                for (ResolveInfo info : resolvedActivities) {
+                                    safeToRedirect &= !appConfiguration.bundleId.equalsIgnoreCase(info.activityInfo.packageName);
+                                }
+                                if (resolvedActivities.size() > 0 && safeToRedirect) {
+                                    appConfiguration.applicationContext.startActivity(uriIntent);
+                                }
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    }
+                }).start();
+            }
+
+            // If the current session has a launch different attribution, it's a new session
+            if (sessionAttribution != null && (currentSession.state != State.Allocated && currentSession.state != State.Created)) {
+                Session oldSession = currentSession;
+                currentSession = new Session(oldSession);
+                currentSession.launchAttribution = sessionAttribution;
+                synchronized (oldSession.stateMutex) {
+                    oldSession.setState(State.Expiring);
+                    oldSession.setState(State.Expired);
+                }
+            } else {
+                // Reset state on current session, if it is expiring
+                synchronized (currentSession.stateMutex) {
+                    if (currentSession.state == State.Expiring) {
+                        currentSession.setState(currentSession.previousState);
+                    }
                 }
             }
         }
+    }
+
+    private static Future<Map<String, Object>> attributionForDeepLink(final Future<String> urlFuture, final AppConfiguration appConfiguration) {
+        FutureTask<Map<String, Object>> returnTask = new FutureTask<>(new Callable<Map<String, Object>>() {
+            @Override
+            public Map<String, Object> call() throws Exception {
+                Map<String, Object> returnValue = new HashMap<>();
+
+                // Wait on the incoming Future
+                Uri uri = null;
+                try {
+                    uri = Uri.parse(urlFuture.get(5, TimeUnit.SECONDS));
+                } catch (Exception ignored) {
+                }
+
+                // If we have a URL, process it if needed
+                if (uri != null) {
+                    // Try and resolve any Teak links
+                    if (uri.getScheme().equals("http") || uri.getScheme().equals("https")) {
+                        HttpsURLConnection connection = null;
+                        try {
+                            Uri.Builder httpsUri = uri.buildUpon();
+                            httpsUri.scheme("https");
+                            URL url = new URL(httpsUri.build().toString());
+                            connection = (HttpsURLConnection) url.openConnection();
+                            connection.setRequestProperty("Accept-Charset", "UTF-8");
+                            connection.setRequestProperty("X-Teak-DeviceType", "API");
+
+                            // Get Response
+                            InputStream is;
+                            if (connection.getResponseCode() < 400) {
+                                is = connection.getInputStream();
+                            } else {
+                                is = connection.getErrorStream();
+                            }
+                            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+                            String line;
+                            StringBuilder response = new StringBuilder();
+                            while ((line = rd.readLine()) != null) {
+                                response.append(line);
+                                response.append('\r');
+                            }
+                            rd.close();
+
+                            try {
+                                JSONObject teakData = new JSONObject(response.toString());
+                                if (teakData.getString("AndroidPath") != null) {
+                                    uri = Uri.parse(String.format(Locale.US, "teak%s://%s", appConfiguration.appId, teakData.getString("AndroidPath")));
+                                }
+                            } catch (Exception ignored) {
+                            }
+                        } catch (Exception e) {
+                            Log.e(LOG_TAG, Log.getStackTraceString(e));
+                        } finally {
+                            if (connection != null) {
+                                connection.disconnect();
+                            }
+                        }
+                    }
+
+                    // Put the URI and any query parameters that start with 'teak_'
+                    returnValue.put("deep_link", uri.toString());
+                    for (String name : uri.getQueryParameterNames()) {
+                        if (name.startsWith("teak_")) {
+                            List<String> values = uri.getQueryParameters(name);
+                            if (values.size() > 1) {
+                                returnValue.put(name, values);
+                            } else {
+                                returnValue.put(name, values.get(0));
+                            }
+                        }
+                    }
+                }
+
+                return returnValue;
+            }
+        });
+
+        // Start it running, and return the Future
+        new Thread(returnTask).start();
+        return returnTask;
     }
 
     // region Accessors
@@ -706,23 +905,24 @@ class Session {
     private static Session currentSession;
     private static final Object currentSessionMutex = new Object();
 
-    public static Session getCurrentSession(AppConfiguration appConfiguration, DeviceConfiguration deviceConfiguration) {
+    private static Session getCurrentSession(AppConfiguration appConfiguration, DeviceConfiguration deviceConfiguration) {
         synchronized (currentSessionMutex) {
             if (currentSession == null || currentSession.hasExpired()) {
                 Session oldSession = currentSession;
                 currentSession = new Session(appConfiguration, deviceConfiguration);
 
                 if (oldSession != null) {
-                    currentSession.attributionChain.addAll(oldSession.attributionChain);
-                }
-
-                // If the old session had a user id assigned, it needs to be passed to the newly created
-                // session. When setState(State.Configured) happens, it will call identifyUser()
-                if (oldSession != null && oldSession.userId != null) {
-                    if (Teak.isDebug) {
-                        Log.d(LOG_TAG, "Previous Session expired, assigning user id '" + oldSession.userId + " to new Session.");
+                    // If the old session had a user id assigned, it needs to be passed to the newly created
+                    // session. When setState(State.Configured) happens, it will call identifyUser()
+                    if (oldSession.userId != null) {
+                        if (Teak.isDebug) {
+                            Log.d(LOG_TAG, "Previous Session expired, assigning user id '" + oldSession.userId + " to new Session.");
+                        }
+                        setUserId(oldSession.userId);
                     }
-                    setUserId(oldSession.userId);
+                } else if (Session.pendingUserId != null) {
+                    setUserId(Session.pendingUserId);
+                    Session.pendingUserId = null;
                 }
             }
             return currentSession;
@@ -733,13 +933,6 @@ class Session {
         synchronized (currentSessionMutex) {
             return currentSession;
         }
-    }
-    // endregion
-
-    // region Helpers
-    private static boolean attributionStringsAreDifferent(String currentValue, String newValue) {
-        return (newValue != null && !newValue.equals(currentValue)) ||
-                (currentValue != null && !currentValue.equals(newValue));
     }
     // endregion
 }

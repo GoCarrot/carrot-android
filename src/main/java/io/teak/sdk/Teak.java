@@ -18,11 +18,14 @@ import android.app.Activity;
 import android.app.Application;
 import android.app.Application.ActivityLifecycleCallbacks;
 
+import android.content.ComponentName;
 import android.content.Intent;
 import android.content.Context;
 import android.content.BroadcastReceiver;
+import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.support.annotation.NonNull;
@@ -34,8 +37,6 @@ import android.util.Log;
 
 import org.json.JSONObject;
 
-import java.lang.reflect.Method;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
@@ -63,6 +64,7 @@ public class Teak extends BroadcastReceiver {
      * @param activity The main <code>Activity</code> of your app.
      */
     public static void onCreate(Activity activity) {
+        Teak.mainActivity = activity;
         Log.d(LOG_TAG, "Android SDK Version: " + Teak.SDKVersion);
 
         if (activity == null) {
@@ -86,6 +88,23 @@ public class Teak extends BroadcastReceiver {
             Teak.isDebug = Teak.forceDebug || Teak.debugConfiguration.forceDebug || (applicationInfo != null && (0 != (applicationInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE)));
         } catch (Exception e) {
             Log.e(LOG_TAG, "Error creating DebugConfiguration. " + Log.getStackTraceString(e));
+        }
+
+        // Check the launch mode of the activity
+        try {
+            ComponentName cn = new ComponentName(activity, activity.getClass());
+            ActivityInfo ai = activity.getPackageManager().getActivityInfo(cn, PackageManager.GET_META_DATA);
+            // (LAUNCH_SINGLE_INSTANCE == LAUNCH_SINGLE_TASK | LAUNCH_SINGLE_TOP) but let's not
+            // assume that those values will stay the same
+            if ((ai.launchMode & ActivityInfo.LAUNCH_SINGLE_INSTANCE) == 0 &&
+                (ai.launchMode & ActivityInfo.LAUNCH_SINGLE_TASK) == 0 &&
+                (ai.launchMode & ActivityInfo.LAUNCH_SINGLE_TOP) == 0) {
+                if (Teak.isDebug) {
+                    Log.w(LOG_TAG, "The android:launchMode of this activity is not set to 'singleTask', 'singleTop' or 'singleInstance'. This could cause undesired behavior.");
+                }
+            }
+        } catch (Exception e) {
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
         }
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
@@ -129,25 +148,16 @@ public class Teak extends BroadcastReceiver {
         }
     }
 
+    /**
+     * @deprecated call {@link Activity#setIntent(Intent)} inside your {@link Activity#onNewIntent(Intent)}.
+     */
+    @Deprecated
     public static void onNewIntent(Intent intent) {
         if (Teak.isDebug) {
             Log.d(LOG_TAG, "Lifecycle - onNewIntent");
         }
 
-        if (intent == null) {
-            Log.e(LOG_TAG, "null Intent passed to onNewIntent, ignoring.");
-            return;
-        }
-
-        if (Teak.isEnabled()) {
-            if (Teak.appConfiguration != null && Teak.deviceConfiguration != null) {
-                Session.processIntent(intent, Teak.appConfiguration, Teak.deviceConfiguration);
-            } else {
-                Log.e(LOG_TAG, "App Configuration and/or Device Configuration are null, cannot process onNewIntent().");
-            }
-        } else {
-            Log.e(LOG_TAG, "Teak is disabled, ignoring onNewIntent().");
-        }
+        Teak.mainActivity.setIntent(intent);
     }
 
     /**
@@ -303,6 +313,7 @@ public class Teak extends BroadcastReceiver {
 
     static LocalBroadcastManager localBroadcastManager;
 
+    private static Activity mainActivity;
     private static IStore appStore;
     private static AppConfiguration appConfiguration;
     static DeviceConfiguration deviceConfiguration;
@@ -316,11 +327,8 @@ public class Teak extends BroadcastReceiver {
     private static final ActivityLifecycleCallbacks lifecycleCallbacks = new ActivityLifecycleCallbacks() {
         @Override
         public void onActivityCreated(Activity inActivity, Bundle savedInstanceState) {
-            if (!Teak.setState(State.Created)) {
-                // Still process launch event
-                Session.processIntent(inActivity.getIntent(), Teak.appConfiguration, Teak.deviceConfiguration);
-                return;
-            }
+            if (inActivity != Teak.mainActivity) return;
+            if (!Teak.setState(State.Created)) return;
 
             final Context context = inActivity.getApplicationContext();
 
@@ -374,9 +382,6 @@ public class Teak extends BroadcastReceiver {
                 }
             });
 
-            // Process launch event
-            Session.processIntent(inActivity.getIntent(), Teak.appConfiguration, Teak.deviceConfiguration);
-
             // Applicable store
             if (Teak.appConfiguration.installerPackage != null) {
                 Class<?> clazz = null;
@@ -416,34 +421,6 @@ public class Teak extends BroadcastReceiver {
                 }
             }
 
-            {
-                // Get/create Session always.
-                final Session session = Session.getCurrentSession(Teak.appConfiguration, Teak.deviceConfiguration);
-
-                // Validate the app id/key via "/games/#{@appId}/validate_sig.json"
-                if (Teak.isDebug) {
-                    HashMap<String, Object> payload = new HashMap<>();
-                    payload.put("id", Teak.appConfiguration.appId);
-                    new Thread(new Request("gocarrot.com", "/games/" + Teak.appConfiguration.appId + "/validate_sig.json", payload, session) {
-                        @Override
-                        protected void done(int responseCode, String responseBody) {
-                            try {
-                                JSONObject response = new JSONObject(responseBody);
-                                if (response.has("error")) {
-                                    JSONObject error = response.getJSONObject("error");
-                                    Log.e(LOG_TAG, "Error in Teak configuration: " + error.getString("message"));
-                                } else {
-                                    Log.d(LOG_TAG, "Teak configuration valid for: " + response.getString("name"));
-                                }
-                            } catch (Exception e) {
-                                Log.e(LOG_TAG, "Error during app validation: " + Log.getStackTraceString(e));
-                            }
-                            super.done(responseCode, responseBody);
-                        }
-                    }).start();
-                }
-            }
-
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityCreated");
                 Log.d(LOG_TAG, "        App Id: " + Teak.appConfiguration.appId);
@@ -456,7 +433,9 @@ public class Teak extends BroadcastReceiver {
         }
 
         @Override
-        public void onActivityPaused(Activity unused) {
+        public void onActivityPaused(Activity activity) {
+            if (activity != Teak.mainActivity) return;
+
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityPaused");
             }
@@ -467,6 +446,8 @@ public class Teak extends BroadcastReceiver {
 
         @Override
         public void onActivityResumed(Activity activity) {
+            if (activity != Teak.mainActivity) return;
+
             if (Teak.isDebug) {
                 Log.d(LOG_TAG, "Lifecycle - onActivityResumed");
             }
@@ -476,9 +457,10 @@ public class Teak extends BroadcastReceiver {
                     Teak.appStore.onActivityResumed();
                 }
 
-                Session.onActivityResumed(Teak.appConfiguration, Teak.deviceConfiguration);
-
                 Intent intent = activity.getIntent();
+
+                Session.onActivityResumed(intent, Teak.appConfiguration, Teak.deviceConfiguration);
+
                 if (intent != null && intent.getExtras() != null && intent.hasExtra("teakNotifId")) {
                     Bundle bundle = intent.getExtras();
 
@@ -516,23 +498,7 @@ public class Teak extends BroadcastReceiver {
         }
 
         @Override
-        public void onActivityStarted(Activity activity) {
-            if (Teak.isDebug) {
-                Log.d(LOG_TAG, "Lifecycle - onActivityStarted: " + activity.toString());
-            }
-
-            // OpenIAB & Prime31, need to store off the SKU for the purchase failed case
-            if (activity.getClass().getName().equals("org.onepf.openiab.UnityProxyActivity")) {
-                Bundle bundle = activity.getIntent().getExtras();
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "Unity OpenIAB purchase launched: " + bundle.toString());
-                }
-            } else if (activity.getClass().getName().equals("com.prime31.GoogleIABProxyActivity")) {
-                Bundle bundle = activity.getIntent().getExtras();
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "Unity Prime31 purchase launched: " + bundle.toString());
-                }
-            }
+        public void onActivityStarted(Activity unused) {
         }
 
         @Override
@@ -658,7 +624,7 @@ public class Teak extends BroadcastReceiver {
                 }
                 Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
                 launchIntent.addCategory("android.intent.category.LAUNCHER");
-                launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 launchIntent.putExtras(bundle);
                 if (bundle.getString("teakDeepLink") != null) {
                     Uri teakDeepLink = Uri.parse(bundle.getString("teakDeepLink"));

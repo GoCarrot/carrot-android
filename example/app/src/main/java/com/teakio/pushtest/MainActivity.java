@@ -22,6 +22,7 @@ import android.view.View;
 import com.android.vending.billing.IInAppBillingService;
 
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.reflect.Method;
@@ -125,6 +126,10 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void call(Map<String, Object> parameters) {
+                try {
+                    Log.d(LOG_TAG, new JSONObject(parameters).toString(2));
+                } catch (JSONException ignored) {
+                }
                 final String sku = (String)parameters.get("sku");
 
                 Log.d(LOG_TAG, "IT called the thing! " + sku);
