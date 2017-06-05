@@ -22,11 +22,9 @@ import android.content.IntentFilter;
 import android.content.BroadcastReceiver;
 import android.support.v4.content.LocalBroadcastManager;
 
-import android.util.Log;
+import io.teak.sdk.Helpers._;
 
 class FacebookAccessTokenBroadcast {
-    private final String LOG_TAG = "Teak.Facebook";
-
     LocalBroadcastManager broadcastManager;
 
     Method com_facebook_Session_getActiveSession;
@@ -43,17 +41,13 @@ class FacebookAccessTokenBroadcast {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
 
-            if (Teak.isDebug) {
-                Log.d(LOG_TAG, "Facebook Broadcast received: " + action);
-            }
-
             String accessTokenString = null;
             if (facebook_3_x_BroadcastAction != null && facebook_3_x_BroadcastAction.equals(action)) {
                 try {
                     Object session = com_facebook_Session_getActiveSession.invoke(null);
                     accessTokenString = (String) com_facebook_Session_getAccessToken.invoke(session);
                 } catch (Exception e) {
-                    Log.e(LOG_TAG, "Failed to get Facebook Access Token, error: " + Log.getStackTraceString(e));
+                    Teak.log.exception(e);
                 }
             } else if (facebook_4_x_BroadcastAction != null && facebook_4_x_BroadcastAction.equals(action)) {
                 Object accessToken = intent.getParcelableExtra(FACEBOOK_4_x_NEW_ACCESS_TOKEN_KEY);
@@ -62,7 +56,7 @@ class FacebookAccessTokenBroadcast {
                     try {
                         accessTokenString = (String) com_facebook_AccessToken_getToken.invoke(accessToken);
                     } catch (Exception e) {
-                        Log.e(LOG_TAG, "Failed to get Facebook Access Token, error: " + Log.getStackTraceString(e));
+                        Teak.log.exception(e);
                     }
                 }
             }
@@ -93,7 +87,7 @@ class FacebookAccessTokenBroadcast {
         try {
             com_facebook_FacebookSdkVersion = Class.forName(FACEBOOK_SDK_VERSION_CLASS_NAME);
         } catch (ClassNotFoundException e) {
-            Log.e(LOG_TAG, "Facebook SDK not found.");
+            Teak.log.exception(e);
         }
 
         Field fbSdkVersionField = null;
@@ -101,7 +95,7 @@ class FacebookAccessTokenBroadcast {
             try {
                 fbSdkVersionField = com_facebook_FacebookSdkVersion.getDeclaredField("BUILD");
             } catch (NoSuchFieldException e) {
-                Log.e(LOG_TAG, "Facebook SDK version field not found.");
+                Teak.log.exception(e);
             }
         }
 
@@ -109,11 +103,9 @@ class FacebookAccessTokenBroadcast {
         if (fbSdkVersionField != null) {
             try {
                 fbSdkVersion = fbSdkVersionField.get(null).toString();
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "Facebook SDK version string: " + fbSdkVersion);
-                }
+                Teak.log.i("facebook", _.h("version", fbSdkVersion));
             } catch (Exception e) {
-                Log.e(LOG_TAG, Log.getStackTraceString(e));
+                Teak.log.exception(e);
             }
         }
 
@@ -127,35 +119,21 @@ class FacebookAccessTokenBroadcast {
 
             switch (versionInts[0]) {
                 case 3: {
-                    if (Teak.isDebug) {
-                        Log.d(LOG_TAG, "Listening for Facebook SDK 3.x broadcast actions.");
-                    }
-
                     Class<?> com_facebook_Session;
                     try {
                         com_facebook_Session = Class.forName(FACEBOOK_3_x_SESSION_CLASS_NAME);
-                        if (Teak.isDebug) {
-                            Log.d(LOG_TAG, "Found " + com_facebook_Session.toString());
-                        }
 
                         this.com_facebook_Session_getActiveSession = com_facebook_Session.getMethod("getActiveSession");
                         try {
                             this.com_facebook_Session_getAccessToken = com_facebook_Session.getMethod("getAccessToken");
                         } catch (NoSuchMethodException e) {
-                            Log.e(LOG_TAG, FACEBOOK_3_x_SESSION_CLASS_NAME + ".getAccessToken() not found: " + Log.getStackTraceString(e));
+                            Teak.log.exception(e);
                         }
 
                         Field f = com_facebook_Session.getDeclaredField(FACEBOOK_3_x_BROADCAST_ACTION_FIELD);
                         this.facebook_3_x_BroadcastAction = (String) f.get(null);
-                        if (Teak.isDebug) {
-                            Log.d(LOG_TAG, "Found broadcast action: " + this.facebook_3_x_BroadcastAction);
-                        }
-                    } catch (ClassNotFoundException e) {
-                        Log.e(LOG_TAG, FACEBOOK_3_x_SESSION_CLASS_NAME + " not found.");
-                    } catch (NoSuchMethodException e) {
-                        Log.e(LOG_TAG, FACEBOOK_3_x_SESSION_CLASS_NAME + ".getActiveSession() not found: " + Log.getStackTraceString(e));
                     } catch (Exception e) {
-                        Log.e(LOG_TAG, "Error occured working with reflected Facebook SDK: " + Log.getStackTraceString(e));
+                        Teak.log.exception(e);
                     }
 
                     if (this.com_facebook_Session_getActiveSession != null &&
@@ -173,36 +151,20 @@ class FacebookAccessTokenBroadcast {
                     Class<?> com_facebook_AccessToken;
                     try {
                         com_facebook_AccessToken = Class.forName(FACEBOOK_4_x_ACCESS_TOKEN_CLASS_NAME);
-                        if (Teak.isDebug) {
-                            Log.d(LOG_TAG, "Found " + com_facebook_AccessToken.toString());
-                        }
-
                         this.com_facebook_AccessToken_getToken = com_facebook_AccessToken.getMethod("getToken");
-                    } catch (ClassNotFoundException e) {
-                        Log.e(LOG_TAG, FACEBOOK_4_x_ACCESS_TOKEN_CLASS_NAME + " not found.");
-                    } catch (NoSuchMethodException e) {
-                        Log.e(LOG_TAG, FACEBOOK_4_x_ACCESS_TOKEN_CLASS_NAME + ".getToken() not found: " + Log.getStackTraceString(e));
                     } catch (Exception e) {
-                        Log.e(LOG_TAG, "Error occured working with reflected Facebook SDK: " + Log.getStackTraceString(e));
+                        Teak.log.exception(e);
                     }
 
                     try {
                         Class<?> com_facebook_AccessTokenManager;
                         com_facebook_AccessTokenManager = Class.forName(FACEBOOK_4_x_ACCESS_TOKEN_MANAGER_CLASS_NAME);
-                        if (Teak.isDebug) {
-                            Log.d(LOG_TAG, "Found " + com_facebook_AccessTokenManager.toString());
-                        }
 
                         Field f = com_facebook_AccessTokenManager.getDeclaredField(FACEBOOK_4_x_BROADCAST_ACTION_FIELD);
                         f.setAccessible(true);
                         this.facebook_4_x_BroadcastAction = (String) f.get(null);
-                        if (Teak.isDebug) {
-                            Log.d(LOG_TAG, "Found broadcast action: " + this.facebook_4_x_BroadcastAction);
-                        }
-                    } catch (ClassNotFoundException e) {
-                        Log.e(LOG_TAG, FACEBOOK_4_x_ACCESS_TOKEN_MANAGER_CLASS_NAME + " not found.");
                     } catch (Exception e) {
-                        Log.e(LOG_TAG, "Error occured working with reflected Facebook SDK: " + Log.getStackTraceString(e));
+                        Teak.log.exception(e);
                     }
 
                     if (this.com_facebook_AccessToken_getToken != null &&
@@ -216,7 +178,7 @@ class FacebookAccessTokenBroadcast {
                 break;
 
                 default: {
-                    Log.e(LOG_TAG, "Don't know how to use Facebook SDK version " + versionInts[0]);
+                    Teak.log.e("facebook", "Don't know how to use Facebook SDK version " + versionInts[0]);
                 }
             }
         }

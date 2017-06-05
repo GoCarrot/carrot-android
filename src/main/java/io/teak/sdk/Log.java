@@ -53,12 +53,9 @@ public class Log {
     // region Log Level enum
     public enum Level {
         Verbose("VERBOSE", android.util.Log.VERBOSE),
-        Debug("DEBUG", android.util.Log.DEBUG),
-        Local("INFO", android.util.Log.INFO),
         Info("INFO", android.util.Log.INFO),
         Warn("WARN", android.util.Log.WARN),
-        Error("ERROR", android.util.Log.ERROR),
-        LocalError("ERROR", android.util.Log.ERROR);
+        Error("ERROR", android.util.Log.ERROR);
 
         public final String name;
         public final int androidLogPriority;
@@ -70,20 +67,30 @@ public class Log {
     }
     // endregion
 
+    Map<String, Object> sdkVersion;
+    DeviceConfiguration deviceConfiguration;
+    AppConfiguration appConfiguration;
+    RemoteConfiguration remoteConfiguration;
+
     // region Public API
     public void useSdk(@NonNull Map<String, Object> sdkVersion) {
-        //this.sdkVersion = sdkVersion;
-        this.local("sdk_init");
+        this.sdkVersion = sdkVersion;
+        this.log(Level.Info, "sdk_init", null);
     }
 
-    public void local(@NonNull String eventType) {
-        this.log(Level.Local, eventType, null);
+    public void useDeviceConfiguration(@NonNull DeviceConfiguration deviceConfiguration) {
+        this.log(Level.Info, "device_configuration", deviceConfiguration.to_h());
+        this.deviceConfiguration = deviceConfiguration;
     }
 
-    public void local(@NonNull String eventType, @NonNull String message) {
-        Map<String, Object> eventData = new HashMap<>();
-        eventData.put("message", message);
-        this.log(Level.Local, eventType, eventData);
+    public void useAppConfiguration(@NonNull AppConfiguration appConfiguration) {
+        this.log(Level.Info, "app_configuration", appConfiguration.to_h());
+        this.appConfiguration = appConfiguration;
+    }
+
+    public void useRemoteConfiguration(@NonNull RemoteConfiguration remoteConfiguration) {
+        this.log(Level.Info, "remote_configuration", remoteConfiguration.to_h());
+        this.remoteConfiguration = remoteConfiguration;
     }
 
     public void e(@NonNull String eventType, @NonNull String message) {
@@ -92,14 +99,48 @@ public class Log {
         this.log(Level.Error, eventType, eventData);
     }
 
+    public void e(@NonNull String eventType, @NonNull Map<String, Object> eventData) {
+        this.log(Level.Error, eventType, eventData);
+    }
+
+    public void e(@NonNull String eventType, @NonNull String message, @NonNull Map<String, Object> eventData) {
+        eventData.put("message", message);
+        this.log(Level.Error, eventType, eventData);
+    }
+
+    public void i(@NonNull String eventType, @NonNull String message) {
+        Map<String, Object> eventData = new HashMap<>();
+        eventData.put("message", message);
+        this.log(Level.Info, eventType, eventData);
+    }
+
+    public void i(@NonNull String eventType, @NonNull String message, @NonNull Map<String, Object> eventData) {
+        eventData.put("message", message);
+        this.log(Level.Info, eventType, eventData);
+    }
+
+    public void i(@NonNull String eventType, @NonNull Map<String, Object> eventData) {
+        this.log(Level.Info, eventType, eventData);
+    }
+
+    public void w(@NonNull String eventType, @NonNull String message) {
+        Map<String, Object> eventData = new HashMap<>();
+        eventData.put("message", message);
+        this.log(Level.Warn, eventType, eventData);
+    }
+
+    public void w(@NonNull String eventType, @NonNull String message, @NonNull Map<String, Object> eventData) {
+        eventData.put("message", message);
+        this.log(Level.Warn, eventType, eventData);
+    }
+
     public void exception(@NonNull Throwable t) {
         // Send to Raven
         if (Teak.sdkRaven != null) {
             Teak.sdkRaven.reportException(t);
         }
 
-        // Log locally
-        this.log(Level.LocalError, "exception", Raven.throwableToMap(t));
+        this.log(Level.Error, "exception", Raven.throwableToMap(t));
     }
     // endregion
 
@@ -127,7 +168,17 @@ public class Log {
         payload.put("event_id", this.eventCounter.getAndAdd(1));
         payload.put("timestamp", new Date().getTime() / 1000); // Milliseconds -> Seconds
         payload.put("log_level", logLevel.name);
-        //payload.put("sdk_version", this.sdkVersion);
+        payload.put("sdk_version", this.sdkVersion);
+
+        if (this.deviceConfiguration != null) {
+            payload.put("device_id", this.deviceConfiguration.deviceId);
+        }
+
+        if (this.appConfiguration != null) {
+            payload.put("bundle_id", this.appConfiguration.bundleId);
+            payload.put("app_id", this.appConfiguration.appId);
+            payload.put("client_app_version", this.appConfiguration.appVersion);
+        }
 
         // Event-specific payload
         payload.put("event_type", eventType);
@@ -137,7 +188,7 @@ public class Log {
         payload.put("event_data", eventData);
 
         // Log to Android log
-        if (logLevel.logLocally && android.util.Log.isLoggable(this.androidLogTag, logLevel.androidLogPriority)) {
+        if (android.util.Log.isLoggable(this.androidLogTag, logLevel.androidLogPriority)) {
             String jsonStringForAndroidLog = "{}";
             try {
                 if (this.jsonIndentation > 0) {
@@ -147,7 +198,7 @@ public class Log {
                 }
             } catch (Exception ignored){
             }
-            //android.util.Log.println(logLevel.priority, this.androidLogTag, jsonStringForAndroidLog);
+            android.util.Log.println(logLevel.androidLogPriority, this.androidLogTag, jsonStringForAndroidLog);
         }
     }
 }

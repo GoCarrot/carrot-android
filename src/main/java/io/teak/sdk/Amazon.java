@@ -14,8 +14,6 @@
  */
 package io.teak.sdk;
 
-import android.util.Log;
-
 import android.content.Intent;
 import android.content.Context;
 
@@ -34,23 +32,19 @@ import java.util.HashSet;
 import java.util.HashMap;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import org.json.JSONException;
 import org.json.JSONObject;
+
+import io.teak.sdk.Helpers._;
 
 @SuppressWarnings("unused")
 class Amazon implements IStore {
-    private static final String LOG_TAG = "Teak.Amazon";
-
     HashMap<RequestId, ArrayBlockingQueue<String>> skuDetailsRequestMap;
 
     public void init(Context context) {
         skuDetailsRequestMap = new HashMap<>();
         PurchasingService.registerListener(context, new TeakPurchasingListener());
 
-        if (Teak.isDebug) {
-            Log.d(LOG_TAG, "Amazon In-App Purchasing 2.0 registered.");
-            Log.d(LOG_TAG, "   Sandbox Mode: " + PurchasingService.IS_SANDBOX_MODE);
-        }
+        Teak.log.i("amazon_iap", "Amazon In-App Purchasing 2.0 registered.", _.h("sandboxMode", PurchasingService.IS_SANDBOX_MODE));
     }
 
     public void onActivityResumed() {
@@ -74,7 +68,7 @@ class Amazon implements IStore {
             skuDetailsRequestMap.remove(requestId);
             return ret;
         } catch (Exception e) {
-            Log.e(LOG_TAG, Log.getStackTraceString(e));
+            Teak.log.exception(e);
             return null;
         }
     }
@@ -84,7 +78,7 @@ class Amazon implements IStore {
     }
 
     public void launchPurchaseFlowForSKU(String sku) {
-        Log.d(LOG_TAG, "TODO: launchPurchaseFlowForSKU: " + sku);
+        Teak.log.i("amazon_iap", "TODO: launchPurchaseFlowForSKU: " + sku);
     }
 
     public boolean ignorePluginPurchaseEvents() {
@@ -101,15 +95,7 @@ class Amazon implements IStore {
                 String storeMarketplace = userData.getMarketplace();
                 Request.dynamicCommonPayload.put("store_user_id", storeUserId);
                 Request.dynamicCommonPayload.put("store_marketplace", storeMarketplace);
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "Amazon Store User Details retrieved:");
-                    Log.d(LOG_TAG, "       User id: " + storeUserId);
-                    Log.d(LOG_TAG, "   Marketplace: " + storeMarketplace);
-                }
-            } else {
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "Amazon Store user data query failed, or unsupported.");
-                }
+                Teak.log.i("amazon_iap", "Amazon Store User Details retrieved.", _.h("storeUserId", storeUserId, "storeMarketplace", storeMarketplace));
             }
         }
 
@@ -121,21 +107,13 @@ class Amazon implements IStore {
             if (productDataResponse.getRequestStatus() == ProductDataResponse.RequestStatus.SUCCESSFUL) {
                 Map<String, Product> skuMap = productDataResponse.getProductData();
 
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "SKU Details:");
-                }
-
                 for (Map.Entry<String, Product> entry : skuMap.entrySet()) {
                     String price = entry.getValue().getPrice();
+                    Teak.log.i("amazon_iap", "SKU Details retrieved.", _.h(entry.getKey(), price));
                     queue.offer(price);
-                    if (Teak.isDebug) {
-                        Log.d(LOG_TAG, "   " + entry.getKey() + " = " + price);
-                    }
                 }
             } else {
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "SKU detail query failed.");
-                }
+                Teak.log.e("amazon_iap", "SKU Details query failed.");
             }
         }
 
@@ -146,7 +124,7 @@ class Amazon implements IStore {
                     JSONObject json = purchaseResponse.toJSON();
                     Teak.purchaseSucceeded(json);
                 } catch (Exception e) {
-                    Log.e(LOG_TAG, Log.getStackTraceString(e));
+                    Teak.log.exception(e);
                     Teak.purchaseFailed(-1);
                 }
             } else {

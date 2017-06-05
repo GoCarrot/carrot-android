@@ -14,6 +14,7 @@
  */
 package io.teak.sdk;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -23,7 +24,6 @@ import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import org.json.JSONObject;
 
@@ -52,8 +52,9 @@ import java.util.concurrent.TimeoutException;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import io.teak.sdk.Helpers._;
+
 class Session {
-    private static final String LOG_TAG = "Teak:Session";
     private static final long SAME_SESSION_TIME_DELTA = 120000;
 
     // region State machine
@@ -128,6 +129,7 @@ class Session {
     public final Date startDate;
     public final AppConfiguration appConfiguration;
     public final DeviceConfiguration deviceConfiguration;
+    public final String sessionId;
 
     // State: Configured
     public RemoteConfiguration remoteConfiguration;
@@ -159,6 +161,7 @@ class Session {
         this.startDate = new Date();
         this.appConfiguration = appConfiguration;
         this.deviceConfiguration = deviceConfiguration;
+        this.sessionId = UUID.randomUUID().toString().replace("-", "");
 
         DeviceConfiguration.addEventListener(this.deviceConfigurationListener);
 
@@ -193,7 +196,7 @@ class Session {
 
     public static void setUserId(@NonNull String userId) {
         if (userId.isEmpty()) {
-            Log.e(LOG_TAG, "User Id can not be null or empty.");
+            Teak.log.e("session", "User Id can not be null or empty.");
             return;
         }
 
@@ -227,12 +230,12 @@ class Session {
     private boolean setState(@NonNull State newState) {
         synchronized (stateMutex) {
             if (this.state == newState) {
-                Log.i(LOG_TAG, String.format("Session State transition to same state (%s). Ignoring.", this.state));
+                Teak.log.i("session.same_state", _.h("state", this.state));
                 return false;
             }
 
             if (!this.state.canTransitionTo(newState)) {
-                Log.e(LOG_TAG, String.format("Invalid Session State transition (%s -> %s). Ignoring.", this.state, newState));
+                Teak.log.e("session.invalid_state", _.h("state", this.state, "new_state", newState));
                 return false;
             }
 
@@ -334,11 +337,13 @@ class Session {
 
             // Print out any invalid values
             if (invalidValuesForTransition.size() > 0) {
-                Log.e(LOG_TAG, String.format("Invalid Session value%s while trying to transition from %s -> %s. Invalidating Session.",
-                        invalidValuesForTransition.size() > 1 ? "s" : "", this.state, newState));
+                Map<String, Object> h = new HashMap<>();
                 for (Object[] invalidValue : invalidValuesForTransition) {
-                    Log.e(LOG_TAG, String.format(Locale.US, "\t%s: %s", invalidValue[0], invalidValue[1]));
+                    h.put(invalidValue[0].toString(), invalidValue[1]);
                 }
+                h.put("state", this.state);
+                h.put("new_state", newState);
+                Teak.log.e("session.invalid_values", h);
 
                 // Invalidate this session
                 this.setState(State.Invalid);
@@ -348,9 +353,7 @@ class Session {
             this.previousState = this.state;
             this.state = newState;
 
-            if (Teak.isDebug) {
-                Log.d(LOG_TAG, String.format("Session State transition from %s -> %s.", this.previousState, this.state));
-            }
+            Teak.log.i("session.state", _.h("state", this.state.name, "old_state", this.previousState.name));
 
             synchronized (eventListenersMutex) {
                 for (EventListener e : eventListeners) {
@@ -367,10 +370,6 @@ class Session {
         this.heartbeatService = Executors.newSingleThreadScheduledExecutor();
         this.heartbeatService.scheduleAtFixedRate(new Runnable() {
             public void run() {
-                if (Teak.isDebug) {
-                    Log.v(LOG_TAG, "Sending heartbeat for user: " + userId);
-                }
-
                 HttpsURLConnection connection = null;
                 try {
                     String queryString = "game_id=" + URLEncoder.encode(_this.appConfiguration.appId, "UTF-8") +
@@ -384,13 +383,8 @@ class Session {
                     connection = (HttpsURLConnection) url.openConnection();
                     connection.setRequestProperty("Accept-Charset", "UTF-8");
                     connection.setUseCaches(false);
-
-                    int responseCode = connection.getResponseCode();
-                    if (Teak.isDebug) {
-                        Log.v(LOG_TAG, "Heartbeat response code: " + responseCode);
-                    }
-                } catch (Exception e) {
-                    Log.e(LOG_TAG, Log.getStackTraceString(e));
+                    connection.getResponseCode();
+                } catch (Exception ignored) {
                 } finally {
                     if (connection != null) {
                         connection.disconnect();
@@ -456,9 +450,7 @@ class Session {
                         payload.put("adm_push_key", _this.deviceConfiguration.admId);
                     }
 
-                    Log.d(LOG_TAG, "Identifying user: " + _this.userId);
-                    Log.d(LOG_TAG, "        Timezone: " + tzOffset);
-                    Log.d(LOG_TAG, "          Locale: " + locale);
+                    Teak.log.i("session.identify_user", _.h("userId", _this.userId, "timezone", tzOffset, "locale", locale));
 
                     new Request("/games/" + _this.appConfiguration.appId + "/users.json", payload, _this) {
                         @Override
@@ -607,9 +599,7 @@ class Session {
             String action = intent.getAction();
             if (FacebookAccessTokenBroadcast.UPDATED_ACCESS_TOKEN_INTENT_ACTION.equals(action)) {
                 facebookAccessToken = intent.getStringExtra("accessToken");
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "Facebook Access Token updated: " + facebookAccessToken);
-                }
+                Teak.log.i("session.fb_access_token", _.h("access_token", facebookAccessToken));
                 synchronized (stateMutex) {
                     if (state == State.UserIdentified) {
                         identifyUser();
@@ -672,9 +662,7 @@ class Session {
                 // Otherwise see if there's a deep link in the intent
                 final String intentDataString = intent.getDataString();
                 if (intentDataString != null && !intentDataString.isEmpty()) {
-                    if (Teak.isDebug) {
-                        Log.d(LOG_TAG, "Launch from deep link: " + intentDataString);
-                    }
+                    Teak.log.i("session.attribution", _.h("deep_link", intentDataString));
                     deepLinkURL = new Future<String>() {
                         @Override
                         public boolean cancel(boolean b) {
@@ -726,9 +714,7 @@ class Session {
             // Get the session attribution
             final Future<Map<String, Object>> sessionAttribution;
             if (teakNotifId != null) {
-                if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "Launch from Teak notification: " + teakNotifId);
-                }
+                Teak.log.i("session.attribution", _.h("teakNotifId", teakNotifId));
                 sessionAttribution = new Future<Map<String, Object>>() {
                     @Override
                     public boolean cancel(boolean b) {
@@ -864,7 +850,7 @@ class Session {
                             } catch (Exception ignored) {
                             }
                         } catch (Exception e) {
-                            Log.e(LOG_TAG, Log.getStackTraceString(e));
+                            Teak.log.exception(e);
                         } finally {
                             if (connection != null) {
                                 connection.disconnect();
@@ -915,9 +901,6 @@ class Session {
                     // If the old session had a user id assigned, it needs to be passed to the newly created
                     // session. When setState(State.Configured) happens, it will call identifyUser()
                     if (oldSession.userId != null) {
-                        if (Teak.isDebug) {
-                            Log.d(LOG_TAG, "Previous Session expired, assigning user id '" + oldSession.userId + " to new Session.");
-                        }
                         setUserId(oldSession.userId);
                     }
                 } else if (Session.pendingUserId != null) {

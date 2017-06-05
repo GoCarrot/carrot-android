@@ -15,7 +15,6 @@
 package io.teak.sdk;
 
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import org.json.JSONObject;
 
@@ -25,8 +24,6 @@ import java.util.Locale;
 import java.util.Map;
 
 class RemoteConfiguration {
-    private static final String LOG_TAG = "Teak.RemoteConfig";
-
     public final AppConfiguration appConfiguration;
     private final String hostname;
     public final String sdkSentryDsn;
@@ -87,7 +84,7 @@ class RemoteConfiguration {
                         }
                     }
                 } catch (Exception e) {
-                    Log.e(LOG_TAG, "Error processing settings.json " + Log.getStackTraceString(e));
+                    Teak.log.exception(e);
                 }
             }
         }).start();

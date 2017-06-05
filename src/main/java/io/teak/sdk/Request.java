@@ -17,7 +17,6 @@ package io.teak.sdk;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Base64;
-import android.util.Log;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -41,17 +40,19 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 import org.json.JSONObject;
 import org.json.JSONArray;
 
-class Request implements Runnable {
-    private static final String LOG_TAG = "Teak.Request";
+import io.teak.sdk.Helpers._;
 
+class Request implements Runnable {
     private final String endpoint;
     private final String hostname;
     protected final Map<String, Object> payload;
     private final Session session;
+    private final String requestId;
 
     static Map<String, Object> dynamicCommonPayload = new HashMap<>();
 
@@ -64,6 +65,7 @@ class Request implements Runnable {
         this.endpoint = endpoint;
         this.payload = payload;
         this.session = session;
+        this.requestId = UUID.randomUUID().toString().replace("-", "");
 
         // Add common data
         if (session.userId() != null) {
@@ -120,7 +122,7 @@ class Request implements Runnable {
                     }
                     builder.append(key).append("=").append(valueString).append("&");
                 } else {
-                    Log.e(LOG_TAG, "Value for key: " + key + " is null.");
+                    Teak.log.e("request", "Value for key is null.", _.h("key", key));
                 }
             }
             builder.deleteCharAt(builder.length() - 1);
@@ -149,14 +151,12 @@ class Request implements Runnable {
 
             requestBody = builder.toString();
         } catch (Exception e) {
-            Log.e(LOG_TAG, "Error signing payload: " + Log.getStackTraceString(e));
+            Teak.log.exception(e);
             return;
         }
 
         try {
-            if (Teak.isDebug) {
-                Log.d(LOG_TAG, "Request@" + Integer.toHexString(this.hashCode()) + ": " + Teak.formatJSONForLogging(new JSONObject(this.to_h())));
-            }
+            Teak.log.i("request", "request", this.to_h());
 
             URL url = new URL("https://" + hostnameForEndpoint + this.endpoint);
             connection = (HttpsURLConnection) url.openConnection();
@@ -190,21 +190,18 @@ class Request implements Runnable {
             }
             rd.close();
 
-            if (Teak.isDebug) {
-                JSONObject debugOut = new JSONObject(this.to_h());
-                debugOut.remove("payload");
-                try {
-                    debugOut.put("payload", new JSONObject(response.toString()));
-                } catch (Exception ignored) {
-                    debugOut.put("payload", "{}");
-                }
-                Log.d(LOG_TAG, "Reply@" + Integer.toHexString(this.hashCode()) + ": " + Teak.formatJSONForLogging(debugOut));
+            Map<String, Object> h = this.to_h();
+            h.remove("payload");
+            try {
+                h.put("payload", Helpers.jsonToMap(new JSONObject(response.toString())));
+            } catch (Exception ignored) {
             }
+            Teak.log.i("request", "reply", h);
 
             // For extending classes
             done(connection.getResponseCode(), response.toString());
         } catch (Exception e) {
-            Log.e(LOG_TAG, Log.getStackTraceString(e));
+            Teak.log.exception(e);
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -217,6 +214,7 @@ class Request implements Runnable {
 
     public Map<String, Object> to_h() {
         HashMap<String, Object> map = new HashMap<>();
+        map.put("request_id", this.requestId);
         map.put("hostname", this.hostname);
         map.put("endpoint", this.endpoint);
         map.put("session", Integer.toHexString(this.session.hashCode()));

@@ -28,7 +28,6 @@ import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.text.Html;
 import android.text.Spanned;
-import android.util.Log;
 import android.view.View;
 import android.widget.RemoteViews;
 
@@ -41,8 +40,6 @@ import java.net.URLConnection;
 import java.util.Random;
 
 class NotificationBuilder {
-    private static final String LOG_TAG = "Teak.NotifBuilder.gteq21";
-
     public static Notification createNativeNotification(final Context context, Bundle bundle, TeakNotification teakNotificaton) {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
 
@@ -57,12 +54,14 @@ class NotificationBuilder {
         builder.setTicker(richMessageText);
 
         // Set small view image
+        int smallIconResourceId = 0;
         try {
             PackageManager pm = context.getPackageManager();
             ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
-            builder.setSmallIcon(ai.icon);
+            smallIconResourceId = ai.icon;
+            builder.setSmallIcon(smallIconResourceId);
         } catch (Exception e) {
-            Log.e(LOG_TAG, "Unable to load icon resource for Notification.");
+            Teak.log.e("notification_builder", "Unable to load icon resource for Notification.");
             return null;
         }
 
@@ -111,14 +110,7 @@ class NotificationBuilder {
         );
 
         // Set small view image
-        try {
-            PackageManager pm = context.getPackageManager();
-            ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
-            smallView.setImageViewResource(R.id("left_image"), ai.icon);
-        } catch (Exception e) {
-            Log.e(LOG_TAG, "Unable to load icon resource for Notification.");
-            return null;
-        }
+        smallView.setImageViewResource(R.id("left_image"), smallIconResourceId);
 
         // Set small view text
         smallView.setTextViewText(R.id("text"), richMessageText);
@@ -176,7 +168,7 @@ class NotificationBuilder {
                 } catch (Exception ignored) {
                 }
             } else {
-                Log.e(LOG_TAG, "Unable to load image asset for Notification.");
+                Teak.log.e("notification_builder", "Unable to load image asset for Notification.");
                 // Hide pulldown
                 smallView.setViewVisibility(R.id("pulldown_layout"), View.INVISIBLE);
             }
