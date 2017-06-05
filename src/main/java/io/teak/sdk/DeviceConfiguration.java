@@ -296,7 +296,8 @@ class DeviceConfiguration {
                             AdvertisingIdClient.Info adInfo = adInfoFuture.get();
 
                             // Inform listeners Ad Info has changed
-                            if (!_this.advertisingId.equals(adInfo.getId()) ||
+                            if (_this.advertisingId == null ||
+                                    !_this.advertisingId.equals(adInfo.getId()) ||
                                     _this.limitAdTracking != adInfo.isLimitAdTrackingEnabled()) {
                                 _this.advertisingId = adInfo.getId();
                                 _this.limitAdTracking = adInfo.isLimitAdTrackingEnabled();
