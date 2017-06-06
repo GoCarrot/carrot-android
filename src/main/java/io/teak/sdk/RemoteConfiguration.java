@@ -65,30 +65,42 @@ class RemoteConfiguration {
     }
 
     public static void requestConfigurationForApp(final Session session) {
-        HashMap<String, Object> payload = new HashMap<>();
-        payload.put("id", session.appConfiguration.appId);
-        payload.put("deep_link_routes", DeepLink.getRouteNamesAndDescriptions());
-
-        new Thread(new Request("gocarrot.com", "/games/" + session.appConfiguration.appId + "/settings.json", payload, session) {
+        new Thread(new Runnable() {
             @Override
-            protected void done(int responseCode, String responseBody) {
+            public void run() {
                 try {
-                    JSONObject response = new JSONObject(responseBody);
+                    if (Teak.waitForDeepLink != null) {
+                        Teak.waitForDeepLink.get();
+                    }
+                } catch(Exception ignored) {
+                }
 
-                    RemoteConfiguration configuration = new RemoteConfiguration(session.appConfiguration,
-                            response.isNull("auth") ? "gocarrot.com" : response.getString("auth"),
-                            nullInsteadOfEmpty(response.isNull("sdk_sentry_dsn") ? null : response.getString("sdk_sentry_dsn")),
-                            nullInsteadOfEmpty(response.isNull("app_sentry_dsn") ? null : response.getString("app_sentry_dsn")),
-                            nullInsteadOfEmpty(response.isNull("gcm_sender_id") ? null : response.getString("gcm_sender_id")));
+                HashMap<String, Object> payload = new HashMap<>();
+                payload.put("id", session.appConfiguration.appId);
+                payload.put("deep_link_routes", DeepLink.getRouteNamesAndDescriptions());
 
-                    synchronized (eventListenersMutex) {
-                        for (EventListener e : RemoteConfiguration.eventListeners) {
-                            e.onConfigurationReady(configuration);
+                new Request("gocarrot.com", "/games/" + session.appConfiguration.appId + "/settings.json", payload, session) {
+                    @Override
+                    protected void done(int responseCode, String responseBody) {
+                        try {
+                            JSONObject response = new JSONObject(responseBody);
+
+                            RemoteConfiguration configuration = new RemoteConfiguration(session.appConfiguration,
+                                    response.isNull("auth") ? "gocarrot.com" : response.getString("auth"),
+                                    nullInsteadOfEmpty(response.isNull("sdk_sentry_dsn") ? null : response.getString("sdk_sentry_dsn")),
+                                    nullInsteadOfEmpty(response.isNull("app_sentry_dsn") ? null : response.getString("app_sentry_dsn")),
+                                    nullInsteadOfEmpty(response.isNull("gcm_sender_id") ? null : response.getString("gcm_sender_id")));
+
+                            synchronized (eventListenersMutex) {
+                                for (EventListener e : RemoteConfiguration.eventListeners) {
+                                    e.onConfigurationReady(configuration);
+                                }
+                            }
+                        } catch (Exception e) {
+                            Log.e(LOG_TAG, "Error processing settings.json " + Log.getStackTraceString(e));
                         }
                     }
-                } catch (Exception e) {
-                    Log.e(LOG_TAG, "Error processing settings.json " + Log.getStackTraceString(e));
-                }
+                }.run();
             }
         }).start();
     }
@@ -101,7 +113,7 @@ class RemoteConfiguration {
 
     // region Helpers
     private static String nullInsteadOfEmpty(String input) {
-        if(input != null && !input.isEmpty()) {
+        if (input != null && !input.isEmpty()) {
             return input;
         }
         return null;

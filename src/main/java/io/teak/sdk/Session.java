@@ -768,8 +768,16 @@ class Session {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        // Resolve the deepLinkAttribution future
                         try {
+                            // If we need to wait for Unity/Adobe Air, do it here
+                            if (Teak.waitForDeepLink != null) {
+                                Teak.waitForDeepLink.get();
+                            }
+                        } catch (Exception ignored){
+                        }
+
+                        try {
+                            // Resolve the deepLinkAttribution future
                             Map<String, Object> attribution = deepLinkAttribution.get(5, TimeUnit.SECONDS);
                             Uri uri = Uri.parse((String) attribution.get("deep_link"));
 
