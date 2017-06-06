@@ -788,6 +788,28 @@ class Session {
                                     appConfiguration.applicationContext.startActivity(uriIntent);
                                 }
                             }
+
+                            // Send reward broadcast
+                            String teakRewardId = attribution.get("teak_reward_id").toString();
+                            if (teakRewardId != null) {
+                                final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
+                                if (rewardFuture != null) {
+                                    new Thread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            try {
+                                                TeakNotification.Reward reward = rewardFuture.get();
+                                                HashMap<String, Object> rewardMap = Helpers.jsonToMap(reward.json);
+                                                final Intent rewardIntent = new Intent(Teak.REWARD_CLAIM_ATTEMPT);
+                                                rewardIntent.putExtra("reward", rewardMap);
+                                                Teak.localBroadcastManager.sendBroadcast(rewardIntent);
+                                            } catch (Exception e) {
+                                                Log.e(LOG_TAG, Log.getStackTraceString(e));
+                                            }
+                                        }
+                                    }).start();
+                                }
+                            }
                         } catch (Exception ignored) {
                         }
                     }
