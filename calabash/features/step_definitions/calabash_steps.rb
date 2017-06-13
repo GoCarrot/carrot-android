@@ -30,7 +30,7 @@ Then(/^my app (?:is|should be) in the foreground$/) do
 end
 
 Then(/^I should be on the home screen$/) do
-  foreground_should_be("com.sec.android.app.launcher")
+  foreground_should_be(["com.sec.android.app.launcher", "com.google.android.googlequicksearchbox"])
 end
 
 Then(/^I insult Android$/) do

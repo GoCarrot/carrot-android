@@ -15,5 +15,6 @@ end
 
 def foreground_should_be(pkg)
   fg_pkg = forground_activity_package_name
-  fail "Foreground activity is #{fg_pkg}" unless fg_pkg.start_with? pkg
+  pkg = [pkg] if not pkg.kind_of?(Array)
+  fail "Foreground activity is #{fg_pkg}" unless pkg.any? { |pk| pk.start_with? fg_pkg }
 end
