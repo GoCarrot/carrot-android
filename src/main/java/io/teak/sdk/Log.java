@@ -26,10 +26,9 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPOutputStream;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -158,17 +157,14 @@ public class Log {
     public final String androidLogTag;
     private final int jsonIndentation;
     public final String runId;
-    private final AtomicInteger eventCounter;
-
-    // Always available, may change (in case of Air or Unity SDK nonsense)
-    //private Map<String, Object> sdkVersion = Teak.to_h();
+    private final AtomicLong eventCounter;
     // endregion
 
     public Log(String androidLogTag, int jsonIndentation) {
         this.androidLogTag = androidLogTag;
         this.jsonIndentation = jsonIndentation;
         this.runId = UUID.randomUUID().toString().replace("-", "");
-        this.eventCounter = new AtomicInteger(0);
+        this.eventCounter = new AtomicLong(0);
     }
 
     protected void log(final @NonNull Level logLevel, final @NonNull String eventType, @Nullable Map<String, Object> eventData) {
