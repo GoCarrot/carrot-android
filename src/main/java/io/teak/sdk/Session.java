@@ -714,7 +714,7 @@ class Session {
             // Get the session attribution
             final Future<Map<String, Object>> sessionAttribution;
             if (teakNotifId != null) {
-                Teak.log.i("session.attribution", _.h("teakNotifId", teakNotifId));
+                Teak.log.i("session.attribution", _.h("teak_notif_id", teakNotifId));
                 sessionAttribution = new Future<Map<String, Object>>() {
                     @Override
                     public boolean cancel(boolean b) {
