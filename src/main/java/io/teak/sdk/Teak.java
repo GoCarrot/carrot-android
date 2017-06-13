@@ -182,7 +182,7 @@ public class Teak extends BroadcastReceiver {
         Teak.log.i("identify_user", _.h("userId", userIdentifier));
 
         if (userIdentifier == null || userIdentifier.isEmpty()) {
-            Teak.log.e("identify_user", "User identifier can not be null or empty.");
+            Teak.log.e("identify_user.error", "User identifier can not be null or empty.");
             return;
         }
 
@@ -208,13 +208,13 @@ public class Teak extends BroadcastReceiver {
         Teak.log.i("track_event", _.h("actionId", actionId, "objectTypeId", objectTypeId, "objectInstanceId", objectInstanceId));
 
         if (actionId == null || actionId.isEmpty()) {
-            Teak.log.e("track_event", "actionId can not be null or empty for trackEvent(), ignoring.");
+            Teak.log.e("track_event.error", "actionId can not be null or empty for trackEvent(), ignoring.");
             return;
         }
 
         if ((objectInstanceId == null || objectInstanceId.isEmpty()) &&
                 (objectTypeId == null || objectTypeId.isEmpty())) {
-            Teak.log.e("track_event", "objectTypeId can not be null or empty if objectInstanceId is present for trackEvent(), ignoring.");
+            Teak.log.e("track_event.error", "objectTypeId can not be null or empty if objectInstanceId is present for trackEvent(), ignoring.");
             return;
         }
 
@@ -292,7 +292,7 @@ public class Teak extends BroadcastReceiver {
                 return false;
             }
 
-            Teak.log.i("teak.state", _.h("previousState", Teak.state.name, "state", newState.name));
+            Teak.log.i("teak.state", _.h("old_state", Teak.state.name, "state", newState.name));
 
             // TODO: Event listeners?
 
@@ -572,6 +572,8 @@ public class Teak extends BroadcastReceiver {
             return;
         }
 
+        Teak.log.i("notification.received", _.h("teakNotifId", teakNotifId, "teakUserId", teakUserId));
+
         // Send Notification Received Metric
         Session session = Session.getCurrentSessionOrNull();
         if (session != null) {
@@ -661,7 +663,7 @@ public class Teak extends BroadcastReceiver {
 
     @SuppressWarnings("unused")
     private static void pluginPurchaseFailed(int errorCode) {
-        Teak.log.i("plugin_purchase_failed", _.h("errorCode", errorCode));
+        Teak.log.i("plugin_purchase.failed", _.h("errorCode", errorCode));
         purchaseFailed(errorCode);
     }
 
@@ -673,9 +675,7 @@ public class Teak extends BroadcastReceiver {
 
                     final HashMap<String, Object> payload = new HashMap<>();
 
-                    if (Teak.appConfiguration.installerPackage == null) {
-                        Teak.log.e("puchase.succeeded", "Purchase succeded from unknown app store.");
-                    } else if (Teak.appConfiguration.installerPackage.equals("com.amazon.venezia")) {
+                    if (Teak.appConfiguration.installerPackage.equals("com.amazon.venezia")) {
                         JSONObject receipt = purchaseData.getJSONObject("receipt");
                         JSONObject userData = purchaseData.getJSONObject("userData");
 
