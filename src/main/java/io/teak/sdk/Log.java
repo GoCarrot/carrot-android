@@ -19,11 +19,20 @@ import android.support.annotation.Nullable;
 
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.URL;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.GZIPOutputStream;
+
+import javax.net.ssl.HttpsURLConnection;
 
 // Things I assume
 // - Remote log space is not an issue
@@ -162,8 +171,8 @@ public class Log {
         this.eventCounter = new AtomicInteger(0);
     }
 
-    protected void log(@NonNull Level logLevel, @NonNull String eventType, @Nullable Map<String, Object> eventData) {
-        Map<String, Object> payload = new HashMap<>();
+    protected void log(final @NonNull Level logLevel, final @NonNull String eventType, @Nullable Map<String, Object> eventData) {
+        final Map<String, Object> payload = new HashMap<>();
         payload.put("run_id", this.runId);
         payload.put("event_id", this.eventCounter.getAndAdd(1));
         payload.put("timestamp", new Date().getTime() / 1000); // Milliseconds -> Seconds
@@ -186,6 +195,49 @@ public class Log {
             eventData = new HashMap<>();
         }
         payload.put("event_data", eventData);
+
+        // Remote logging
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                HttpsURLConnection connection = null;
+                try {
+                    URL endpoint = new URL("https://logs.gocarrot.com/sdk.log." + logLevel.name);
+                    connection = (HttpsURLConnection) endpoint.openConnection();
+                    connection.setRequestProperty("Accept-Charset", "UTF-8");
+                    connection.setUseCaches(false);
+                    connection.setDoOutput(true);
+                    connection.setRequestProperty("Content-Type", "application/json");
+                    //connection.setRequestProperty("Content-Encoding", "gzip");
+
+                    //GZIPOutputStream wr = new GZIPOutputStream(connection.getOutputStream());
+                    OutputStream wr = connection.getOutputStream();
+                    wr.write(new JSONObject(payload).toString().getBytes());
+                    wr.flush();
+                    wr.close();
+
+                    InputStream is;
+                    if (connection.getResponseCode() < 400) {
+                        is = connection.getInputStream();
+                    } else {
+                        is = connection.getErrorStream();
+                    }
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+                    String line;
+                    StringBuilder response = new StringBuilder();
+                    while ((line = rd.readLine()) != null) {
+                        response.append(line);
+                        response.append('\r');
+                    }
+                    rd.close();
+                } catch (Exception ignored) {
+                } finally {
+                    if (connection != null) {
+                        connection.disconnect();
+                    }
+                }
+            }
+        }).start();
 
         // Log to Android log
         if (android.util.Log.isLoggable(this.androidLogTag, logLevel.androidLogPriority)) {
