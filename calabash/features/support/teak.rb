@@ -1,10 +1,11 @@
-require 'teak_dev_tools'
+require 'json'
 
 def get_teak_run_history
-  stdout, stderr, status = exec_adb('logcat -d -s "Teak:D" "Teak.Session:D" "Teak.Request:D"')
-  teak_run_history = TeakDevTools::RunHistory.new
-  teak_run_history.read_lines(stdout)
-  teak_run_history
+  stdout, stderr, status = exec_adb('logcat -d')
+  teak_stdin, teak_stdout, teak_stderr = Open3.popen3('teak')
+  teak_stdin.puts(stdout)
+  teak_stdin.close
+  JSON.parse(teak_stdout.gets)
 end
 
 def forground_activity_package_name
