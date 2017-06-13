@@ -55,7 +55,7 @@ import javax.net.ssl.HttpsURLConnection;
 import io.teak.sdk.Helpers._;
 
 class Session {
-    private static final long SAME_SESSION_TIME_DELTA = 120000;
+    private static long SAME_SESSION_TIME_DELTA = 120000;
 
     // region State machine
     public enum State {
