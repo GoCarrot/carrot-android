@@ -44,7 +44,7 @@ class Amazon implements IStore {
         skuDetailsRequestMap = new HashMap<>();
         PurchasingService.registerListener(context, new TeakPurchasingListener());
 
-        Teak.log.i("amazon_iap", "Amazon In-App Purchasing 2.0 registered.", _.h("sandboxMode", PurchasingService.IS_SANDBOX_MODE));
+        Teak.log.i("amazon.iap", "Amazon In-App Purchasing 2.0 registered.", _.h("sandboxMode", PurchasingService.IS_SANDBOX_MODE));
     }
 
     public void onActivityResumed() {
@@ -78,7 +78,7 @@ class Amazon implements IStore {
     }
 
     public void launchPurchaseFlowForSKU(String sku) {
-        Teak.log.i("amazon_iap", "TODO: launchPurchaseFlowForSKU: " + sku);
+        Teak.log.i("amazon.iap", "TODO: launchPurchaseFlowForSKU: " + sku);
     }
 
     public boolean ignorePluginPurchaseEvents() {
@@ -95,7 +95,7 @@ class Amazon implements IStore {
                 String storeMarketplace = userData.getMarketplace();
                 Request.dynamicCommonPayload.put("store_user_id", storeUserId);
                 Request.dynamicCommonPayload.put("store_marketplace", storeMarketplace);
-                Teak.log.i("amazon_iap", "Amazon Store User Details retrieved.", _.h("storeUserId", storeUserId, "storeMarketplace", storeMarketplace));
+                Teak.log.i("amazon.iap.user", "Amazon Store User Details retrieved.", _.h("storeUserId", storeUserId, "storeMarketplace", storeMarketplace));
             }
         }
 
@@ -109,11 +109,11 @@ class Amazon implements IStore {
 
                 for (Map.Entry<String, Product> entry : skuMap.entrySet()) {
                     String price = entry.getValue().getPrice();
-                    Teak.log.i("amazon_iap", "SKU Details retrieved.", _.h(entry.getKey(), price));
+                    Teak.log.i("amazon.iap.sku", "SKU Details retrieved.", _.h(entry.getKey(), price));
                     queue.offer(price);
                 }
             } else {
-                Teak.log.e("amazon_iap", "SKU Details query failed.");
+                Teak.log.e("amazon.iap.sku", "SKU Details query failed.");
             }
         }
 

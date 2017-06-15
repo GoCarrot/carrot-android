@@ -65,7 +65,7 @@ public class ADMMessageHandler extends ADMMessageHandlerBase {
 
     @Override
     protected void onRegistrationError(String s) {
-        Teak.log.e("adm.registration_error", "Error registering for ADM id: " + s);
+        Teak.log.e("amazon.adm.registration_error", "Error registering for ADM id: " + s);
 
         // If the error is INVALID_SENDER try and help the developer
         if (Teak.isDebug && s.contains("INVALID_SENDER")) {
@@ -75,12 +75,12 @@ public class ADMMessageHandler extends ADMMessageHandlerBase {
             try {
                 inputStream = getApplicationContext().getAssets().open("api_key.txt");
             } catch (IOException e) {
-                Teak.log.e("adm.registration_error", "Unable to find 'api_key.txt' in assets, this is required for debugging. Please see: https://developer.amazon.com/public/apis/engage/device-messaging/tech-docs/04-integrating-your-app-with-adm");
+                Teak.log.e("amazon.adm.registration_error", "Unable to find 'api_key.txt' in assets, this is required for debugging. Please see: https://developer.amazon.com/public/apis/engage/device-messaging/tech-docs/04-integrating-your-app-with-adm");
             }
 
             // Check for whitespace
             if (inputStream != null) {
-                Teak.log.i("adm.registration_error_debugging", "[✓] 'api_key.txt' found in assets");
+                Teak.log.i("amazon.adm.registration_error.debugging", "[✓] 'api_key.txt' found in assets");
                 try {
                     Scanner scanner = new Scanner(inputStream).useDelimiter("\\A");
                     String keyText = scanner.hasNext() ? scanner.next() : "";
@@ -92,22 +92,22 @@ public class ADMMessageHandler extends ADMMessageHandlerBase {
                     }
 
                     // Ok, no whitespace, so decode the key
-                    Teak.log.i("adm.registration_error.debugging", "[✓] No whitespace inside 'api_key.txt'");
+                    Teak.log.i("amazon.adm.registration_error.debugging", "[✓] No whitespace inside 'api_key.txt'");
                     String[] keySections = keyText.split("\\.");
                     if (keySections.length != 3) {
                         throw new Exception("Potentially malformed contents of 'api_key.txt', does not contain three sections delimited by '.'");
                     }
-                    Teak.log.i("adm.registration_error.debugging", "[✓] Found validation section inside 'api_key.txt'");
+                    Teak.log.i("amazon.adm.registration_error.debugging", "[✓] Found validation section inside 'api_key.txt'");
                     String middleJson = new String(Base64.decode(keySections[1], Base64.DEFAULT), "UTF-8");
                     JSONObject json = new JSONObject(middleJson);
 
                     // Make sure the key and the package name match
                     String packageName = getApplicationContext().getPackageName();
                     if (!packageName.equals(json.getString("pkg"))) {
-                        Teak.log.e("adm.registration_error.debugging", _.h("packageName", packageName, "api_key.packageName", json.getString("pkg")));
+                        Teak.log.e("amazon.adm.registration_error.debugging", _.h("packageName", packageName, "api_key.packageName", json.getString("pkg")));
                         throw new Exception("Package name mismatch in 'api_key.txt'");
                     }
-                    Teak.log.i("adm.registration_error.debugging", "[✓] App package name matches package name inside 'api_key.txt'");
+                    Teak.log.i("amazon.adm.registration_error.debugging", "[✓] App package name matches package name inside 'api_key.txt'");
 
                     // Make sure the signature matches
                     @SuppressLint("PackageManagerGetSignatures") Signature[] sigs = getApplicationContext().getPackageManager().getPackageInfo(getApplicationContext().getPackageName(), PackageManager.GET_SIGNATURES).signatures;
@@ -115,26 +115,26 @@ public class ADMMessageHandler extends ADMMessageHandlerBase {
                         if (json.has("appsigSha256")) {
                             String sigSha256 = formatSig(sig, "SHA-256");
                             if (!sigSha256.equalsIgnoreCase(json.getString("appsigSha256"))) {
-                                Teak.log.e("adm.registration_error.debugging", _.h("sha256", sigSha256, "api_key.sha256", json.getString("appsigSha256")));
+                                Teak.log.e("amazon.adm.registration_error.debugging", _.h("sha256", sigSha256, "api_key.sha256", json.getString("appsigSha256")));
                                 throw new Exception("App signature SHA-256 does not match api_key.txt");
                             }
-                            Teak.log.i("adm.registration_error.debugging",  "[✓] App signature matches signature inside 'api_key.txt'");
+                            Teak.log.i("amazon.adm.registration_error.debugging",  "[✓] App signature matches signature inside 'api_key.txt'");
                         } else if (json.has("appsig")) {
                             String sigMd5 = formatSig(sig, "MD5");
                             if (!sigMd5.equalsIgnoreCase(json.getString("appsig"))) {
-                                Teak.log.e("adm.registration_error.debugging", _.h("md5", sigMd5, "api_key.md5", json.getString("appsig")));
+                                Teak.log.e("amazon.adm.registration_error.debugging", _.h("md5", sigMd5, "api_key.md5", json.getString("appsig")));
                                 throw new Exception("App signature MD5 does not match api_key.txt");
                             }
                         } else {
                             String sigMd5 = formatSig(sig, "MD5");
                             String sigSha256 = formatSig(sig, "SHA-256");
-                            Teak.log.w("adm.registration_error.debugging", "Couldn't find 'appsigSha256' or 'appsig' please ensure that your API key matches one of the included signatures.",
+                            Teak.log.w("amazon.adm.registration_error.debugging", "Couldn't find 'appsigSha256' or 'appsig' please ensure that your API key matches one of the included signatures.",
                                     _.h("md5", sigMd5, "sha256", sigSha256));
                         }
                     }
 
                     // Couldn't find the error, sorry!
-                    Teak.log.w("adm.registration_error.debugging", "Unable to automatically find reason for INVALID_SENDER");
+                    Teak.log.w("amazon.adm.registration_error.debugging", "Unable to automatically find reason for INVALID_SENDER");
                 } catch (Exception e) {
                     Teak.log.exception(e);
                 } finally {
@@ -149,12 +149,14 @@ public class ADMMessageHandler extends ADMMessageHandlerBase {
 
     @Override
     protected void onRegistered(String s) {
+        Teak.log.i("amazon.adm.registered", _.h("admId", s));
         Teak.deviceConfiguration.admId = s;
         Teak.deviceConfiguration.notifyPushIdChangedListeners();
     }
 
     @Override
     protected void onUnregistered(String s) {
+        Teak.log.i("amazon.adm.unregistered", _.h("admId", s));
         Teak.deviceConfiguration.admId = null;
         Teak.deviceConfiguration.notifyPushIdChangedListeners();
     }
