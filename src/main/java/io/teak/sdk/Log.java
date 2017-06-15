@@ -198,7 +198,9 @@ public class Log {
             public void run() {
                 HttpsURLConnection connection = null;
                 try {
-                    URL endpoint = new URL("https://logs.gocarrot.com/sdk.log." + logLevel.name);
+                    URL endpoint = Teak.isDebug ?
+                            new URL("https://logs.gocarrot.com/dev.sdk.log." + logLevel.name)
+                            : new URL("https://logs.gocarrot.com/sdk.log." + logLevel.name);
                     connection = (HttpsURLConnection) endpoint.openConnection();
                     connection.setRequestProperty("Accept-Charset", "UTF-8");
                     connection.setUseCaches(false);
@@ -244,7 +246,7 @@ public class Log {
                 } else {
                     jsonStringForAndroidLog = new JSONObject(payload).toString();
                 }
-            } catch (Exception ignored){
+            } catch (Exception ignored) {
             }
             android.util.Log.println(logLevel.androidLogPriority, this.androidLogTag, jsonStringForAndroidLog);
         }
