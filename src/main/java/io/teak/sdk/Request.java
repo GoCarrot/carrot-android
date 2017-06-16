@@ -156,7 +156,7 @@ class Request implements Runnable {
         }
 
         try {
-            Teak.log.i("request", "request", this.to_h());
+            Teak.log.i("request.send", this.to_h());
 
             URL url = new URL("https://" + hostnameForEndpoint + this.endpoint);
             connection = (HttpsURLConnection) url.openConnection();
@@ -196,7 +196,7 @@ class Request implements Runnable {
                 h.put("payload", Helpers.jsonToMap(new JSONObject(response.toString())));
             } catch (Exception ignored) {
             }
-            Teak.log.i("request", "reply", h);
+            Teak.log.i("request.reply", h);
 
             // For extending classes
             done(connection.getResponseCode(), response.toString());

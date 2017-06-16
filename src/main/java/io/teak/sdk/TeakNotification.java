@@ -329,17 +329,17 @@ public class TeakNotification {
     @SuppressWarnings("unused")
     public static FutureTask<String> scheduleNotification(final String creativeId, final String defaultMessage, final long delayInSeconds) {
         if (!Teak.isEnabled()) {
-            Teak.log.e("notification.schedule", "Teak is disabled, ignoring scheduleNotification().");
+            Teak.log.e("notification.schedule.disabled", "Teak is disabled, ignoring scheduleNotification().");
             return null;
         }
 
         if (creativeId == null || creativeId.isEmpty()) {
-            Teak.log.e("notification.schedule", "creativeId cannot be null or empty");
+            Teak.log.e("notification.schedule.error", "creativeId cannot be null or empty");
             return null;
         }
 
         if (defaultMessage == null || defaultMessage.isEmpty()) {
-            Teak.log.e("notification.schedule", "defaultMessage cannot be null or empty");
+            Teak.log.e("notification.schedule.error", "defaultMessage cannot be null or empty");
             return null;
         }
 
@@ -370,10 +370,10 @@ public class TeakNotification {
                             JSONObject response = new JSONObject(responseBody);
                             if (response.getString("status").equals("ok")) {
                                 q.offer(response.getJSONObject("event").getString("id"));
-                                Teak.log.i("reward.schedule", "Scheduled notification.", _.h("notification", response.getJSONObject("event").getString("id")));
+                                Teak.log.i("notification.schedule", "Scheduled notification.", _.h("notification", response.getJSONObject("event").getString("id")));
                             } else {
                                 q.offer("");
-                                Teak.log.e("reward.schedule", "Error scheduling notification.", _.h("response", response.toString()));
+                                Teak.log.e("notification.schedule.error", "Error scheduling notification.", _.h("response", response.toString()));
                             }
                         } catch (Exception ignored) {
                             q.offer("");
@@ -396,12 +396,12 @@ public class TeakNotification {
     @SuppressWarnings("unused")
     public static FutureTask<String> cancelNotification(final String scheduleId) {
         if (!Teak.isEnabled()) {
-            Teak.log.e("notification.cancel", "Teak is disabled, ignoring cancelNotification().");
+            Teak.log.e("notification.cancel.disabled", "Teak is disabled, ignoring cancelNotification().");
             return null;
         }
 
         if (scheduleId == null || scheduleId.isEmpty()) {
-            Teak.log.e("notification.cancel", "scheduleId cannot be null or empty");
+            Teak.log.e("notification.cancel.error", "scheduleId cannot be null or empty");
             return null;
         }
 

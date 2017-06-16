@@ -178,13 +178,12 @@ public class Teak extends BroadcastReceiver {
      * @param userIdentifier An identifier which is unique for the current user.
      */
     public static void identifyUser(String userIdentifier) {
-        // Integer.toHexString(Teak.stateMutex.hashCode()) ?
-        Teak.log.i("identify_user", _.h("userId", userIdentifier));
-
         if (userIdentifier == null || userIdentifier.isEmpty()) {
             Teak.log.e("identify_user.error", "User identifier can not be null or empty.");
             return;
         }
+
+        Teak.log.i("identify_user", _.h("userId", userIdentifier));
 
         if (Teak.isEnabled()) {
             // Add userId to the Ravens
@@ -205,8 +204,6 @@ public class Teak extends BroadcastReceiver {
      */
     @SuppressWarnings("unused")
     public static void trackEvent(final String actionId, final String objectTypeId, final String objectInstanceId) {
-        Teak.log.i("track_event", _.h("actionId", actionId, "objectTypeId", objectTypeId, "objectInstanceId", objectInstanceId));
-
         if (actionId == null || actionId.isEmpty()) {
             Teak.log.e("track_event.error", "actionId can not be null or empty for trackEvent(), ignoring.");
             return;
@@ -217,6 +214,8 @@ public class Teak extends BroadcastReceiver {
             Teak.log.e("track_event.error", "objectTypeId can not be null or empty if objectInstanceId is present for trackEvent(), ignoring.");
             return;
         }
+
+        Teak.log.i("track_event", _.h("actionId", actionId, "objectTypeId", objectTypeId, "objectInstanceId", objectInstanceId));
 
         if (Teak.isEnabled()) {
             Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
