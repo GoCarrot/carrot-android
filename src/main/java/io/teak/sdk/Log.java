@@ -238,7 +238,7 @@ public class Log {
         }).start();
 
         // Log to Android log
-        if (android.util.Log.isLoggable(this.androidLogTag, logLevel.androidLogPriority)) {
+        if (Teak.isDebug && android.util.Log.isLoggable(this.androidLogTag, logLevel.androidLogPriority)) {
             String jsonStringForAndroidLog = "{}";
             try {
                 if (this.jsonIndentation > 0) {
