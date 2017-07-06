@@ -232,6 +232,34 @@ public class Teak extends BroadcastReceiver {
         }
     }
 
+    /**
+     * Intent action used by Teak to notify you that the app was launched from a notification.
+     * <p/>
+     * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
+     * <pre>
+     * {@code
+     *     IntentFilter filter = new IntentFilter();
+     *     filter.addAction(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
+     *     LocalBroadcastManager.getInstance(context).registerReceiver(yourBroadcastListener, filter);
+     * }
+     * </pre>
+     */
+    public static final String LAUNCHED_FROM_NOTIFICATION_INTENT = "io.teak.sdk.Teak.intent.LAUNCHED_FROM_NOTIFICATION";
+
+    /**
+     * Intent action used by Teak to notify you that the a reward claim attempt has occured.
+     * <p/>
+     * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
+     * <pre>
+     * {@code
+     *     IntentFilter filter = new IntentFilter();
+     *     filter.addAction(Teak.REWARD_CLAIM_ATTEMPT);
+     *     LocalBroadcastManager.getInstance(context).registerReceiver(yourBroadcastListener, filter);
+     * }
+     * </pre>
+     */
+    public static final String REWARD_CLAIM_ATTEMPT = "io.teak.sdk.Teak.intent.REWARD_CLAIM_ATTEMPT";
+
     /**************************************************************************/
 
     // region State machine
@@ -303,6 +331,9 @@ public class Teak extends BroadcastReceiver {
     // endregion
 
     static final String PREFERENCES_FILE = "io.teak.sdk.Preferences";
+
+    public static boolean forceDebug;
+    public static Future<Void> waitForDeepLink;
 
     static boolean isDebug;
     static DebugConfiguration debugConfiguration;
@@ -457,7 +488,7 @@ public class Teak extends BroadcastReceiver {
 
                     // Send broadcast
                     if (Teak.localBroadcastManager != null) {
-                        final Intent broadcastEvent = new Intent(TeakNotification.LAUNCHED_FROM_NOTIFICATION_INTENT);
+                        final Intent broadcastEvent = new Intent(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
                         broadcastEvent.putExtras(bundle);
 
                         String teakRewardId = bundle.getString("teakRewardId");
@@ -469,7 +500,13 @@ public class Teak extends BroadcastReceiver {
                                     public void run() {
                                         try {
                                             TeakNotification.Reward reward = rewardFuture.get();
-                                            broadcastEvent.putExtra("teakReward", Helpers.jsonToMap(reward.json));
+                                            HashMap<String, Object> rewardMap = Helpers.jsonToMap(reward.json);
+                                            broadcastEvent.putExtra("teakReward", rewardMap);
+
+                                            // Broadcast reward only if everything goes well
+                                            final Intent rewardIntent = new Intent(Teak.REWARD_CLAIM_ATTEMPT);
+                                            rewardIntent.putExtra("reward", rewardMap);
+                                            Teak.localBroadcastManager.sendBroadcast(rewardIntent);
                                         } catch (Exception e) {
                                             Teak.log.exception(e);
                                         } finally {

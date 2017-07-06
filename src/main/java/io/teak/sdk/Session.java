@@ -754,8 +754,16 @@ class Session {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        // Resolve the deepLinkAttribution future
                         try {
+                            // If we need to wait for Unity/Adobe Air, do it here
+                            if (Teak.waitForDeepLink != null) {
+                                Teak.waitForDeepLink.get();
+                            }
+                        } catch (Exception ignored){
+                        }
+
+                        try {
+                            // Resolve the deepLinkAttribution future
                             Map<String, Object> attribution = deepLinkAttribution.get(5, TimeUnit.SECONDS);
                             Uri uri = Uri.parse((String) attribution.get("deep_link"));
 
@@ -772,6 +780,28 @@ class Session {
                                 }
                                 if (resolvedActivities.size() > 0 && safeToRedirect) {
                                     appConfiguration.applicationContext.startActivity(uriIntent);
+                                }
+                            }
+
+                            // Send reward broadcast
+                            String teakRewardId = attribution.get("teak_reward_id").toString();
+                            if (teakRewardId != null) {
+                                final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
+                                if (rewardFuture != null) {
+                                    new Thread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            try {
+                                                TeakNotification.Reward reward = rewardFuture.get();
+                                                HashMap<String, Object> rewardMap = Helpers.jsonToMap(reward.json);
+                                                final Intent rewardIntent = new Intent(Teak.REWARD_CLAIM_ATTEMPT);
+                                                rewardIntent.putExtra("reward", rewardMap);
+                                                Teak.localBroadcastManager.sendBroadcast(rewardIntent);
+                                            } catch (Exception e) {
+                                                Log.e(LOG_TAG, Log.getStackTraceString(e));
+                                            }
+                                        }
+                                    }).start();
                                 }
                             }
                         } catch (Exception ignored) {

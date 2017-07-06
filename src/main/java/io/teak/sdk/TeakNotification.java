@@ -92,20 +92,6 @@ public class TeakNotification {
     public static final String TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX = ".intent.TEAK_NOTIFICATION_CLEARED";
 
     /**
-     * Intent action used by Teak to notify you that the app was launched from a notification.
-     * <p/>
-     * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
-     * <pre>
-     * {@code
-     *     IntentFilter filter = new IntentFilter();
-     *     filter.addAction(TeakNotification.LAUNCHED_FROM_NOTIFICATION_INTENT);
-     *     LocalBroadcastManager.getInstance(context).registerReceiver(yourBroadcastListener, filter);
-     * }
-     * </pre>
-     */
-    public static final String LAUNCHED_FROM_NOTIFICATION_INTENT = "io.teak.sdk.TeakNotification.intent.LAUNCHED_FROM_NOTIFICATION";
-
-    /**
      * Get optional extra data associated with this notification.
      *
      * @return {@link JSONObject} containing extra data sent by the server.
