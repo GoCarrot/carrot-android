@@ -812,7 +812,7 @@ class Session {
                                                 rewardIntent.putExtra("reward", rewardMap);
                                                 Teak.localBroadcastManager.sendBroadcast(rewardIntent);
                                             } catch (Exception e) {
-                                                Log.e(LOG_TAG, Log.getStackTraceString(e));
+                                                Teak.log.exception(e);
                                             }
                                         }
                                     }).start();

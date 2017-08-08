@@ -97,7 +97,7 @@ class RemoteConfiguration {
                                 }
                             }
                         } catch (Exception e) {
-                            Log.e(LOG_TAG, "Error processing settings.json " + Log.getStackTraceString(e));
+                            Teak.log.exception(e);
                         }
                     }
                 }.run();
