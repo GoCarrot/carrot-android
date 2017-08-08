@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            if (TeakNotification.LAUNCHED_FROM_NOTIFICATION_INTENT.equals(action)) {
+            if (Teak.LAUNCHED_FROM_NOTIFICATION_INTENT.equals(action)) {
                 Bundle bundle = intent.getExtras();
                 try {
 
@@ -68,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Register the BroadcastReceiver defined above to listen for notification launches
         IntentFilter filter = new IntentFilter();
-        filter.addAction(TeakNotification.LAUNCHED_FROM_NOTIFICATION_INTENT);
+        filter.addAction(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
         LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, filter);
 
         Teak.identifyUser("demo-app-thingy-3");

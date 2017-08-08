@@ -332,7 +332,6 @@ public class Teak extends BroadcastReceiver {
 
     static final String PREFERENCES_FILE = "io.teak.sdk.Preferences";
 
-    public static boolean forceDebug;
     public static Future<Void> waitForDeepLink;
 
     static boolean isDebug;
