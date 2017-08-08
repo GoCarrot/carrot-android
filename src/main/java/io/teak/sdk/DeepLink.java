@@ -15,7 +15,6 @@
 package io.teak.sdk;
 
 import android.net.Uri;
-import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,8 +27,6 @@ public class DeepLink {
     public static abstract class Call {
         public abstract void call(Map<String, Object> parameters);
     }
-
-    private static final String LOG_TAG = "Teak:DeepLink";
 
     public static void registerRoute(String route, String name, String description, Call call) {
         // https://github.com/rkh/mustermann/blob/master/mustermann-simple/lib/mustermann/simple.rb
@@ -93,7 +90,7 @@ public class DeepLink {
                         try {
                             parameterDict.put(name, matcher.group(name));
                         } catch (Exception e) {
-                            Log.e(LOG_TAG, Log.getStackTraceString(e));
+                            Teak.log.exception(e);
                             return false;
                         }
                     }
@@ -106,7 +103,7 @@ public class DeepLink {
                     try {
                         value.call.call(parameterDict);
                     } catch (Exception e) {
-                        Log.e(LOG_TAG, Log.getStackTraceString(e));
+                        Teak.log.exception(e);
                         return false;
                     }
                     return true;

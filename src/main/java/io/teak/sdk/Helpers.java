@@ -16,14 +16,14 @@ package io.teak.sdk;
 
 import android.content.Context;
 
-import android.os.Build;
 import android.os.Bundle;
-import android.text.TextUtils;
+import android.support.annotation.NonNull;
 
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.json.JSONException;
 
+import java.security.InvalidParameterException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -88,5 +88,17 @@ class Helpers {
             list.add(value);
         }
         return list;
+    }
+
+
+    public static class _ {
+        public static Map<String, Object> h(@NonNull Object... args) {
+            Map<String, Object> ret = new HashMap<>();
+            if (args.length % 2 != 0) throw new InvalidParameterException("Args must be in key value pairs.");
+            for (int i = 0; i < args.length; i += 2) {
+                ret.put(args[i].toString(), args[i + 1]);
+            }
+            return ret;
+        }
     }
 }

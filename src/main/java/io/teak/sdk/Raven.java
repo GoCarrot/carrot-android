@@ -35,7 +35,7 @@ import java.util.UUID;
 import io.teak.sdk.service.RavenService;
 
 public class Raven implements Thread.UncaughtExceptionHandler {
-    public static final String LOG_TAG = "Teak:Raven";
+    public static final String LOG_TAG = "Teak.Raven";
 
     public enum Level {
         FATAL("fatal"),
@@ -124,17 +124,11 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         applicationContext.startService(intent);
     }
 
-    public void reportException(Throwable t) {
-        if (t == null) {
-            return;
-        }
-
+    public static Map<String, Object> throwableToMap(Throwable t) {
         if (t instanceof InvocationTargetException && t.getCause() != null) {
             t = t.getCause();
         }
 
-        HashMap<String, Object> additions = new HashMap<>();
-        ArrayList<Object> exceptions = new ArrayList<>();
         HashMap<String, Object> exception = new HashMap<>();
 
         exception.put("type", t.getClass().getSimpleName());
@@ -177,6 +171,22 @@ public class Raven implements Thread.UncaughtExceptionHandler {
 
         exception.put("stacktrace", stacktrace);
 
+        return exception;
+    }
+
+    public void reportException(Throwable t) {
+        if (t == null) {
+            return;
+        }
+
+        if (t instanceof InvocationTargetException && t.getCause() != null) {
+            t = t.getCause();
+        }
+
+        HashMap<String, Object> additions = new HashMap<>();
+        ArrayList<Object> exceptions = new ArrayList<>();
+        Map<String, Object> exception = Raven.throwableToMap(t);
+
         exceptions.add(exception);
         additions.put("exception", exceptions);
 
@@ -213,7 +223,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
     @Override
     public String toString() {
         try {
-            return String.format(Locale.US, "%s: %s", super.toString(), new JSONObject(this.to_h()).toString(2));
+            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.to_h())));
         } catch (Exception ignored) {
             return super.toString();
         }
@@ -279,7 +289,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         @Override
         public String toString() {
             try {
-                return String.format(Locale.US, "%s: %s", super.toString(), new JSONObject(this.to_h()).toString(2));
+                return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.to_h())));
             } catch (Exception ignored) {
                 return super.toString();
             }

@@ -17,7 +17,6 @@ package io.teak.sdk;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import org.json.JSONObject;
 
@@ -26,24 +25,22 @@ import java.util.HashMap;
 import java.util.Locale;
 
 class DebugConfiguration {
-    private static final String LOG_TAG = "Teak:DebugConfig";
-
     private static final String PREFERENCE_FORCE_DEBUG = "io.teak.sdk.Preferences.ForceDebug";
 
     @SuppressWarnings("unused")
     public static void addExternalDebugInfo(String key, Object value) {
         if (key == null || key.isEmpty()) {
-            Log.e(LOG_TAG, "key can not be null or empty for addExternalDebugInfo(), ignoring.");
+            Teak.log.e("debug_configuration", "key can not be null or empty for addExternalDebugInfo(), ignoring.");
             return;
         }
 
         try {
             if (value == null || value.toString() == null || value.toString().isEmpty()) {
-                Log.e(LOG_TAG, "value can not be null or empty for addExternalDebugInfo(), ignoring.");
+                Teak.log.e("debug_configuration", "value can not be null or empty for addExternalDebugInfo(), ignoring.");
                 return;
             }
         } catch (Exception e) {
-            Log.e(LOG_TAG, "Error occured while converting value to string in addExternalDebugInfo(), ignoring.");
+            Teak.log.e("debug_configuration", "Error occured while converting value to string in addExternalDebugInfo(), ignoring.");
             return;
         }
 
@@ -61,13 +58,13 @@ class DebugConfiguration {
         try {
             tempPreferences = context.getSharedPreferences(Teak.PREFERENCES_FILE, Context.MODE_PRIVATE);
         } catch (Exception e) {
-            Log.e(LOG_TAG, "Error calling getSharedPreferences(). " + Log.getStackTraceString(e));
+            Teak.log.exception(e);
         } finally {
             this.preferences = tempPreferences;
         }
 
         if (this.preferences == null) {
-            Log.e(LOG_TAG, "getSharedPreferences() returned null. Some debug functionality is disabled.");
+            Teak.log.e("debug_configuration", "getSharedPreferences() returned null. Some debug functionality is disabled.");
             this.forceDebug = false;
         } else {
             this.forceDebug = this.preferences.getBoolean(PREFERENCE_FORCE_DEBUG, false);
@@ -76,47 +73,15 @@ class DebugConfiguration {
 
     public void setPreferenceForceDebug(boolean forceDebug) {
         if (this.preferences == null) {
-            Log.e(LOG_TAG, "getSharedPreferences() returned null. Setting force debug is disabled.");
+            Teak.log.e("debug_configuration", "getSharedPreferences() returned null. Setting force debug is disabled.");
         } else if (forceDebug != this.forceDebug) {
             try {
                 SharedPreferences.Editor editor = this.preferences.edit();
                 editor.putBoolean(PREFERENCE_FORCE_DEBUG, forceDebug);
                 editor.apply();
-                Log.d(LOG_TAG, String.format(Locale.US, "Force debug is now %s, please re-start the app.", forceDebug ? "enabled" : "disabled"));
+                Teak.log.i("debug_configuration",  String.format(Locale.US, "Force debug is now %s, please re-start the app.", forceDebug ? "enabled" : "disabled"));
             } catch (Exception e) {
-                Log.e(LOG_TAG, "Error occurred while storing preferences. " + Log.getStackTraceString(e));
-            }
-        }
-    }
-
-    public void printBugReportInfo(@NonNull Context context, @NonNull AppConfiguration appConfiguration, @NonNull DeviceConfiguration deviceConfiguration) {
-        if (Teak.isDebug) {
-            try {
-                HashMap<String, Object> debugInfoMap = new HashMap<>();
-
-                HashMap<String, Object> sdkInfo = new HashMap<>();
-                sdkInfo.put("teakAndroidVersion", Teak.SDKVersion);
-
-                String airSdkVersion = Helpers.getStringResourceByName("io_teak_air_sdk_version", context);
-                if (airSdkVersion != null) {
-                    sdkInfo.put("teakAirVersion", airSdkVersion);
-                }
-
-                debugInfoMap.put("sdk", sdkInfo);
-                debugInfoMap.put("appConfiguration", appConfiguration.to_h());
-                debugInfoMap.put("deviceConfiguration", deviceConfiguration.to_h());
-                if (!DebugConfiguration.externalDebugInfo.isEmpty()) {
-                    debugInfoMap.put("externalDebugInfo", DebugConfiguration.externalDebugInfo);
-                }
-
-                String debugInfo = new JSONObject(debugInfoMap).toString();
-                Log.d(LOG_TAG, "Please include the following JSON blob with any bug reports you submit: " + debugInfo);
-
-                if (this.bugReportUrl != null) {
-                    Log.d(LOG_TAG, String.format(Locale.US, "Or use this link:\n%s?body=%s", this.bugReportUrl, URLEncoder.encode("DESCRIBE THE ISSUE HERE\n\n" + debugInfo, "UTF-8")));
-                }
-            } catch (Exception e) {
-                Log.e(LOG_TAG, "Error in printBugReportInfo() " + Log.getStackTraceString(e));
+                Teak.log.exception(e);
             }
         }
     }

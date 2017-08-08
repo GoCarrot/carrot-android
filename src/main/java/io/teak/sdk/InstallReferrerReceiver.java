@@ -21,12 +21,12 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.util.Log;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import io.teak.sdk.Helpers._;
+
 public class InstallReferrerReceiver extends BroadcastReceiver {
-    private static final String LOG_TAG = "Teak.InstallReferrer";
 
     public static final ConcurrentLinkedQueue<String> installReferrerQueue = new ConcurrentLinkedQueue<>();
 
@@ -34,9 +34,7 @@ public class InstallReferrerReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         String installReferrer = intent.getStringExtra("referrer");
         if (installReferrer != null && !installReferrer.isEmpty()) {
-            if (Teak.isDebug) {
-                Log.d(LOG_TAG, "Install referrer: " + installReferrer);
-            }
+            Teak.log.i("install_referrer", _.h("referrer", installReferrer));
             installReferrerQueue.offer(installReferrer);
         }
 
@@ -53,7 +51,7 @@ public class InstallReferrerReceiver extends BroadcastReceiver {
                 }
             }
         } catch (Exception e) {
-            Log.e(LOG_TAG, Log.getStackTraceString(e));
+            Teak.log.exception(e);
         }
     }
 }

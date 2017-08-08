@@ -26,7 +26,6 @@ import android.app.Notification;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.app.NotificationCompat;
 
-import android.util.Log;
 import android.util.SparseArray;
 
 import java.util.HashMap;
@@ -51,6 +50,8 @@ import javax.net.ssl.HttpsURLConnection;
 import org.json.JSONObject;
 import org.json.JSONException;
 
+import io.teak.sdk.Helpers._;
+
 /**
  * An app-to-user notification received from Teak via GCM.
  * <p/>
@@ -71,8 +72,6 @@ import org.json.JSONException;
  * </pre>
  */
 public class TeakNotification {
-    private static final String LOG_TAG = "Teak:Notification";
-
     /**
      * The 'tag' specified by Teak to the {@link NotificationCompat}
      */
@@ -210,12 +209,12 @@ public class TeakNotification {
         @SuppressWarnings("unused")
         public static Future<Reward> rewardFromRewardId(final String teakRewardId) {
             if (!Teak.isEnabled()) {
-                Log.e(LOG_TAG, "Teak is disabled, ignoring rewardFromRewardId().");
+                Teak.log.e("reward", "Teak is disabled, ignoring rewardFromRewardId().");
                 return null;
             }
 
             if (teakRewardId == null || teakRewardId.isEmpty()) {
-                Log.e(LOG_TAG, "teakRewardId cannot be null or empty");
+                Teak.log.e("reward", "teakRewardId cannot be null or empty");
                 return null;
             }
 
@@ -225,7 +224,7 @@ public class TeakNotification {
                     try {
                         return q.take();
                     } catch (InterruptedException e) {
-                        Log.e(LOG_TAG, Log.getStackTraceString(e));
+                        Teak.log.exception(e);
                     }
                     return null;
                 }
@@ -237,9 +236,7 @@ public class TeakNotification {
                 public void run(Session session) {
                     HttpsURLConnection connection = null;
 
-                    if (Teak.isDebug) {
-                        Log.d(LOG_TAG, "Claiming reward id: " + teakRewardId);
-                    }
+                    Teak.log.i("reward.claim", _.h("teakRewardId", teakRewardId));
 
                     try {
                         // https://rewards.gocarrot.com/<<teak_reward_id>>/clicks?clicking_user_id=<<your_user_id>>
@@ -289,13 +286,11 @@ public class TeakNotification {
                         }
                         Reward reward = new Reward(fullParsedResponse);
 
-                        if (Teak.isDebug) {
-                            Log.d(LOG_TAG, "Reward claim response: " + responseJson.toString(2));
-                        }
+                        Teak.log.i("reward.claim", Helpers.jsonToMap(responseJson));
 
                         q.offer(reward);
                     } catch (Exception e) {
-                        Log.e(LOG_TAG, Log.getStackTraceString(e));
+                        Teak.log.exception(e);
                         q.offer(null);
                     } finally {
                         if (connection != null) {
@@ -320,17 +315,17 @@ public class TeakNotification {
     @SuppressWarnings("unused")
     public static FutureTask<String> scheduleNotification(final String creativeId, final String defaultMessage, final long delayInSeconds) {
         if (!Teak.isEnabled()) {
-            Log.e(LOG_TAG, "Teak is disabled, ignoring scheduleNotification().");
+            Teak.log.e("notification.schedule.disabled", "Teak is disabled, ignoring scheduleNotification().");
             return null;
         }
 
         if (creativeId == null || creativeId.isEmpty()) {
-            Log.e(LOG_TAG, "creativeId cannot be null or empty");
+            Teak.log.e("notification.schedule.error", "creativeId cannot be null or empty");
             return null;
         }
 
         if (defaultMessage == null || defaultMessage.isEmpty()) {
-            Log.e(LOG_TAG, "defaultMessage cannot be null or empty");
+            Teak.log.e("notification.schedule.error", "defaultMessage cannot be null or empty");
             return null;
         }
 
@@ -340,7 +335,7 @@ public class TeakNotification {
                 try {
                     return q.take();
                 } catch (InterruptedException e) {
-                    Log.e(LOG_TAG, Log.getStackTraceString(e));
+                    Teak.log.exception(e);
                 }
                 return null;
             }
@@ -361,10 +356,10 @@ public class TeakNotification {
                             JSONObject response = new JSONObject(responseBody);
                             if (response.getString("status").equals("ok")) {
                                 q.offer(response.getJSONObject("event").getString("id"));
-                                Log.d(LOG_TAG, "Scheduled notification with id " + response.getJSONObject("event").getString("id"));
+                                Teak.log.i("notification.schedule", "Scheduled notification.", _.h("notification", response.getJSONObject("event").getString("id")));
                             } else {
                                 q.offer("");
-                                Log.d(LOG_TAG, "Error scheduling notification " + response.toString());
+                                Teak.log.e("notification.schedule.error", "Error scheduling notification.", _.h("response", response.toString()));
                             }
                         } catch (Exception ignored) {
                             q.offer("");
@@ -387,12 +382,12 @@ public class TeakNotification {
     @SuppressWarnings("unused")
     public static FutureTask<String> cancelNotification(final String scheduleId) {
         if (!Teak.isEnabled()) {
-            Log.e(LOG_TAG, "Teak is disabled, ignoring cancelNotification().");
+            Teak.log.e("notification.cancel.disabled", "Teak is disabled, ignoring cancelNotification().");
             return null;
         }
 
         if (scheduleId == null || scheduleId.isEmpty()) {
-            Log.e(LOG_TAG, "scheduleId cannot be null or empty");
+            Teak.log.e("notification.cancel.error", "scheduleId cannot be null or empty");
             return null;
         }
 
@@ -402,7 +397,7 @@ public class TeakNotification {
                 try {
                     return q.take();
                 } catch (InterruptedException e) {
-                    Log.e(LOG_TAG, Log.getStackTraceString(e));
+                    Teak.log.exception(e);
                 }
                 return null;
             }
@@ -504,17 +499,13 @@ public class TeakNotification {
             try {
                 notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
             } catch (Exception e) {
-                Log.e(LOG_TAG, Log.getStackTraceString(e));
+                Teak.log.exception(e);
                 return;
             }
         }
 
         // Send it out
-        if (Teak.isDebug) {
-            Log.d(LOG_TAG, "Showing Notification");
-            Log.d(LOG_TAG, "       Teak id: " + teakNotif.teakNotifId);
-            Log.d(LOG_TAG, "   Platform id: " + teakNotif.platformId);
-        }
+        Teak.log.i("notification.show", _.h("teakNotifId", teakNotif.teakNotifId, "platformId", teakNotif.platformId));
         notificationManager.notify(NOTIFICATION_TAG, teakNotif.platformId, nativeNotification);
 
         // TODO: Here is where any kind of thread/update logic will live
@@ -525,14 +516,12 @@ public class TeakNotification {
             try {
                 notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
             } catch (Exception e) {
-                Log.e(LOG_TAG, Log.getStackTraceString(e));
+                Teak.log.exception(e);
                 return;
             }
         }
 
-        if (Teak.isDebug) {
-            Log.d(LOG_TAG, "Canceling notification id: " + platformId);
-        }
+        Teak.log.i("notification.cancel", _.h("platformId", platformId));
 
         notificationManager.cancel(NOTIFICATION_TAG, platformId);
         context.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));

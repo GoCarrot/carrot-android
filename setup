@@ -2,7 +2,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-brew update
 brew tap caskroom/cask
 
 # TODO: Ensure both Brew and Caskroom are set up.
@@ -20,5 +19,7 @@ fi
 ANDROID_HOME=/usr/local/share/android-sdk
 export ANDROID_HOME
 
-sdkmanager --package_file=sdk_packages.list
-echo y | android update sdk --all --no-ui --filter 'tools,platform-tools'
+sdkmanager "build-tools;23.0.2"
+sdkmanager "platforms;android-23"
+sdkmanager "extras;google;m2repository"
+sdkmanager "extras;android;m2repository"

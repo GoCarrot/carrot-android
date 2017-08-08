@@ -19,7 +19,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import org.json.JSONObject;
 
@@ -30,8 +29,6 @@ import java.util.Map;
 import io.teak.sdk.service.RavenService;
 
 class AppConfiguration {
-    private static final String LOG_TAG = "Teak:AppConfig";
-
     public final String appId;
     public final String apiKey;
     public final String pushSenderId;
@@ -68,8 +65,8 @@ class AppConfiguration {
         {
             // TODO: Check ADM vs GCM
             this.pushSenderId = Helpers.getStringResourceByName(TEAK_GCM_SENDER_ID, context);
-            if (this.pushSenderId == null && Teak.isDebug) {
-                Log.d(LOG_TAG, "R.string." + TEAK_GCM_SENDER_ID + " not present, push notifications disabled.");
+            if (this.pushSenderId == null) {
+                Teak.log.e("app_configuration", "R.string." + TEAK_GCM_SENDER_ID + " not present, push notifications disabled.");
             }
         }
 
@@ -92,7 +89,7 @@ class AppConfiguration {
             try {
                 tempAppVersion = this.packageManager.getPackageInfo(this.bundleId, 0).versionCode;
             } catch (Exception e) {
-                Log.e(LOG_TAG, "Error getting App Version: " + Log.getStackTraceString(e));
+                Teak.log.exception(e);
             } finally {
                 this.appVersion = tempAppVersion;
             }
@@ -102,7 +99,7 @@ class AppConfiguration {
         {
             this.installerPackage = this.packageManager.getInstallerPackageName(this.bundleId);
             if (this.installerPackage == null) {
-                Log.e(LOG_TAG, "Installer package (Store) is null, purchase tracking disabled.");
+                Teak.log.e("app_configuration", "Installer package (Store) is null, purchase tracking disabled.");
             }
         }
 
@@ -112,12 +109,10 @@ class AppConfiguration {
             intent.putExtra("appId", this.appId);
             ComponentName componentName = context.startService(intent);
             if (componentName == null) {
-                Log.e(LOG_TAG, "Unable to communicate with exception reporting service. Please add:\n\t<service android:name=\"io.teak.sdk.service.RavenService\" android:process=\":teak.raven\" android:exported=\"false\"/>\nTo the <application> section of your AndroidManifest.xml");
-            } else if(Teak.isDebug) {
-                Log.d(LOG_TAG, "Communication with exception reporting service established: " + componentName.toString());
+                Teak.log.e("app_configuration", "Unable to communicate with exception reporting service. Please add:\n\t<service android:name=\"io.teak.sdk.service.RavenService\" android:process=\":teak.raven\" android:exported=\"false\"/>\nTo the <application> section of your AndroidManifest.xml");
             }
         } catch (Exception e) {
-            Log.e(LOG_TAG, "Error calling startService for exception reporting service: " + Log.getStackTraceString(e));
+            Teak.log.exception(e);
         }
     }
 
@@ -135,7 +130,7 @@ class AppConfiguration {
     @Override
     public String toString() {
         try {
-            return String.format(Locale.US, "%s: %s", super.toString(), new JSONObject(this.to_h()).toString(2));
+            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.to_h())));
         } catch (Exception ignored) {
             return super.toString();
         }

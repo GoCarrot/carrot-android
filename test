@@ -1,0 +1,14 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+
+err=0
+
+(
+  cd example
+  ./gradlew assemble
+)
+(
+  cd calabash
+  calabash-android run ../example/app/build/outputs/apk/app-debug.apk --format pretty --quiet
+)

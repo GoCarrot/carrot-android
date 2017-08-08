@@ -39,7 +39,7 @@ import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.HttpsURLConnection;
 
 public class RavenService extends Service {
-    public static final String LOG_TAG = "Teak:Raven:Service";
+    public static final String LOG_TAG = "Teak.Raven.Service";
     public static final int DATABASE_VERSION = 1;
 
     public static final int SENTRY_VERSION = 7;

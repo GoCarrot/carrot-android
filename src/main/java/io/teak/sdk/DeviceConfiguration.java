@@ -21,7 +21,6 @@ import android.os.Build;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.amazon.device.messaging.ADM;
 
@@ -43,8 +42,6 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.FutureTask;
 
 class DeviceConfiguration {
-    private static final String LOG_TAG = "Teak:DeviceConfig";
-
     public String gcmId;
     public String admId;
 
@@ -110,13 +107,13 @@ class DeviceConfiguration {
             try {
                 tempPreferences = context.getSharedPreferences(Teak.PREFERENCES_FILE, Context.MODE_PRIVATE);
             } catch (Exception e) {
-                Log.e(LOG_TAG, "Error calling getSharedPreferences(). " + Log.getStackTraceString(e));
+                Teak.log.exception(e);
             } finally {
                 this.preferences = tempPreferences;
             }
 
             if (this.preferences == null) {
-                Log.e(LOG_TAG, "getSharedPreferences() returned null. Some caching is disabled.");
+                Teak.log.e("device_configuration", "getSharedPreferences() returned null. Some caching is disabled.");
             }
         }
 
@@ -138,19 +135,21 @@ class DeviceConfiguration {
             try {
                 tempDeviceId = UUID.nameUUIDFromBytes(android.os.Build.SERIAL.getBytes("utf8")).toString();
             } catch (Exception e) {
-                Log.e(LOG_TAG, "android.os.Build.SERIAL not available, falling back to Settings.Secure.ANDROID_ID. " + Log.getStackTraceString(e));
+                Teak.log.e("device_configuration", "android.os.Build.SERIAL not available, falling back to Settings.Secure.ANDROID_ID.");
+                Teak.log.exception(e);
             }
 
             if (tempDeviceId == null) {
                 try {
                     String androidId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
                     if (androidId.equals("9774d56d682e549c")) {
-                        Log.e(LOG_TAG, "Settings.Secure.ANDROID_ID == '9774d56d682e549c', falling back to random UUID stored in preferences.");
+                        Teak.log.e("device_configuration", "Settings.Secure.ANDROID_ID == '9774d56d682e549c', falling back to random UUID stored in preferences.");
                     } else {
                         tempDeviceId = UUID.nameUUIDFromBytes(androidId.getBytes("utf8")).toString();
                     }
                 } catch (Exception e) {
-                    Log.e(LOG_TAG, "Error generating device id from Settings.Secure.ANDROID_ID, falling back to random UUID stored in preferences. " + Log.getStackTraceString(e));
+                    Teak.log.e("device_configuration", "Error generating device id from Settings.Secure.ANDROID_ID, falling back to random UUID stored in preferences.");
+                    Teak.log.exception(e);
                 }
             }
 
@@ -165,11 +164,12 @@ class DeviceConfiguration {
                             editor.apply();
                             tempDeviceId = prefDeviceId;
                         } catch (Exception e) {
-                            Log.e(LOG_TAG, "Error storing random UUID, no more fallbacks. " + Log.getStackTraceString(e));
+                            Teak.log.e("device_configuration", "Error storing random UUID, no more fallbacks.");
+                            Teak.log.exception(e);
                         }
                     }
                 } else {
-                    Log.e(LOG_TAG, "getSharedPreferences() returned null, unable to store random UUID, no more fallbacks.");
+                    Teak.log.e("device_configuration", "getSharedPreferences() returned null, unable to store random UUID, no more fallbacks.");
                 }
             }
 
@@ -186,13 +186,13 @@ class DeviceConfiguration {
             this.admInstance = adm;
             if (adm.getRegistrationId() == null) {
                 if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "ADM supported, starting registration.");
+                    Teak.log.i("device_configuration", "ADM supported, starting registration.");
                 }
                 adm.startRegister();
             } else {
                 this.admId = adm.getRegistrationId();
                 if (Teak.isDebug) {
-                    Log.d(LOG_TAG, "ADM Id found in cache: " + this.admId);
+                    Teak.log.i("device_configuration", "ADM Id found in cache: " + this.admId);
                 }
             }
         } else {
@@ -226,11 +226,8 @@ class DeviceConfiguration {
                         storedGcmSenderId != null && storedGcmSenderId.equals(gcmSenderId) &&
                         storedGcmId != null) {
                     // No need to get a new one, so put it on the blocking queue
-                    if (Teak.isDebug) {
-                        Log.d(LOG_TAG, "GCM Id found in cache: " + storedGcmId);
-                    }
+                    Teak.log.i("device_configuration", "GCM Id found in cache: " + storedGcmId);
                     gcmId = storedGcmId;
-                    displayPushDebugMessage();
                 }
             }
 
@@ -309,9 +306,7 @@ class DeviceConfiguration {
                                 }
                             }
                         } catch (Exception e) {
-                            if (Teak.isDebug) {
-                                Log.e(LOG_TAG, "Couldn't get Google Play Advertising Information.");
-                            }
+                            Teak.log.exception(e);
                         }
                     }
                 }).start();
@@ -328,10 +323,7 @@ class DeviceConfiguration {
                     @Override
                     public String call() throws Exception {
                         GoogleCloudMessaging gcm = _this.gcm.get();
-
-                        if (Teak.isDebug) {
-                            Log.d(LOG_TAG, "Registering for GCM with sender id: " + gcmSenderId);
-                        }
+                        Teak.log.i("device_configuration", "Registering for GCM with sender id: " + gcmSenderId);
                         return gcm.register(gcmSenderId);
                     }
                 }));
@@ -343,7 +335,7 @@ class DeviceConfiguration {
                             String registration = gcmRegistration.get();
 
                             if (registration == null) {
-                                Log.e(LOG_TAG, "Got null token during GCM registration.");
+                                Teak.log.e("device_configuration", "Got null token during GCM registration.");
                                 return;
                             }
 
@@ -360,10 +352,8 @@ class DeviceConfiguration {
                                 _this.gcmId = registration;
                                 _this.notifyPushIdChangedListeners();
                             }
-
-                            displayPushDebugMessage();
                         } catch (Exception e) {
-                            Log.e(LOG_TAG, Log.getStackTraceString(e));
+                            Teak.log.exception(e);
                         }
                     }
                 }).start();
@@ -405,39 +395,6 @@ class DeviceConfiguration {
     }
     // endregion
 
-    private void displayPushDebugMessage() {
-        if (Teak.isDebug) {
-            final DeviceConfiguration _this = this;
-            Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
-                @Override
-                public void run(Session session) {
-                    try {
-                        String urlString = "https://app.teak.io/apps/" + session.appConfiguration.appId + "/test_accounts/new" +
-                                "?api_key=" + URLEncoder.encode(session.userId(), "UTF-8") +
-                                "&device_manufacturer=" + URLEncoder.encode(_this.deviceManufacturer, "UTF-8") +
-                                "&device_model=" + URLEncoder.encode(_this.deviceModel, "UTF-8") +
-                                "&device_fallback=" + URLEncoder.encode(_this.deviceFallback, "UTF-8") +
-                                "&bundle_id=" + URLEncoder.encode(session.appConfiguration.bundleId, "UTF-8") +
-                                "&device_id=" + URLEncoder.encode(_this.deviceId, "UTF-8");
-
-                        if (_this.gcmId != null) {
-                            urlString += "&gcm_push_key=" + URLEncoder.encode(_this.gcmId, "UTF-8");
-                        }
-
-                        if (_this.admId != null) {
-                            urlString += "&adm_push_key=" + URLEncoder.encode(_this.admId, "UTF-8");
-                        }
-
-                        Log.d(LOG_TAG, "If you want to debug or test push notifications on this device please click the link below, or copy/paste into your browser:");
-                        Log.d(LOG_TAG, "    " + urlString);
-                    } catch (Exception e) {
-                        Log.e(LOG_TAG, Log.getStackTraceString(e));
-                    }
-                }
-            });
-        }
-    }
-
     // region Helpers
     // https://raw.githubusercontent.com/jaredrummler/AndroidDeviceNames/master/library/src/main/java/com/jaredrummler/android/device/DeviceName.java
     private static String capitalize(String str) {
@@ -475,7 +432,7 @@ class DeviceConfiguration {
     @Override
     public String toString() {
         try {
-            return String.format(Locale.US, "%s: %s", super.toString(), new JSONObject(this.to_h()).toString(2));
+            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.to_h())));
         } catch (Exception ignored) {
             return super.toString();
         }
