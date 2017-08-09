@@ -157,6 +157,7 @@ class Request implements Runnable {
 
         try {
             Teak.log.i("request.send", this.to_h());
+            long startTime = System.nanoTime();
 
             URL url = new URL("https://" + hostnameForEndpoint + this.endpoint);
             connection = (HttpsURLConnection) url.openConnection();
@@ -192,6 +193,7 @@ class Request implements Runnable {
 
             Map<String, Object> h = this.to_h();
             h.remove("payload");
+            h.put("response_time", (System.nanoTime() - startTime) / 1000000.0);
             try {
                 h.put("payload", Helpers.jsonToMap(new JSONObject(response.toString())));
             } catch (Exception ignored) {
