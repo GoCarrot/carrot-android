@@ -489,6 +489,7 @@ public class Teak extends BroadcastReceiver {
                     if (Teak.localBroadcastManager != null) {
                         final Intent broadcastEvent = new Intent(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
                         broadcastEvent.putExtras(bundle);
+                        Teak.localBroadcastManager.sendBroadcast(broadcastEvent);
 
                         String teakRewardId = bundle.getString("teakRewardId");
                         if (teakRewardId != null) {
@@ -500,7 +501,6 @@ public class Teak extends BroadcastReceiver {
                                         try {
                                             TeakNotification.Reward reward = rewardFuture.get();
                                             HashMap<String, Object> rewardMap = Helpers.jsonToMap(reward.json);
-                                            broadcastEvent.putExtra("teakReward", rewardMap);
 
                                             // Broadcast reward only if everything goes well
                                             final Intent rewardIntent = new Intent(Teak.REWARD_CLAIM_ATTEMPT);
@@ -508,16 +508,10 @@ public class Teak extends BroadcastReceiver {
                                             Teak.localBroadcastManager.sendBroadcast(rewardIntent);
                                         } catch (Exception e) {
                                             Teak.log.exception(e);
-                                        } finally {
-                                            Teak.localBroadcastManager.sendBroadcast(broadcastEvent);
                                         }
                                     }
                                 }).start();
-                            } else {
-                                Teak.localBroadcastManager.sendBroadcast(broadcastEvent);
                             }
-                        } else {
-                            Teak.localBroadcastManager.sendBroadcast(broadcastEvent);
                         }
                     }
                 }
