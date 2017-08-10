@@ -73,6 +73,10 @@ public class Teak extends BroadcastReceiver {
             if (airSdkVersion != null) {
                 map.put("adobeAir", airSdkVersion);
             }
+            String unitySdkVersion = Helpers.getStringResourceByName("io_teak_unity_sdk_version", Teak.mainActivity.getApplicationContext());
+            if (unitySdkVersion != null) {
+                map.put("unity", unitySdkVersion);
+            }
         }
         return map;
     }
