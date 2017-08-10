@@ -69,13 +69,10 @@ public class Teak extends BroadcastReceiver {
         HashMap<String, Object> map = new HashMap<>();
         map.put("android", Teak.SDKVersion);
         if (Teak.mainActivity != null) {
-            String airSdkVersion = Helpers.getStringResourceByName("io_teak_air_sdk_version", Teak.mainActivity.getApplicationContext());
-            if (airSdkVersion != null) {
-                map.put("adobeAir", airSdkVersion);
-            }
-            String unitySdkVersion = Helpers.getStringResourceByName("io_teak_unity_sdk_version", Teak.mainActivity.getApplicationContext());
-            if (unitySdkVersion != null) {
-                map.put("unity", unitySdkVersion);
+            String wrapperSDKName = Helpers.getStringResourceByName("io_teak_wrapper_sdk_name", Teak.mainActivity.getApplicationContext());
+            String wrapperSDKVersion = Helpers.getStringResourceByName("io_teak_wrapper_sdk_version", Teak.mainActivity.getApplicationContext());
+            if (wrapperSDKName != null && wrapperSDKVersion != null) {
+                map.put(wrapperSDKName, wrapperSDKVersion);
             }
         }
         return map;
