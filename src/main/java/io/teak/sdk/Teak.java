@@ -38,6 +38,7 @@ import org.json.JSONObject;
 
 import java.security.InvalidParameterException;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 
@@ -602,7 +603,20 @@ public class Teak extends BroadcastReceiver {
             return;
         }
 
-        Teak.log.i("notification.received", _.h("teakNotifId", teakNotifId, "teakUserId", teakUserId));
+        HashMap<String, Object> debugHash = new HashMap<>();
+        Set<String> keys = bundle.keySet();
+        for (String key : keys) {
+            Object o = bundle.get(key);
+            if (o instanceof String) {
+                try {
+                    JSONObject jsonObject = new JSONObject(o.toString());
+                    o = Helpers.jsonToMap(jsonObject);
+                } catch (Exception ignored) {
+                }
+            }
+            debugHash.put(key, o);
+        }
+        Teak.log.i("notification.received", debugHash);
 
         // Send Notification Received Metric
         Session session = Session.getCurrentSessionOrNull();
