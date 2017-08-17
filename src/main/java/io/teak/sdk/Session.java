@@ -563,7 +563,13 @@ class Session {
         @Override
         public void onConfigurationReady(RemoteConfiguration configuration) {
             remoteConfiguration = configuration;
-            setState(State.Configured);
+            synchronized (currentSession.stateMutex) {
+                if (currentSession.state == State.Expiring) {
+                    currentSession.previousState = State.Configured;
+                } else {
+                    setState(State.Configured);
+                }
+            }
         }
     };
 
