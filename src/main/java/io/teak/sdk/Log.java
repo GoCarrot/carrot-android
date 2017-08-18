@@ -193,49 +193,51 @@ public class Log {
         payload.put("event_data", eventData);
 
         // Remote logging
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                HttpsURLConnection connection = null;
-                try {
-                    URL endpoint = Teak.isDebug ?
-                            new URL("https://logs.gocarrot.com/dev.sdk.log." + logLevel.name)
-                            : new URL("https://logs.gocarrot.com/sdk.log." + logLevel.name);
-                    connection = (HttpsURLConnection) endpoint.openConnection();
-                    connection.setRequestProperty("Accept-Charset", "UTF-8");
-                    connection.setUseCaches(false);
-                    connection.setDoOutput(true);
-                    connection.setRequestProperty("Content-Type", "application/json");
-                    //connection.setRequestProperty("Content-Encoding", "gzip");
+        if (Teak.isDebug) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    HttpsURLConnection connection = null;
+                    try {
+                        URL endpoint = Teak.debugConfiguration.isDevelopmentBuild ?
+                                new URL("https://logs.gocarrot.com/dev.sdk.log." + logLevel.name)
+                                : new URL("https://logs.gocarrot.com/sdk.log." + logLevel.name);
+                        connection = (HttpsURLConnection) endpoint.openConnection();
+                        connection.setRequestProperty("Accept-Charset", "UTF-8");
+                        connection.setUseCaches(false);
+                        connection.setDoOutput(true);
+                        connection.setRequestProperty("Content-Type", "application/json");
+                        //connection.setRequestProperty("Content-Encoding", "gzip");
 
-                    //GZIPOutputStream wr = new GZIPOutputStream(connection.getOutputStream());
-                    OutputStream wr = connection.getOutputStream();
-                    wr.write(new JSONObject(payload).toString().getBytes());
-                    wr.flush();
-                    wr.close();
+                        //GZIPOutputStream wr = new GZIPOutputStream(connection.getOutputStream());
+                        OutputStream wr = connection.getOutputStream();
+                        wr.write(new JSONObject(payload).toString().getBytes());
+                        wr.flush();
+                        wr.close();
 
-                    InputStream is;
-                    if (connection.getResponseCode() < 400) {
-                        is = connection.getInputStream();
-                    } else {
-                        is = connection.getErrorStream();
-                    }
-                    BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-                    String line;
-                    StringBuilder response = new StringBuilder();
-                    while ((line = rd.readLine()) != null) {
-                        response.append(line);
-                        response.append('\r');
-                    }
-                    rd.close();
-                } catch (Exception ignored) {
-                } finally {
-                    if (connection != null) {
-                        connection.disconnect();
+                        InputStream is;
+                        if (connection.getResponseCode() < 400) {
+                            is = connection.getInputStream();
+                        } else {
+                            is = connection.getErrorStream();
+                        }
+                        BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+                        String line;
+                        StringBuilder response = new StringBuilder();
+                        while ((line = rd.readLine()) != null) {
+                            response.append(line);
+                            response.append('\r');
+                        }
+                        rd.close();
+                    } catch (Exception ignored) {
+                    } finally {
+                        if (connection != null) {
+                            connection.disconnect();
+                        }
                     }
                 }
-            }
-        }).start();
+            }).start();
+        }
 
         // Log to Android log
         if (Teak.isDebug && android.util.Log.isLoggable(this.androidLogTag, logLevel.androidLogPriority)) {

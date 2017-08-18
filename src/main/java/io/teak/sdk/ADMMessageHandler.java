@@ -68,7 +68,7 @@ public class ADMMessageHandler extends ADMMessageHandlerBase {
         Teak.log.e("amazon.adm.registration_error", "Error registering for ADM id: " + s);
 
         // If the error is INVALID_SENDER try and help the developer
-        if (Teak.isDebug && s.contains("INVALID_SENDER")) {
+        if (Teak.debugConfiguration.isDevelopmentBuild && s.contains("INVALID_SENDER")) {
 
             // First check to see if api_key.txt is available
             InputStream inputStream = null;

@@ -96,14 +96,8 @@ public class Teak extends BroadcastReceiver {
         }
 
         // Set up debug logging ASAP
-        try {
-            final Context context = Teak.mainActivity.getApplicationContext();
-            final ApplicationInfo applicationInfo = context.getApplicationInfo();
-            Teak.debugConfiguration = new DebugConfiguration(context);
-            Teak.isDebug = Teak.forceDebug || Teak.debugConfiguration.forceDebug || (applicationInfo != null && (0 != (applicationInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE)));
-        } catch (Exception e) {
-            Teak.log.exception(e);
-        }
+        Teak.debugConfiguration = new DebugConfiguration(Teak.mainActivity.getApplicationContext());
+        Teak.isDebug = Teak.debugConfiguration.forceDebug || Teak.debugConfiguration.isDevelopmentBuild;
 
         // Check the launch mode of the activity
         try {
@@ -114,9 +108,7 @@ public class Teak extends BroadcastReceiver {
             if ((ai.launchMode & ActivityInfo.LAUNCH_SINGLE_INSTANCE) == 0 &&
                 (ai.launchMode & ActivityInfo.LAUNCH_SINGLE_TASK) == 0 &&
                 (ai.launchMode & ActivityInfo.LAUNCH_SINGLE_TOP) == 0) {
-                if (Teak.isDebug) {
-                    Teak.log.w("launch_mode", "The android:launchMode of this activity is not set to 'singleTask', 'singleTop' or 'singleInstance'. This could cause undesired behavior.");
-                }
+                Teak.log.w("launch_mode", "The android:launchMode of this activity is not set to 'singleTask', 'singleTop' or 'singleInstance'. This could cause undesired behavior.");
             }
         } catch (Exception e) {
             Teak.log.exception(e);

@@ -16,6 +16,7 @@ package io.teak.sdk;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
 import android.support.annotation.NonNull;
 
 import org.json.JSONObject;
@@ -51,7 +52,7 @@ class DebugConfiguration {
     private final SharedPreferences preferences;
 
     public final boolean forceDebug;
-    private final String bugReportUrl = "https://github.com/GoCarrot/teak-android/issues/new";
+    public final boolean isDevelopmentBuild;
 
     public DebugConfiguration(@NonNull Context context) {
         SharedPreferences tempPreferences = null;
@@ -65,10 +66,18 @@ class DebugConfiguration {
 
         if (this.preferences == null) {
             Teak.log.e("debug_configuration", "getSharedPreferences() returned null. Some debug functionality is disabled.");
-            this.forceDebug = false;
+            this.forceDebug = Teak.forceDebug;
         } else {
-            this.forceDebug = this.preferences.getBoolean(PREFERENCE_FORCE_DEBUG, false);
+            this.forceDebug = Teak.forceDebug || this.preferences.getBoolean(PREFERENCE_FORCE_DEBUG, false);
         }
+
+        boolean tempDevelopmentBuild = false;
+        try {
+            ApplicationInfo applicationInfo = context.getApplicationInfo();
+            tempDevelopmentBuild = (applicationInfo != null && (0 != (applicationInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE)));
+        } catch (Exception ignored) {
+        }
+        this.isDevelopmentBuild = tempDevelopmentBuild;
     }
 
     public void setPreferenceForceDebug(boolean forceDebug) {
@@ -83,6 +92,7 @@ class DebugConfiguration {
             } catch (Exception e) {
                 Teak.log.exception(e);
             }
+            Teak.forceDebug = true;
         }
     }
 }

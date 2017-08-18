@@ -185,15 +185,9 @@ class DeviceConfiguration {
             ADM adm = new ADM(context);
             this.admInstance = adm;
             if (adm.getRegistrationId() == null) {
-                if (Teak.isDebug) {
-                    Teak.log.i("device_configuration", "ADM supported, starting registration.");
-                }
                 adm.startRegister();
             } else {
                 this.admId = adm.getRegistrationId();
-                if (Teak.isDebug) {
-                    Teak.log.i("device_configuration", "ADM Id found in cache: " + this.admId);
-                }
             }
         } else {
             this.gcm = new FutureTask<>(new RetriableTask<>(100, 2000L, new Callable<GoogleCloudMessaging>() {
