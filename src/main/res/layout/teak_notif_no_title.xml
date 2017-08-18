@@ -4,6 +4,15 @@
     android:layout_height="match_parent">
 
     <ImageView
+        android:tag="aspect_ratio: 1111x2222&#10;description: Background image for the notification."
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_centerInParent="true"
+        android:scaleType="centerCrop"
+        android:id="@+id/notification_background" />
+
+    <ImageView
+        android:tag="default: BUILTIN_APP_ICON&#10;aspect_ratio: 48x48&#10;description: The 'app icon' of the app, on the left of the notification. Set to the text BUILTIN_APP_ICON unless you really think this should be changed or hidden."
         android:id="@+id/left_image"
         android:layout_width="48dp"
         android:layout_height="48dp"
@@ -41,6 +50,7 @@
         android:orientation="vertical">
 
         <TextView
+            android:tag="max_length: 48&#10;description: Text of the notification, can be HTML."
             android:id="@+id/text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

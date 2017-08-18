@@ -435,6 +435,11 @@ public class TeakNotification {
 
     static final String INBOX_CACHE_CREATE_SQL = "CREATE TABLE IF NOT EXISTS inbox(teak_notification_id INTEGER, android_id INTEGER, notification_payload TEXT)";
 
+    // Version of the push from Teak
+    static final int TEAK_NOTIFICATION_V0 = 0;
+    int notificationVersion = TEAK_NOTIFICATION_V0;
+
+    // v1
     String message;
     String longText;
     String teakRewardId;
@@ -443,6 +448,9 @@ public class TeakNotification {
     int platformId;
     long teakNotifId;
     JSONObject extras;
+
+    // v2+
+    JSONObject display;
 
     static SparseArray<Thread> notificationUpdateThread = new SparseArray<>();
 
@@ -456,6 +464,21 @@ public class TeakNotification {
             this.extras = bundle.getString("extras") == null ? null : new JSONObject(bundle.getString("extras"));
         } catch (JSONException e) {
             this.extras = null;
+        }
+
+        try {
+            this.notificationVersion = Integer.parseInt(bundle.getString("version"));
+        } catch (Exception ignored) {
+            this.notificationVersion = TEAK_NOTIFICATION_V0;
+        }
+
+        if (bundle.getString("display") != null) {
+            try {
+                this.display = new JSONObject(bundle.getString("display"));
+            } catch (Exception e) {
+                Teak.log.exception(e);
+                this.notificationVersion = TEAK_NOTIFICATION_V0;
+            }
         }
 
         try {

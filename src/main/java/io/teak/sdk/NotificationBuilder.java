@@ -28,8 +28,14 @@ import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.text.Html;
 import android.text.Spanned;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.RemoteViews;
+import android.widget.TextView;
+
+import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.InputStream;
@@ -37,10 +43,184 @@ import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Iterator;
 import java.util.Random;
 
 class NotificationBuilder {
-    public static Notification createNativeNotification(final Context context, Bundle bundle, TeakNotification teakNotificaton) {
+    public static Notification createNativeNotification(Context context, Bundle bundle, TeakNotification teakNotificaton) {
+        if (teakNotificaton.notificationVersion == TeakNotification.TEAK_NOTIFICATION_V0) {
+            return createNativeNotificationV0(context, bundle, teakNotificaton);
+        }
+
+        try {
+            return createNativeNotificationV1Plus(context, bundle, teakNotificaton);
+        } catch (Exception e) {
+            Teak.log.exception(e);
+            // TODO: Report to the 'callback' URL on the push when/if we implement that
+            return null;
+        }
+    }
+
+    public static Notification createNativeNotificationV1Plus(final Context context, Bundle bundle, final TeakNotification teakNotificaton) throws Exception {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
+
+        // Rich text message
+        Spanned richMessageText = Html.fromHtml(teakNotificaton.message);
+
+        // Configure notification behavior
+        builder.setPriority(NotificationCompat.PRIORITY_MAX);
+        builder.setDefaults(NotificationCompat.DEFAULT_ALL);
+        builder.setOnlyAlertOnce(true);
+        builder.setAutoCancel(true);
+        builder.setTicker(richMessageText);
+
+        // App Icon
+        int tempAppIconResourceId = 0;
+        try {
+            PackageManager pm = context.getPackageManager();
+            ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
+            tempAppIconResourceId = ai.icon;
+            builder.setSmallIcon(tempAppIconResourceId);
+        } catch (Exception e) {
+            Teak.log.e("notification_builder", "Unable to load app icon resource for Notification.");
+            return null;
+        }
+        final int appIconResourceId = tempAppIconResourceId;
+
+        Random rng = new Random();
+
+        // Create intent to fire if/when notification is cleared
+        Intent pushClearedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX);
+        pushClearedIntent.putExtras(bundle);
+        PendingIntent pushClearedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
+        builder.setDeleteIntent(pushClearedPendingIntent);
+
+        // Create intent to fire if/when notification is opened, attach bundle info
+        Intent pushOpenedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX);
+        pushOpenedIntent.putExtras(bundle);
+        PendingIntent pushOpenedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
+        builder.setContentIntent(pushOpenedPendingIntent);
+
+        // Notification builder
+        Notification nativeNotification = builder.build();
+
+        // Because we can't be certain that the R class will line up with what is at SDK build time
+        // like in the case of Unity et. al.
+        class IdHelper {
+            public int id(String identifier) {
+                int ret = context.getResources().getIdentifier(identifier, "id", context.getPackageName());
+                if (ret == 0) {
+                    throw new Resources.NotFoundException("Could not find R.id." + identifier);
+                }
+                return ret;
+            }
+
+            public int layout(String identifier) {
+                int ret = context.getResources().getIdentifier(identifier, "layout", context.getPackageName());
+                if (ret == 0) {
+                    throw new Resources.NotFoundException("Could not find R.layout." + identifier);
+                }
+                return ret;
+            }
+        }
+        final IdHelper R = new IdHelper(); // Declaring local as 'R' ensures we don't accidentally use the other R
+
+        class ViewBuilder {
+            public RemoteViews buildViews(String name) throws Exception {
+                int viewLayout = R.layout(name);
+                RemoteViews remoteViews = new RemoteViews(
+                        context.getPackageName(),
+                        viewLayout
+                );
+
+                // To let us query for information about the view
+                LayoutInflater factory = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                View inflatedView = factory.inflate(viewLayout, null);
+
+                // Configure view
+                JSONObject viewConfig = teakNotificaton.display.getJSONObject(name);
+                Iterator<?> keys = viewConfig.keys();
+
+                while (keys.hasNext()) {
+                    String key = (String) keys.next();
+                    String value = viewConfig.getString(key);
+
+                    if (value == null || value.length() == 0) continue;
+
+                    int viewElementId = R.id(key);
+                    View viewElement = inflatedView.findViewById(viewElementId);
+
+                    if (viewElement.getClass().equals(TextView.class)) {
+                        remoteViews.setTextViewText(viewElementId, Html.fromHtml(value));
+                    } else if (viewElement.getClass().equals(ImageView.class)) {
+                        if (value.equalsIgnoreCase("BUILTIN_APP_ICON")) {
+                            remoteViews.setImageViewResource(viewElementId, appIconResourceId);
+                        } else {
+                            Bitmap bitmap = loadBitmapFromURI(new URI(value));
+                            remoteViews.setImageViewBitmap(viewElementId, bitmap);
+                        }
+                    } else if (viewElement.getClass().equals(Button.class)) {
+                        // TODO: Need more config options for button, image, text, deep link
+                    } else {
+                        // TODO: report error to the dashboard
+                    }
+                }
+
+                return remoteViews;
+            }
+
+            public Bitmap loadBitmapFromURI(URI bitmapUri) throws Exception {
+                Bitmap ret = null;
+                URL aURL = new URL(bitmapUri.toString());
+                URLConnection conn = aURL.openConnection();
+                conn.connect();
+                InputStream is = conn.getInputStream();
+                BufferedInputStream bis = new BufferedInputStream(is);
+                ret = BitmapFactory.decodeStream(bis);
+                bis.close();
+                is.close();
+                return ret;
+            }
+        }
+        ViewBuilder viewBuilder = new ViewBuilder();
+
+        // Configure 'contentView'
+        RemoteViews contentView = viewBuilder.buildViews(teakNotificaton.display.getString("contentView"));
+        nativeNotification.contentView = contentView;
+
+        // Check for Jellybean (API 16, 4.1)+ for expanded view
+        RemoteViews bigContentView = null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && teakNotificaton.display.has("bigContentView")) {
+            try {
+                bigContentView = viewBuilder.buildViews(teakNotificaton.display.getString("bigContentView"));
+            } catch (Exception ignored) {
+            }
+        }
+
+        // Assign expanded view if it's there, otherwise hide the pulldown view (if it exists)
+        if (bigContentView != null) {
+            // Use reflection to avoid compile-time issues
+            try {
+                Field bigContentViewField = nativeNotification.getClass().getField("bigContentView");
+                bigContentViewField.set(nativeNotification, bigContentView);
+            } catch (Exception ignored) {
+            }
+        } else {
+            String pulldownContentView = "pulldown_layout";
+            if (teakNotificaton.display.has("pulldownContentView")) {
+                pulldownContentView = teakNotificaton.display.getString("pulldownContentView");
+            }
+
+            try {
+                contentView.setViewVisibility(R.id(pulldownContentView), View.GONE);
+            } catch (Exception ignored) {
+            }
+        }
+
+        return nativeNotification;
+    }
+
+    public static Notification createNativeNotificationV0(final Context context, Bundle bundle, TeakNotification teakNotificaton) {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
 
         // Rich text message
