@@ -524,7 +524,6 @@ public class TeakNotification {
         Teak.log.i("notification.cancel", _.h("platformId", platformId));
 
         notificationManager.cancel(NOTIFICATION_TAG, platformId);
-        context.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
 
         Thread updateThread = TeakNotification.notificationUpdateThread.get(platformId);
         if (updateThread != null) {
