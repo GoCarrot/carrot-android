@@ -360,7 +360,7 @@ public class Teak extends BroadcastReceiver {
 
     /**************************************************************************/
 
-    private static final ActivityLifecycleCallbacks lifecycleCallbacks = new ActivityLifecycleCallbacks() {
+    static final ActivityLifecycleCallbacks lifecycleCallbacks = new ActivityLifecycleCallbacks() {
         @Override
         public void onActivityCreated(Activity inActivity, Bundle savedInstanceState) {
             if (inActivity != Teak.mainActivity) return;

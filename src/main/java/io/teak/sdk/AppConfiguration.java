@@ -17,7 +17,9 @@ package io.teak.sdk;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 
 import org.json.JSONObject;
@@ -45,9 +47,24 @@ class AppConfiguration {
     public AppConfiguration(@NonNull Context context) {
         this.applicationContext = context.getApplicationContext();
 
+        Bundle metaData = null;
+        try {
+            ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+            metaData = appInfo.metaData;
+        } catch (Exception ignored) {
+        }
+
         // Teak App Id
         {
-            this.appId = Helpers.getStringResourceByName(TEAK_APP_ID, context);
+            String tempAppId = Helpers.getStringResourceByName(TEAK_APP_ID, context);
+            if (tempAppId == null && metaData != null && metaData.getString(TEAK_APP_ID) != null) {
+                String temp = metaData.getString(TEAK_APP_ID);
+                if (temp.startsWith("teak")) {
+                    tempAppId = temp.substring(4);
+                }
+            }
+
+            this.appId = tempAppId;
             if (this.appId == null) {
                 throw new RuntimeException("Failed to find R.string." + TEAK_APP_ID);
             }
@@ -55,7 +72,15 @@ class AppConfiguration {
 
         // Teak API Key
         {
-            this.apiKey = Helpers.getStringResourceByName(TEAK_API_KEY, context);
+            String tempApiKey = Helpers.getStringResourceByName(TEAK_API_KEY, context);
+            if (tempApiKey == null && metaData != null && metaData.getString(TEAK_API_KEY) != null) {
+                String temp = metaData.getString(TEAK_API_KEY);
+                if (temp.startsWith("teak")) {
+                    tempApiKey = temp.substring(4);
+                }
+            }
+
+            this.apiKey = tempApiKey;
             if (this.apiKey == null) {
                 throw new RuntimeException("Failed to find R.string." + TEAK_API_KEY);
             }
@@ -63,8 +88,15 @@ class AppConfiguration {
 
         // Push Sender Id
         {
-            // TODO: Check ADM vs GCM
-            this.pushSenderId = Helpers.getStringResourceByName(TEAK_GCM_SENDER_ID, context);
+            String tempPushSenderId = Helpers.getStringResourceByName(TEAK_GCM_SENDER_ID, context);
+            if (tempPushSenderId == null && metaData != null && metaData.getString(TEAK_GCM_SENDER_ID) != null) {
+                String temp = metaData.getString(TEAK_GCM_SENDER_ID);
+                if (temp.startsWith("teak")) {
+                    tempPushSenderId = temp.substring(4);
+                }
+            }
+
+            this.pushSenderId = tempPushSenderId;
             if (this.pushSenderId == null) {
                 Teak.log.e("app_configuration", "R.string." + TEAK_GCM_SENDER_ID + " not present, push notifications disabled.");
             }
