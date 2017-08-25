@@ -632,6 +632,19 @@ class Session {
         synchronized (currentSessionMutex) {
             getCurrentSession(appConfiguration, deviceConfiguration);
 
+            // If this intent has already been processed by Teak, just reset the state and we are done.
+            // Otherwise, out-of-app deep links can cause a back-stack loop
+            if (intent.getBooleanExtra("processedByTeak", false)) {
+                // Reset state on current session, if it is expiring
+                synchronized (currentSession.stateMutex) {
+                    if (currentSession.state == State.Expiring) {
+                        currentSession.setState(currentSession.previousState);
+                    }
+                }
+                return;
+            }
+            intent.putExtra("processedByTeak", true);
+
             // Check and see if this is (probably) the first time this app has been ever launched
             boolean isFirstLaunch = false;
             if (deviceConfiguration.preferences != null) {
