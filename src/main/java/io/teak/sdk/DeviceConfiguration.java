@@ -31,7 +31,6 @@ import com.google.android.gms.gcm.GoogleCloudMessaging;
 
 import org.json.JSONObject;
 
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -40,6 +39,8 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.FutureTask;
+
+import io.teak.sdk.Helpers._;
 
 class DeviceConfiguration {
     public String gcmId;
@@ -65,9 +66,6 @@ class DeviceConfiguration {
 
     private final AppConfiguration appConfiguration;
 
-    private static final String PREFERENCE_GCM_ID = "io.teak.sdk.Preferences.GcmId";
-    private static final String PREFERENCE_GCM_SENDER_ID = "io.teak.sdk.Preferences.GcmSenderId";
-    private static final String PREFERENCE_APP_VERSION = "io.teak.sdk.Preferences.AppVersion";
     private static final String PREFERENCE_DEVICE_ID = "io.teak.sdk.Preferences.DeviceId";
 
     public DeviceConfiguration(@NonNull final Context context, @NonNull AppConfiguration appConfiguration) {
@@ -210,40 +208,16 @@ class DeviceConfiguration {
         public void onConfigurationReady(RemoteConfiguration configuration) {
             // GCM sender id
             gcmSenderId = configuration.gcmSenderId == null ? appConfiguration.pushSenderId : configuration.gcmSenderId;
-
-            // Kick off GCM request
-            if (preferences != null) {
-                int storedAppVersion = preferences.getInt(PREFERENCE_APP_VERSION, 0);
-                String storedGcmId = preferences.getString(PREFERENCE_GCM_ID, null);
-                String storedGcmSenderId = preferences.getString(PREFERENCE_GCM_SENDER_ID, null);
-                if (storedAppVersion == appConfiguration.appVersion &&
-                        storedGcmSenderId != null && storedGcmSenderId.equals(gcmSenderId) &&
-                        storedGcmId != null) {
-                    // No need to get a new one, so put it on the blocking queue
-                    Teak.log.i("device_configuration", "GCM Id found in cache: " + storedGcmId);
-                    gcmId = storedGcmId;
-                }
-            }
-
-            if (gcmId == null) {
-                registerForGCM(appConfiguration);
-            }
+            registerForGCM(appConfiguration, "remote_configuration");
         }
     };
 
-    public void reRegisterPushToken(@NonNull AppConfiguration appConfiguration) {
+    public void reRegisterPushToken(@NonNull AppConfiguration appConfiguration, String source) {
         if (this.admIsSupported) {
             ADM adm = (ADM) this.admInstance;
             adm.startRegister();
         } else {
-            if (this.preferences != null) {
-                SharedPreferences.Editor editor = this.preferences.edit();
-                editor.putInt(PREFERENCE_APP_VERSION, 0);
-                editor.putString(PREFERENCE_GCM_ID, null);
-                editor.putString(PREFERENCE_GCM_SENDER_ID, null);
-                editor.apply();
-            }
-            registerForGCM(appConfiguration);
+            registerForGCM(appConfiguration, source);
         }
     }
 
@@ -308,7 +282,7 @@ class DeviceConfiguration {
         }
     }
 
-    private void registerForGCM(@NonNull final AppConfiguration appConfiguration) {
+    private void registerForGCM(@NonNull final AppConfiguration appConfiguration, final String source) {
         try {
             if (gcmSenderId != null) {
                 final DeviceConfiguration _this = this;
@@ -317,7 +291,7 @@ class DeviceConfiguration {
                     @Override
                     public String call() throws Exception {
                         GoogleCloudMessaging gcm = _this.gcm.get();
-                        Teak.log.i("device_configuration", "Registering for GCM with sender id: " + gcmSenderId);
+                        Teak.log.i("device_configuration", _.h("sender_id", gcmSenderId, "source", source));
                         return gcm.register(gcmSenderId);
                     }
                 }));
@@ -333,19 +307,7 @@ class DeviceConfiguration {
                                 return;
                             }
 
-                            if (_this.preferences != null) {
-                                SharedPreferences.Editor editor = _this.preferences.edit();
-                                editor.putInt(PREFERENCE_APP_VERSION, appConfiguration.appVersion);
-                                editor.putString(PREFERENCE_GCM_ID, registration);
-                                editor.putString(PREFERENCE_GCM_SENDER_ID, gcmSenderId);
-                                editor.apply();
-                            }
-
-                            // Inform event listeners GCM is here
-                            if (!registration.equals(gcmId)) {
-                                _this.gcmId = registration;
-                                _this.notifyPushIdChangedListeners();
-                            }
+                            _this.assignGcmRegistration(registration);
                         } catch (Exception e) {
                             Teak.log.exception(e);
                         }
@@ -354,6 +316,24 @@ class DeviceConfiguration {
             }
         } catch (Exception ignored) {
         }
+    }
+
+    public void assignGcmRegistration(final String registration) {
+        final DeviceConfiguration _this = this;
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    // Inform event listeners GCM is here
+                    if (!registration.equals(gcmId)) {
+                        _this.gcmId = registration;
+                        _this.notifyPushIdChangedListeners();
+                        Teak.log.i("gcm.key_updated", _.h("gcm_id", registration));
+                    }
+                } catch (Exception e) {
+                    Teak.log.exception(e);
+                }
+            }
+        }).start();
     }
 
     public void notifyPushIdChangedListeners() {

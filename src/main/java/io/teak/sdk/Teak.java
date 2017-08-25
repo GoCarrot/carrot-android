@@ -23,7 +23,6 @@ import android.content.Intent;
 import android.content.Context;
 import android.content.BroadcastReceiver;
 import android.content.pm.ActivityInfo;
-import android.content.pm.ApplicationInfo;
 
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -341,7 +340,7 @@ public class Teak extends BroadcastReceiver {
 
     private static Activity mainActivity;
     private static IStore appStore;
-    private static AppConfiguration appConfiguration;
+    static AppConfiguration appConfiguration;
     static DeviceConfiguration deviceConfiguration;
 
     private static FacebookAccessTokenBroadcast facebookAccessTokenBroadcast;
@@ -577,6 +576,7 @@ public class Teak extends BroadcastReceiver {
     /**************************************************************************/
 
     private static final String GCM_RECEIVE_INTENT_ACTION = "com.google.android.c2dm.intent.RECEIVE";
+    private static final String GCM_REGISTRATION_INTENT_ACTION  = "com.google.android.c2dm.intent.REGISTRATION";
 
     static void handlePushNotificationReceived(Context context, Intent intent) {
         Bundle bundle = intent.getExtras();
@@ -638,6 +638,11 @@ public class Teak extends BroadcastReceiver {
 
         if (GCM_RECEIVE_INTENT_ACTION.equals(action)) {
             Teak.handlePushNotificationReceived(context, intent);
+        } else if (GCM_REGISTRATION_INTENT_ACTION.equals(action)) {
+            final String registrationId = intent.getStringExtra("registration_id");
+            if (registrationId != null && Teak.deviceConfiguration != null) {
+                Teak.deviceConfiguration.assignGcmRegistration(registrationId);
+            }
         } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX)) {
             Bundle bundle = intent.getExtras();
 

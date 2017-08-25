@@ -36,6 +36,7 @@
             android:permission="com.google.android.c2dm.permission.SEND">
             <intent-filter>
                 <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+                <action android:name="com.google.android.c2dm.intent.REGISTRATION" />
                 <action android:name="com.teakio.pushtest.intent.TEAK_NOTIFICATION_OPENED" />
                 <action android:name="com.teakio.pushtest.intent.TEAK_NOTIFICATION_CLEARED" />
                 <category android:name="com.teakio.pushtest" />

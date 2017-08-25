@@ -468,7 +468,7 @@ class Session {
 
                                 // Server requesting new push key.
                                 if (response.optBoolean("reset_push_key", false)) {
-                                    _this.deviceConfiguration.reRegisterPushToken(_this.appConfiguration);
+                                    _this.deviceConfiguration.reRegisterPushToken(_this.appConfiguration, "reset_push_key");
                                 }
 
                                 if (response.has("country_code")) {
