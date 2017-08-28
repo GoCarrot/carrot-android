@@ -86,7 +86,7 @@ class NotificationBuilder {
                 if (ret == 0) {
                     throw new Resources.NotFoundException("Could not find R.integer." + identifier);
                 }
-                return ret;
+                return context.getResources().getInteger(ret);
             }
 
             public int drawable(String identifier) {
