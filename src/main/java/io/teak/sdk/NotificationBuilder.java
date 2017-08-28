@@ -62,48 +62,6 @@ class NotificationBuilder {
     }
 
     public static Notification createNativeNotificationV1Plus(final Context context, Bundle bundle, final TeakNotification teakNotificaton) throws Exception {
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
-
-        // Rich text message
-        Spanned richMessageText = Html.fromHtml(teakNotificaton.message);
-
-        // Configure notification behavior
-        builder.setPriority(NotificationCompat.PRIORITY_MAX);
-        builder.setDefaults(NotificationCompat.DEFAULT_ALL);
-        builder.setOnlyAlertOnce(true);
-        builder.setAutoCancel(true);
-        builder.setTicker(richMessageText);
-
-        // App Icon
-        int tempAppIconResourceId = 0;
-        try {
-            PackageManager pm = context.getPackageManager();
-            ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
-            tempAppIconResourceId = ai.icon;
-            builder.setSmallIcon(tempAppIconResourceId);
-        } catch (Exception e) {
-            Teak.log.e("notification_builder", "Unable to load app icon resource for Notification.");
-            return null;
-        }
-        final int appIconResourceId = tempAppIconResourceId;
-
-        Random rng = new Random();
-
-        // Create intent to fire if/when notification is cleared
-        Intent pushClearedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX);
-        pushClearedIntent.putExtras(bundle);
-        PendingIntent pushClearedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
-        builder.setDeleteIntent(pushClearedPendingIntent);
-
-        // Create intent to fire if/when notification is opened, attach bundle info
-        Intent pushOpenedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX);
-        pushOpenedIntent.putExtras(bundle);
-        PendingIntent pushOpenedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
-        builder.setContentIntent(pushOpenedPendingIntent);
-
-        // Notification builder
-        Notification nativeNotification = builder.build();
-
         // Because we can't be certain that the R class will line up with what is at SDK build time
         // like in the case of Unity et. al.
         class IdHelper {
@@ -122,8 +80,90 @@ class NotificationBuilder {
                 }
                 return ret;
             }
+
+            public int integer(String identifier) {
+                int ret = context.getResources().getIdentifier(identifier, "integer", context.getPackageName());
+                if (ret == 0) {
+                    throw new Resources.NotFoundException("Could not find R.integer." + identifier);
+                }
+                return ret;
+            }
+
+            public int drawable(String identifier) {
+                int ret = context.getResources().getIdentifier(identifier, "drawable", context.getPackageName());
+                if (ret == 0) {
+                    throw new Resources.NotFoundException("Could not find R.drawable." + identifier);
+                }
+                return ret;
+            }
         }
         final IdHelper R = new IdHelper(); // Declaring local as 'R' ensures we don't accidentally use the other R
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
+
+        // Rich text message
+        Spanned richMessageText = Html.fromHtml(teakNotificaton.message);
+
+        // Configure notification behavior
+        builder.setPriority(NotificationCompat.PRIORITY_MAX);
+        builder.setDefaults(NotificationCompat.DEFAULT_ALL);
+        builder.setOnlyAlertOnce(true);
+        builder.setAutoCancel(true);
+        builder.setTicker(richMessageText);
+
+        // Icon accent color
+        try {
+            builder.setColor(R.integer("io_teak_notification_accent_color"));
+        } catch (Exception ignored) {
+        }
+
+        // Get app icon
+        int tempAppIconResourceId;
+        try {
+            PackageManager pm = context.getPackageManager();
+            ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
+            tempAppIconResourceId = ai.icon;
+        } catch (Exception e) {
+            Teak.log.e("notification_builder", "Unable to load app icon resource for Notification.");
+            return null;
+        }
+        final int appIconResourceId = tempAppIconResourceId;
+
+        // Assign notification icons
+        int smallNotificationIcon = appIconResourceId;
+        try {
+            smallNotificationIcon = R.drawable("io_teak_small_notification_icon");
+        } catch (Exception ignored) {
+        }
+
+        Bitmap largeNotificationIcon = null;
+        try {
+            largeNotificationIcon = BitmapFactory.decodeResource(context.getResources(),
+                    R.drawable("io_teak_large_notification_icon"));
+        } catch (Exception ignored) {
+        }
+
+        builder.setSmallIcon(smallNotificationIcon);
+        if (largeNotificationIcon != null) {
+            builder.setLargeIcon(largeNotificationIcon);
+        }
+
+        Random rng = new Random();
+
+        // Create intent to fire if/when notification is cleared
+        Intent pushClearedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX);
+        pushClearedIntent.putExtras(bundle);
+        PendingIntent pushClearedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
+        builder.setDeleteIntent(pushClearedPendingIntent);
+
+        // Create intent to fire if/when notification is opened, attach bundle info
+        Intent pushOpenedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX);
+        pushOpenedIntent.putExtras(bundle);
+        PendingIntent pushOpenedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
+        builder.setContentIntent(pushOpenedPendingIntent);
+
+        // Notification builder
+        Notification nativeNotification = builder.build();
 
         class ViewBuilder {
             public RemoteViews buildViews(String name) throws Exception {
