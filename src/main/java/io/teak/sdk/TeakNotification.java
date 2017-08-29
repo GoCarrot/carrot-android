@@ -529,7 +529,13 @@ public class TeakNotification {
 
         // Send it out
         Teak.log.i("notification.show", _.h("teakNotifId", teakNotif.teakNotifId, "platformId", teakNotif.platformId));
-        notificationManager.notify(NOTIFICATION_TAG, teakNotif.platformId, nativeNotification);
+
+        try {
+            notificationManager.notify(NOTIFICATION_TAG, teakNotif.platformId, nativeNotification);
+        } catch (SecurityException ignored) {
+            // This likely means that they need the VIBRATE permission on old versions of Android
+            Teak.log.e("permission_needed.vibrate", "Please add this to your AndroidManifest.xml: <uses-permission android:name=\"android.permission.VIBRATE\" />");
+        }
 
         // TODO: Here is where any kind of thread/update logic will live
     }
