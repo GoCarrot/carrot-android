@@ -113,9 +113,12 @@ class NotificationBuilder {
         builder.setTicker(richMessageText);
 
         // Icon accent color (added in API 21 version of Notification builder, so use reflection)
-        Method setColor = builder.getClass().getMethod("setColor", int.class);
-        if (setColor != null) {
-            setColor.invoke(builder, R.integer("io_teak_notification_accent_color"));
+        try {
+            Method setColor = builder.getClass().getMethod("setColor", int.class);
+            if (setColor != null) {
+                setColor.invoke(builder, R.integer("io_teak_notification_accent_color"));
+            }
+        } catch (Exception ignored) {
         }
 
         // Get app icon
