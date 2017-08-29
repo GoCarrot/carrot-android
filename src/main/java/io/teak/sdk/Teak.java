@@ -472,10 +472,19 @@ public class Teak extends BroadcastReceiver {
                 }
 
                 Intent intent = activity.getIntent();
+                if (intent == null) {
+                    intent = new Intent();
+                }
 
                 Session.onActivityResumed(intent, Teak.appConfiguration, Teak.deviceConfiguration);
 
-                if (intent != null && intent.getExtras() != null && intent.hasExtra("teakNotifId")) {
+                if (intent.getBooleanExtra("processedByTeak", false)) {
+                    return;
+                } else {
+                    intent.putExtra("processedByTeak", true);
+                }
+
+                if (intent.hasExtra("teakNotifId")) {
                     Bundle bundle = intent.getExtras();
 
                     // Send broadcast

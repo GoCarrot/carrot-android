@@ -643,7 +643,6 @@ class Session {
                 }
                 return;
             }
-            intent.putExtra("processedByTeak", true);
 
             // Check and see if this is (probably) the first time this app has been ever launched
             boolean isFirstLaunch = false;
