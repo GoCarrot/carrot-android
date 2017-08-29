@@ -40,6 +40,7 @@ import org.json.JSONObject;
 import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
@@ -111,10 +112,10 @@ class NotificationBuilder {
         builder.setAutoCancel(true);
         builder.setTicker(richMessageText);
 
-        // Icon accent color
-        try {
-            builder.setColor(R.integer("io_teak_notification_accent_color"));
-        } catch (Exception ignored) {
+        // Icon accent color (added in API 21 version of Notification builder, so use reflection)
+        Method setColor = builder.getClass().getMethod("setColor", int.class);
+        if (setColor != null) {
+            setColor.invoke(builder, R.integer("io_teak_notification_accent_color"));
         }
 
         // Get app icon
