@@ -141,7 +141,7 @@ class AppConfiguration {
             intent.putExtra("appId", this.appId);
             ComponentName componentName = context.startService(intent);
             if (componentName == null) {
-                Teak.log.e("app_configuration", "Unable to communicate with exception reporting service. Please add:\n\t<service android:name=\"io.teak.sdk.service.RavenService\" android:process=\":teak.raven\" android:exported=\"false\"/>\nTo the <application> section of your AndroidManifest.xml");
+                Teak.log.w("app_configuration", "Unable to communicate with exception reporting service. Please add:\n\t<service android:name=\"io.teak.sdk.service.RavenService\" android:process=\":teak.raven\" android:exported=\"false\"/>\nTo the <application> section of your AndroidManifest.xml");
             }
         } catch (Exception e) {
             Teak.log.exception(e);
