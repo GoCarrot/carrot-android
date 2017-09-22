@@ -829,7 +829,9 @@ class Session {
             }
 
             // If the current session has a launch different attribution, it's a new session
-            if (sessionAttribution != null && (currentSession.state != State.Allocated && currentSession.state != State.Created)) {
+            if (currentSession.state == State.Allocated || currentSession.state == State.Created) {
+                currentSession.launchAttribution = sessionAttribution;
+            } else if (sessionAttribution != null) {
                 Session oldSession = currentSession;
                 currentSession = new Session(oldSession);
                 currentSession.launchAttribution = sessionAttribution;
