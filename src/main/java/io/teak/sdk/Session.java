@@ -172,9 +172,9 @@ class Session {
         setState(State.Created);
     }
 
-    private Session(@NonNull Session session) {
+    private Session(@NonNull Session session, Future<Map<String, Object>> launchAttribution) {
         this(session.appConfiguration, session.deviceConfiguration);
-
+        this.launchAttribution = launchAttribution;
         this.userId = session.userId;
     }
 
@@ -207,12 +207,10 @@ class Session {
             } else {
                 synchronized (currentSession.stateMutex) {
                     if (currentSession.userId != null && !currentSession.userId.equals(userId)) {
-                        Session newSession = new Session(currentSession);
+                        Session newSession = new Session(currentSession, currentSession.launchAttribution);
 
                         currentSession.setState(State.Expiring);
                         currentSession.setState(State.Expired);
-
-                        newSession.launchAttribution = currentSession.launchAttribution;
 
                         currentSession = newSession;
                     }
@@ -829,10 +827,11 @@ class Session {
             }
 
             // If the current session has a launch different attribution, it's a new session
-            if (sessionAttribution != null && (currentSession.state != State.Allocated && currentSession.state != State.Created)) {
-                Session oldSession = currentSession;
-                currentSession = new Session(oldSession);
+            if (currentSession.state == State.Allocated || currentSession.state == State.Created) {
                 currentSession.launchAttribution = sessionAttribution;
+            } else if (sessionAttribution != null) {
+                Session oldSession = currentSession;
+                currentSession = new Session(oldSession, sessionAttribution);
                 synchronized (oldSession.stateMutex) {
                     oldSession.setState(State.Expiring);
                     oldSession.setState(State.Expired);

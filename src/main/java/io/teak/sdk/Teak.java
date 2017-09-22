@@ -202,7 +202,7 @@ public class Teak extends BroadcastReceiver {
             return;
         }
 
-        if ((objectInstanceId == null || objectInstanceId.isEmpty()) &&
+        if ((objectInstanceId != null && !objectInstanceId.isEmpty()) &&
                 (objectTypeId == null || objectTypeId.isEmpty())) {
             Teak.log.e("track_event.error", "objectTypeId can not be null or empty if objectInstanceId is present for trackEvent(), ignoring.");
             return;
