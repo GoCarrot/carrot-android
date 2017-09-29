@@ -688,7 +688,7 @@ public class Teak extends BroadcastReceiver {
             JSONObject purchase = new JSONObject(json);
             Teak.log.i("open_iab", Helpers.jsonToMap(purchase));
 
-            if (Teak.appStore == null || Teak.appStore.ignorePluginPurchaseEvents()) {
+            if (Teak.appStore == null || !Teak.appStore.ignorePluginPurchaseEvents()) {
                 JSONObject originalJson = new JSONObject(purchase.getString("originalJson"));
                 purchaseSucceeded(originalJson);
             }
@@ -703,7 +703,7 @@ public class Teak extends BroadcastReceiver {
             JSONObject originalJson = new JSONObject(json);
             Teak.log.i("prime_31", Helpers.jsonToMap(originalJson));
 
-            if (Teak.appStore == null || Teak.appStore.ignorePluginPurchaseEvents()) {
+            if (Teak.appStore == null || !Teak.appStore.ignorePluginPurchaseEvents()) {
                 purchaseSucceeded(originalJson);
             }
         } catch (Exception e) {
@@ -725,7 +725,7 @@ public class Teak extends BroadcastReceiver {
 
                     final HashMap<String, Object> payload = new HashMap<>();
 
-                    if (Teak.appConfiguration.installerPackage.equals("com.amazon.venezia")) {
+                    if (Teak.appConfiguration.installerPackage != null && Teak.appConfiguration.installerPackage.equals("com.amazon.venezia")) {
                         JSONObject receipt = purchaseData.getJSONObject("receipt");
                         JSONObject userData = purchaseData.getJSONObject("userData");
 
