@@ -489,8 +489,20 @@ public class Teak extends BroadcastReceiver {
 
                     // Send broadcast
                     if (Teak.localBroadcastManager != null) {
+                        final HashMap<String, Object> eventDataDict = new HashMap<String, Object>();
+                        if (bundle.getString("teakRewardId") != null) {
+                            eventDataDict.put("incentivized", true);
+                            eventDataDict.put("teakRewardId", bundle.getString("teakRewardId"));
+                        } else {
+                            eventDataDict.put("incentivized", false);
+                        }
+                        if (bundle.getString("teakScheduleName") != null) eventDataDict.put("teakScheduleName", bundle.getString("teakScheduleName"));
+                        if (bundle.getString("teakCreativeName") != null) eventDataDict.put("teakCreativeName", bundle.getString("teakCreativeName"));
+
+
                         final Intent broadcastEvent = new Intent(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
                         broadcastEvent.putExtras(bundle);
+                        broadcastEvent.putExtra("eventData", eventDataDict);
                         Teak.localBroadcastManager.sendBroadcast(broadcastEvent);
 
                         String teakRewardId = bundle.getString("teakRewardId");
@@ -503,6 +515,7 @@ public class Teak extends BroadcastReceiver {
                                         try {
                                             TeakNotification.Reward reward = rewardFuture.get();
                                             HashMap<String, Object> rewardMap = Helpers.jsonToMap(reward.json);
+                                            rewardMap.putAll(eventDataDict);
 
                                             // Broadcast reward only if everything goes well
                                             final Intent rewardIntent = new Intent(Teak.REWARD_CLAIM_ATTEMPT);
