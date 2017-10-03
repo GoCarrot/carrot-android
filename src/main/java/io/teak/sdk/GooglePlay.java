@@ -173,6 +173,8 @@ class GooglePlay implements IStore {
     }
 
     private JSONObject querySkuDetails(String itemType, String sku) {
+        if (mService == null) return null; // Sentry bug: TEAK-SDK-9
+
         try {
             ArrayList<String> skuList = new ArrayList<>();
             skuList.add(sku);

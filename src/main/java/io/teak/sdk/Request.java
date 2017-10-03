@@ -27,12 +27,18 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLException;
 
 import java.lang.reflect.Array;
 
+import java.net.ConnectException;
+import java.net.HttpRetryException;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLEncoder;
 
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -202,6 +208,19 @@ class Request implements Runnable {
 
             // For extending classes
             done(connection.getResponseCode(), response.toString());
+        } catch (UnknownHostException uh_e) {
+            // Ignored, Sentry issue 'TEAK-SDK-F', 'TEAK-SDK-M', 'TEAK-SDK-X'
+        } catch (SocketTimeoutException st_e) {
+            // Ignored, Sentry issue 'TEAK-SDK-11'
+        } catch (ConnectException c_e) {
+            // Ignored, Sentry issue 'TEAK-SDK-Q', 'TEAK-SDK-K', 'TEAK-SDK-W', 'TEAK-SDK-V',
+            //      'TEAK-SDK-J', 'TEAK-SDK-P'
+        } catch (HttpRetryException http_e) {
+            // Ignored, Sentry issue 'TEAK-SDK-N'
+        } catch (SSLException ssl_e) {
+            // Ignored, Sentry issue 'TEAK-SDK-T'
+        } catch (SocketException sock_e) {
+            // Ignored, Sentry issue 'TEAK-SDK-S'
         } catch (Exception e) {
             Teak.log.exception(e);
         } finally {
