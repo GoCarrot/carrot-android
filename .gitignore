@@ -7,7 +7,8 @@ local.properties
 .gradle/
 infer-out/
 
-example/.idea
+.idea/
+
 calabash/screenshot*
 calabash/test_servers/
 calabash/.irb-history
