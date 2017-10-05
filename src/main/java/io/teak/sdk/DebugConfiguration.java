@@ -51,7 +51,7 @@ class DebugConfiguration {
 
     private final SharedPreferences preferences;
 
-    public final boolean forceDebug;
+    public boolean forceDebug;
     public final boolean isDevelopmentBuild;
 
     public DebugConfiguration(@NonNull Context context) {
@@ -92,7 +92,11 @@ class DebugConfiguration {
             } catch (Exception e) {
                 Teak.log.exception(e);
             }
-            Teak.forceDebug = true;
         }
+        this.forceDebug = forceDebug;
+    }
+
+    public boolean isDebug() {
+        return this.forceDebug || this.isDevelopmentBuild;
     }
 }

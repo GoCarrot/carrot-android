@@ -96,7 +96,6 @@ public class Teak extends BroadcastReceiver {
 
         // Set up debug logging ASAP
         Teak.debugConfiguration = new DebugConfiguration(Teak.mainActivity.getApplicationContext());
-        Teak.isDebug = Teak.debugConfiguration.forceDebug || Teak.debugConfiguration.isDevelopmentBuild;
 
         // Check the launch mode of the activity
         try {
@@ -327,7 +326,6 @@ public class Teak extends BroadcastReceiver {
 
     public static Future<Void> waitForDeepLink;
 
-    static boolean isDebug;
     static DebugConfiguration debugConfiguration;
 
     public static int jsonLogIndentation = 0;
