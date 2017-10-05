@@ -135,9 +135,11 @@ class NotificationBuilder {
 
         // Assign notification icons
         int smallNotificationIcon = appIconResourceId;
-        try {
-            smallNotificationIcon = R.drawable("io_teak_small_notification_icon");
-        } catch (Exception ignored) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            try {
+                smallNotificationIcon = R.drawable("io_teak_small_notification_icon");
+            } catch (Exception ignored) {
+            }
         }
 
         Bitmap largeNotificationIcon = null;
