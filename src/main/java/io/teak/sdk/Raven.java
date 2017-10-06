@@ -114,7 +114,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
 
     @Override
     public void uncaughtException(Thread thread, Throwable ex) {
-        reportException(ex);
+        reportException(ex, null);
     }
 
     public void setDsn(@NonNull String dsn) {
@@ -174,7 +174,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         return exception;
     }
 
-    public void reportException(Throwable t) {
+    public void reportException(Throwable t, Map<String, Object> extras) {
         if (t == null) {
             return;
         }
@@ -192,7 +192,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
 
         try {
             Report report = new Report(t.getMessage(), Level.ERROR, additions);
-            report.sendToService();
+            report.sendToService(extras);
         } catch (Exception e) {
             Log.e(LOG_TAG, "Unable to report Teak SDK exception. " + Log.getStackTraceString(t) + "\n" + Log.getStackTraceString(e));
         }
@@ -266,8 +266,9 @@ public class Raven implements Thread.UncaughtExceptionHandler {
             }
         }
 
-        public void sendToService() {
+        public void sendToService(Map<String, Object> extras) {
             payload.putAll(payloadTemplate);
+            if (extras != null) payload.putAll(extras);
             try {
                 Intent intent = new Intent(RavenService.REPORT_EXCEPTION_INTENT_ACTION, null, applicationContext, RavenService.class);
                 intent.putExtra("appId", appId);
