@@ -15,9 +15,6 @@
 
 package io.teak.app.test;
 
-
-import android.content.Context;
-import android.content.Intent;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.filters.SdkSuppress;
 import android.support.test.runner.AndroidJUnit4;
@@ -29,15 +26,13 @@ import android.support.test.uiautomator.Until;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import io.teak.sdk.TeakNotification;
-
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @RunWith(AndroidJUnit4.class)
-public class OSListenerIntegrationTests extends TeakIntegrationTests {
+public class lifecycle_OSListenerIntegrationTests extends TeakIntegrationTests {
+
     @Test
     public void basicLifecycle() {
         launchActivity();
@@ -67,25 +62,5 @@ public class OSListenerIntegrationTests extends TeakIntegrationTests {
 
         // Should be resumed
         verify(osListener, timeout(500).times(2)).lifecycle_onActivityResumed(getActivity());
-    }
-
-    @Test(timeout = 10000)
-    @SdkSuppress(minSdkVersion = 21)
-    public void notificationCleared() {
-        launchActivity();
-
-        // Make sure app is fully active
-        UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
-        device.wait(Until.hasObject(By.text("Hello World")), 1000);
-
-        // Background the app
-        device.pressHome();
-
-        // Send a notification cleared broadcast
-        String event = getActivity().getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX;
-        sendBroadcast(event, null);
-
-        // Should have been called
-        verify(osListener, timeout(3000).times(1)).notification_onNotificationCleared(any(Context.class), any(Intent.class));
     }
 }

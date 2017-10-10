@@ -38,6 +38,8 @@ dependencies {
 
     testCompile 'junit:junit:4.12'
 
+    androidTestCompile group: 'org.skyscreamer', name: 'jsonassert', version: '1.5.0'
+
     androidTestCompile ('org.powermock:powermock-mockito-release-full:1.6.0') {
         exclude module: 'hamcrest-core'
         exclude module: 'objenesis'

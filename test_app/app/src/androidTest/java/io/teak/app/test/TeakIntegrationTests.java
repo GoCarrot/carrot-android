@@ -25,12 +25,15 @@ import android.support.test.rule.ActivityTestRule;
 
 import org.junit.Rule;
 
+
+import java.lang.reflect.Method;
 import java.util.Map;
 
 import io.teak.sdk.ObjectFactory;
 import io.teak.sdk.Teak2;
 import io.teak.sdk.event.OSListener;
 
+import static junit.framework.TestCase.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
@@ -74,6 +77,40 @@ class TeakIntegrationTests {
             verify(osListener, timeout(500).atLeastOnce()).lifecycle_onActivityPaused(getActivity());
         }
     };
+
+    ///// Invoke helper for private Teak methods
+
+    private Class<?> teakThunkClass = Teak2.class;
+
+    void call_prime31PurchaseSucceeded(String json) {
+        try {
+            Method method = teakThunkClass.getDeclaredMethod("prime31PurchaseSucceeded", String.class);
+            method.setAccessible(true);
+            method.invoke(null, json);
+        } catch (Exception e) {
+            fail(android.util.Log.getStackTraceString(e));
+        }
+    }
+
+    void call_openIABPurchaseSucceeded(String json) {
+        try {
+            Method method = teakThunkClass.getDeclaredMethod("openIABPurchaseSucceeded", String.class);
+            method.setAccessible(true);
+            method.invoke(null, json);
+        } catch (Exception e) {
+            fail(android.util.Log.getStackTraceString(e));
+        }
+    }
+
+    void call_pluginPurchaseFailed(int errorCode) {
+        try {
+            Method method = teakThunkClass.getDeclaredMethod("pluginPurchaseFailed", int.class);
+            method.setAccessible(true);
+            method.invoke(null, errorCode);
+        } catch (Exception e) {
+            fail(android.util.Log.getStackTraceString(e));
+        }
+    }
 
     ///// TestRule helpers
 
