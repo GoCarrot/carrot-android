@@ -35,13 +35,15 @@ import java.lang.reflect.Method;
 import org.json.JSONObject;
 
 import io.teak.sdk.Helpers._;
+import io.teak.sdk.event.OSListener;
 
 @SuppressWarnings("unused")
 class GooglePlay implements IStore {
-    Object mService;
-    ServiceConnection mServiceConn;
-    Context mContext;
-    boolean mDisposed = false;
+    private Object mService;
+    private ServiceConnection mServiceConn;
+    private Context mContext;
+    private boolean mDisposed = false;
+    private OSListener osListener;
 
     public static final String ITEM_TYPE_INAPP = "inapp";
     public static final String ITEM_TYPE_SUBS = "subs";
@@ -69,7 +71,8 @@ class GooglePlay implements IStore {
     public static final String GET_SKU_DETAILS_ITEM_LIST = "ITEM_ID_LIST";
     //public static final String GET_SKU_DETAILS_ITEM_TYPE_LIST = "ITEM_TYPE_LIST";
 
-    public void init(Context context) {
+    public void init(Context context, OSListener osListener) {
+        this.osListener = osListener;
         mContext = context;
 
         mServiceConn = new ServiceConnection() {
@@ -250,12 +253,17 @@ class GooglePlay implements IStore {
             if (resultCode == Activity.RESULT_OK && responseCode == BILLING_RESPONSE_RESULT_OK) {
                 try {
                     JSONObject json = new JSONObject(purchaseData);
-                    Teak.purchaseSucceeded(json);
+                    this.osListener.purchase_onPurchaseSucceeded(json);
                 } catch (Exception e) {
                     Teak.log.exception(e);
                 }
             } else {
-                Teak.purchaseFailed(responseCode);
+                JSONObject json = new JSONObject();
+                try {
+                    json.put("errorCode", responseCode);
+                } catch (Exception ignored){
+                }
+                this.osListener.purchase_onPurchaseFailed(json);
             }
         } else {
             Teak.log.i("google_play", "Checking activity result for purchase.");

@@ -169,6 +169,7 @@ public class Teak extends BroadcastReceiver {
      *
      * @param userIdentifier An identifier which is unique for the current user.
      */
+    @SuppressWarnings("unused")
     public static void identifyUser(String userIdentifier) {
         if (userIdentifier == null || userIdentifier.isEmpty()) {
             Teak.log.e("identify_user.error", "User identifier can not be null or empty.");
@@ -437,7 +438,7 @@ public class Teak extends BroadcastReceiver {
                 try {
                     IStore store = (IStore) (clazz != null ? clazz.newInstance() : null);
                     if (store != null) {
-                        store.init(context);
+                        store.init(context, null);
                     }
                     Teak.appStore = store;
                 } catch (Exception e) {

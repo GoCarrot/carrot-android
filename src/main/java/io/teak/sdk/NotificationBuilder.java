@@ -48,7 +48,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
 
-class NotificationBuilder {
+public class NotificationBuilder {
     public static Notification createNativeNotification(Context context, Bundle bundle, TeakNotification teakNotificaton) {
         if (teakNotificaton.notificationVersion == TeakNotification.TEAK_NOTIFICATION_V0) {
             return createNativeNotificationV0(context, bundle, teakNotificaton);
