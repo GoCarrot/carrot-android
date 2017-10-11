@@ -90,6 +90,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
 
         HashMap<String, Object> user = new HashMap<>();
         user.put("device_id", deviceConfiguration.deviceId);
+        user.put("log_run_id", Teak.log.runId);
         payloadTemplate.put("user", user);
 
         HashMap<String, Object> tagsAttribute = new HashMap<>();
