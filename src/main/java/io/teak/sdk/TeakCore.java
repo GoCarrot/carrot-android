@@ -110,7 +110,7 @@ public class TeakCore implements OSListener {
 
         if (autoLaunch) {
             Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
-            launchIntent.addCategory("android.intent.category.LAUNCHER");
+            launchIntent.addCategory(Intent.CATEGORY_LAUNCHER);
             launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             launchIntent.putExtras(bundle);
             if (bundle.getString("teakDeepLink") != null) {
