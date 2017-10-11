@@ -20,11 +20,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 
 import org.json.JSONObject;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import io.teak.sdk.event.OSListener;
 
@@ -35,17 +40,67 @@ public class TeakCore implements OSListener {
 
     @Override
     public boolean lifecycle_onActivityCreated(Activity activity) {
+
+        final Context context = activity.getApplicationContext();
+
+        // App Configuration
+        this.appConfiguration = new AppConfiguration(context);
+        Teak.log.useAppConfiguration(this.appConfiguration);
+
+        // Device configuration
+        this.deviceConfiguration = new DeviceConfiguration(context, this.appConfiguration);
+
+        // If deviceId is null, we can't operate
+        if (this.deviceConfiguration.deviceId == null) {
+            this.cleanup(activity);
+            return false;
+        }
+
+        Teak.log.useDeviceConfiguration(Teak.deviceConfiguration);
+
+        // Facebook Access Token Broadcaster
+        this.facebookAccessTokenBroadcast = new FacebookAccessTokenBroadcast(context);
+
+        // Hook in to Session state change events
+        Session.addEventListener(this.sessionEventListener);
+        RemoteConfiguration.addEventListener(this.remoteConfigurationEventListener);
+
+        // Ravens
+        Teak.sdkRaven = new Raven(context, "sdk", this.appConfiguration, this.deviceConfiguration);
+        Teak.appRaven = new Raven(context, this.appConfiguration.bundleId, this.appConfiguration, this.deviceConfiguration);
+
+        // Broadcast manager
+        this.localBroadcastManager = LocalBroadcastManager.getInstance(context);
+
         return true;
     }
 
     @Override
     public void lifecycle_onActivityPaused(Activity activity) {
-
+        Session.onActivityPaused();
     }
 
     @Override
     public void lifecycle_onActivityResumed(Activity activity) {
 
+        // Get or create an empty Intent
+        Intent intent = activity.getIntent();
+        if (intent == null) {
+            intent = new Intent();
+        }
+
+        // Let the Session know
+        Session.onActivityResumed(intent, this.appConfiguration, this.deviceConfiguration);
+
+        // Prevent back-stack loops
+        if (intent.getBooleanExtra("processedByTeak", false)) {
+            return;
+        } else {
+            intent.putExtra("processedByTeak", true);
+        }
+
+        // Check to see if this was a push notification launch
+        checkIntentForPushLaunchAndSendBroadcasts(intent);
     }
 
     @Override
@@ -129,11 +184,24 @@ public class TeakCore implements OSListener {
 
     @Override
     public void purchase_onPurchaseSucceeded(final Map<String, Object> payload) {
+        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+            @Override
+            public void run(Session session) {
+                new Request("/me/purchase", payload, session).run();
+            }
+        });
     }
 
     @Override
     public void purchase_onPurchaseFailed(final Map<String, Object> payload) {
+        Teak.log.i("puchase.failed", payload);
 
+        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+            @Override
+            public void run(Session session) {
+                new Request("/me/purchase", payload, session).run();
+            }
+        });
     }
 
     private final Session.EventListener sessionEventListener = new Session.EventListener() {
@@ -154,6 +222,7 @@ public class TeakCore implements OSListener {
                 Teak.sdkRaven.setDsn(configuration.sdkSentryDsn);
             }
 
+            // Handle global exceptions, if enabled
             if (configuration.appSentryDsn != null) {
                 Teak.appRaven.setDsn(configuration.appSentryDsn);
 
@@ -171,8 +240,63 @@ public class TeakCore implements OSListener {
         RemoteConfiguration.removeEventListener(this.remoteConfigurationEventListener);
         Session.removeEventListener(this.sessionEventListener);
 
-        //if (Teak.facebookAccessTokenBroadcast != null) {
-        //    Teak.facebookAccessTokenBroadcast.unregister(activity.getApplicationContext());
-        //}
+        if (this.facebookAccessTokenBroadcast != null) {
+            this.facebookAccessTokenBroadcast.unregister(activity.getApplicationContext());
+        }
     }
+
+    private void checkIntentForPushLaunchAndSendBroadcasts(Intent intent) {
+        if (intent.hasExtra("teakNotifId")) {
+            Bundle bundle = intent.getExtras();
+
+            // Send broadcast
+            if (this.localBroadcastManager != null) {
+                final HashMap<String, Object> eventDataDict = new HashMap<String, Object>();
+                if (bundle.getString("teakRewardId") != null) {
+                    eventDataDict.put("incentivized", true);
+                    eventDataDict.put("teakRewardId", bundle.getString("teakRewardId"));
+                } else {
+                    eventDataDict.put("incentivized", false);
+                }
+                if (bundle.getString("teakScheduleName") != null) eventDataDict.put("teakScheduleName", bundle.getString("teakScheduleName"));
+                if (bundle.getString("teakCreativeName") != null) eventDataDict.put("teakCreativeName", bundle.getString("teakCreativeName"));
+
+                final Intent broadcastEvent = new Intent(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
+                broadcastEvent.putExtras(bundle);
+                broadcastEvent.putExtra("eventData", eventDataDict);
+                this.localBroadcastManager.sendBroadcast(broadcastEvent);
+
+                String teakRewardId = bundle.getString("teakRewardId");
+                if (teakRewardId != null) {
+                    final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
+                    if (rewardFuture != null) {
+                        this.asyncExecutor.submit(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    TeakNotification.Reward reward = rewardFuture.get();
+                                    HashMap<String, Object> rewardMap = Helpers.jsonToMap(reward.json);
+                                    rewardMap.putAll(eventDataDict);
+
+                                    // Broadcast reward only if everything goes well
+                                    final Intent rewardIntent = new Intent(Teak.REWARD_CLAIM_ATTEMPT);
+                                    rewardIntent.putExtra("reward", rewardMap);
+                                    localBroadcastManager.sendBroadcast(rewardIntent);
+                                } catch (Exception e) {
+                                    Teak.log.exception(e);
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    ///// Data Members
+    private DeviceConfiguration deviceConfiguration;
+    private AppConfiguration appConfiguration;
+    private FacebookAccessTokenBroadcast facebookAccessTokenBroadcast;
+    private LocalBroadcastManager localBroadcastManager;
+    private ExecutorService asyncExecutor = Executors.newCachedThreadPool();
 }

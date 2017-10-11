@@ -516,6 +516,7 @@ public class TeakNotification {
     }
 
     static void displayNotification(Context context, TeakNotification teakNotif, Notification nativeNotification) {
+        // TODO: This is TeakIO functionality
         if (notificationManager == null) {
             try {
                 notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -539,6 +540,7 @@ public class TeakNotification {
     }
 
     static void cancel(Context context, int platformId) {
+        // TODO: This is TeakIO functionality
         if (notificationManager == null) {
             try {
                 notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
