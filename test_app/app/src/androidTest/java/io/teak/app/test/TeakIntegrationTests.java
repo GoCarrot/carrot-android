@@ -17,6 +17,7 @@ package io.teak.app.test;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.os.ParcelFileDescriptor;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.test.InstrumentationRegistry;
@@ -26,6 +27,10 @@ import android.support.test.rule.ActivityTestRule;
 import org.junit.Rule;
 
 
+import java.io.BufferedInputStream;
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.Map;
 
@@ -126,15 +131,24 @@ class TeakIntegrationTests {
         return testRule.launchActivity(intent);
     }
 
+    ///// Sleep helper, since Mockito.await seems to have strange behavior
+
+    void sleep(long ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (Exception ignored) {
+        }
+    }
+
     ///// BroadcastReceiver test helpers
 
     @SdkSuppress(minSdkVersion = 21)
-    void sendBroadcast(@NonNull String event) {
-        sendBroadcast(event, null);
+    String sendBroadcast(@NonNull String event) {
+        return sendBroadcast(event, null);
     }
 
     @SdkSuppress(minSdkVersion = 21)
-    void sendBroadcast(@NonNull String event, @Nullable Map<String, Object> extras) {
+    String sendBroadcast(@NonNull String event, @Nullable Map<String, Object> extras) {
         String adbString = "am broadcast -a " + event;
         if (extras != null) {
             for (Map.Entry<String, Object> entry : extras.entrySet()) {
@@ -151,6 +165,25 @@ class TeakIntegrationTests {
                 }
             }
         }
-        InstrumentationRegistry.getInstrumentation().getUiAutomation().executeShellCommand(adbString);
+
+        String output = null;
+        ParcelFileDescriptor pfd = InstrumentationRegistry.getInstrumentation().getUiAutomation().executeShellCommand(adbString);
+        FileDescriptor fd = pfd.getFileDescriptor();
+        InputStream is = new BufferedInputStream(new FileInputStream(fd));
+        byte[] buf = new byte[1024];
+        try {
+            is.read(buf, 0, buf.length);
+            output = new String(buf);
+            android.util.Log.v("Teak:IntegrationTest", output);
+        } catch (Exception e) {
+            fail(android.util.Log.getStackTraceString(e));
+        } finally {
+            try {
+                is.close();
+            } catch (Exception ignored){
+            }
+        }
+
+        return output;
     }
 }
