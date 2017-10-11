@@ -37,11 +37,11 @@ public class lifecycle_OSListenerIntegrationTests extends TeakIntegrationTests {
 
         // Background the app, it should now be paused
         backgroundApp();
-        verify(osListener, timeout(1000).times(1)).lifecycle_onActivityPaused(getActivity());
+        verify(osListener, timeout(5000).times(1)).lifecycle_onActivityPaused(getActivity());
 
 
         // Bring the app back, it should be resumed again
         foregroundApp();
-        verify(osListener, timeout(1000).times(2)).lifecycle_onActivityResumed(getActivity());
+        verify(osListener, timeout(5000).times(2)).lifecycle_onActivityResumed(getActivity());
     }
 }

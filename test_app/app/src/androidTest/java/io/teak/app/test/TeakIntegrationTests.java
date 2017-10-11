@@ -80,7 +80,7 @@ class TeakIntegrationTests {
         @Override
         protected void afterActivityFinished() {
             super.afterActivityFinished();
-            verify(osListener, timeout(500).atLeastOnce()).lifecycle_onActivityPaused(getActivity());
+            verify(osListener, timeout(5000).atLeastOnce()).lifecycle_onActivityPaused(getActivity());
         }
     };
 
@@ -135,17 +135,17 @@ class TeakIntegrationTests {
     ///// Activity background/launch helpers
 
     void backgroundApp() {
-        Intent homeIntent = new Intent();
-        homeIntent.setAction(Intent.ACTION_MAIN);
-        homeIntent.addCategory(Intent.CATEGORY_HOME);
-        getActivity().startActivity(homeIntent);
+        Intent i = new Intent(Intent.ACTION_MAIN);
+        i.addCategory(Intent.CATEGORY_HOME);
+        getActivity().startActivity(i);
     }
 
     void foregroundApp() {
         PackageManager manager = getActivity().getPackageManager();
         Intent i = manager.getLaunchIntentForPackage(getActivity().getPackageName());
         i.addCategory(Intent.CATEGORY_LAUNCHER);
-        getActivity().startActivity(i);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        InstrumentationRegistry.getTargetContext().startActivity(i);
     }
 
     ///// BroadcastReceiver test helpers
