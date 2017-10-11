@@ -130,9 +130,6 @@ class AppConfiguration {
         // Get the installer package
         {
             this.installerPackage = this.packageManager.getInstallerPackageName(this.bundleId);
-            if (this.installerPackage == null) {
-                Teak.log.e("app_configuration", "Installer package (Store) is null, purchase tracking disabled.");
-            }
         }
 
         // Tell the Raven service about the app id
