@@ -15,7 +15,6 @@
 package io.teak.sdk;
 
 import android.app.NotificationManager;
-import android.content.BroadcastReceiver;
 import android.os.Bundle;
 
 import android.content.Intent;
@@ -23,7 +22,6 @@ import android.content.Context;
 
 import android.app.Notification;
 
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.app.NotificationCompat;
 
 import android.util.SparseArray;
