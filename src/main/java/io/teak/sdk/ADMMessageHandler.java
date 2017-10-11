@@ -33,8 +33,6 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.teak.sdk.Helpers._;
-
 public class ADMMessageHandler extends ADMMessageHandlerBase {
     @Override
     protected void onMessage(Intent intent) {
@@ -104,7 +102,7 @@ public class ADMMessageHandler extends ADMMessageHandlerBase {
                     // Make sure the key and the package name match
                     String packageName = getApplicationContext().getPackageName();
                     if (!packageName.equals(json.getString("pkg"))) {
-                        Teak.log.e("amazon.adm.registration_error.debugging", _.h("packageName", packageName, "api_key.packageName", json.getString("pkg")));
+                        Teak.log.e("amazon.adm.registration_error.debugging", Helpers.mm.h("packageName", packageName, "api_key.packageName", json.getString("pkg")));
                         throw new Exception("Package name mismatch in 'api_key.txt'");
                     }
                     Teak.log.i("amazon.adm.registration_error.debugging", "[✓] App package name matches package name inside 'api_key.txt'");
@@ -115,21 +113,21 @@ public class ADMMessageHandler extends ADMMessageHandlerBase {
                         if (json.has("appsigSha256")) {
                             String sigSha256 = formatSig(sig, "SHA-256");
                             if (!sigSha256.equalsIgnoreCase(json.getString("appsigSha256"))) {
-                                Teak.log.e("amazon.adm.registration_error.debugging", _.h("sha256", sigSha256, "api_key.sha256", json.getString("appsigSha256")));
+                                Teak.log.e("amazon.adm.registration_error.debugging", Helpers.mm.h("sha256", sigSha256, "api_key.sha256", json.getString("appsigSha256")));
                                 throw new Exception("App signature SHA-256 does not match api_key.txt");
                             }
                             Teak.log.i("amazon.adm.registration_error.debugging",  "[✓] App signature matches signature inside 'api_key.txt'");
                         } else if (json.has("appsig")) {
                             String sigMd5 = formatSig(sig, "MD5");
                             if (!sigMd5.equalsIgnoreCase(json.getString("appsig"))) {
-                                Teak.log.e("amazon.adm.registration_error.debugging", _.h("md5", sigMd5, "api_key.md5", json.getString("appsig")));
+                                Teak.log.e("amazon.adm.registration_error.debugging", Helpers.mm.h("md5", sigMd5, "api_key.md5", json.getString("appsig")));
                                 throw new Exception("App signature MD5 does not match api_key.txt");
                             }
                         } else {
                             String sigMd5 = formatSig(sig, "MD5");
                             String sigSha256 = formatSig(sig, "SHA-256");
                             Teak.log.w("amazon.adm.registration_error.debugging", "Couldn't find 'appsigSha256' or 'appsig' please ensure that your API key matches one of the included signatures.",
-                                    _.h("md5", sigMd5, "sha256", sigSha256));
+                                    Helpers.mm.h("md5", sigMd5, "sha256", sigSha256));
                         }
                     }
 
@@ -149,14 +147,14 @@ public class ADMMessageHandler extends ADMMessageHandlerBase {
 
     @Override
     protected void onRegistered(String s) {
-        Teak.log.i("amazon.adm.registered", _.h("admId", s));
+        Teak.log.i("amazon.adm.registered", Helpers.mm.h("admId", s));
         Teak.deviceConfiguration.admId = s;
         Teak.deviceConfiguration.notifyPushIdChangedListeners();
     }
 
     @Override
     protected void onUnregistered(String s) {
-        Teak.log.i("amazon.adm.unregistered", _.h("admId", s));
+        Teak.log.i("amazon.adm.unregistered", Helpers.mm.h("admId", s));
         Teak.deviceConfiguration.admId = null;
         Teak.deviceConfiguration.notifyPushIdChangedListeners();
     }

@@ -34,8 +34,6 @@ import java.lang.reflect.Method;
 
 import org.json.JSONObject;
 
-import io.teak.sdk.Helpers._;
-
 @SuppressWarnings("unused")
 class GooglePlay implements IStore {
     private Object mService;
@@ -222,7 +220,7 @@ class GooglePlay implements IStore {
         } else if (o instanceof Integer) return (Integer) o;
         else if (o instanceof Long) return (int) ((Long) o).longValue();
         else {
-            Teak.log.e("google_play", "Unexpected type for bundle response code.", _.h("class", o.getClass().getName()));
+            Teak.log.e("google_play", "Unexpected type for bundle response code.", Helpers.mm.h("class", o.getClass().getName()));
             throw new RuntimeException("Unexpected type for bundle response code: " + o.getClass().getName());
         }
     }
@@ -234,7 +232,7 @@ class GooglePlay implements IStore {
         } else if (o instanceof Integer) return (Integer) o;
         else if (o instanceof Long) return (int) ((Long) o).longValue();
         else {
-            Teak.log.e("google_play", "Unexpected type for bundle response code.", _.h("class", o.getClass().getName()));
+            Teak.log.e("google_play", "Unexpected type for bundle response code.", Helpers.mm.h("class", o.getClass().getName()));
             throw new RuntimeException("Unexpected type for intent response code: " + o.getClass().getName());
         }
     }

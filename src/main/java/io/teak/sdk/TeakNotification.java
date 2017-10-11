@@ -48,7 +48,7 @@ import javax.net.ssl.HttpsURLConnection;
 import org.json.JSONObject;
 import org.json.JSONException;
 
-import io.teak.sdk.Helpers._;
+import io.teak.sdk.Helpers.mm;
 
 /**
  * An app-to-user notification received from Teak via GCM.
@@ -234,7 +234,7 @@ public class TeakNotification {
                 public void run(Session session) {
                     HttpsURLConnection connection = null;
 
-                    Teak.log.i("reward.claim", _.h("teakRewardId", teakRewardId));
+                    Teak.log.i("reward.claim", mm.h("teakRewardId", teakRewardId));
 
                     try {
                         // https://rewards.gocarrot.com/<<teak_reward_id>>/clicks?clicking_user_id=<<your_user_id>>
@@ -354,10 +354,10 @@ public class TeakNotification {
                             JSONObject response = new JSONObject(responseBody);
                             if (response.getString("status").equals("ok")) {
                                 q.offer(response.getJSONObject("event").getString("id"));
-                                Teak.log.i("notification.schedule", "Scheduled notification.", _.h("notification", response.getJSONObject("event").getString("id")));
+                                Teak.log.i("notification.schedule", "Scheduled notification.", Helpers.mm.h("notification", response.getJSONObject("event").getString("id")));
                             } else {
                                 q.offer("");
-                                Teak.log.e("notification.schedule.error", "Error scheduling notification.", _.h("response", response.toString()));
+                                Teak.log.e("notification.schedule.error", "Error scheduling notification.", Helpers.mm.h("response", response.toString()));
                             }
                         } catch (Exception ignored) {
                             q.offer("");
@@ -527,7 +527,7 @@ public class TeakNotification {
         }
 
         // Send it out
-        Teak.log.i("notification.show", _.h("teakNotifId", teakNotif.teakNotifId, "platformId", teakNotif.platformId));
+        Teak.log.i("notification.show", Helpers.mm.h("teakNotifId", teakNotif.teakNotifId, "platformId", teakNotif.platformId));
 
         try {
             notificationManager.notify(NOTIFICATION_TAG, teakNotif.platformId, nativeNotification);
@@ -550,7 +550,7 @@ public class TeakNotification {
             }
         }
 
-        Teak.log.i("notification.cancel", _.h("platformId", platformId));
+        Teak.log.i("notification.cancel", Helpers.mm.h("platformId", platformId));
 
         notificationManager.cancel(NOTIFICATION_TAG, platformId);
 

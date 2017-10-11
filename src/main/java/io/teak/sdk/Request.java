@@ -51,8 +51,6 @@ import java.util.UUID;
 import org.json.JSONObject;
 import org.json.JSONArray;
 
-import io.teak.sdk.Helpers._;
-
 class Request implements Runnable {
     private final String endpoint;
     private final String hostname;
@@ -128,7 +126,7 @@ class Request implements Runnable {
                     }
                     builder.append(key).append("=").append(valueString).append("&");
                 } else {
-                    Teak.log.e("request", "Value for key is null.", _.h("key", key));
+                    Teak.log.e("request", "Value for key is null.", Helpers.mm.h("key", key));
                 }
             }
             builder.deleteCharAt(builder.length() - 1);

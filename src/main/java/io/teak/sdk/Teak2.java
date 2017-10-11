@@ -31,8 +31,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import io.teak.sdk.Helpers._;
-
 /**
  * Teak
  */
@@ -88,7 +86,7 @@ public class Teak2 extends BroadcastReceiver {
      * @param data        The <code>data</code> parameter received from {@link Activity#onActivityResult}
      */
     public static void onActivityResult(@SuppressWarnings("unused") int requestCode, int resultCode, Intent data) {
-        Teak.log.i("lifecycle", _.h("callback", "onActivityResult"));
+        Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityResult"));
 
         if (data != null) {
             checkActivityResultForPurchase(resultCode, data);

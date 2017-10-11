@@ -24,7 +24,7 @@ import android.os.Bundle;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import io.teak.sdk.Helpers._;
+import io.teak.sdk.Helpers.mm;
 
 public class InstallReferrerReceiver extends BroadcastReceiver {
 
@@ -34,7 +34,7 @@ public class InstallReferrerReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         String installReferrer = intent.getStringExtra("referrer");
         if (installReferrer != null && !installReferrer.isEmpty()) {
-            Teak.log.i("install_referrer", _.h("referrer", installReferrer));
+            Teak.log.i("install_referrer", mm.h("referrer", installReferrer));
             installReferrerQueue.offer(installReferrer);
         }
 

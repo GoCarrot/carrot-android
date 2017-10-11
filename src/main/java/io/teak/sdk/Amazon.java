@@ -34,7 +34,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import org.json.JSONObject;
 
-import io.teak.sdk.Helpers._;
+import io.teak.sdk.Helpers.mm;
 
 @SuppressWarnings("unused")
 class Amazon implements IStore {
@@ -46,7 +46,7 @@ class Amazon implements IStore {
         this.skuDetailsRequestMap = new HashMap<>();
         PurchasingService.registerListener(context, new TeakPurchasingListener());
 
-        Teak.log.i("amazon.iap", "Amazon In-App Purchasing 2.0 registered.", _.h("sandboxMode", PurchasingService.IS_SANDBOX_MODE));
+        Teak.log.i("amazon.iap", "Amazon In-App Purchasing 2.0 registered.", Helpers.mm.h("sandboxMode", PurchasingService.IS_SANDBOX_MODE));
     }
 
     public void onActivityResumed() {
@@ -97,7 +97,7 @@ class Amazon implements IStore {
                 String storeMarketplace = userData.getMarketplace();
                 Request.dynamicCommonPayload.put("store_user_id", storeUserId);
                 Request.dynamicCommonPayload.put("store_marketplace", storeMarketplace);
-                Teak.log.i("amazon.iap.user", "Amazon Store User Details retrieved.", _.h("storeUserId", storeUserId, "storeMarketplace", storeMarketplace));
+                Teak.log.i("amazon.iap.user", "Amazon Store User Details retrieved.", mm.h("storeUserId", storeUserId, "storeMarketplace", storeMarketplace));
             }
         }
 
@@ -111,7 +111,7 @@ class Amazon implements IStore {
 
                 for (Map.Entry<String, Product> entry : skuMap.entrySet()) {
                     String price = entry.getValue().getPrice();
-                    Teak.log.i("amazon.iap.sku", "SKU Details retrieved.", _.h(entry.getKey(), price));
+                    Teak.log.i("amazon.iap.sku", "SKU Details retrieved.", Helpers.mm.h(entry.getKey(), price));
                     queue.offer(price);
                 }
             } else {

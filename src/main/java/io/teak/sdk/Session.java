@@ -14,7 +14,6 @@
  */
 package io.teak.sdk;
 
-import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -53,7 +52,7 @@ import java.util.concurrent.TimeoutException;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLProtocolException;
 
-import io.teak.sdk.Helpers._;
+import io.teak.sdk.Helpers.mm;
 
 class Session {
     private static long SAME_SESSION_TIME_DELTA = 120000;
@@ -229,12 +228,12 @@ class Session {
     private boolean setState(@NonNull State newState) {
         synchronized (stateMutex) {
             if (this.state == newState) {
-                Teak.log.i("session.same_state", _.h("state", this.state));
+                Teak.log.i("session.same_state", Helpers.mm.h("state", this.state));
                 return false;
             }
 
             if (!this.state.canTransitionTo(newState)) {
-                Teak.log.e("session.invalid_state", _.h("state", this.state, "new_state", newState));
+                Teak.log.e("session.invalid_state", mm.h("state", this.state, "new_state", newState));
                 return false;
             }
 
@@ -352,7 +351,7 @@ class Session {
             this.previousState = this.state;
             this.state = newState;
 
-            Teak.log.i("session.state", _.h("state", this.state.name, "old_state", this.previousState.name));
+            Teak.log.i("session.state", Helpers.mm.h("state", this.state.name, "old_state", this.previousState.name));
 
             synchronized (eventListenersMutex) {
                 for (EventListener e : eventListeners) {
@@ -449,7 +448,7 @@ class Session {
                         payload.put("adm_push_key", _this.deviceConfiguration.admId);
                     }
 
-                    Teak.log.i("session.identify_user", _.h("userId", _this.userId, "timezone", tzOffset, "locale", locale));
+                    Teak.log.i("session.identify_user", Helpers.mm.h("userId", _this.userId, "timezone", tzOffset, "locale", locale));
 
                     new Request("/games/" + _this.appConfiguration.appId + "/users.json", payload, _this) {
                         @Override
@@ -604,7 +603,7 @@ class Session {
             String action = intent.getAction();
             if (FacebookAccessTokenBroadcast.UPDATED_ACCESS_TOKEN_INTENT_ACTION.equals(action)) {
                 facebookAccessToken = intent.getStringExtra("accessToken");
-                Teak.log.i("session.fb_access_token", _.h("access_token", facebookAccessToken));
+                Teak.log.i("session.fb_access_token", Helpers.mm.h("access_token", facebookAccessToken));
                 synchronized (stateMutex) {
                     if (state == State.UserIdentified) {
                         identifyUser();
@@ -679,7 +678,7 @@ class Session {
                 // Otherwise see if there's a deep link in the intent
                 final String intentDataString = intent.getDataString();
                 if (intentDataString != null && !intentDataString.isEmpty()) {
-                    Teak.log.i("session.attribution", _.h("deep_link", intentDataString));
+                    Teak.log.i("session.attribution", Helpers.mm.h("deep_link", intentDataString));
                     deepLinkURL = new Future<String>() {
                         @Override
                         public boolean cancel(boolean b) {
@@ -731,7 +730,7 @@ class Session {
             // Get the session attribution
             final Future<Map<String, Object>> sessionAttribution;
             if (teakNotifId != null) {
-                Teak.log.i("session.attribution", _.h("teak_notif_id", teakNotifId));
+                Teak.log.i("session.attribution", Helpers.mm.h("teak_notif_id", teakNotifId));
                 sessionAttribution = new Future<Map<String, Object>>() {
                     @Override
                     public boolean cancel(boolean b) {

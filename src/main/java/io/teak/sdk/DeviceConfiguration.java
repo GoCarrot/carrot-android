@@ -31,7 +31,6 @@ import com.google.android.gms.gcm.GoogleCloudMessaging;
 
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -41,7 +40,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.FutureTask;
 
-import io.teak.sdk.Helpers._;
+import io.teak.sdk.Helpers.mm;
 
 class DeviceConfiguration {
     public String gcmId;
@@ -292,7 +291,7 @@ class DeviceConfiguration {
                     @Override
                     public String call() throws Exception {
                         GoogleCloudMessaging gcm = _this.gcm.get();
-                        Teak.log.i("device_configuration", _.h("sender_id", gcmSenderId, "source", source));
+                        Teak.log.i("device_configuration", mm.h("sender_id", gcmSenderId, "source", source));
                         return gcm.register(gcmSenderId);
                     }
                 }));
@@ -328,7 +327,7 @@ class DeviceConfiguration {
                     if (!registration.equals(gcmId)) {
                         _this.gcmId = registration;
                         _this.notifyPushIdChangedListeners();
-                        Teak.log.i("gcm.key_updated", _.h("gcm_id", registration));
+                        Teak.log.i("gcm.key_updated", mm.h("gcm_id", registration));
                     }
                 } catch (Exception e) {
                     Teak.log.exception(e);

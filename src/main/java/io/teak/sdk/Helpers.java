@@ -91,7 +91,7 @@ class Helpers {
     }
 
 
-    public static class _ {
+    public static class mm {
         public static Map<String, Object> h(@NonNull Object... args) {
             Map<String, Object> ret = new HashMap<>();
             if (args.length % 2 != 0) throw new InvalidParameterException("Args must be in key value pairs.");

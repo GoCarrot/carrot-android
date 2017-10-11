@@ -22,8 +22,6 @@ import android.content.IntentFilter;
 import android.content.BroadcastReceiver;
 import android.support.v4.content.LocalBroadcastManager;
 
-import io.teak.sdk.Helpers._;
-
 class FacebookAccessTokenBroadcast {
     LocalBroadcastManager broadcastManager;
 
@@ -103,7 +101,7 @@ class FacebookAccessTokenBroadcast {
         if (fbSdkVersionField != null) {
             try {
                 fbSdkVersion = fbSdkVersionField.get(null).toString();
-                Teak.log.i("facebook", _.h("version", fbSdkVersion));
+                Teak.log.i("facebook", Helpers.mm.h("version", fbSdkVersion));
             } catch (Exception e) {
                 Teak.log.exception(e);
             }

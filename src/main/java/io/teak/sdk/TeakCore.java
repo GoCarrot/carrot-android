@@ -161,7 +161,7 @@ public class TeakCore implements OSListener {
 
         // Launch the app
         boolean autoLaunch = !Helpers.getBooleanFromBundle(bundle, "noAutolaunch");
-        Teak.log.i("notification.opened", Helpers._.h("teakNotifId", bundle.getString("teakNotifId"), "autoLaunch", autoLaunch));
+        Teak.log.i("notification.opened", Helpers.mm.h("teakNotifId", bundle.getString("teakNotifId"), "autoLaunch", autoLaunch));
 
         if (autoLaunch) {
             Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());

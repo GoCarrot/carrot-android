@@ -115,7 +115,7 @@ class TeakInstance {
             return;
         }
 
-        Teak.log.i("identify_user", Helpers._.h("userId", userIdentifier));
+        Teak.log.i("identify_user", Helpers.mm.h("userId", userIdentifier));
 
         if (this.isEnabled()) {
             // TODO: Send to Core
@@ -143,7 +143,7 @@ class TeakInstance {
             return;
         }
 
-        Teak.log.i("track_event", Helpers._.h("actionId", actionId, "objectTypeId", objectTypeId, "objectInstanceId", objectInstanceId));
+        Teak.log.i("track_event", Helpers.mm.h("actionId", actionId, "objectTypeId", objectTypeId, "objectInstanceId", objectInstanceId));
 
         // TODO: Send to Core
         if (this.isEnabled()) {
@@ -243,7 +243,7 @@ class TeakInstance {
                 return false;
             }
 
-            Teak.log.i("teak.state", Helpers._.h("old_state", this.state.name, "state", newState.name));
+            Teak.log.i("teak.state", Helpers.mm.h("old_state", this.state.name, "state", newState.name));
 
             this.state = newState;
 
@@ -322,7 +322,7 @@ class TeakInstance {
         @Override
         public void onActivityCreated(Activity activity, Bundle bundle) {
             if (activity.hashCode() == activityHashCode && setState(State.Created)) {
-                Teak.log.i("lifecycle", Helpers._.h("callback", "onActivityCreated"));
+                Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityCreated"));
 
                 final Context context = activity.getApplicationContext();
 
@@ -346,7 +346,7 @@ class TeakInstance {
         @Override
         public void onActivityResumed(Activity activity) {
             if (activity.hashCode() == activityHashCode && setState(State.Active)) {
-                Teak.log.i("lifecycle", Helpers._.h("callback", "onActivityResumed"));
+                Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityResumed"));
 
                 if (appStore != null) {
                     appStore.onActivityResumed();
@@ -359,7 +359,7 @@ class TeakInstance {
         @Override
         public void onActivityPaused(Activity activity) {
             if (activity.hashCode() == activityHashCode && setState(State.Paused)) {
-                Teak.log.i("lifecycle", Helpers._.h("callback", "onActivityPaused"));
+                Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityPaused"));
                 osListener.lifecycle_onActivityPaused(activity);
             }
         }
@@ -367,7 +367,7 @@ class TeakInstance {
         @Override
         public void onActivityDestroyed(Activity activity) {
             if (activity.hashCode() == activityHashCode && setState(State.Destroyed)) {
-                Teak.log.i("lifecycle", Helpers._.h("callback", "onActivityDestroyed"));
+                Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityDestroyed"));
             }
         }
 
