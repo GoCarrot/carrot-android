@@ -26,6 +26,9 @@ import org.mockito.ArgumentCaptor;
 
 import org.skyscreamer.jsonassert.JSONAssert;
 
+import java.util.Date;
+import java.util.Map;
+
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
@@ -36,14 +39,14 @@ public class purchase_OSListenerIntegrationTests extends TeakIntegrationTests {
     public void purchaseSucceeded_Prime31() throws JSONException {
         launchActivity();
 
-        String json = "{}";
+        JSONObject originalJson = getTestGooglePlayStoreJson();
 
-        call_prime31PurchaseSucceeded(json);
+        call_prime31PurchaseSucceeded(originalJson.toString());
 
-        ArgumentCaptor<JSONObject> argument = ArgumentCaptor.forClass(JSONObject.class);
+        ArgumentCaptor<Map<String, Object>> argument = ArgumentCaptor.forClass(Map.class);
         verify(osListener, timeout(3000).times(1)).purchase_onPurchaseSucceeded(argument.capture());
 
-        JSONAssert.assertEquals(json, argument.getValue(), false);
+        JSONAssert.assertEquals(getTeakPurchasePayload(originalJson), new JSONObject(argument.getValue()), false);
     }
 
     @Test
@@ -51,14 +54,15 @@ public class purchase_OSListenerIntegrationTests extends TeakIntegrationTests {
         launchActivity();
 
         JSONObject json = new JSONObject();
-        json.put("originalJson", new JSONObject());
+        JSONObject originalJson = getTestGooglePlayStoreJson();
+        json.put("originalJson", originalJson);
 
         call_openIABPurchaseSucceeded(json.toString());
 
-        ArgumentCaptor<JSONObject> argument = ArgumentCaptor.forClass(JSONObject.class);
+        ArgumentCaptor<Map<String, Object>> argument = ArgumentCaptor.forClass(Map.class);
         verify(osListener, timeout(3000).times(1)).purchase_onPurchaseSucceeded(argument.capture());
 
-        JSONAssert.assertEquals(json.getJSONObject("originalJson"), argument.getValue(), false);
+        JSONAssert.assertEquals(getTeakPurchasePayload(originalJson), new JSONObject(argument.getValue()), false);
     }
 
     @Test
@@ -67,13 +71,14 @@ public class purchase_OSListenerIntegrationTests extends TeakIntegrationTests {
 
         int errorCode = 42;
         JSONObject json = new JSONObject();
-        json.put("errorCode", errorCode);
+        json.put("error_code", errorCode);
 
         call_pluginPurchaseFailed(errorCode);
 
-        ArgumentCaptor<JSONObject> argument = ArgumentCaptor.forClass(JSONObject.class);
+        ArgumentCaptor<Map<String, Object>> argument = ArgumentCaptor.forClass(Map.class);
         verify(osListener, timeout(3000).times(1)).purchase_onPurchaseFailed(argument.capture());
-        JSONAssert.assertEquals(json, argument.getValue(), false);
+
+        JSONAssert.assertEquals(json, new JSONObject(argument.getValue()), false);
     }
 
     @Test
@@ -86,5 +91,25 @@ public class purchase_OSListenerIntegrationTests extends TeakIntegrationTests {
         call_onActivityResult(resultCode, data);
 
         verify(iStore, timeout(3000).times(1)).checkActivityResultForPurchase(resultCode, data);
+    }
+
+    private JSONObject getTestGooglePlayStoreJson() throws JSONException {
+        JSONObject json = new JSONObject();
+        json.put("purchaseToken", "test-purchase-token");
+        json.put("purchaseTime", new Date().getTime());
+        json.put("productId", "some.example.product");
+        json.put("orderId", "todo-check-data-type-of-this");
+        return json;
+    }
+
+    private JSONObject getTeakPurchasePayload(JSONObject originalJson) throws JSONException {
+        JSONObject payload = new JSONObject();
+        payload.put("purchase_token", originalJson.get("purchaseToken"));
+        payload.put("purchase_time", originalJson.get("purchaseTime"));
+        payload.put("product_id", originalJson.get("productId"));
+        if (originalJson.has("orderId")) {
+            payload.put("order_id", originalJson.get("orderId"));
+        }
+        return payload;
     }
 }

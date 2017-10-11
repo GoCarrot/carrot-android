@@ -25,7 +25,6 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
 import org.json.JSONObject;
 
@@ -256,17 +255,52 @@ class TeakInstance {
 
     private IStore appStore;
 
-    void pluginPurchaseSucceeded(JSONObject originalJson) {
-        this.osListener.purchase_onPurchaseSucceeded(originalJson);
+    void purchaseSucceeded(JSONObject originalJson) {
+        try {
+            Teak.log.i("puchase.succeeded", Helpers.jsonToMap(originalJson));
+
+            HashMap<String, Object> payload = new HashMap<>();
+
+            if (this.appStore != null && this.appStore.getClass() == io.teak.sdk.Amazon.class) {
+                JSONObject receipt = originalJson.getJSONObject("receipt");
+                JSONObject userData = originalJson.getJSONObject("userData");
+
+                payload.put("purchase_token", receipt.get("receiptId"));
+                payload.put("purchase_time_string", receipt.get("purchaseDate"));
+                payload.put("product_id", receipt.get("sku"));
+                payload.put("store_user_id", userData.get("userId"));
+                payload.put("store_marketplace", userData.get("marketplace"));
+            } else {
+                payload.put("purchase_token", originalJson.get("purchaseToken"));
+                payload.put("purchase_time", originalJson.get("purchaseTime"));
+                payload.put("product_id", originalJson.get("productId"));
+                if (originalJson.has("orderId")) {
+                    payload.put("order_id", originalJson.get("orderId"));
+                }
+            }
+
+            if (this.appStore != null) {
+                JSONObject skuDetails = this.appStore.querySkuDetails((String) payload.get("product_id"));
+                if (skuDetails != null) {
+                    if (skuDetails.has("price_amount_micros")) {
+                        payload.put("price_currency_code", skuDetails.getString("price_currency_code"));
+                        payload.put("price_amount_micros", skuDetails.getString("price_amount_micros"));
+                    } else if (skuDetails.has("price_string")) {
+                        payload.put("price_string", skuDetails.getString("price_string"));
+                    }
+                }
+            }
+
+            this.osListener.purchase_onPurchaseSucceeded(payload);
+        } catch (Exception e) {
+            Teak.log.exception(e);
+        }
     }
 
-    void pluginPurchaseFailed(int errorCode) {
-        JSONObject json = new JSONObject();
-        try {
-            json.put("errorCode", errorCode);
-        } catch (Exception ignored){
-        }
-        this.osListener.purchase_onPurchaseFailed(json);
+    void purchaseFailed(int errorCode) {
+        HashMap<String, Object> payload = new HashMap<>();
+        payload.put("error_code", errorCode);
+        this.osListener.purchase_onPurchaseFailed(payload);
     }
 
     void checkActivityResultForPurchase(int resultCode, Intent data) {
@@ -313,6 +347,11 @@ class TeakInstance {
         public void onActivityResumed(Activity activity) {
             if (activity.hashCode() == activityHashCode && setState(State.Active)) {
                 Teak.log.i("lifecycle", Helpers._.h("callback", "onActivityResumed"));
+
+                if (appStore != null) {
+                    appStore.onActivityResumed();
+                }
+
                 osListener.lifecycle_onActivityResumed(activity);
             }
         }

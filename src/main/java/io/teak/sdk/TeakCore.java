@@ -128,12 +128,11 @@ public class TeakCore implements OSListener {
     }
 
     @Override
-    public void purchase_onPurchaseSucceeded(JSONObject json) {
-
+    public void purchase_onPurchaseSucceeded(final Map<String, Object> payload) {
     }
 
     @Override
-    public void purchase_onPurchaseFailed(JSONObject json) {
+    public void purchase_onPurchaseFailed(final Map<String, Object> payload) {
 
     }
 

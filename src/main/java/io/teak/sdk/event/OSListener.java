@@ -19,7 +19,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 
-import org.json.JSONObject;
+import java.util.Map;
 
 // Mono-directional: OS->SDK
 public interface OSListener {
@@ -35,6 +35,6 @@ public interface OSListener {
     void notification_onNotificationCleared(Context context, Intent intent); // When someone dismisses a notification
 
     // Purchases
-    void purchase_onPurchaseSucceeded(JSONObject json);
-    void purchase_onPurchaseFailed(JSONObject json);
+    void purchase_onPurchaseSucceeded(Map<String, Object> payload);
+    void purchase_onPurchaseFailed(Map<String, Object> payload);
 }

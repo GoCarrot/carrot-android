@@ -19,10 +19,8 @@ import android.content.Context;
 
 import org.json.JSONObject;
 
-import io.teak.sdk.event.OSListener;
-
 public interface IStore {
-    void init(Context context, OSListener osListener);
+    void init(Context context, TeakInstance teakInstance);
 
     void dispose();
 

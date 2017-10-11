@@ -22,7 +22,7 @@ import android.support.annotation.Nullable;
 
 import io.teak.sdk.event.OSListener;
 
-public class DefaultObjectFactory implements ObjectFactory {
+class DefaultObjectFactory implements ObjectFactory {
     @NonNull
     @Override
     public OSListener getOSListener() {

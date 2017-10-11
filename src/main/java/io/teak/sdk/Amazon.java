@@ -35,15 +35,14 @@ import java.util.concurrent.ArrayBlockingQueue;
 import org.json.JSONObject;
 
 import io.teak.sdk.Helpers._;
-import io.teak.sdk.event.OSListener;
 
 @SuppressWarnings("unused")
 class Amazon implements IStore {
     HashMap<RequestId, ArrayBlockingQueue<String>> skuDetailsRequestMap;
-    OSListener osListener;
+    TeakInstance teakInstance;
 
-    public void init(Context context, OSListener osListener) {
-        this.osListener = osListener;
+    public void init(Context context, TeakInstance teakInstance) {
+        this.teakInstance = teakInstance;
         this.skuDetailsRequestMap = new HashMap<>();
         PurchasingService.registerListener(context, new TeakPurchasingListener());
 
@@ -124,13 +123,12 @@ class Amazon implements IStore {
         public void onPurchaseResponse(PurchaseResponse purchaseResponse) {
             if (purchaseResponse.getRequestStatus() == PurchaseResponse.RequestStatus.SUCCESSFUL) {
                 try {
-                    JSONObject json = purchaseResponse.toJSON();
-                    osListener.purchase_onPurchaseSucceeded(json);
+                    teakInstance.purchaseSucceeded(purchaseResponse.toJSON());
                 } catch (Exception e) {
                     Teak.log.exception(e);
                 }
             } else {
-                osListener.purchase_onPurchaseFailed(null);
+                teakInstance.purchaseFailed(-1);
             }
         }
 

@@ -201,7 +201,7 @@ public class Teak2 extends BroadcastReceiver {
                 asyncExecutor.submit(new Runnable() {
                     @Override
                     public void run() {
-                        Instance.pluginPurchaseSucceeded(originalJson);
+                        Instance.purchaseSucceeded(originalJson);
                     }
                 });
             }
@@ -221,7 +221,7 @@ public class Teak2 extends BroadcastReceiver {
                 asyncExecutor.submit(new Runnable() {
                     @Override
                     public void run() {
-                        Instance.pluginPurchaseSucceeded(originalJson);
+                        Instance.purchaseSucceeded(originalJson);
                     }
                 });
             }
@@ -237,7 +237,7 @@ public class Teak2 extends BroadcastReceiver {
             asyncExecutor.submit(new Runnable() {
                 @Override
                 public void run() {
-                    Instance.pluginPurchaseFailed(errorCode);
+                    Instance.purchaseFailed(errorCode);
                 }
             });
         }
