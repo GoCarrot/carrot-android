@@ -15,19 +15,12 @@
 
 package io.teak.app.test;
 
-import android.support.test.InstrumentationRegistry;
-import android.support.test.filters.SdkSuppress;
 import android.support.test.runner.AndroidJUnit4;
-import android.support.test.uiautomator.By;
-import android.support.test.uiautomator.UiDevice;
-import android.support.test.uiautomator.UiObject2;
-import android.support.test.uiautomator.Until;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @RunWith(AndroidJUnit4.class)
@@ -39,28 +32,16 @@ public class lifecycle_OSListenerIntegrationTests extends TeakIntegrationTests {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 18)
     public void integratedLifecycle() {
         launchActivity();
 
-        // Reference:
-        // http://alexzh.com/tutorials/android-testing-ui-automator-part-4/
-
         // Background the app, it should now be paused
-        UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
-        device.pressHome();
-        verify(osListener, times(1)).lifecycle_onActivityPaused(getActivity());
+        backgroundApp();
+        verify(osListener, timeout(1000).times(1)).lifecycle_onActivityPaused(getActivity());
 
-        // Open up the apps list
-        UiObject2 allApps = device.findObject(By.text("Apps"));
-        allApps.click();
 
-        // Re-open the test app
-        device.wait(Until.hasObject(By.desc("Teak SDK Tests")), 3000);
-        UiObject2 testAppIcon = device.findObject(By.desc("Teak SDK Tests"));
-        testAppIcon.click();
-
-        // Should be resumed
-        verify(osListener, timeout(500).times(2)).lifecycle_onActivityResumed(getActivity());
+        // Bring the app back, it should be resumed again
+        foregroundApp();
+        verify(osListener, timeout(1000).times(2)).lifecycle_onActivityResumed(getActivity());
     }
 }

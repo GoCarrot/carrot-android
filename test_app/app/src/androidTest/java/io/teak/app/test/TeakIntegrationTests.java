@@ -17,6 +17,7 @@ package io.teak.app.test;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.ParcelFileDescriptor;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -131,13 +132,20 @@ class TeakIntegrationTests {
         return testRule.launchActivity(intent);
     }
 
-    ///// Sleep helper, since Mockito.await seems to have strange behavior
+    ///// Activity background/launch helpers
 
-    void sleep(long ms) {
-        try {
-            Thread.sleep(ms);
-        } catch (Exception ignored) {
-        }
+    void backgroundApp() {
+        Intent homeIntent = new Intent();
+        homeIntent.setAction(Intent.ACTION_MAIN);
+        homeIntent.addCategory(Intent.CATEGORY_HOME);
+        getActivity().startActivity(homeIntent);
+    }
+
+    void foregroundApp() {
+        PackageManager manager = getActivity().getPackageManager();
+        Intent i = manager.getLaunchIntentForPackage(getActivity().getPackageName());
+        i.addCategory(Intent.CATEGORY_LAUNCHER);
+        getActivity().startActivity(i);
     }
 
     ///// BroadcastReceiver test helpers
