@@ -15,6 +15,7 @@
 
 package io.teak.app.test;
 
+import android.content.Intent;
 import android.support.test.runner.AndroidJUnit4;
 
 import org.json.JSONException;
@@ -73,5 +74,17 @@ public class purchase_OSListenerIntegrationTests extends TeakIntegrationTests {
         ArgumentCaptor<JSONObject> argument = ArgumentCaptor.forClass(JSONObject.class);
         verify(osListener, timeout(3000).times(1)).purchase_onPurchaseFailed(argument.capture());
         JSONAssert.assertEquals(json, argument.getValue(), false);
+    }
+
+    @Test
+    public void purchase_onActivityResult() {
+        launchActivity();
+
+        int resultCode = 42;
+        Intent data = new Intent();
+
+        call_onActivityResult(resultCode, data);
+
+        verify(iStore, timeout(3000).times(1)).checkActivityResultForPurchase(resultCode, data);
     }
 }

@@ -36,12 +36,16 @@ import java.util.Map;
 import io.teak.sdk.event.OSListener;
 
 class TeakInstance {
-    TeakInstance(@NonNull Activity activity, @Nullable ObjectFactory objectFactory) {
+    private final ObjectFactory objectFactory;
+
+    TeakInstance(@NonNull Activity activity, @NonNull ObjectFactory objectFactory) {
         if (activity == null) {
             throw new InvalidParameterException("null Activity passed to Teak.onCreate");
         }
+
+        this.objectFactory = objectFactory;
         this.activityHashCode = activity.hashCode();
-        this.osListener = objectFactory.getOSListener();
+        this.osListener = this.objectFactory.getOSListener();
 
         // Add version info for Unity/Air
         String wrapperSDKName = Helpers.getStringResourceByName("io_teak_wrapper_sdk_name", activity.getApplicationContext());
@@ -85,18 +89,11 @@ class TeakInstance {
         }
     }
 
-    void close(Activity activity) {
+    void cleanup(Activity activity) {
         if (this.appStore != null) {
             this.appStore.dispose();
             this.appStore = null;
         }
-
-//        RemoteConfiguration.removeEventListener(Teak.remoteConfigurationEventListener);
-//        Session.removeEventListener(Teak.sessionEventListener);
-
-//        if (Teak.facebookAccessTokenBroadcast != null) {
-//            Teak.facebookAccessTokenBroadcast.unregister(activity.getApplicationContext());
-//        }
 
         activity.getApplication().unregisterActivityLifecycleCallbacks(this.lifecycleCallbacks);
     }
@@ -109,7 +106,7 @@ class TeakInstance {
         map.putAll(wrapperSDKMap);
         return map;
     }
-    private Map<String, Object> wrapperSDKMap = new HashMap<>();
+    private final Map<String, Object> wrapperSDKMap = new HashMap<>();
 
     ///// identifyUser
 
@@ -292,11 +289,23 @@ class TeakInstance {
         public void onActivityCreated(Activity activity, Bundle bundle) {
             if (activity.hashCode() == activityHashCode && setState(State.Created)) {
                 Teak.log.i("lifecycle", Helpers._.h("callback", "onActivityCreated"));
-                if (!osListener.lifecycle_onActivityCreated(activity)) {
-                    close(activity);
-                    setState(State.Disabled);
+
+                final Context context = activity.getApplicationContext();
+
+                // Create IStore
+                appStore = objectFactory.getIStore(context);
+                if (appStore != null) {
+                    appStore.init(context, null);
                 }
 
+                // Call lifecycle_onActivityCreated, if it fails, cleanup and disable
+                if (!osListener.lifecycle_onActivityCreated(activity)) {
+                    cleanup(activity);
+                    setState(State.Disabled);
+                } else {
+                    // Set up the /teak_internal/* routes
+                    registerTeakInternalDeepLinks();
+                }
             }
         }
 
@@ -319,7 +328,7 @@ class TeakInstance {
         @Override
         public void onActivityDestroyed(Activity activity) {
             if (activity.hashCode() == activityHashCode && setState(State.Destroyed)) {
-                // Nothing right now
+                Teak.log.i("lifecycle", Helpers._.h("callback", "onActivityDestroyed"));
             }
         }
 
@@ -335,4 +344,15 @@ class TeakInstance {
         public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
         }
     };
+
+    private void registerTeakInternalDeepLinks() {
+        DeepLink.registerRoute("/teak_internal/store/:sku", "", "", new DeepLink.Call() {
+            @Override
+            public void call(Map<String, Object> params) {
+                if (appStore != null) {
+                    appStore.launchPurchaseFlowForSKU((String)params.get("sku"));
+                }
+            }
+        });
+    }
 }

@@ -69,7 +69,7 @@ public class Teak2 extends BroadcastReceiver {
      */
     public static void onCreate(@NonNull Activity activity, @Nullable ObjectFactory objectFactory) {
         if (objectFactory == null) {
-            throw new RuntimeException("TODO: Default object factory.");
+            objectFactory = new DefaultObjectFactory();
         }
 
         // Create Instance

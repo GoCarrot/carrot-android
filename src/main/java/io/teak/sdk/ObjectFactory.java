@@ -15,10 +15,13 @@
 
 package io.teak.sdk;
 
+import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import io.teak.sdk.event.OSListener;
 
 public interface ObjectFactory {
     @NonNull OSListener getOSListener();
+    @Nullable IStore getIStore(Context context);
 }

@@ -16,6 +16,7 @@
 package io.teak.app.test;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.ParcelFileDescriptor;
@@ -35,6 +36,7 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.Map;
 
+import io.teak.sdk.IStore;
 import io.teak.sdk.ObjectFactory;
 import io.teak.sdk.Teak2;
 import io.teak.sdk.event.OSListener;
@@ -49,6 +51,7 @@ import static org.mockito.Mockito.when;
 
 class TeakIntegrationTests {
     OSListener osListener;
+    IStore iStore;
 
     @Rule
     public ActivityTestRule<MainActivity> testRule = new ActivityTestRule<MainActivity>(MainActivity.class, false, false) {
@@ -61,11 +64,19 @@ class TeakIntegrationTests {
             osListener = mock(io.teak.sdk.event.OSListener.class);
             when(osListener.lifecycle_onActivityCreated(any(Activity.class))).thenReturn(true);
 
+            iStore = mock(io.teak.sdk.IStore.class);
+
             MainActivity.whateverFactory = new ObjectFactory() {
                 @NonNull
                 @Override
                 public io.teak.sdk.event.OSListener getOSListener() {
                     return osListener;
+                }
+
+                @Nullable
+                @Override
+                public IStore getIStore(Context context) {
+                    return iStore;
                 }
             };
         }
@@ -113,6 +124,16 @@ class TeakIntegrationTests {
             Method method = teakThunkClass.getDeclaredMethod("pluginPurchaseFailed", int.class);
             method.setAccessible(true);
             method.invoke(null, errorCode);
+        } catch (Exception e) {
+            fail(android.util.Log.getStackTraceString(e));
+        }
+    }
+
+    void call_onActivityResult(int resultCode, Intent data) {
+        try {
+            Method method = teakThunkClass.getDeclaredMethod("onActivityResult", int.class, int.class, Intent.class);
+            method.setAccessible(true);
+            method.invoke(null, 0 /* unused */, resultCode, data);
         } catch (Exception e) {
             fail(android.util.Log.getStackTraceString(e));
         }
