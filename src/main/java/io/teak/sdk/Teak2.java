@@ -27,6 +27,8 @@ import android.support.v4.content.LocalBroadcastManager;
 
 import org.json.JSONObject;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import io.teak.sdk.Helpers._;
@@ -112,7 +114,12 @@ public class Teak2 extends BroadcastReceiver {
     @SuppressWarnings("unused")
     public static void identifyUser(final String userIdentifier) {
         if (Instance != null) {
-            Instance.identifyUser(userIdentifier);
+            asyncExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    Instance.identifyUser(userIdentifier);
+                }
+            });
         } else {
             // TODO: Throw exception for integration help?
         }
@@ -128,7 +135,12 @@ public class Teak2 extends BroadcastReceiver {
     @SuppressWarnings("unused")
     public static void trackEvent(final String actionId, final String objectTypeId, final String objectInstanceId) {
         if (Instance != null) {
-            Instance.trackEvent(actionId, objectTypeId, objectInstanceId);
+            asyncExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    Instance.trackEvent(actionId, objectTypeId, objectInstanceId);
+                }
+            });
         }
     }
 
@@ -163,10 +175,15 @@ public class Teak2 extends BroadcastReceiver {
     ///// BroadcastReceiver
 
     @Override
-    public void onReceive(Context context, Intent intent) {
+    public void onReceive(final Context context, final Intent intent) {
         // TODO: getInstance() ?
         if (Instance != null) {
-            Instance.onReceive(context, intent);
+            asyncExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    Instance.onReceive(context, intent);
+                }
+            });
         }
     }
 
@@ -179,9 +196,14 @@ public class Teak2 extends BroadcastReceiver {
             JSONObject purchase = new JSONObject(json);
             Teak.log.i("purchase.open_iab", Helpers.jsonToMap(purchase));
 
-            JSONObject originalJson = new JSONObject(purchase.getString("originalJson"));
+            final JSONObject originalJson = new JSONObject(purchase.getString("originalJson"));
             if (Instance != null) {
-                Instance.pluginPurchaseSucceeded(originalJson);
+                asyncExecutor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        Instance.pluginPurchaseSucceeded(originalJson);
+                    }
+                });
             }
         } catch (Exception e) {
             Teak.log.exception(e);
@@ -192,11 +214,16 @@ public class Teak2 extends BroadcastReceiver {
     @SuppressWarnings("unused")
     private static void prime31PurchaseSucceeded(String json) {
         try {
-            JSONObject originalJson = new JSONObject(json);
+            final JSONObject originalJson = new JSONObject(json);
             Teak.log.i("purchase.prime_31", Helpers.jsonToMap(originalJson));
 
             if (Instance != null) {
-                Instance.pluginPurchaseSucceeded(originalJson);
+                asyncExecutor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        Instance.pluginPurchaseSucceeded(originalJson);
+                    }
+                });
             }
         } catch (Exception e) {
             Teak.log.exception(e);
@@ -205,17 +232,27 @@ public class Teak2 extends BroadcastReceiver {
 
     // Called by Unity integration
     @SuppressWarnings("unused")
-    private static void pluginPurchaseFailed(int errorCode) {
+    private static void pluginPurchaseFailed(final int errorCode) {
         if (Instance != null) {
-            Instance.pluginPurchaseFailed(errorCode);
+            asyncExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    Instance.pluginPurchaseFailed(errorCode);
+                }
+            });
         }
     }
 
     // Called by onActivityResult, as well as via reflection/directly in external purchase
     // activity code.
-    public static void checkActivityResultForPurchase(int resultCode, Intent data) {
+    public static void checkActivityResultForPurchase(final int resultCode, final Intent data) {
         if (Instance != null) {
-            Instance.checkActivityResultForPurchase(resultCode, data);
+            asyncExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    Instance.checkActivityResultForPurchase(resultCode, data);
+                }
+            });
         }
     }
 
@@ -223,4 +260,5 @@ public class Teak2 extends BroadcastReceiver {
 
     public static TeakInstance Instance;
     public static Future<Void> waitForDeepLink;
+    private static ExecutorService asyncExecutor = Executors.newCachedThreadPool();
 }
