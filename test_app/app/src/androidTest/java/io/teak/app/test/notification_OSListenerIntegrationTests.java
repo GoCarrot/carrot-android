@@ -18,12 +18,8 @@ package io.teak.app.test;
 
 import android.content.Context;
 import android.content.Intent;
-import android.support.test.InstrumentationRegistry;
 import android.support.test.filters.SdkSuppress;
 import android.support.test.runner.AndroidJUnit4;
-import android.support.test.uiautomator.By;
-import android.support.test.uiautomator.UiDevice;
-import android.support.test.uiautomator.Until;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,67 +31,43 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
 @RunWith(AndroidJUnit4.class)
+@SdkSuppress(minSdkVersion = 21)
 public class notification_OSListenerIntegrationTests extends TeakIntegrationTests {
 
     // TODO: ADM, if anyone uses it ever
 
-    @Test(timeout = 30000)
-    @SdkSuppress(minSdkVersion = 21)
+    @Test
     public void notificationReceived() {
         launchActivity();
 
-        // Make sure app is fully active
-        UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
-        device.wait(Until.hasObject(By.text("Hello World")), 1000);
-
-        // Background the app
-        device.pressHome();
-
-        // Send a notification cleared broadcast
-        String event = "com.google.android.c2dm.intent.RECEIVE";
-        sendBroadcast(event, null);
+        // Send a notification received broadcast
+        sendBroadcast("com.google.android.c2dm.intent.RECEIVE");
 
         // Should have been called
-        verify(osListener, timeout(3000).times(1)).notification_onNotificationReceived(any(Context.class), any(Intent.class));
+        verify(osListener, timeout(7000).times(1)).notification_onNotificationReceived(any(Context.class), any(Intent.class));
     }
 
-    @Test(timeout = 30000)
-    @SdkSuppress(minSdkVersion = 21)
+    @Test
     public void notificationAction() {
         launchActivity();
 
-        // Make sure app is fully active
-        UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
-        device.wait(Until.hasObject(By.text("Hello World")), 1000);
-
-        // Background the app
-        device.pressHome();
-
-        // Send a notification cleared broadcast
+        // Send a notification opened broadcast
         String event = getActivity().getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX;
-        sendBroadcast(event, null);
+        sendBroadcast(event);
 
         // Should have been called
-        verify(osListener, timeout(3000).times(1)).notification_onNotificationAction(any(Context.class), any(Intent.class));
+        verify(osListener, timeout(7000).times(1)).notification_onNotificationAction(any(Context.class), any(Intent.class));
     }
 
-    @Test(timeout = 30000)
-    @SdkSuppress(minSdkVersion = 21)
+    @Test
     public void notificationCleared() {
         launchActivity();
 
-        // Make sure app is fully active
-        UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
-        device.wait(Until.hasObject(By.text("Hello World")), 1000);
-
-        // Background the app
-        device.pressHome();
-
         // Send a notification cleared broadcast
         String event = getActivity().getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX;
-        sendBroadcast(event, null);
+        sendBroadcast(event);
 
         // Should have been called
-        verify(osListener, timeout(3000).times(1)).notification_onNotificationCleared(any(Context.class), any(Intent.class));
+        verify(osListener, timeout(7000).times(1)).notification_onNotificationCleared(any(Context.class), any(Intent.class));
     }
 }
