@@ -51,8 +51,8 @@ class DebugConfiguration {
 
     private final SharedPreferences preferences;
 
-    public boolean forceDebug;
-    public final boolean isDevelopmentBuild;
+    private boolean forceDebug;
+    final boolean isDevelopmentBuild;
 
     public DebugConfiguration(@NonNull Context context) {
         SharedPreferences tempPreferences = null;
@@ -65,7 +65,6 @@ class DebugConfiguration {
         }
 
         if (this.preferences == null) {
-            Teak.log.e("debug_configuration", "getSharedPreferences() returned null. Some debug functionality is disabled.");
             this.forceDebug = Teak.forceDebug;
         } else {
             this.forceDebug = Teak.forceDebug || this.preferences.getBoolean(PREFERENCE_FORCE_DEBUG, false);
@@ -80,15 +79,12 @@ class DebugConfiguration {
         this.isDevelopmentBuild = tempDevelopmentBuild;
     }
 
-    public void setPreferenceForceDebug(boolean forceDebug) {
-        if (this.preferences == null) {
-            Teak.log.e("debug_configuration", "getSharedPreferences() returned null. Setting force debug is disabled.");
-        } else if (forceDebug != this.forceDebug) {
+    void setPreferenceForceDebug(boolean forceDebug) {
+        if (forceDebug != this.forceDebug) {
             try {
                 SharedPreferences.Editor editor = this.preferences.edit();
                 editor.putBoolean(PREFERENCE_FORCE_DEBUG, forceDebug);
                 editor.apply();
-                Teak.log.i("debug_configuration",  String.format(Locale.US, "Force debug is now %s, please re-start the app.", forceDebug ? "enabled" : "disabled"));
             } catch (Exception e) {
                 Teak.log.exception(e);
             }

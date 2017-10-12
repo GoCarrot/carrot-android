@@ -68,7 +68,7 @@ class DeviceConfiguration {
 
     private static final String PREFERENCE_DEVICE_ID = "io.teak.sdk.Preferences.DeviceId";
 
-    public DeviceConfiguration(@NonNull final Context context, @NonNull AppConfiguration appConfiguration) {
+    public DeviceConfiguration(@NonNull final Context context, @NonNull final AppConfiguration appConfiguration) {
         if (android.os.Build.VERSION.RELEASE == null) {
             this.platformString = "android_unknown";
         } else {
@@ -178,8 +178,30 @@ class DeviceConfiguration {
             }
         }
 
+        // Listen for events coming in from InstanceIDListenerService
+        InstanceIDListenerService.addEventListener(new InstanceIDListenerService.EventListener() {
+            @Override
+            public void onTokenRefresh() {
+                reRegisterPushToken(appConfiguration, "InstanceIDListenerService");
+            }
+        });
+
         // Listen for ADM messages if ADM is available
         if (this.admIsSupported) {
+            ADMMessageHandler.addEventListener(new ADMMessageHandler.EventListener() {
+                @Override
+                public void onRegistered(String s) {
+                    admId = s;
+                    notifyPushIdChangedListeners();
+                }
+
+                @Override
+                public void onUnregistered() {
+                    admId = null;
+                    notifyPushIdChangedListeners();
+                }
+            });
+
             ADM adm = new ADM(context);
             this.admInstance = adm;
             if (adm.getRegistrationId() == null) {
@@ -212,7 +234,7 @@ class DeviceConfiguration {
         }
     };
 
-    public void reRegisterPushToken(@NonNull AppConfiguration appConfiguration, String source) {
+    void reRegisterPushToken(@NonNull AppConfiguration appConfiguration, String source) {
         if (this.admIsSupported) {
             ADM adm = (ADM) this.admInstance;
             adm.startRegister();
@@ -336,7 +358,7 @@ class DeviceConfiguration {
         }).start();
     }
 
-    public void notifyPushIdChangedListeners() {
+    private void notifyPushIdChangedListeners() {
         synchronized (eventListenersMutex) {
             for (EventListener e : eventListeners) {
                 e.onPushIdChanged(this);
@@ -345,7 +367,7 @@ class DeviceConfiguration {
     }
 
     // region Event Listener
-    public interface EventListener {
+    interface EventListener {
         void onPushIdChanged(DeviceConfiguration deviceConfiguration);
 
         void onAdvertisingInfoChanged(DeviceConfiguration deviceConfiguration);
@@ -354,7 +376,7 @@ class DeviceConfiguration {
     private static final Object eventListenersMutex = new Object();
     private static ArrayList<EventListener> eventListeners = new ArrayList<>();
 
-    public static void addEventListener(EventListener e) {
+    static void addEventListener(EventListener e) {
         synchronized (eventListenersMutex) {
             if (!eventListeners.contains(e)) {
                 eventListeners.add(e);
@@ -412,12 +434,12 @@ class DeviceConfiguration {
         }
     }
 
-    public class RetriableTask<T> implements Callable<T> {
+    private class RetriableTask<T> implements Callable<T> {
         private final Callable<T> wrappedTask;
         private final int tries;
         private final long retryDelay;
 
-        public RetriableTask(final int tries, final long retryDelay, final Callable<T> taskToWrap) {
+        RetriableTask(final int tries, final long retryDelay, final Callable<T> taskToWrap) {
             this.wrappedTask = taskToWrap;
             this.tries = tries;
             this.retryDelay = retryDelay;

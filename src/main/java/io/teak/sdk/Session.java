@@ -165,9 +165,11 @@ class Session {
 
         DeviceConfiguration.addEventListener(this.deviceConfigurationListener);
 
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(FacebookAccessTokenBroadcast.UPDATED_ACCESS_TOKEN_INTENT_ACTION);
-        Teak.localBroadcastManager.registerReceiver(this.facebookBroadcastReceiver, filter);
+        if (Teak.Instance != null && Teak.Instance.localBroadcastManager != null) {
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(FacebookAccessTokenBroadcast.UPDATED_ACCESS_TOKEN_INTENT_ACTION);
+            Teak.Instance.localBroadcastManager.registerReceiver(this.facebookBroadcastReceiver, filter);
+        }
 
         setState(State.Created);
     }
@@ -324,8 +326,8 @@ class Session {
 
                 case Expired: {
                     DeviceConfiguration.removeEventListener(this.deviceConfigurationListener);
-                    if (Teak.localBroadcastManager != null) {
-                        Teak.localBroadcastManager.unregisterReceiver(this.facebookBroadcastReceiver);
+                    if (Teak.Instance != null && Teak.Instance.localBroadcastManager != null) {
+                        Teak.Instance.localBroadcastManager.unregisterReceiver(this.facebookBroadcastReceiver);
                     }
 
                     // TODO: Report Session to server, once we collect that info.
@@ -460,8 +462,8 @@ class Session {
 
                                 // Enable verbose logging if flagged
                                 boolean enableVerboseLogging = response.optBoolean("verbose_logging");
-                                if (Teak.debugConfiguration != null) {
-                                    Teak.debugConfiguration.setPreferenceForceDebug(enableVerboseLogging);
+                                if (Teak.Instance != null && Teak.Instance.debugConfiguration != null) {
+                                    Teak.Instance.debugConfiguration.setPreferenceForceDebug(enableVerboseLogging);
                                 }
 
                                 // Server requesting new push key.
@@ -490,14 +492,14 @@ class Session {
         }).start();
     }
 
-    public static abstract class SessionRunnable {
+    static abstract class SessionRunnable {
         public abstract void run(Session session);
     }
 
     private static class WhenUserIdIsReadyRun implements Runnable {
         private SessionRunnable runnable;
 
-        public WhenUserIdIsReadyRun(SessionRunnable runnable) {
+        WhenUserIdIsReadyRun(SessionRunnable runnable) {
             this.runnable = runnable;
         }
 
@@ -512,7 +514,7 @@ class Session {
     private static final Object userIdReadyRunnableQueueMutex = new Object();
     private static final ArrayList<WhenUserIdIsReadyRun> userIdReadyRunnableQueue = new ArrayList<>();
 
-    public static void whenUserIdIsReadyRun(@NonNull SessionRunnable runnable) {
+    static void whenUserIdIsReadyRun(@NonNull SessionRunnable runnable) {
         synchronized (currentSessionMutex) {
             if (currentSession == null) {
                 synchronized (userIdReadyRunnableQueueMutex) {
@@ -532,7 +534,7 @@ class Session {
         }
     }
 
-    public static void whenUserIdIsOrWasReadyRun(@NonNull SessionRunnable runnable) {
+    static void whenUserIdIsOrWasReadyRun(@NonNull SessionRunnable runnable) {
         synchronized (currentSessionMutex) {
             if (currentSession == null) {
                 synchronized (userIdReadyRunnableQueueMutex) {
@@ -616,7 +618,7 @@ class Session {
     /**
      * Called by Teak lifecycle when activity is paused, set current session state to Expiring
      */
-    public static void onActivityPaused() {
+    static void onActivityPaused() {
         synchronized (currentSessionMutex) {
             currentSession.setState(State.Expiring);
         }
@@ -625,7 +627,7 @@ class Session {
     /**
      * Called by Teak lifecycle when activity is resumed, reset state on current session if it's 'Expiring'
      */
-    public static void onActivityResumed(final Intent intent, final AppConfiguration appConfiguration, final DeviceConfiguration deviceConfiguration) {
+    static void onActivityResumed(final Intent intent, final AppConfiguration appConfiguration, final DeviceConfiguration deviceConfiguration) {
         // Call getCurrentSession() so the null || Expired logic stays in one place
         synchronized (currentSessionMutex) {
             getCurrentSession(appConfiguration, deviceConfiguration);
@@ -807,14 +809,16 @@ class Session {
                                     new Thread(new Runnable() {
                                         @Override
                                         public void run() {
-                                            try {
-                                                TeakNotification.Reward reward = rewardFuture.get();
-                                                HashMap<String, Object> rewardMap = Helpers.jsonToMap(reward.json);
-                                                final Intent rewardIntent = new Intent(Teak.REWARD_CLAIM_ATTEMPT);
-                                                rewardIntent.putExtra("reward", rewardMap);
-                                                Teak.localBroadcastManager.sendBroadcast(rewardIntent);
-                                            } catch (Exception e) {
-                                                Teak.log.exception(e);
+                                            if (Teak.Instance != null && Teak.Instance.localBroadcastManager != null) {
+                                                try {
+                                                    TeakNotification.Reward reward = rewardFuture.get();
+                                                    HashMap<String, Object> rewardMap = Helpers.jsonToMap(reward.json);
+                                                    final Intent rewardIntent = new Intent(Teak.REWARD_CLAIM_ATTEMPT);
+                                                    rewardIntent.putExtra("reward", rewardMap);
+                                                    Teak.Instance.localBroadcastManager.sendBroadcast(rewardIntent);
+                                                } catch (Exception e) {
+                                                    Teak.log.exception(e);
+                                                }
                                             }
                                         }
                                     }).start();

@@ -38,7 +38,7 @@ import java.util.Map;
 
 import io.teak.sdk.IStore;
 import io.teak.sdk.ObjectFactory;
-import io.teak.sdk.Teak2;
+import io.teak.sdk.Teak;
 import io.teak.sdk.event.OSListener;
 
 import static junit.framework.TestCase.fail;
@@ -59,7 +59,7 @@ class TeakIntegrationTests {
         protected void beforeActivityLaunched() {
             super.beforeActivityLaunched();
 
-            Teak2.Instance = null;
+            Teak.Instance = null;
 
             osListener = mock(io.teak.sdk.event.OSListener.class);
             when(osListener.lifecycle_onActivityCreated(any(Activity.class))).thenReturn(true);
@@ -97,7 +97,7 @@ class TeakIntegrationTests {
 
     ///// Invoke helper for private Teak methods
 
-    private Class<?> teakThunkClass = Teak2.class;
+    private Class<?> teakThunkClass = Teak.class;
 
     void call_prime31PurchaseSucceeded(String json) {
         try {

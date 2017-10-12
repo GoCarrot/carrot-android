@@ -206,7 +206,7 @@ public class TeakNotification {
          */
         @SuppressWarnings("unused")
         public static Future<Reward> rewardFromRewardId(final String teakRewardId) {
-            if (!Teak.isEnabled()) {
+            if (Teak.Instance == null || !Teak.Instance.isEnabled()) {
                 Teak.log.e("reward", "Teak is disabled, ignoring rewardFromRewardId().");
                 return null;
             }
@@ -312,7 +312,7 @@ public class TeakNotification {
      */
     @SuppressWarnings("unused")
     public static FutureTask<String> scheduleNotification(final String creativeId, final String defaultMessage, final long delayInSeconds) {
-        if (!Teak.isEnabled()) {
+        if (Teak.Instance == null || !Teak.Instance.isEnabled()) {
             Teak.log.e("notification.schedule.disabled", "Teak is disabled, ignoring scheduleNotification().");
             return null;
         }
@@ -379,7 +379,7 @@ public class TeakNotification {
      */
     @SuppressWarnings("unused")
     public static FutureTask<String> cancelNotification(final String scheduleId) {
-        if (!Teak.isEnabled()) {
+        if (Teak.Instance == null || !Teak.Instance.isEnabled()) {
             Teak.log.e("notification.cancel.disabled", "Teak is disabled, ignoring cancelNotification().");
             return null;
         }

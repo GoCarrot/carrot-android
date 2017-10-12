@@ -18,7 +18,7 @@
         </activity>
 
         <!-- Remove android:permission="com.google.android.c2dm.permission.SEND" for automated testing -->
-        <receiver android:name="io.teak.sdk.Teak2" android:exported="true">
+        <receiver android:name="io.teak.sdk.Teak" android:exported="true">
             <intent-filter>
                 <action android:name="io.teak.app.test.intent.TEAK_NOTIFICATION_OPENED" />
                 <action android:name="io.teak.app.test.intent.TEAK_NOTIFICATION_CLEARED" />

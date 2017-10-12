@@ -56,7 +56,7 @@ public class TeakCore implements OSListener {
             return false;
         }
 
-        Teak.log.useDeviceConfiguration(Teak.deviceConfiguration);
+        Teak.log.useDeviceConfiguration(this.deviceConfiguration);
 
         // Facebook Access Token Broadcaster
         this.facebookAccessTokenBroadcast = new FacebookAccessTokenBroadcast(context);
@@ -66,8 +66,10 @@ public class TeakCore implements OSListener {
         RemoteConfiguration.addEventListener(this.remoteConfigurationEventListener);
 
         // Ravens
-        Teak.sdkRaven = new Raven(context, "sdk", this.appConfiguration, this.deviceConfiguration);
-        Teak.appRaven = new Raven(context, this.appConfiguration.bundleId, this.appConfiguration, this.deviceConfiguration);
+        if (Teak.Instance != null) {
+            Teak.Instance.sdkRaven = new Raven(context, "sdk", this.appConfiguration, this.deviceConfiguration);
+            Teak.Instance.appRaven = new Raven(context, this.appConfiguration.bundleId, this.appConfiguration, this.deviceConfiguration);
+        }
 
         // Broadcast manager
         this.localBroadcastManager = LocalBroadcastManager.getInstance(context);
@@ -140,7 +142,7 @@ public class TeakCore implements OSListener {
         Session session = Session.getCurrentSessionOrNull();
         if (session != null) {
             HashMap<String, Object> payload = new HashMap<>();
-            payload.put("app_id", Teak.appConfiguration.appId);
+            payload.put("app_id", this.appConfiguration.appId);
             payload.put("user_id", teakUserId);
             payload.put("platform_id", teakNotifId);
 
@@ -218,16 +220,16 @@ public class TeakCore implements OSListener {
         @Override
         public void onConfigurationReady(RemoteConfiguration configuration) {
             // Begin exception reporting, if enabled
-            if (configuration.sdkSentryDsn != null) {
-                Teak.sdkRaven.setDsn(configuration.sdkSentryDsn);
+            if (configuration.sdkSentryDsn != null && Teak.Instance != null && Teak.Instance.sdkRaven != null) {
+                Teak.Instance.sdkRaven.setDsn(configuration.sdkSentryDsn);
             }
 
             // Handle global exceptions, if enabled
-            if (configuration.appSentryDsn != null) {
-                Teak.appRaven.setDsn(configuration.appSentryDsn);
+            if (configuration.appSentryDsn != null&& Teak.Instance != null && Teak.Instance.appRaven != null) {
+                Teak.Instance.appRaven.setDsn(configuration.appSentryDsn);
 
                 if (!android.os.Debug.isDebuggerConnected()) {
-                    Teak.appRaven.setAsUncaughtExceptionHandler();
+                    Teak.Instance.appRaven.setAsUncaughtExceptionHandler();
                 }
             }
 

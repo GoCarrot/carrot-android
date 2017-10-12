@@ -25,6 +25,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v4.content.LocalBroadcastManager;
 
 import org.json.JSONObject;
 
@@ -35,7 +36,10 @@ import java.util.Map;
 import io.teak.sdk.event.OSListener;
 
 class TeakInstance {
-    private final ObjectFactory objectFactory;
+    final ObjectFactory objectFactory;
+
+    final DebugConfiguration debugConfiguration;
+    final LocalBroadcastManager localBroadcastManager;
 
     TeakInstance(@NonNull Activity activity, @NonNull ObjectFactory objectFactory) {
         if (activity == null) {
@@ -45,6 +49,7 @@ class TeakInstance {
         this.objectFactory = objectFactory;
         this.activityHashCode = activity.hashCode();
         this.osListener = this.objectFactory.getOSListener();
+        this.localBroadcastManager = LocalBroadcastManager.getInstance(activity);
 
         // Add version info for Unity/Air
         String wrapperSDKName = Helpers.getStringResourceByName("io_teak_wrapper_sdk_name", activity.getApplicationContext());
@@ -53,11 +58,12 @@ class TeakInstance {
             this.wrapperSDKMap.put(wrapperSDKName, wrapperSDKVersion);
         }
 
+        // Debug configuration
+        this.debugConfiguration = new DebugConfiguration(activity.getApplicationContext());
+        Teak.log.useDebugConfiguration(this.debugConfiguration);
+
         // Output version information
         Teak.log.useSdk(this.to_h());
-
-        // Ready for debug logging.
-        Teak.debugConfiguration = new DebugConfiguration(activity.getApplicationContext());
 
         // Check the launch mode of the activity
         try {
@@ -159,6 +165,11 @@ class TeakInstance {
             });
         }
     }
+
+    ///// Exception Handling
+
+    Raven sdkRaven;
+    Raven appRaven;
 
     ///// Broadcast Receiver
 
@@ -315,7 +326,7 @@ class TeakInstance {
 
     ///// Activity Lifecycle
 
-    private final OSListener osListener;
+    final OSListener osListener;
     private final int activityHashCode;
 
     private final Application.ActivityLifecycleCallbacks lifecycleCallbacks = new Application.ActivityLifecycleCallbacks() {
@@ -383,6 +394,8 @@ class TeakInstance {
         public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
         }
     };
+
+    ///// Built-in deep links
 
     private void registerTeakInternalDeepLinks() {
         DeepLink.registerRoute("/teak_internal/store/:sku", "", "", new DeepLink.Call() {

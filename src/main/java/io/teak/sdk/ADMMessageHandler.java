@@ -29,6 +29,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,11 +37,9 @@ import java.util.regex.Pattern;
 public class ADMMessageHandler extends ADMMessageHandlerBase {
     @Override
     protected void onMessage(Intent intent) {
-        if (!Teak.isEnabled()) {
-            return;
+        if (Teak.Instance != null && Teak.Instance.isEnabled()) {
+            Teak.Instance.osListener.notification_onNotificationReceived(getApplicationContext(), intent);
         }
-
-        Teak.handlePushNotificationReceived(getApplicationContext(), intent);
     }
 
     private static String formatSig(Signature sig, String hashType) throws java.security.NoSuchAlgorithmException {
@@ -66,7 +65,7 @@ public class ADMMessageHandler extends ADMMessageHandlerBase {
         Teak.log.e("amazon.adm.registration_error", "Error registering for ADM id: " + s);
 
         // If the error is INVALID_SENDER try and help the developer
-        if (Teak.debugConfiguration.isDevelopmentBuild && s.contains("INVALID_SENDER")) {
+        if (s.contains("INVALID_SENDER")) {
 
             // First check to see if api_key.txt is available
             InputStream inputStream = null;
@@ -148,15 +147,21 @@ public class ADMMessageHandler extends ADMMessageHandlerBase {
     @Override
     protected void onRegistered(String s) {
         Teak.log.i("amazon.adm.registered", Helpers.mm.h("admId", s));
-        Teak.deviceConfiguration.admId = s;
-        Teak.deviceConfiguration.notifyPushIdChangedListeners();
+        synchronized (eventListenersMutex) {
+            for (EventListener e : eventListeners) {
+                e.onRegistered(s);
+            }
+        }
     }
 
     @Override
     protected void onUnregistered(String s) {
         Teak.log.i("amazon.adm.unregistered", Helpers.mm.h("admId", s));
-        Teak.deviceConfiguration.admId = null;
-        Teak.deviceConfiguration.notifyPushIdChangedListeners();
+        synchronized (eventListenersMutex) {
+            for (EventListener e : eventListeners) {
+                e.onUnregistered();
+            }
+        }
     }
 
     public static class MessageAlertReceiver extends ADMMessageReceiver {
@@ -167,5 +172,29 @@ public class ADMMessageHandler extends ADMMessageHandlerBase {
 
     public ADMMessageHandler() {
         super(ADMMessageHandler.class.getName());
+    }
+
+    ///// Event Listener
+
+    interface EventListener {
+        void onRegistered(String s);
+        void onUnregistered();
+    }
+
+    private static final Object eventListenersMutex = new Object();
+    private static ArrayList<EventListener> eventListeners = new ArrayList<>();
+
+    public static void addEventListener(EventListener e) {
+        synchronized (eventListenersMutex) {
+            if (!eventListeners.contains(e)) {
+                eventListeners.add(e);
+            }
+        }
+    }
+
+    public static void removeEventListener(EventListener e) {
+        synchronized (eventListenersMutex) {
+            eventListeners.remove(e);
+        }
     }
 }

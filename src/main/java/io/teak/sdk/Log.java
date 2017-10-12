@@ -75,28 +75,33 @@ public class Log {
     }
     // endregion
 
-    Map<String, Object> sdkVersion;
-    DeviceConfiguration deviceConfiguration;
-    AppConfiguration appConfiguration;
-    RemoteConfiguration remoteConfiguration;
+    private Map<String, Object> sdkVersion;
+    private DeviceConfiguration deviceConfiguration;
+    private AppConfiguration appConfiguration;
+    private RemoteConfiguration remoteConfiguration;
+    private DebugConfiguration debugConfiguration;
 
     // region Public API
-    public void useSdk(@NonNull Map<String, Object> sdkVersion) {
+    void useDebugConfiguration(@NonNull DebugConfiguration debugConfiguration) {
+        this.debugConfiguration = debugConfiguration;
+    }
+
+    void useSdk(@NonNull Map<String, Object> sdkVersion) {
         this.sdkVersion = sdkVersion;
         this.log(Level.Info, "sdk_init", null);
     }
 
-    public void useDeviceConfiguration(@NonNull DeviceConfiguration deviceConfiguration) {
+    void useDeviceConfiguration(@NonNull DeviceConfiguration deviceConfiguration) {
         this.log(Level.Info, "device_configuration", deviceConfiguration.to_h());
         this.deviceConfiguration = deviceConfiguration;
     }
 
-    public void useAppConfiguration(@NonNull AppConfiguration appConfiguration) {
+    void useAppConfiguration(@NonNull AppConfiguration appConfiguration) {
         this.log(Level.Info, "app_configuration", appConfiguration.to_h());
         this.appConfiguration = appConfiguration;
     }
 
-    public void useRemoteConfiguration(@NonNull RemoteConfiguration remoteConfiguration) {
+    void useRemoteConfiguration(@NonNull RemoteConfiguration remoteConfiguration) {
         this.log(Level.Info, "remote_configuration", remoteConfiguration.to_h());
         this.remoteConfiguration = remoteConfiguration;
     }
@@ -148,8 +153,8 @@ public class Log {
 
     public void exception(@NonNull Throwable t, @Nullable Map<String, Object> extras) {
         // Send to Raven
-        if (Teak.sdkRaven != null) {
-            Teak.sdkRaven.reportException(t, extras);
+        if (Teak.Instance != null && Teak.Instance.sdkRaven != null) {
+            Teak.Instance.sdkRaven.reportException(t, extras);
         }
 
         this.log(Level.Error, "exception", Raven.throwableToMap(t));
@@ -158,9 +163,9 @@ public class Log {
 
     // region State
     // Always available, can't change
-    public final String androidLogTag;
+    private final String androidLogTag;
     private final int jsonIndentation;
-    public final String runId;
+    final String runId;
     private final AtomicLong eventCounter;
     // endregion
 
@@ -197,13 +202,13 @@ public class Log {
         payload.put("event_data", eventData);
 
         // Remote logging
-        if (Teak.debugConfiguration != null && Teak.debugConfiguration.isDebug()) {
+        if (this.debugConfiguration != null && this.debugConfiguration.isDebug()) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
                     HttpsURLConnection connection = null;
                     try {
-                        URL endpoint = Teak.debugConfiguration.isDevelopmentBuild ?
+                        URL endpoint = debugConfiguration.isDevelopmentBuild ?
                                 new URL("https://logs.gocarrot.com/dev.sdk.log." + logLevel.name)
                                 : new URL("https://logs.gocarrot.com/sdk.log." + logLevel.name);
                         connection = (HttpsURLConnection) endpoint.openConnection();
@@ -244,7 +249,8 @@ public class Log {
         }
 
         // Log to Android log
-        if (Teak.debugConfiguration == null || (Teak.debugConfiguration.isDebug() && android.util.Log.isLoggable(this.androidLogTag, logLevel.androidLogPriority))) {
+        if (this.debugConfiguration == null ||
+                (this.debugConfiguration.isDebug() && android.util.Log.isLoggable(this.androidLogTag, logLevel.androidLogPriority))) {
             String jsonStringForAndroidLog = "{}";
             try {
                 if (this.jsonIndentation > 0) {
