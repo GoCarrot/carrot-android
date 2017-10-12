@@ -100,7 +100,7 @@ public class Teak extends BroadcastReceiver {
     @Deprecated
     @SuppressWarnings("unused")
     public static void onNewIntent(Intent intent) {
-        throw new RuntimeException("Teak.onNewIntent is deprecated, call Activity.onNewIntent() instead.");
+        Teak.log.e("deprecatation", "Teak.onNewIntent is deprecated, call Activity.onNewIntent() instead.");
     }
 
     /**
