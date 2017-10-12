@@ -179,12 +179,16 @@ class DeviceConfiguration {
         }
 
         // Listen for events coming in from InstanceIDListenerService
-        InstanceIDListenerService.addEventListener(new InstanceIDListenerService.EventListener() {
-            @Override
-            public void onTokenRefresh() {
-                reRegisterPushToken(appConfiguration, "InstanceIDListenerService");
-            }
-        });
+        try {
+            InstanceIDListenerService.addEventListener(new InstanceIDListenerService.EventListener() {
+                @Override
+                public void onTokenRefresh() {
+                    reRegisterPushToken(appConfiguration, "InstanceIDListenerService");
+                }
+            });
+        } catch (Exception ignored) {
+            // This means that com.google.android.gms.iid.InstanceIDListenerService doesn't exist
+        }
 
         // Listen for ADM messages if ADM is available
         if (this.admIsSupported) {
