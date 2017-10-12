@@ -329,7 +329,8 @@ class TeakInstance {
     final OSListener osListener;
     private final int activityHashCode;
 
-    private final Application.ActivityLifecycleCallbacks lifecycleCallbacks = new Application.ActivityLifecycleCallbacks() {
+    // Needs to be package-accessable for Adobe Air Application workaround
+    final Application.ActivityLifecycleCallbacks lifecycleCallbacks = new Application.ActivityLifecycleCallbacks() {
         @Override
         public void onActivityCreated(Activity activity, Bundle bundle) {
             if (activity.hashCode() == activityHashCode && setState(State.Created)) {
