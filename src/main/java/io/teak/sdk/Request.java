@@ -21,24 +21,11 @@ import android.util.Base64;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLException;
-
 import java.lang.reflect.Array;
 
-import java.net.ConnectException;
-import java.net.HttpRetryException;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLEncoder;
 
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -51,6 +38,9 @@ import java.util.UUID;
 import org.json.JSONObject;
 import org.json.JSONArray;
 
+import io.teak.sdk.io.DefaultHttpsRequest;
+import io.teak.sdk.io.IHttpsRequest;
+
 class Request implements Runnable {
     private final String endpoint;
     private final String hostname;
@@ -58,53 +48,58 @@ class Request implements Runnable {
     private final Session session;
     private final String requestId;
 
+    private static String teakApiKey;
+    private static Map<String, Object> configurationPayload = new HashMap<>();
     static Map<String, Object> dynamicCommonPayload = new HashMap<>();
 
-    public Request(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
-        this(null, endpoint, payload, session);
+    static {
+        TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
+            @Override
+            public void onConfigurationReady(@NonNull TeakConfiguration configuration) {
+                Request.teakApiKey = configuration.appConfiguration.apiKey;
+
+                configurationPayload.put("sdk_version", Teak.SDKVersion);
+                configurationPayload.put("game_id", configuration.appConfiguration.appId);
+                configurationPayload.put("app_version", String.valueOf(configuration.appConfiguration.appVersion));
+                configurationPayload.put("bundle_id", configuration.appConfiguration.bundleId);
+                if (configuration.appConfiguration.installerPackage != null) {
+                    configurationPayload.put("appstore_name", configuration.appConfiguration.installerPackage);
+                }
+
+                configurationPayload.put("device_id", configuration.deviceConfiguration.deviceId);
+                configurationPayload.put("sdk_platform", configuration.deviceConfiguration.platformString);
+                configurationPayload.put("device_manufacturer", configuration.deviceConfiguration.deviceManufacturer);
+                configurationPayload.put("device_model", configuration.deviceConfiguration.deviceModel);
+                configurationPayload.put("device_fallback", configuration.deviceConfiguration.deviceFallback);
+            }
+        });
     }
 
-    public Request(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
+    Request(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
+        this(session.remoteConfiguration.getHostnameForEndpoint(endpoint), endpoint, payload, session);
+    }
+
+    Request(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
         this.hostname = hostname;
         this.endpoint = endpoint;
-        this.payload = payload;
+        this.payload = new HashMap<>(payload);
         this.session = session;
         this.requestId = UUID.randomUUID().toString().replace("-", "");
 
-        // Add common data
-        if (session.userId() != null) {
-            payload.put("api_key", session.userId());
-        }
-        payload.put("request_date", new Date().getTime() / 1000); // Milliseconds -> Seconds
-        payload.put("game_id", session.appConfiguration.appId);
-        payload.put("sdk_version", Teak.SDKVersion);
-        payload.put("sdk_platform", session.deviceConfiguration.platformString);
-        payload.put("app_version", String.valueOf(session.appConfiguration.appVersion));
-        payload.put("bundle_id", session.appConfiguration.bundleId);
-        if (session.appConfiguration.installerPackage != null) {
-            payload.put("appstore_name", session.appConfiguration.installerPackage);
-        }
-        if (session.deviceConfiguration.deviceId != null) {
-            payload.put("device_id", session.deviceConfiguration.deviceId);
-        }
-        // Add device information to Request common payload
-        payload.put("device_manufacturer", session.deviceConfiguration.deviceManufacturer);
-        payload.put("device_model", session.deviceConfiguration.deviceModel);
-        payload.put("device_fallback", session.deviceConfiguration.deviceFallback);
 
-        payload.putAll(Request.dynamicCommonPayload); // TODO: I don't like this, but it seems ok for now
+        if (session.userId() != null) {
+            this.payload.put("api_key", session.userId());
+        }
+        this.payload.put("request_date", new Date().getTime() / 1000); // Milliseconds -> Seconds
+
+        this.payload.putAll(Request.configurationPayload);
+        this.payload.putAll(Request.dynamicCommonPayload); // TODO: I don't like this, but it seems ok for now
     }
 
     @Override
     public void run() {
-        HttpsURLConnection connection = null;
-        SecretKeySpec keySpec = new SecretKeySpec(this.session.appConfiguration.apiKey.getBytes(), "HmacSHA256");
+        SecretKeySpec keySpec = new SecretKeySpec(Request.teakApiKey.getBytes(), "HmacSHA256");
         String requestBody;
-
-        String hostnameForEndpoint = this.hostname;
-        if (hostnameForEndpoint == null) {
-            hostnameForEndpoint = this.session.remoteConfiguration.getHostnameForEndpoint(this.endpoint);
-        }
 
         try {
             ArrayList<String> payloadKeys = new ArrayList<>(this.payload.keySet());
@@ -131,7 +126,7 @@ class Request implements Runnable {
             }
             builder.deleteCharAt(builder.length() - 1);
 
-            String stringToSign = "POST\n" + hostnameForEndpoint + "\n" + this.endpoint + "\n" + builder.toString();
+            String stringToSign = "POST\n" + this.hostname + "\n" + this.endpoint + "\n" + builder.toString();
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(keySpec);
             byte[] result = mac.doFinal(stringToSign.getBytes());
@@ -163,68 +158,26 @@ class Request implements Runnable {
             Teak.log.i("request.send", this.to_h());
             long startTime = System.nanoTime();
 
-            URL url = new URL("https://" + hostnameForEndpoint + this.endpoint);
-            connection = (HttpsURLConnection) url.openConnection();
+            URL url = new URL("https://" + this.hostname + this.endpoint);
 
-            connection.setRequestProperty("Accept-Charset", "UTF-8");
-            connection.setUseCaches(false);
-            connection.setDoOutput(true);
-            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-            connection.setRequestProperty("Content-Length",
-                    "" + Integer.toString(requestBody.getBytes().length));
+            IHttpsRequest request = new DefaultHttpsRequest(); // TODO: Do this properly
+            IHttpsRequest.Response response = request.synchronousRequest(url, requestBody);
 
-            // Send request
-            DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
-            wr.writeBytes(requestBody);
-            wr.flush();
-            wr.close();
+            if (response != null) {
+                Map<String, Object> h = this.to_h();
+                h.remove("payload");
+                h.put("response_time", (System.nanoTime() - startTime) / 1000000.0);
+                try {
+                    h.put("payload", Helpers.jsonToMap(new JSONObject(response.body)));
+                } catch (Exception ignored) {
+                }
+                Teak.log.i("request.reply", h);
 
-            // Get Response
-            InputStream is;
-            if (connection.getResponseCode() < 400) {
-                is = connection.getInputStream();
-            } else {
-                is = connection.getErrorStream();
+                // For extending classes
+                done(response.statusCode, response.body);
             }
-            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-            String line;
-            StringBuilder response = new StringBuilder();
-            while ((line = rd.readLine()) != null) {
-                response.append(line);
-                response.append('\r');
-            }
-            rd.close();
-
-            Map<String, Object> h = this.to_h();
-            h.remove("payload");
-            h.put("response_time", (System.nanoTime() - startTime) / 1000000.0);
-            try {
-                h.put("payload", Helpers.jsonToMap(new JSONObject(response.toString())));
-            } catch (Exception ignored) {
-            }
-            Teak.log.i("request.reply", h);
-
-            // For extending classes
-            done(connection.getResponseCode(), response.toString());
-        } catch (UnknownHostException uh_e) {
-            // Ignored, Sentry issue 'TEAK-SDK-F', 'TEAK-SDK-M', 'TEAK-SDK-X'
-        } catch (SocketTimeoutException st_e) {
-            // Ignored, Sentry issue 'TEAK-SDK-11'
-        } catch (ConnectException c_e) {
-            // Ignored, Sentry issue 'TEAK-SDK-Q', 'TEAK-SDK-K', 'TEAK-SDK-W', 'TEAK-SDK-V',
-            //      'TEAK-SDK-J', 'TEAK-SDK-P'
-        } catch (HttpRetryException http_e) {
-            // Ignored, Sentry issue 'TEAK-SDK-N'
-        } catch (SSLException ssl_e) {
-            // Ignored, Sentry issue 'TEAK-SDK-T'
-        } catch (SocketException sock_e) {
-            // Ignored, Sentry issue 'TEAK-SDK-S'
         } catch (Exception e) {
             Teak.log.exception(e);
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
         }
     }
 
