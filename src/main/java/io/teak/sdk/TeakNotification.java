@@ -551,6 +551,7 @@ public class TeakNotification {
                             contents.put("status", response.getString("status"));
 
                             if (response.getString("status").equals("ok")) {
+                                contents.put("data", response.getJSONArray("canceled"));
                                 Teak.log.i("notification.cancel_all", "Canceled all notifications.");
                             } else {
                                 Teak.log.e("notification.cancel_all.error", "Error canceling all notifications.", _.h("response", response.toString()));
