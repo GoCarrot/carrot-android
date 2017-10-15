@@ -494,10 +494,11 @@ public class TeakNotification {
                                 Teak.log.e("notification.cancel.error", "Error canceling notification.", _.h("response", response.toString()));
                             }
                             q.offer(new JSONObject(contents).toString());
-                        } catch (Exception ignored) {
+                        } catch (Exception e) {
                             final Map<String, Object> contents = new HashMap<>();
                             contents.put("status", "error.internal");
                             q.offer(new JSONObject(contents).toString());
+                            Teak.log.exception(e, _.h("scheduleId", scheduleId));
                         }
                         ret.run();
                     }
@@ -557,10 +558,11 @@ public class TeakNotification {
                                 Teak.log.e("notification.cancel_all.error", "Error canceling all notifications.", _.h("response", response.toString()));
                             }
                             q.offer(new JSONObject(contents).toString());
-                        } catch (Exception ignored) {
+                        } catch (Exception e) {
                             final Map<String, Object> contents = new HashMap<>();
                             contents.put("status", "error.internal");
                             q.offer(new JSONObject(contents).toString());
+                            Teak.log.exception(e, _.h("responseBody", responseBody));
                         }
                         ret.run();
                     }
