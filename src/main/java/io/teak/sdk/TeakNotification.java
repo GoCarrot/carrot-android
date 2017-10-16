@@ -28,6 +28,7 @@ import android.support.v4.app.NotificationCompat;
 
 import android.util.SparseArray;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -48,6 +49,7 @@ import java.net.URLEncoder;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONException;
 
@@ -552,7 +554,14 @@ public class TeakNotification {
                             contents.put("status", response.getString("status"));
 
                             if (response.getString("status").equals("ok")) {
-                                contents.put("data", response.getJSONArray("canceled"));
+                                ArrayList<Map<String, Object>> canceled = new ArrayList<>();
+                                JSONArray jArray = response.getJSONArray("canceled");
+                                if (jArray != null) {
+                                    for (int i = 0; i< jArray.length(); i++) {
+                                        canceled.add(Helpers.jsonToMap(jArray.getJSONObject(i)));
+                                    }
+                                }
+                                contents.put("data", canceled);
                                 Teak.log.i("notification.cancel_all", "Canceled all notifications.");
                             } else {
                                 Teak.log.e("notification.cancel_all.error", "Error canceling all notifications.", _.h("response", response.toString()));
