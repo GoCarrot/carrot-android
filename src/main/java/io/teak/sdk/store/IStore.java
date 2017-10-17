@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.teak.sdk;
+package io.teak.sdk.store;
 
 import android.content.Intent;
 import android.content.Context;
@@ -20,7 +20,7 @@ import android.content.Context;
 import org.json.JSONObject;
 
 public interface IStore {
-    void init(Context context, TeakInstance teakInstance);
+    void init(Context context);
 
     void dispose();
 

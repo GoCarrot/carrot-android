@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.teak.sdk;
+package io.teak.sdk.store;
 
 import android.app.Activity;
 
@@ -34,42 +34,42 @@ import java.lang.reflect.Method;
 
 import org.json.JSONObject;
 
+import io.teak.sdk.Teak;
+
 @SuppressWarnings("unused")
 class GooglePlay implements IStore {
     private Object mService;
     private ServiceConnection mServiceConn;
     private Context mContext;
     private boolean mDisposed = false;
-    private TeakInstance teakInstance;
 
-    public static final String ITEM_TYPE_INAPP = "inapp";
-    public static final String ITEM_TYPE_SUBS = "subs";
+    private static final String ITEM_TYPE_INAPP = "inapp";
+    private static final String ITEM_TYPE_SUBS = "subs";
 
-    public static final int BILLING_RESPONSE_RESULT_OK = 0;
-    //public static final int BILLING_RESPONSE_RESULT_USER_CANCELED = 1;
-    //public static final int BILLING_RESPONSE_RESULT_SERVICE_UNAVAILABLE = 2;
-    //public static final int BILLING_RESPONSE_RESULT_BILLING_UNAVAILABLE = 3;
-    //public static final int BILLING_RESPONSE_RESULT_ITEM_UNAVAILABLE = 4;
+    private static final int BILLING_RESPONSE_RESULT_OK = 0;
+    //private static final int BILLING_RESPONSE_RESULT_USER_CANCELED = 1;
+    //private static final int BILLING_RESPONSE_RESULT_SERVICE_UNAVAILABLE = 2;
+    //private static final int BILLING_RESPONSE_RESULT_BILLING_UNAVAILABLE = 3;
+    //private static final int BILLING_RESPONSE_RESULT_ITEM_UNAVAILABLE = 4;
     //public static final int BILLING_RESPONSE_RESULT_DEVELOPER_ERROR = 5;
-    //public static final int BILLING_RESPONSE_RESULT_ERROR = 6;
-    //public static final int BILLING_RESPONSE_RESULT_ITEM_ALREADY_OWNED = 7;
-    //public static final int BILLING_RESPONSE_RESULT_ITEM_NOT_OWNED = 8;
+    //private static final int BILLING_RESPONSE_RESULT_ERROR = 6;
+    //private static final int BILLING_RESPONSE_RESULT_ITEM_ALREADY_OWNED = 7;
+    //private static final int BILLING_RESPONSE_RESULT_ITEM_NOT_OWNED = 8;
 
-    public static final String RESPONSE_CODE = "RESPONSE_CODE";
-    public static final String RESPONSE_GET_SKU_DETAILS_LIST = "DETAILS_LIST";
-    //public static final String RESPONSE_BUY_INTENT = "BUY_INTENT";
-    public static final String RESPONSE_INAPP_PURCHASE_DATA = "INAPP_PURCHASE_DATA";
-    public static final String RESPONSE_INAPP_SIGNATURE = "INAPP_DATA_SIGNATURE";
-    //public static final String RESPONSE_INAPP_ITEM_LIST = "INAPP_PURCHASE_ITEM_LIST";
-    //public static final String RESPONSE_INAPP_PURCHASE_DATA_LIST = "INAPP_PURCHASE_DATA_LIST";
-    //public static final String RESPONSE_INAPP_SIGNATURE_LIST = "INAPP_DATA_SIGNATURE_LIST";
-    //public static final String INAPP_CONTINUATION_TOKEN = "INAPP_CONTINUATION_TOKEN";
+    private static final String RESPONSE_CODE = "RESPONSE_CODE";
+    private static final String RESPONSE_GET_SKU_DETAILS_LIST = "DETAILS_LIST";
+    //private static final String RESPONSE_BUY_INTENT = "BUY_INTENT";
+    private static final String RESPONSE_INAPP_PURCHASE_DATA = "INAPP_PURCHASE_DATA";
+    private static final String RESPONSE_INAPP_SIGNATURE = "INAPP_DATA_SIGNATURE";
+    //private static final String RESPONSE_INAPP_ITEM_LIST = "INAPP_PURCHASE_ITEM_LIST";
+    //private static final String RESPONSE_INAPP_PURCHASE_DATA_LIST = "INAPP_PURCHASE_DATA_LIST";
+    //private static final String RESPONSE_INAPP_SIGNATURE_LIST = "INAPP_DATA_SIGNATURE_LIST";
+    //private static final String INAPP_CONTINUATION_TOKEN = "INAPP_CONTINUATION_TOKEN";
 
-    public static final String GET_SKU_DETAILS_ITEM_LIST = "ITEM_ID_LIST";
-    //public static final String GET_SKU_DETAILS_ITEM_TYPE_LIST = "ITEM_TYPE_LIST";
+    private static final String GET_SKU_DETAILS_ITEM_LIST = "ITEM_ID_LIST";
+    //private static final String GET_SKU_DETAILS_ITEM_TYPE_LIST = "ITEM_TYPE_LIST";
 
-    public void init(Context context, TeakInstance teakInstance) {
-        this.teakInstance = teakInstance;
+    public void init(Context context) {
         mContext = context;
 
         mServiceConn = new ServiceConnection() {

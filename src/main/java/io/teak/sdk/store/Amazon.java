@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.teak.sdk;
+package io.teak.sdk.store;
 
 import android.content.Intent;
 import android.content.Context;
@@ -35,18 +35,21 @@ import java.util.concurrent.ArrayBlockingQueue;
 import org.json.JSONObject;
 
 import io.teak.sdk.Helpers.mm;
+import io.teak.sdk.Teak;
+import io.teak.sdk.TeakEvent;
+import io.teak.sdk.event.PurchaseEvent;
+import io.teak.sdk.event.PurchaseFailedEvent;
+import io.teak.sdk.Request;
 
 @SuppressWarnings("unused")
 class Amazon implements IStore {
-    HashMap<RequestId, ArrayBlockingQueue<String>> skuDetailsRequestMap;
-    TeakInstance teakInstance;
+    private HashMap<RequestId, ArrayBlockingQueue<String>> skuDetailsRequestMap;
 
-    public void init(Context context, TeakInstance teakInstance) {
-        this.teakInstance = teakInstance;
+    public void init(Context context) {
         this.skuDetailsRequestMap = new HashMap<>();
         PurchasingService.registerListener(context, new TeakPurchasingListener());
 
-        Teak.log.i("amazon.iap", "Amazon In-App Purchasing 2.0 registered.", Helpers.mm.h("sandboxMode", PurchasingService.IS_SANDBOX_MODE));
+        Teak.log.i("amazon.iap", "Amazon In-App Purchasing 2.0 registered.", mm.h("sandboxMode", PurchasingService.IS_SANDBOX_MODE));
     }
 
     public void onActivityResumed() {
@@ -87,7 +90,7 @@ class Amazon implements IStore {
         return true;
     }
 
-    class TeakPurchasingListener implements PurchasingListener {
+    private class TeakPurchasingListener implements PurchasingListener {
         @Override
         public void onUserDataResponse(UserDataResponse userDataResponse) {
             if (userDataResponse.getRequestStatus() == UserDataResponse.RequestStatus.SUCCESSFUL) {
@@ -111,7 +114,7 @@ class Amazon implements IStore {
 
                 for (Map.Entry<String, Product> entry : skuMap.entrySet()) {
                     String price = entry.getValue().getPrice();
-                    Teak.log.i("amazon.iap.sku", "SKU Details retrieved.", Helpers.mm.h(entry.getKey(), price));
+                    Teak.log.i("amazon.iap.sku", "SKU Details retrieved.", mm.h(entry.getKey(), price));
                     queue.offer(price);
                 }
             } else {
@@ -123,12 +126,24 @@ class Amazon implements IStore {
         public void onPurchaseResponse(PurchaseResponse purchaseResponse) {
             if (purchaseResponse.getRequestStatus() == PurchaseResponse.RequestStatus.SUCCESSFUL) {
                 try {
-                    teakInstance.purchaseSucceeded(purchaseResponse.toJSON());
+                    JSONObject originalJson = purchaseResponse.toJSON();
+
+                    JSONObject receipt = originalJson.getJSONObject("receipt");
+                    JSONObject userData = originalJson.getJSONObject("userData");
+
+                    JSONObject payload = new JSONObject();
+                    payload.put("purchase_token", receipt.get("receiptId"));
+                    payload.put("purchase_time_string", receipt.get("purchaseDate"));
+                    payload.put("product_id", receipt.get("sku"));
+                    payload.put("store_user_id", userData.get("userId"));
+                    payload.put("store_marketplace", userData.get("marketplace"));
+
+                    TeakEvent.postEvent(new PurchaseEvent(payload));
                 } catch (Exception e) {
                     Teak.log.exception(e);
                 }
             } else {
-                teakInstance.purchaseFailed(-1);
+                TeakEvent.postEvent(new PurchaseFailedEvent(-1));
             }
         }
 

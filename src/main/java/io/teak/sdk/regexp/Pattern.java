@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.teak.sdk;
+package io.teak.sdk.regexp;
 
 import java.io.Serializable;
 import java.util.ArrayList;
