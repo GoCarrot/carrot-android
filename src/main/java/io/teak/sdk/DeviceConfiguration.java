@@ -180,12 +180,15 @@ class DeviceConfiguration {
 
         // Listen for events coming in from InstanceIDListenerService
         try {
-            InstanceIDListenerService.addEventListener(new InstanceIDListenerService.EventListener() {
-                @Override
-                public void onTokenRefresh() {
-                    reRegisterPushToken(appConfiguration, "InstanceIDListenerService");
-                }
-            });
+            Class<?> clazz = Class.forName("com.google.android.gms.iid.InstanceIDListenerService");
+            if (clazz != null) {
+                InstanceIDListenerService.addEventListener(new InstanceIDListenerService.EventListener() {
+                    @Override
+                    public void onTokenRefresh() {
+                        reRegisterPushToken(appConfiguration, "InstanceIDListenerService");
+                    }
+                });
+            }
         } catch (Exception ignored) {
             // This means that com.google.android.gms.iid.InstanceIDListenerService doesn't exist
         }
