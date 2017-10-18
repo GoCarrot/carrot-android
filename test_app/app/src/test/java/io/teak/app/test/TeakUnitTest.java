@@ -50,6 +50,7 @@ public class TeakUnitTest {
 
         // Android Device Info mock
         final IAndroidDeviceInfo androidDeviceInfo = mock(IAndroidDeviceInfo.class);
+        when(androidDeviceInfo.getDeviceId()).thenReturn("unit_test_mock_device");
 
         // Create and add an easily mockable TeakEvent.EventListener
         if (eventListener != null) {

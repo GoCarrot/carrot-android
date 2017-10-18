@@ -19,7 +19,7 @@ import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class TeakEventTests extends TeakUnitTest {
+public class TeakEventListener extends TeakUnitTest {
 
     ///// Verify that the event listener array gets reset in between tests
 
@@ -32,8 +32,8 @@ public class TeakEventTests extends TeakUnitTest {
 
     @Test
     public void a_verify_setupReset() throws Exception {
-        TeakEvent.addEventListener(verifyResetListener);
-        TeakEvent.postEvent(new UserIdEvent("test"));
+        io.teak.sdk.TeakEvent.addEventListener(verifyResetListener);
+        io.teak.sdk.TeakEvent.postEvent(new UserIdEvent("test"));
         verify(verifyResetListener, timeout(5000).times(1)).eventRecieved(any(Class.class), anyString());
     }
 
