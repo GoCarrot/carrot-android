@@ -1,4 +1,4 @@
-/* Teak -- Copyright (C) 2016 GoCarrot Inc.
+/* Teak -- Copyright (C) 2017 GoCarrot Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,19 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.teak.sdk.store;
 
-import android.content.Intent;
+package io.teak.sdk;
+
 import android.content.Context;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
-import org.json.JSONObject;
+import io.teak.sdk.io.IAndroidResources;
+import io.teak.sdk.store.IStore;
 
-public interface IStore {
-    void init(Context context);
-    void dispose();
+public interface IObjectFactory {
+    @Nullable
+    IStore getIStore(Context context);
 
-    void processPurchaseJson(JSONObject originalJson);
-    void checkActivityResultForPurchase(int resultCode, Intent data);
-
-    void launchPurchaseFlowForSKU(String sku);
+    @NonNull
+    IAndroidResources getAndroidResources(Context context);
 }

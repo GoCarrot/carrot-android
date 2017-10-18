@@ -30,18 +30,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-class Helpers {
-    static String getStringResourceByName(String name, Context context) {
-        try {
-            String packageName = context.getPackageName();
-            int resId = context.getResources().getIdentifier(name, "string", packageName);
-            return context.getString(resId);
-        } catch (Exception ignored) {
-        }
-        return null;
-    }
-
-    static boolean getBooleanFromBundle(Bundle b, String key) {
+public class Helpers {
+    public static boolean getBooleanFromBundle(Bundle b, String key) {
         String boolAsStringMaybe = b.getString(key);
         if (boolAsStringMaybe != null) {
             return Boolean.parseBoolean(boolAsStringMaybe);
@@ -49,7 +39,7 @@ class Helpers {
         return b.getBoolean(key);
     }
 
-    static HashMap<String, Object> jsonToMap(JSONObject json) throws JSONException {
+    public static HashMap<String, Object> jsonToMap(JSONObject json) throws JSONException {
         HashMap<String, Object> retMap = new HashMap<>();
 
         if (json != JSONObject.NULL) {

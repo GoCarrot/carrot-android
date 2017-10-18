@@ -12,20 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.teak.sdk;
+package io.teak.sdk.configuration;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.support.annotation.NonNull;
 
-import org.json.JSONObject;
-
-import java.net.URLEncoder;
 import java.util.HashMap;
-import java.util.Locale;
 
-class DebugConfiguration {
+import io.teak.sdk.Teak;
+
+public class DebugConfiguration {
     private static final String PREFERENCE_FORCE_DEBUG = "io.teak.sdk.Preferences.ForceDebug";
 
     @SuppressWarnings("unused")
@@ -77,6 +75,12 @@ class DebugConfiguration {
         } catch (Exception ignored) {
         }
         this.isDevelopmentBuild = tempDevelopmentBuild;
+
+        // TODO: This should be listener based
+
+        // Set up Logs
+        Teak.log.setLoggingEnabled(this.forceDebug || this.isDevelopmentBuild);
+        Teak.log.useRapidIngestionEndpoint(this.isDevelopmentBuild);
     }
 
     void setPreferenceForceDebug(boolean forceDebug) {
@@ -90,6 +94,9 @@ class DebugConfiguration {
             }
         }
         this.forceDebug = forceDebug;
+
+        // TODO: This should be listener based
+        Teak.log.setLoggingEnabled(this.forceDebug || this.isDevelopmentBuild);
     }
 
     public boolean isDebug() {

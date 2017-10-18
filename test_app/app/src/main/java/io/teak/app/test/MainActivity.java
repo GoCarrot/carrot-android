@@ -20,10 +20,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
 import io.teak.sdk.Teak;
-import io.teak.sdk.ObjectFactory;
+import io.teak.sdk.IObjectFactory;
 
 public class MainActivity extends AppCompatActivity {
-    public static ObjectFactory whateverFactory;
+    public static IObjectFactory whateverFactory;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

@@ -22,19 +22,19 @@ import android.content.IntentFilter;
 import android.content.BroadcastReceiver;
 import android.support.v4.content.LocalBroadcastManager;
 
+import io.teak.sdk.event.FacebookAccessTokenEvent;
+
 class FacebookAccessTokenBroadcast {
-    LocalBroadcastManager broadcastManager;
+    private LocalBroadcastManager broadcastManager;
 
-    Method com_facebook_Session_getActiveSession;
-    Method com_facebook_Session_getAccessToken;
-    Method com_facebook_AccessToken_getToken;
+    private Method com_facebook_Session_getActiveSession;
+    private Method com_facebook_Session_getAccessToken;
+    private Method com_facebook_AccessToken_getToken;
 
-    String facebook_3_x_BroadcastAction;
-    String facebook_4_x_BroadcastAction;
+    private String facebook_3_x_BroadcastAction;
+    private String facebook_4_x_BroadcastAction;
 
-    static final String UPDATED_ACCESS_TOKEN_INTENT_ACTION = "io.teak.sdk.FacebookAccessTokenBroadcast.UpdatedAccessToken";
-
-    BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+    private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
@@ -60,9 +60,7 @@ class FacebookAccessTokenBroadcast {
             }
 
             if (accessTokenString != null) {
-                Intent updateAccessTokenIntent = new Intent(UPDATED_ACCESS_TOKEN_INTENT_ACTION);
-                updateAccessTokenIntent.putExtra("accessToken", accessTokenString);
-                broadcastManager.sendBroadcast(updateAccessTokenIntent);
+                TeakEvent.postEvent(new FacebookAccessTokenEvent(accessTokenString));
             }
         }
     };
@@ -77,7 +75,7 @@ class FacebookAccessTokenBroadcast {
     private static final String FACEBOOK_4_x_BROADCAST_ACTION_FIELD = "ACTION_CURRENT_ACCESS_TOKEN_CHANGED";
     private static final String FACEBOOK_4_x_NEW_ACCESS_TOKEN_KEY = "com.facebook.sdk.EXTRA_NEW_ACCESS_TOKEN";
 
-    public FacebookAccessTokenBroadcast(Context context) {
+    FacebookAccessTokenBroadcast(Context context) {
         this.broadcastManager = LocalBroadcastManager.getInstance(context);
 
         // Get the Facebook SDK Version string

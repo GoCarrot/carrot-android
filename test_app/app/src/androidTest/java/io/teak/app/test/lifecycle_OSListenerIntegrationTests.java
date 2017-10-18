@@ -20,11 +20,13 @@ import android.support.test.runner.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import io.teak.sdk.event.LifecycleEvent;
+
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
 @RunWith(AndroidJUnit4.class)
-public class lifecycle_OSListenerIntegrationTests extends TeakIntegrationTests {
+public class lifecycle_OSListenerIntegrationTests extends TeakIntegrationTest {
 
     @Test
     public void basicLifecycle() {
@@ -37,11 +39,10 @@ public class lifecycle_OSListenerIntegrationTests extends TeakIntegrationTests {
 
         // Background the app, it should now be paused
         backgroundApp();
-        verify(osListener, timeout(5000).times(1)).lifecycle_onActivityPaused(getActivity());
-
+        verify(eventListener, timeout(5000).times(1)).eventRecieved(LifecycleEvent.class, LifecycleEvent.Paused);
 
         // Bring the app back, it should be resumed again
         foregroundApp();
-        verify(osListener, timeout(5000).times(2)).lifecycle_onActivityResumed(getActivity());
+        verify(eventListener, timeout(5000).times(2)).eventRecieved(LifecycleEvent.class, LifecycleEvent.Resumed);
     }
 }

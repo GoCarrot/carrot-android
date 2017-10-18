@@ -49,6 +49,7 @@ import org.json.JSONObject;
 import org.json.JSONException;
 
 import io.teak.sdk.Helpers.mm;
+import io.teak.sdk.core.Session;
 
 /**
  * An app-to-user notification received from Teak via GCM.
@@ -228,7 +229,7 @@ public class TeakNotification {
                 }
             });
             new Thread(ret).start();
-
+/*
             Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
                 @Override
                 public void run(Session session) {
@@ -296,7 +297,7 @@ public class TeakNotification {
                         }
                     }
                 }
-            });
+            });*/
 
             return ret;
         }
@@ -338,7 +339,7 @@ public class TeakNotification {
                 return null;
             }
         });
-
+/*
         Session.whenUserIdIsOrWasReadyRun(new Session.SessionRunnable() {
             @Override
             public void run(Session session) {
@@ -367,7 +368,7 @@ public class TeakNotification {
                     }
                 }.run();
             }
-        });
+        });*/
         return ret;
     }
 
@@ -400,7 +401,7 @@ public class TeakNotification {
                 return null;
             }
         });
-
+/*
         Session.whenUserIdIsOrWasReadyRun(new Session.SessionRunnable() {
             @Override
             public void run(Session session) {
@@ -424,7 +425,7 @@ public class TeakNotification {
                     }
                 }.run();
             }
-        });
+        });*/
 
         return ret;
     }

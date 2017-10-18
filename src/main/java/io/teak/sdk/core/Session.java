@@ -12,12 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.teak.sdk;
+package io.teak.sdk.core;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
@@ -52,9 +49,24 @@ import java.util.concurrent.TimeoutException;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLProtocolException;
 
+import io.teak.sdk.Helpers;
 import io.teak.sdk.Helpers.mm;
+import io.teak.sdk.InstallReferrerReceiver;
+import io.teak.sdk.Request;
+import io.teak.sdk.Teak;
+import io.teak.sdk.TeakConfiguration;
+import io.teak.sdk.TeakEvent;
+import io.teak.sdk.TeakNotification;
+import io.teak.sdk.configuration.AppConfiguration;
+import io.teak.sdk.configuration.DeviceConfiguration;
+import io.teak.sdk.event.FacebookAccessTokenEvent;
+import io.teak.sdk.event.LifecycleEvent;
+import io.teak.sdk.event.RemoteConfigurationEvent;
+import io.teak.sdk.event.SessionStateEvent;
+import io.teak.sdk.event.UserIdEvent;
 
-class Session {
+public class Session {
+
     private static long SAME_SESSION_TIME_DELTA = 120000;
 
     // region State machine
@@ -101,38 +113,13 @@ class Session {
     private State previousState = null;
     private final Object stateMutex = new Object();
     // endregion
-
-    // region Event Listener
-    public interface EventListener {
-        void onStateChange(Session session, State oldState, State newState);
-    }
-
-    private static final Object eventListenersMutex = new Object();
-    private static ArrayList<EventListener> eventListeners = new ArrayList<>();
-
-    public static void addEventListener(EventListener e) {
-        synchronized (eventListenersMutex) {
-            if (!eventListeners.contains(e)) {
-                eventListeners.add(e);
-            }
-        }
-    }
-
-    public static void removeEventListener(EventListener e) {
-        synchronized (eventListenersMutex) {
-            eventListeners.remove(e);
-        }
-    }
-    // endregion
-
+/*
     // State: Created
-    public final Date startDate;
-    public final AppConfiguration appConfiguration;
-    public final DeviceConfiguration deviceConfiguration;
-    public final String sessionId;
+    private final Date startDate;
+    private final String sessionId;
 
     // State: Configured
-    public RemoteConfiguration remoteConfiguration;
+    // (none)
 
     // State: UserIdentified
     private String userId;
@@ -152,78 +139,35 @@ class Session {
 
     private static final String PREFERENCE_FIRST_RUN = "io.teak.sdk.Preferences.FirstRun";
 
-    private Session(AppConfiguration appConfiguration, DeviceConfiguration deviceConfiguration) {
+    private Session() {
         // State: Created
         // Valid data:
         // - startDate
         // - appConfiguration
         // - deviceConfiguration
         this.startDate = new Date();
-        this.appConfiguration = appConfiguration;
-        this.deviceConfiguration = deviceConfiguration;
         this.sessionId = UUID.randomUUID().toString().replace("-", "");
 
-        DeviceConfiguration.addEventListener(this.deviceConfigurationListener);
+        TeakEvent.addEventListener(this.teakEventListener);
 
-        if (Teak.Instance != null && Teak.Instance.localBroadcastManager != null) {
-            IntentFilter filter = new IntentFilter();
-            filter.addAction(FacebookAccessTokenBroadcast.UPDATED_ACCESS_TOKEN_INTENT_ACTION);
-            Teak.Instance.localBroadcastManager.registerReceiver(this.facebookBroadcastReceiver, filter);
-        }
+        DeviceConfiguration.addEventListener(this.deviceConfigurationListener);
 
         setState(State.Created);
     }
 
     private Session(@NonNull Session session, Future<Map<String, Object>> launchAttribution) {
-        this(session.appConfiguration, session.deviceConfiguration);
+        this();
         this.launchAttribution = launchAttribution;
         this.userId = session.userId;
     }
 
-    public boolean hasExpired() {
+    private boolean hasExpired() {
         synchronized (stateMutex) {
             if (this.state == State.Expiring &&
                     (new Date().getTime() - this.endDate.getTime() > SAME_SESSION_TIME_DELTA)) {
                 setState(State.Expired);
             }
             return (this.state == State.Expired);
-        }
-    }
-
-    public static boolean isExpiringOrExpired() {
-        synchronized (currentSessionMutex) {
-            return currentSession == null || currentSession.hasExpired() || currentSession.state == State.Expiring;
-        }
-    }
-
-    public static void setUserId(@NonNull String userId) {
-        if (userId.isEmpty()) {
-            Teak.log.e("session", "User Id can not be null or empty.");
-            return;
-        }
-
-        // If the user id has changed, create a new session
-        synchronized (currentSessionMutex) {
-            if (currentSession == null) {
-                Session.pendingUserId = userId;
-            } else {
-                synchronized (currentSession.stateMutex) {
-                    if (currentSession.userId != null && !currentSession.userId.equals(userId)) {
-                        Session newSession = new Session(currentSession, currentSession.launchAttribution);
-
-                        currentSession.setState(State.Expiring);
-                        currentSession.setState(State.Expired);
-
-                        currentSession = newSession;
-                    }
-
-                    currentSession.userId = userId;
-
-                    if (currentSession.state == State.Configured) {
-                        currentSession.identifyUser();
-                    }
-                }
-            }
         }
     }
 
@@ -250,27 +194,12 @@ class Session {
                         break;
                     }
 
-                    if (this.appConfiguration == null) {
-                        invalidValuesForTransition.add(new Object[]{"appConfiguration", "null"});
-                        break;
-                    }
-
-                    if (this.deviceConfiguration == null) {
-                        invalidValuesForTransition.add(new Object[]{"deviceConfiguration", "null"});
-                        break;
-                    }
-
-                    RemoteConfiguration.addEventListener(remoteConfigurationListener);
+                    TeakEvent.addEventListener(this.remoteConfigurationEventListener);
                 }
                 break;
 
                 case Configured: {
-                    if (this.remoteConfiguration == null) {
-                        invalidValuesForTransition.add(new Object[]{"remoteConfiguration", "null"});
-                        break;
-                    }
-
-                    RemoteConfiguration.removeEventListener(remoteConfigurationListener);
+                    TeakEvent.removeEventListener(this.remoteConfigurationEventListener);
 
                     final Session _this = this;
                     new Thread(new Runnable() {
@@ -325,10 +254,8 @@ class Session {
                 break;
 
                 case Expired: {
+                    TeakEvent.removeEventListener(this.teakEventListener);
                     DeviceConfiguration.removeEventListener(this.deviceConfigurationListener);
-                    if (Teak.Instance != null && Teak.Instance.localBroadcastManager != null) {
-                        Teak.Instance.localBroadcastManager.unregisterReceiver(this.facebookBroadcastReceiver);
-                    }
 
                     // TODO: Report Session to server, once we collect that info.
                 }
@@ -354,29 +281,34 @@ class Session {
             this.state = newState;
 
             Teak.log.i("session.state", Helpers.mm.h("state", this.state.name, "old_state", this.previousState.name));
+            TeakEvent.postEvent(new SessionStateEvent(this, this.state, this.previousState));
 
-            synchronized (eventListenersMutex) {
-                for (EventListener e : eventListeners) {
-                    e.onStateChange(this, this.previousState, this.state);
-                }
+            TeakConfiguration teakConfiguration = TeakConfiguration.get();
+            //noinspection all - Seriously, that is not a simplification
+            if (this.state == State.Created && teakConfiguration != null && teakConfiguration.remoteConfiguration != null) {
+                return setState(State.Configured);
+            } else {
+                return true;
             }
-            return true;
         }
     }
 
     private void startHeartbeat() {
         final Session _this = this;
+        final TeakConfiguration teakConfiguration = TeakConfiguration.get();
 
         this.heartbeatService = Executors.newSingleThreadScheduledExecutor();
         this.heartbeatService.scheduleAtFixedRate(new Runnable() {
             public void run() {
                 HttpsURLConnection connection = null;
                 try {
-                    String queryString = "game_id=" + URLEncoder.encode(_this.appConfiguration.appId, "UTF-8") +
+                    // TODO: Ask Alex if we should use Teak.Version instead, and what needs to be changed
+                    //noinspection deprecation
+                    String queryString = "game_id=" + URLEncoder.encode(teakConfiguration.appConfiguration.appId, "UTF-8") +
                             "&api_key=" + URLEncoder.encode(_this.userId, "UTF-8") +
                             "&sdk_version=" + URLEncoder.encode(Teak.SDKVersion, "UTF-8") +
-                            "&sdk_platform=" + URLEncoder.encode(_this.deviceConfiguration.platformString, "UTF-8") +
-                            "&app_version=" + URLEncoder.encode(String.valueOf(_this.appConfiguration.appVersion), "UTF-8") +
+                            "&sdk_platform=" + URLEncoder.encode(teakConfiguration.deviceConfiguration.platformString, "UTF-8") +
+                            "&app_version=" + URLEncoder.encode(String.valueOf(teakConfiguration.appConfiguration.appVersion), "UTF-8") +
                             (_this.countryCode == null ? "" : "&country_code=" + URLEncoder.encode(String.valueOf(_this.countryCode), "UTF-8")) +
                             "&buster=" + URLEncoder.encode(UUID.randomUUID().toString(), "UTF-8");
                     URL url = new URL("https://iroko.gocarrot.com/ping?" + queryString);
@@ -396,6 +328,7 @@ class Session {
 
     private void identifyUser() {
         final Session _this = this;
+        final TeakConfiguration teakConfiguration = TeakConfiguration.get();
 
         new Thread(new Runnable() {
             public void run() {
@@ -422,9 +355,9 @@ class Session {
                     String locale = Locale.getDefault().toString();
                     payload.put("locale", locale);
 
-                    if (_this.deviceConfiguration.advertisingId != null) {
-                        payload.put("android_ad_id", _this.deviceConfiguration.advertisingId);
-                        payload.put("android_limit_ad_tracking", _this.deviceConfiguration.limitAdTracking);
+                    if (teakConfiguration.deviceConfiguration.advertisingId != null) {
+                        payload.put("android_ad_id", teakConfiguration.deviceConfiguration.advertisingId);
+                        payload.put("android_limit_ad_tracking", teakConfiguration.deviceConfiguration.limitAdTracking);
                     }
 
                     if (_this.facebookAccessToken != null) {
@@ -442,17 +375,17 @@ class Session {
                         payload.put(entry.getKey(), entry.getValue());
                     }
 
-                    if (_this.deviceConfiguration.gcmId != null) {
-                        payload.put("gcm_push_key", _this.deviceConfiguration.gcmId);
+                    if (teakConfiguration.deviceConfiguration.gcmId != null) {
+                        payload.put("gcm_push_key", teakConfiguration.deviceConfiguration.gcmId);
                     }
 
-                    if (_this.deviceConfiguration.admId != null) {
-                        payload.put("adm_push_key", _this.deviceConfiguration.admId);
+                    if (teakConfiguration.deviceConfiguration.admId != null) {
+                        payload.put("adm_push_key", teakConfiguration.deviceConfiguration.admId);
                     }
 
                     Teak.log.i("session.identify_user", Helpers.mm.h("userId", _this.userId, "timezone", tzOffset, "locale", locale));
 
-                    new Request("/games/" + _this.appConfiguration.appId + "/users.json", payload, _this) {
+                    new Request("/games/" + teakConfiguration.appConfiguration.appId + "/users.json", payload, _this) {
                         @Override
                         protected void done(int responseCode, String responseBody) {
                             try {
@@ -462,13 +395,11 @@ class Session {
 
                                 // Enable verbose logging if flagged
                                 boolean enableVerboseLogging = response.optBoolean("verbose_logging");
-                                if (Teak.Instance != null && Teak.Instance.debugConfiguration != null) {
-                                    Teak.Instance.debugConfiguration.setPreferenceForceDebug(enableVerboseLogging);
-                                }
+                                teakConfiguration.debugConfiguration.setPreferenceForceDebug(enableVerboseLogging);
 
                                 // Server requesting new push key.
                                 if (response.optBoolean("reset_push_key", false)) {
-                                    _this.deviceConfiguration.reRegisterPushToken(_this.appConfiguration, "reset_push_key");
+                                    teakConfiguration.deviceConfiguration.reRegisterPushToken(teakConfiguration.appConfiguration, "reset_push_key");
                                 }
 
                                 if (response.has("country_code")) {
@@ -490,6 +421,118 @@ class Session {
                 }
             }
         }).start();
+    }
+
+    private DeviceConfiguration.EventListener deviceConfigurationListener = new DeviceConfiguration.EventListener() {
+        @Override
+        public void onPushIdChanged(DeviceConfiguration deviceConfiguration) {
+            synchronized (stateMutex) {
+                if (state == State.UserIdentified) {
+                    identifyUser();
+                }
+            }
+        }
+
+        @Override
+        public void onAdvertisingInfoChanged(DeviceConfiguration deviceConfiguration) {
+            synchronized (stateMutex) {
+                if (state == State.UserIdentified) {
+                    identifyUser();
+                }
+            }
+        }
+    };
+
+    private final TeakEvent.EventListener teakEventListener = new TeakEvent.EventListener() {
+        @Override
+        public void onNewEvent(@NonNull TeakEvent event) {
+            // Facebook Access Token
+            if (event.eventType.equals(FacebookAccessTokenEvent.Type)) {
+                String newAccessToken = ((FacebookAccessTokenEvent)event).accessToken;
+                if (newAccessToken != null && !newAccessToken.equals(facebookAccessToken)) {
+                    facebookAccessToken = newAccessToken;
+                    Teak.log.i("session.fb_access_token", Helpers.mm.h("access_token", facebookAccessToken));
+
+                    // TODO: Revisit this logic
+                    synchronized (stateMutex) {
+                        if (state == State.UserIdentified) {
+                            identifyUser();
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    // This is separate so it can be removed/added independently
+    private final TeakEvent.EventListener remoteConfigurationEventListener = new TeakEvent.EventListener() {
+        @Override
+        public void onNewEvent(@NonNull TeakEvent event) {
+            if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
+                synchronized (currentSession.stateMutex) {
+                    if (currentSession.state == State.Expiring) {
+                        currentSession.previousState = State.Configured;
+                    } else {
+                        setState(State.Configured);
+                    }
+                }
+            }
+        }
+    };
+
+    // Static event listener
+    static {
+        TeakEvent.addEventListener(new TeakEvent.EventListener() {
+            @Override
+            public void onNewEvent(@NonNull TeakEvent event) {
+                if (event.eventType.equals(UserIdEvent.Type)) {
+                    String userId = ((UserIdEvent)event).userId;
+                    setUserId(userId);
+                } else if (event.eventType.equals(LifecycleEvent.Paused)) {
+                    // Set state to 'Expiring'
+                    synchronized (currentSessionMutex) {
+                        if (currentSession != null) {
+                            currentSession.setState(State.Expiring);
+                        }
+                    }
+                } else if (event.eventType.equals(LifecycleEvent.Resumed)) {
+                    Intent resumeIntent = ((LifecycleEvent)event).intent;
+                    onActivityResumed(resumeIntent);
+                }
+            }
+        });
+    }
+
+    static boolean isExpiringOrExpired() {
+        synchronized (currentSessionMutex) {
+            return currentSession == null || currentSession.hasExpired() || currentSession.state == State.Expiring;
+        }
+    }
+
+    private static void setUserId(@NonNull String userId) {
+        // If the user id has changed, create a new session
+        synchronized (currentSessionMutex) {
+            if (currentSession == null) {
+                Session.pendingUserId = userId;
+            } else {
+                synchronized (currentSession.stateMutex) {
+                    if (currentSession.userId != null && !currentSession.userId.equals(userId)) {
+                        Session newSession = new Session(currentSession, currentSession.launchAttribution);
+
+                        currentSession.setState(State.Expiring);
+                        currentSession.setState(State.Expired);
+
+                        currentSession = newSession;
+                    }
+
+                    currentSession.userId = userId;
+
+                    if (currentSession.state == State.Configured) {
+                        currentSession.identifyUser();
+                    }
+                }
+            }
+        }
     }
 
     static abstract class SessionRunnable {
@@ -555,82 +598,10 @@ class Session {
         }
     }
 
-
-    /**
-     * Used to listen for when remote configuration is ready
-     */
-    private RemoteConfiguration.EventListener remoteConfigurationListener = new RemoteConfiguration.EventListener() {
-        @Override
-        public void onConfigurationReady(RemoteConfiguration configuration) {
-            remoteConfiguration = configuration;
-            synchronized (currentSession.stateMutex) {
-                if (currentSession.state == State.Expiring) {
-                    currentSession.previousState = State.Configured;
-                } else {
-                    setState(State.Configured);
-                }
-            }
-        }
-    };
-
-    /**
-     * Used to listen for when a GCM key or Advertising Info is changed.
-     */
-    private DeviceConfiguration.EventListener deviceConfigurationListener = new DeviceConfiguration.EventListener() {
-        @Override
-        public void onPushIdChanged(DeviceConfiguration deviceConfiguration) {
-            synchronized (stateMutex) {
-                if (state == State.UserIdentified) {
-                    identifyUser();
-                }
-            }
-        }
-
-        @Override
-        public void onAdvertisingInfoChanged(DeviceConfiguration deviceConfiguration) {
-            synchronized (stateMutex) {
-                if (state == State.UserIdentified) {
-                    identifyUser();
-                }
-            }
-        }
-    };
-
-    /**
-     * Used to listen for Facebook Access Token update
-     */
-    private BroadcastReceiver facebookBroadcastReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context unused, Intent intent) {
-            String action = intent.getAction();
-            if (FacebookAccessTokenBroadcast.UPDATED_ACCESS_TOKEN_INTENT_ACTION.equals(action)) {
-                facebookAccessToken = intent.getStringExtra("accessToken");
-                Teak.log.i("session.fb_access_token", Helpers.mm.h("access_token", facebookAccessToken));
-                synchronized (stateMutex) {
-                    if (state == State.UserIdentified) {
-                        identifyUser();
-                    }
-                }
-            }
-        }
-    };
-
-    /**
-     * Called by Teak lifecycle when activity is paused, set current session state to Expiring
-     */
-    static void onActivityPaused() {
-        synchronized (currentSessionMutex) {
-            currentSession.setState(State.Expiring);
-        }
-    }
-
-    /**
-     * Called by Teak lifecycle when activity is resumed, reset state on current session if it's 'Expiring'
-     */
-    static void onActivityResumed(final Intent intent, final AppConfiguration appConfiguration, final DeviceConfiguration deviceConfiguration) {
+    private static void onActivityResumed(final Intent intent) {
         // Call getCurrentSession() so the null || Expired logic stays in one place
         synchronized (currentSessionMutex) {
-            getCurrentSession(appConfiguration, deviceConfiguration);
+            getCurrentSession();
 
             // If this intent has already been processed by Teak, just reset the state and we are done.
             // Otherwise, out-of-app deep links can cause a back-stack loop
@@ -644,13 +615,16 @@ class Session {
                 return;
             }
 
+            final TeakConfiguration teakConfiguration = TeakConfiguration.get();
+
             // Check and see if this is (probably) the first time this app has been ever launched
             boolean isFirstLaunch = false;
-            if (deviceConfiguration.preferences != null) {
-                long firstLaunch = deviceConfiguration.preferences.getLong(PREFERENCE_FIRST_RUN, 0);
+            // TODO: Just make a TeakPreferences class or something
+            if (teakConfiguration.deviceConfiguration.preferences != null) {
+                long firstLaunch = teakConfiguration.deviceConfiguration.preferences.getLong(PREFERENCE_FIRST_RUN, 0);
                 if (firstLaunch == 0) {
                     firstLaunch = new Date().getTime() / 1000;
-                    SharedPreferences.Editor editor = deviceConfiguration.preferences.edit();
+                    SharedPreferences.Editor editor = teakConfiguration.deviceConfiguration.preferences.edit();
                     editor.putLong(PREFERENCE_FIRST_RUN, firstLaunch);
                     editor.apply();
                     isFirstLaunch = true;
@@ -713,7 +687,7 @@ class Session {
             //
             final Future<Map<String, Object>> deepLinkAttribution;
             if (deepLinkURL != null) {
-                deepLinkAttribution = attributionForDeepLink(deepLinkURL, appConfiguration);
+                deepLinkAttribution = attributionForDeepLink(deepLinkURL);
             } else {
                 deepLinkAttribution = null;
             }
@@ -791,13 +765,13 @@ class Session {
                                 // try to find a different app to launch.
                                 Intent uriIntent = new Intent(Intent.ACTION_VIEW, uri);
                                 uriIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                List<ResolveInfo> resolvedActivities = appConfiguration.packageManager.queryIntentActivities(uriIntent, 0);
+                                List<ResolveInfo> resolvedActivities = teakConfiguration.appConfiguration.packageManager.queryIntentActivities(uriIntent, 0);
                                 boolean safeToRedirect = true;
                                 for (ResolveInfo info : resolvedActivities) {
-                                    safeToRedirect &= !appConfiguration.bundleId.equalsIgnoreCase(info.activityInfo.packageName);
+                                    safeToRedirect &= !teakConfiguration.appConfiguration.bundleId.equalsIgnoreCase(info.activityInfo.packageName);
                                 }
                                 if (resolvedActivities.size() > 0 && safeToRedirect) {
-                                    appConfiguration.applicationContext.startActivity(uriIntent);
+                                    teakConfiguration.appConfiguration.applicationContext.startActivity(uriIntent);
                                 }
                             }
 
@@ -944,11 +918,11 @@ class Session {
     private static Session currentSession;
     private static final Object currentSessionMutex = new Object();
 
-    private static Session getCurrentSession(AppConfiguration appConfiguration, DeviceConfiguration deviceConfiguration) {
+    private static Session getCurrentSession() {
         synchronized (currentSessionMutex) {
             if (currentSession == null || currentSession.hasExpired()) {
                 Session oldSession = currentSession;
-                currentSession = new Session(appConfiguration, deviceConfiguration);
+                currentSession = new Session();
 
                 if (oldSession != null) {
                     // If the old session had a user id assigned, it needs to be passed to the newly created
@@ -965,17 +939,15 @@ class Session {
         }
     }
 
-    public static Session getCurrentSessionOrNull() {
+    static Session getCurrentSessionOrNull() {
         synchronized (currentSessionMutex) {
             return currentSession;
         }
     }
     // endregion
 
-    public Map<String, Object> to_h() {
+    private Map<String, Object> to_h() {
         HashMap<String, Object> map = new HashMap<>();
-        map.put("appConfiguration", Integer.toHexString(this.appConfiguration.hashCode()));
-        map.put("deviceConfiguration", Integer.toHexString(this.deviceConfiguration.hashCode()));
         map.put("startDate", this.startDate.getTime() / 1000);
         return map;
     }
@@ -987,5 +959,5 @@ class Session {
         } catch (Exception ignored) {
             return super.toString();
         }
-    }
+    }*/
 }

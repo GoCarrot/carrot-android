@@ -21,9 +21,16 @@ import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 
+import io.teak.sdk.configuration.AppConfiguration;
+import io.teak.sdk.configuration.DebugConfiguration;
+import io.teak.sdk.configuration.DeviceConfiguration;
+import io.teak.sdk.configuration.RemoteConfiguration;
+import io.teak.sdk.event.RemoteConfigurationEvent;
+import io.teak.sdk.io.IAndroidResources;
+
 public class TeakConfiguration {
-    static boolean initialize(Context context) {
-        TeakConfiguration teakConfiguration = new TeakConfiguration(context);
+    static boolean initialize(@NonNull Context context, @NonNull IAndroidResources androidResources) {
+        TeakConfiguration teakConfiguration = new TeakConfiguration(context, androidResources);
         if (teakConfiguration.deviceConfiguration.deviceId != null) {
             Instance = teakConfiguration;
             synchronized (eventListenersMutex) {
@@ -39,16 +46,28 @@ public class TeakConfiguration {
     public final DebugConfiguration debugConfiguration;
     public final AppConfiguration appConfiguration;
     public final DeviceConfiguration deviceConfiguration;
+    public RemoteConfiguration remoteConfiguration;
 
-    private TeakConfiguration(Context context) {
+    private TeakConfiguration(@NonNull Context context, @NonNull IAndroidResources androidResources) {
         this.debugConfiguration = new DebugConfiguration(context);
-        this.appConfiguration = new AppConfiguration(context);
+        this.appConfiguration = new AppConfiguration(context, androidResources);
         this.deviceConfiguration = new DeviceConfiguration(context, this.appConfiguration);
     }
 
     private static TeakConfiguration Instance;
     public static @Nullable TeakConfiguration get() {
         return Instance;
+    }
+
+    static {
+        TeakEvent.addEventListener(new TeakEvent.EventListener() {
+            @Override
+            public void onNewEvent(@NonNull TeakEvent event) {
+                if (event.eventType.equals(RemoteConfigurationEvent.Type) && Instance != null) {
+                    Instance.remoteConfiguration = ((RemoteConfigurationEvent)event).remoteConfiguration;
+                }
+            }
+        });
     }
 
     ///// Events

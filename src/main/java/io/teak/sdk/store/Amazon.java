@@ -16,6 +16,7 @@ package io.teak.sdk.store;
 
 import android.content.Intent;
 import android.content.Context;
+import android.support.annotation.NonNull;
 
 import com.amazon.device.iap.PurchasingListener;
 import com.amazon.device.iap.PurchasingService;
@@ -37,9 +38,9 @@ import org.json.JSONObject;
 import io.teak.sdk.Helpers.mm;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
+import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.PurchaseEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
-import io.teak.sdk.Request;
 
 @SuppressWarnings("unused")
 class Amazon implements IStore {
@@ -50,17 +51,22 @@ class Amazon implements IStore {
         PurchasingService.registerListener(context, new TeakPurchasingListener());
 
         Teak.log.i("amazon.iap", "Amazon In-App Purchasing 2.0 registered.", mm.h("sandboxMode", PurchasingService.IS_SANDBOX_MODE));
-    }
 
-    public void onActivityResumed() {
-        PurchasingService.getUserData();
+        TeakEvent.addEventListener(new TeakEvent.EventListener() {
+            @Override
+            public void onNewEvent(@NonNull TeakEvent event) {
+                if (event.eventType.equals(LifecycleEvent.Resumed)) {
+                    PurchasingService.getUserData();
+                }
+            }
+        });
     }
 
     public void dispose() {
         // None
     }
 
-    public JSONObject querySkuDetails(String sku) {
+    private JSONObject querySkuDetails(String sku) {
         HashSet<String> skus = new HashSet<>();
         skus.add(sku);
         RequestId requestId = PurchasingService.getProductData(skus);
@@ -86,8 +92,33 @@ class Amazon implements IStore {
         Teak.log.i("amazon.iap", "TODO: launchPurchaseFlowForSKU: " + sku);
     }
 
-    public boolean ignorePluginPurchaseEvents() {
-        return true;
+    @Override
+    public void processPurchaseJson(JSONObject originalJson) {
+        try {
+            JSONObject receipt = originalJson.getJSONObject("receipt");
+            JSONObject userData = originalJson.getJSONObject("userData");
+
+            JSONObject payload = new JSONObject();
+            payload.put("purchase_token", receipt.get("receiptId"));
+            payload.put("purchase_time_string", receipt.get("purchaseDate"));
+            payload.put("product_id", receipt.get("sku"));
+            payload.put("store_user_id", userData.get("userId"));
+            payload.put("store_marketplace", userData.get("marketplace"));
+
+            JSONObject skuDetails = querySkuDetails((String) payload.get("product_id"));
+            if (skuDetails != null) {
+                if (skuDetails.has("price_amount_micros")) {
+                    payload.put("price_currency_code", skuDetails.getString("price_currency_code"));
+                    payload.put("price_amount_micros", skuDetails.getString("price_amount_micros"));
+                } else if (skuDetails.has("price_string")) {
+                    payload.put("price_string", skuDetails.getString("price_string"));
+                }
+            }
+
+            TeakEvent.postEvent(new PurchaseEvent(payload));
+        } catch (Exception e) {
+            Teak.log.exception(e);
+        }
     }
 
     private class TeakPurchasingListener implements PurchasingListener {
@@ -98,8 +129,7 @@ class Amazon implements IStore {
 
                 String storeUserId = userData.getUserId();
                 String storeMarketplace = userData.getMarketplace();
-                Request.dynamicCommonPayload.put("store_user_id", storeUserId);
-                Request.dynamicCommonPayload.put("store_marketplace", storeMarketplace);
+                // TODO: Do we want these for anything?
                 Teak.log.i("amazon.iap.user", "Amazon Store User Details retrieved.", mm.h("storeUserId", storeUserId, "storeMarketplace", storeMarketplace));
             }
         }
@@ -127,18 +157,7 @@ class Amazon implements IStore {
             if (purchaseResponse.getRequestStatus() == PurchaseResponse.RequestStatus.SUCCESSFUL) {
                 try {
                     JSONObject originalJson = purchaseResponse.toJSON();
-
-                    JSONObject receipt = originalJson.getJSONObject("receipt");
-                    JSONObject userData = originalJson.getJSONObject("userData");
-
-                    JSONObject payload = new JSONObject();
-                    payload.put("purchase_token", receipt.get("receiptId"));
-                    payload.put("purchase_time_string", receipt.get("purchaseDate"));
-                    payload.put("product_id", receipt.get("sku"));
-                    payload.put("store_user_id", userData.get("userId"));
-                    payload.put("store_marketplace", userData.get("marketplace"));
-
-                    TeakEvent.postEvent(new PurchaseEvent(payload));
+                    processPurchaseJson(originalJson);
                 } catch (Exception e) {
                     Teak.log.exception(e);
                 }

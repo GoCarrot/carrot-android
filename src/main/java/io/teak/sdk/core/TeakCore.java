@@ -13,15 +13,16 @@
  * limitations under the License.
  */
 
-package io.teak.sdk;
+package io.teak.sdk.core;
 
+/*
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
-
+*/
 import org.json.JSONObject;
 
 import java.util.HashMap;
@@ -29,70 +30,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
-import io.teak.sdk.event.OSListener;
-
-public class TeakCore implements OSListener {
+public class TeakCore {
     public TeakCore() {
 
     }
-
+/*
     @Override
-    public boolean lifecycle_onActivityCreated(Activity activity) {
-
-        final Context context = activity.getApplicationContext();
-
-        // App Configuration
-        this.appConfiguration = new AppConfiguration(context);
-        Teak.log.useAppConfiguration(this.appConfiguration);
-
-        // Device configuration
-        this.deviceConfiguration = new DeviceConfiguration(context, this.appConfiguration);
-
-        // If deviceId is null, we can't operate
-        if (this.deviceConfiguration.deviceId == null) {
-            this.cleanup(activity);
-            return false;
-        }
-
-        Teak.log.useDeviceConfiguration(this.deviceConfiguration);
-
-        // Facebook Access Token Broadcaster
-        this.facebookAccessTokenBroadcast = new FacebookAccessTokenBroadcast(context);
-
-        // Hook in to Session state change events
-        Session.addEventListener(this.sessionEventListener);
-        RemoteConfiguration.addEventListener(this.remoteConfigurationEventListener);
-
-        // Ravens
-        if (Teak.Instance != null) {
-            Teak.Instance.sdkRaven = new Raven(context, "sdk", this.appConfiguration, this.deviceConfiguration);
-            Teak.Instance.appRaven = new Raven(context, this.appConfiguration.bundleId, this.appConfiguration, this.deviceConfiguration);
-        }
-
-        // Broadcast manager
-        this.localBroadcastManager = LocalBroadcastManager.getInstance(context);
-
-        return true;
-    }
-
-    @Override
-    public void lifecycle_onActivityPaused(Activity activity) {
-        Session.onActivityPaused();
-    }
-
-    @Override
-    public void lifecycle_onActivityResumed(Activity activity) {
+    public void lifecycle_onActivityResumed() {
 
         // Get or create an empty Intent
         Intent intent = activity.getIntent();
         if (intent == null) {
             intent = new Intent();
         }
-
-        // Let the Session know
-        Session.onActivityResumed(intent, this.appConfiguration, this.deviceConfiguration);
 
         // Prevent back-stack loops
         if (intent.getBooleanExtra("processedByTeak", false)) {
@@ -206,47 +157,6 @@ public class TeakCore implements OSListener {
         });
     }
 
-    private final Session.EventListener sessionEventListener = new Session.EventListener() {
-        @Override
-        public void onStateChange(Session session, Session.State oldState, Session.State newState) {
-            if (newState == Session.State.Created) {
-                // If Session state is now 'Created', we need the configuration from the Teak server
-                RemoteConfiguration.requestConfigurationForApp(session);
-            }
-        }
-    };
-
-    private final RemoteConfiguration.EventListener remoteConfigurationEventListener = new RemoteConfiguration.EventListener() {
-        @Override
-        public void onConfigurationReady(RemoteConfiguration configuration) {
-            // Begin exception reporting, if enabled
-            if (configuration.sdkSentryDsn != null && Teak.Instance != null && Teak.Instance.sdkRaven != null) {
-                Teak.Instance.sdkRaven.setDsn(configuration.sdkSentryDsn);
-            }
-
-            // Handle global exceptions, if enabled
-            if (configuration.appSentryDsn != null&& Teak.Instance != null && Teak.Instance.appRaven != null) {
-                Teak.Instance.appRaven.setDsn(configuration.appSentryDsn);
-
-                if (!android.os.Debug.isDebuggerConnected()) {
-                    Teak.Instance.appRaven.setAsUncaughtExceptionHandler();
-                }
-            }
-
-            Teak.log.useRemoteConfiguration(configuration);
-        }
-    };
-
-    private void cleanup(Activity activity) {
-
-        RemoteConfiguration.removeEventListener(this.remoteConfigurationEventListener);
-        Session.removeEventListener(this.sessionEventListener);
-
-        if (this.facebookAccessTokenBroadcast != null) {
-            this.facebookAccessTokenBroadcast.unregister(activity.getApplicationContext());
-        }
-    }
-
     private void checkIntentForPushLaunchAndSendBroadcasts(Intent intent) {
         if (intent.hasExtra("teakNotifId")) {
             Bundle bundle = intent.getExtras();
@@ -296,9 +206,5 @@ public class TeakCore implements OSListener {
     }
 
     ///// Data Members
-    private DeviceConfiguration deviceConfiguration;
-    private AppConfiguration appConfiguration;
-    private FacebookAccessTokenBroadcast facebookAccessTokenBroadcast;
-    private LocalBroadcastManager localBroadcastManager;
-    private ExecutorService asyncExecutor = Executors.newCachedThreadPool();
+    private ExecutorService asyncExecutor = Executors.newCachedThreadPool();*/
 }

@@ -28,9 +28,16 @@ import android.support.v4.content.LocalBroadcastManager;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
+import io.teak.sdk.core.Session;
+import io.teak.sdk.event.SessionStateEvent;
+import io.teak.sdk.io.IAndroidResources;
 
 /**
  * Teak
@@ -40,8 +47,22 @@ public class Teak extends BroadcastReceiver {
 
     /**
      * Version of the Teak SDK.
+     * @deprecated Use the {@link Teak#Version} member instead.
      */
     public static final String SDKVersion = io.teak.sdk.BuildConfig.VERSION_NAME;
+
+    /**
+     * Version of the Teak SDK, and Unity/Air SDK if applicable.
+     *
+     * You must call {@link Teak#onCreate(Activity)} in order to get Unity/Air SDK version info.
+     */
+    public static final Map<String, Object> Version;
+
+    private static final Map<String, Object> sdkMap = new HashMap<>();
+    static {
+        sdkMap.put("android", io.teak.sdk.BuildConfig.VERSION_NAME);
+        Version = Collections.unmodifiableMap(sdkMap);
+    }
 
     /**
      * Force debug print on/off.
@@ -56,6 +77,7 @@ public class Teak extends BroadcastReceiver {
      *
      * @param activity The main <code>Activity</code> of your app.
      */
+    @SuppressWarnings("unused")
     public static void onCreate(@NonNull Activity activity) {
         onCreate(activity, null);
     }
@@ -66,9 +88,18 @@ public class Teak extends BroadcastReceiver {
      * @param activity The main <code>Activity</code> of your app.
      * @param objectFactory Teak Object Factory to use, or null for default.
      */
-    public static void onCreate(@NonNull Activity activity, @Nullable ObjectFactory objectFactory) {
+    public static void onCreate(@NonNull Activity activity, @Nullable IObjectFactory objectFactory) {
+        // Unless something gave us an object factory, use the default one
         if (objectFactory == null) {
             objectFactory = new DefaultObjectFactory();
+        }
+
+        // Add version info for Unity/Air
+        IAndroidResources androidResources = objectFactory.getAndroidResources(activity);
+        String wrapperSDKName = androidResources.getStringResource("io_teak_wrapper_sdk_name");
+        String wrapperSDKVersion = androidResources.getStringResource("io_teak_wrapper_sdk_version");
+        if (wrapperSDKName != null && wrapperSDKVersion != null) {
+            Teak.sdkMap.put(wrapperSDKName, wrapperSDKVersion);
         }
 
         // Create Instance
@@ -86,6 +117,7 @@ public class Teak extends BroadcastReceiver {
      * @param resultCode  The <code>resultCode</code> parameter received from {@link Activity#onActivityResult}
      * @param data        The <code>data</code> parameter received from {@link Activity#onActivityResult}
      */
+    @SuppressWarnings("unused")
     public static void onActivityResult(@SuppressWarnings("unused") int requestCode, int resultCode, Intent data) {
         Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityResult"));
 
@@ -100,7 +132,7 @@ public class Teak extends BroadcastReceiver {
     @Deprecated
     @SuppressWarnings("unused")
     public static void onNewIntent(Intent intent) {
-        Teak.log.e("deprecatation", "Teak.onNewIntent is deprecated, call Activity.onNewIntent() instead.");
+        Teak.log.e("deprecation.onNewIntent", "Teak.onNewIntent is deprecated, call Activity.onNewIntent() instead.");
     }
 
     /**
@@ -119,9 +151,8 @@ public class Teak extends BroadcastReceiver {
                     Instance.identifyUser(userIdentifier);
                 }
             });
-        } else {
-            // TODO: Throw exception for integration help?
         }
+        // TODO: Else throw exception for integration help?
     }
 
     /**
@@ -155,6 +186,7 @@ public class Teak extends BroadcastReceiver {
      * }
      * </pre>
      */
+    @SuppressWarnings("unused")
     public static final String LAUNCHED_FROM_NOTIFICATION_INTENT = "io.teak.sdk.Teak.intent.LAUNCHED_FROM_NOTIFICATION";
 
     /**
@@ -169,6 +201,7 @@ public class Teak extends BroadcastReceiver {
      * }
      * </pre>
      */
+    @SuppressWarnings("unused")
     public static final String REWARD_CLAIM_ATTEMPT = "io.teak.sdk.Teak.intent.REWARD_CLAIM_ATTEMPT";
 
     ///// BroadcastReceiver
@@ -258,9 +291,9 @@ public class Teak extends BroadcastReceiver {
     ///// Logging
 
     public static int jsonLogIndentation = 0;
-    static io.teak.sdk.Log log = new io.teak.sdk.Log(Teak.LOG_TAG, Teak.jsonLogIndentation);
+    public static io.teak.sdk.Log log = new io.teak.sdk.Log(Teak.LOG_TAG, Teak.jsonLogIndentation);
 
-    static String formatJSONForLogging(JSONObject obj) throws JSONException {
+    public static String formatJSONForLogging(JSONObject obj) throws JSONException {
         if (Teak.jsonLogIndentation > 0) {
             return obj.toString(Teak.jsonLogIndentation);
         } else {
@@ -268,14 +301,41 @@ public class Teak extends BroadcastReceiver {
         }
     }
 
+    ///// Give SDK wrappers the ability to delay deep link resolution
+
+    public static Future<Void> waitForDeepLink;
+    static {
+        TeakEvent.addEventListener(new TeakEvent.EventListener() {
+            @Override
+            public void onNewEvent(@NonNull TeakEvent event) {
+                if (event.eventType.equals(SessionStateEvent.Type) && ((SessionStateEvent)event).state == Session.State.Created) {
+
+                    // Use thread instead of executor here, since this could block for a while
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                if (Teak.waitForDeepLink != null) {
+                                    Teak.waitForDeepLink.get();
+                                }
+                            } catch (Exception ignored) {
+                            }
+
+                            // TODO: Is there a more general event that should be used here?
+                        }
+                    }).start();
+                }
+            }
+        });
+    }
+
     ///// Configuration
 
-    static final String PREFERENCES_FILE = "io.teak.sdk.Preferences";
+    public static final String PREFERENCES_FILE = "io.teak.sdk.Preferences";
 
     ///// Data Members
 
     public static TeakInstance Instance;
-    public static Future<Void> waitForDeepLink;
 
     private static ExecutorService asyncExecutor = Executors.newCachedThreadPool();
 }

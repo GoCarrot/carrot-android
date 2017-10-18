@@ -15,6 +15,7 @@
 
 package io.teak.sdk;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.content.ComponentName;
@@ -25,47 +26,71 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v4.content.LocalBroadcastManager;
 
 import org.json.JSONObject;
 
 import java.security.InvalidParameterException;
-import java.util.HashMap;
 import java.util.Map;
 
-import io.teak.sdk.event.OSListener;
+import io.teak.sdk.configuration.RemoteConfiguration;
+import io.teak.sdk.core.DeepLink;
+import io.teak.sdk.event.LifecycleEvent;
+import io.teak.sdk.event.PurchaseFailedEvent;
+import io.teak.sdk.event.RemoteConfigurationEvent;
+import io.teak.sdk.event.UserIdEvent;
+import io.teak.sdk.store.IStore;
 
-class TeakInstance {
-    final ObjectFactory objectFactory;
+public class TeakInstance {
+    private final IObjectFactory objectFactory;
 
-    final DebugConfiguration debugConfiguration;
-    final LocalBroadcastManager localBroadcastManager;
-
-    TeakInstance(@NonNull Activity activity, @NonNull ObjectFactory objectFactory) {
+    @SuppressLint("ObsoleteSdkInt")
+    TeakInstance(@NonNull Activity activity, @NonNull IObjectFactory objectFactory) {
+        //noinspection all -- Disable warning on the null check
         if (activity == null) {
             throw new InvalidParameterException("null Activity passed to Teak.onCreate");
         }
 
-        this.objectFactory = objectFactory;
         this.activityHashCode = activity.hashCode();
-        this.osListener = this.objectFactory.getOSListener();
-        this.localBroadcastManager = LocalBroadcastManager.getInstance(activity);
+        this.objectFactory = objectFactory;
 
-        // Add version info for Unity/Air
-        String wrapperSDKName = Helpers.getStringResourceByName("io_teak_wrapper_sdk_name", activity.getApplicationContext());
-        String wrapperSDKVersion = Helpers.getStringResourceByName("io_teak_wrapper_sdk_version", activity.getApplicationContext());
-        if (wrapperSDKName != null && wrapperSDKVersion != null) {
-            this.wrapperSDKMap.put(wrapperSDKName, wrapperSDKVersion);
+        final Context context = activity.getApplicationContext();
+
+        // Ravens
+        TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
+            @Override
+            public void onConfigurationReady(@NonNull TeakConfiguration configuration) {
+                sdkRaven = new Raven(context, "sdk", configuration);
+                appRaven = new Raven(context, configuration.appConfiguration.bundleId, configuration);
+            }
+        });
+
+        TeakEvent.addEventListener(new TeakEvent.EventListener() {
+            @Override
+            public void onNewEvent(@NonNull TeakEvent event) {
+                if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
+                    RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent)event).remoteConfiguration;
+
+                    if (remoteConfiguration.sdkSentryDsn != null && sdkRaven != null) {
+                        sdkRaven.setDsn(remoteConfiguration.sdkSentryDsn);
+                    }
+
+                    if (remoteConfiguration.appSentryDsn != null && appRaven != null) {
+                        appRaven.setDsn(remoteConfiguration.appSentryDsn);
+                        if (!android.os.Debug.isDebuggerConnected()) {
+                            appRaven.setAsUncaughtExceptionHandler();
+                        }
+                    }
+                }
+            }
+        });
+
+        // Get Teak Configuration ready
+        if (!TeakConfiguration.initialize(context, this.objectFactory.getAndroidResources(context))) {
+            this.setState(State.Disabled);
+            return;
         }
 
-        // Debug configuration
-        this.debugConfiguration = new DebugConfiguration(activity.getApplicationContext());
-        Teak.log.useDebugConfiguration(this.debugConfiguration);
-
-        // Output version information
-        Teak.log.useSdk(this.to_h());
-
-        // Check the launch mode of the activity
+        // Check the launch mode of the activity for debugging purposes
         try {
             ComponentName cn = new ComponentName(activity, activity.getClass());
             ActivityInfo ai = activity.getPackageManager().getActivityInfo(cn, PackageManager.GET_META_DATA);
@@ -94,24 +119,18 @@ class TeakInstance {
         }
     }
 
-    void cleanup(Activity activity) {
+    private void cleanup(Activity activity) {
         if (this.appStore != null) {
             this.appStore.dispose();
             this.appStore = null;
         }
 
+        if (this.facebookAccessTokenBroadcast != null) {
+            this.facebookAccessTokenBroadcast.unregister(activity.getApplicationContext());
+        }
+
         activity.getApplication().unregisterActivityLifecycleCallbacks(this.lifecycleCallbacks);
     }
-
-    ///// to_h
-
-    Map<String, Object> to_h() {
-        HashMap<String, Object> map = new HashMap<>();
-        map.put("android", Teak.SDKVersion);
-        map.putAll(wrapperSDKMap);
-        return map;
-    }
-    private final Map<String, Object> wrapperSDKMap = new HashMap<>();
 
     ///// identifyUser
 
@@ -124,14 +143,7 @@ class TeakInstance {
         Teak.log.i("identify_user", Helpers.mm.h("userId", userIdentifier));
 
         if (this.isEnabled()) {
-            // TODO: Send to Core
-
-            // Add userId to the Ravens
-            //Teak.sdkRaven.addUserData("id", userIdentifier);
-            //Teak.appRaven.addUserData("id", userIdentifier);
-
-            // Send to Session
-            //Session.setUserId(userIdentifier);
+            TeakEvent.postEvent(new UserIdEvent(userIdentifier));
         }
     }
 
@@ -151,8 +163,9 @@ class TeakInstance {
 
         Teak.log.i("track_event", Helpers.mm.h("actionId", actionId, "objectTypeId", objectTypeId, "objectInstanceId", objectInstanceId));
 
-        // TODO: Send to Core
         if (this.isEnabled()) {
+            // TODO: Post Event
+            /*
             Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
                 @Override
                 public void run(Session session) {
@@ -162,14 +175,14 @@ class TeakInstance {
                     payload.put("object_instance_id", objectInstanceId);
                     new Request("/me/events", payload, session).run();
                 }
-            });
+            });*/
         }
     }
 
     ///// Exception Handling
 
     Raven sdkRaven;
-    Raven appRaven;
+    private Raven appRaven;
 
     ///// Broadcast Receiver
 
@@ -185,20 +198,20 @@ class TeakInstance {
 
         String action = intent.getAction();
         if (GCM_RECEIVE_INTENT_ACTION.equals(action)) {
-            this.osListener.notification_onNotificationReceived(context, intent);
+            //this.osListener.notification_onNotificationReceived(context, intent);
         } else if (GCM_REGISTRATION_INTENT_ACTION.equals(action)) {
             final String registrationId = intent.getStringExtra("registration_id");
             // TODO: TeakIOListener
         } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX)) {
-            this.osListener.notification_onNotificationAction(context, intent);
+            //this.osListener.notification_onNotificationAction(context, intent);
         } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX)) {
-            this.osListener.notification_onNotificationCleared(context, intent);
+            //this.osListener.notification_onNotificationCleared(context, intent);
         }
     }
 
     ///// State Machine
 
-    enum State {
+    private enum State {
         Disabled("Disabled"),
         Allocated("Allocated"),
         Created("Created"),
@@ -267,51 +280,19 @@ class TeakInstance {
     private IStore appStore;
 
     void purchaseSucceeded(JSONObject originalJson) {
-        try {
-            Teak.log.i("puchase.succeeded", Helpers.jsonToMap(originalJson));
-
-            HashMap<String, Object> payload = new HashMap<>();
-
-            if (this.appStore != null && this.appStore.getClass() == io.teak.sdk.Amazon.class) {
-                JSONObject receipt = originalJson.getJSONObject("receipt");
-                JSONObject userData = originalJson.getJSONObject("userData");
-
-                payload.put("purchase_token", receipt.get("receiptId"));
-                payload.put("purchase_time_string", receipt.get("purchaseDate"));
-                payload.put("product_id", receipt.get("sku"));
-                payload.put("store_user_id", userData.get("userId"));
-                payload.put("store_marketplace", userData.get("marketplace"));
-            } else {
-                payload.put("purchase_token", originalJson.get("purchaseToken"));
-                payload.put("purchase_time", originalJson.get("purchaseTime"));
-                payload.put("product_id", originalJson.get("productId"));
-                if (originalJson.has("orderId")) {
-                    payload.put("order_id", originalJson.get("orderId"));
-                }
+        if (this.appStore != null) {
+            try {
+                Teak.log.i("puchase.succeeded", Helpers.jsonToMap(originalJson));
+            } catch (Exception ignored) {
             }
-
-            if (this.appStore != null) {
-                JSONObject skuDetails = this.appStore.querySkuDetails((String) payload.get("product_id"));
-                if (skuDetails != null) {
-                    if (skuDetails.has("price_amount_micros")) {
-                        payload.put("price_currency_code", skuDetails.getString("price_currency_code"));
-                        payload.put("price_amount_micros", skuDetails.getString("price_amount_micros"));
-                    } else if (skuDetails.has("price_string")) {
-                        payload.put("price_string", skuDetails.getString("price_string"));
-                    }
-                }
-            }
-
-            this.osListener.purchase_onPurchaseSucceeded(payload);
-        } catch (Exception e) {
-            Teak.log.exception(e);
+            this.appStore.processPurchaseJson(originalJson);
+        } else {
+            Teak.log.e("puchase.succeeded", "Unable to process purchaseSucceeded, no active app store.");
         }
     }
 
     void purchaseFailed(int errorCode) {
-        HashMap<String, Object> payload = new HashMap<>();
-        payload.put("error_code", errorCode);
-        this.osListener.purchase_onPurchaseFailed(payload);
+        TeakEvent.postEvent(new PurchaseFailedEvent(errorCode));
     }
 
     void checkActivityResultForPurchase(int resultCode, Intent data) {
@@ -326,10 +307,11 @@ class TeakInstance {
 
     ///// Activity Lifecycle
 
-    final OSListener osListener;
     private final int activityHashCode;
+    private FacebookAccessTokenBroadcast facebookAccessTokenBroadcast;
 
     // Needs to be package-accessable for Adobe Air Application workaround
+    @SuppressWarnings("WeakerAccess")
     final Application.ActivityLifecycleCallbacks lifecycleCallbacks = new Application.ActivityLifecycleCallbacks() {
         @Override
         public void onActivityCreated(Activity activity, Bundle bundle) {
@@ -339,13 +321,16 @@ class TeakInstance {
                 final Context context = activity.getApplicationContext();
 
                 // Create IStore
+                // TODO: App Stores should listen for events
                 appStore = objectFactory.getIStore(context);
                 if (appStore != null) {
-                    appStore.init(context, null);
+                    appStore.init(context);
                 }
 
-                // Call lifecycle_onActivityCreated, if it fails, cleanup and disable
-                if (!osListener.lifecycle_onActivityCreated(activity)) {
+                // Facebook Access Token Broadcaster
+                facebookAccessTokenBroadcast = new FacebookAccessTokenBroadcast(context);
+
+                if (!TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Created, activity.getIntent()))) {
                     cleanup(activity);
                     setState(State.Disabled);
                 } else {
@@ -359,12 +344,7 @@ class TeakInstance {
         public void onActivityResumed(Activity activity) {
             if (activity.hashCode() == activityHashCode && setState(State.Active)) {
                 Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityResumed"));
-
-                if (appStore != null) {
-                    appStore.onActivityResumed();
-                }
-
-                osListener.lifecycle_onActivityResumed(activity);
+                TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Resumed, activity.getIntent()));
             }
         }
 
@@ -372,7 +352,7 @@ class TeakInstance {
         public void onActivityPaused(Activity activity) {
             if (activity.hashCode() == activityHashCode && setState(State.Paused)) {
                 Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityPaused"));
-                osListener.lifecycle_onActivityPaused(activity);
+                TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Paused, activity.getIntent()));
             }
         }
 

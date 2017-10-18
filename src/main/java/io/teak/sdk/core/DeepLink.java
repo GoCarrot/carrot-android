@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.teak.sdk;
+package io.teak.sdk.core;
 
 import android.net.Uri;
 
@@ -22,6 +22,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import io.teak.sdk.Teak;
+import io.teak.sdk.regexp.Matcher;
+import io.teak.sdk.regexp.Pattern;
 
 public class DeepLink {
     public static abstract class Call {
@@ -74,7 +78,7 @@ public class DeepLink {
         }).start();
     }
 
-    public static boolean processUri(Uri uri) {
+    static boolean processUri(Uri uri) {
         if (uri == null) return false;
         // TODO: Check uri.getAuthority(), and if it exists, make sure it matches one we care about
 
@@ -113,7 +117,7 @@ public class DeepLink {
         return false;
     }
 
-    static List<Map<String, String>> getRouteNamesAndDescriptions() {
+    public static List<Map<String, String>> getRouteNamesAndDescriptions() {
         List<Map<String, String>> routeNamesAndDescriptions = new ArrayList<>();
         synchronized (routes) {
             for (Map.Entry<Pattern, DeepLink> entry : routes.entrySet()) {
@@ -138,7 +142,7 @@ public class DeepLink {
     private final String name;
     private final String description;
 
-    protected DeepLink(String route, Call call, List<String> groupNames, String name, String description) {
+    private DeepLink(String route, Call call, List<String> groupNames, String name, String description) {
         this.route = route;
         this.call = call;
         this.groupNames = groupNames;

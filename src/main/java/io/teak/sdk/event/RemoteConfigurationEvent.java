@@ -12,11 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.teak.sdk.event;
 
-public interface TeakIOListener {
-    void notification_onPushKeyChanged();
+import android.support.annotation.NonNull;
 
-    void advertising_advertisingIdentifierChanged();
+import io.teak.sdk.TeakEvent;
+import io.teak.sdk.configuration.RemoteConfiguration;
+
+public class RemoteConfigurationEvent extends TeakEvent {
+    public static final String Type = "RemoteConfigurationEvent";
+
+    public final RemoteConfiguration remoteConfiguration;
+
+    public RemoteConfigurationEvent(@NonNull RemoteConfiguration remoteConfiguration) {
+        super(Type);
+        this.remoteConfiguration = remoteConfiguration;
+    }
 }

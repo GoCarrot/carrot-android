@@ -34,7 +34,11 @@ import java.lang.reflect.Method;
 
 import org.json.JSONObject;
 
+import io.teak.sdk.Helpers;
 import io.teak.sdk.Teak;
+import io.teak.sdk.TeakEvent;
+import io.teak.sdk.event.PurchaseEvent;
+import io.teak.sdk.event.PurchaseFailedEvent;
 
 @SuppressWarnings("unused")
 class GooglePlay implements IStore {
@@ -104,6 +108,7 @@ class GooglePlay implements IStore {
                     // Check for v5 subscriptions support. This is needed for
                     // getBuyIntentToReplaceSku which allows for subscription update
                     response = (Integer) m.invoke(mService, 5, packageName, ITEM_TYPE_SUBS);
+                    //noinspection StatementWithEmptyBody
                     if (response == BILLING_RESPONSE_RESULT_OK) {
                         // Subscription v5 available
                     } else {
@@ -111,6 +116,7 @@ class GooglePlay implements IStore {
 
                         // check for v3 subscriptions support
                         response = (Integer) m.invoke(mService, 3, packageName, ITEM_TYPE_SUBS);
+                        //noinspection StatementWithEmptyBody
                         if (response == BILLING_RESPONSE_RESULT_OK) {
                             // Subscription v3 available
                         } else {
@@ -140,18 +146,11 @@ class GooglePlay implements IStore {
 
             Bundle buyIntentBundle = (Bundle) m.invoke(mService, 3, mContext.getPackageName(), "inapp", sku);
             PendingIntent pendingIntent = buyIntentBundle.getParcelable("BUY_INTENT");
-            ((Activity)mContext).startIntentSenderForResult(pendingIntent.getIntentSender(), 1001, new Intent(), 0, 0, 0);
-        } catch (Exception e) {
-
+            if (pendingIntent != null) {
+                ((Activity)mContext).startIntentSenderForResult(pendingIntent.getIntentSender(), 1001, new Intent(), 0, 0, 0);
+            }
+        } catch (Exception ignored) {
         }
-    }
-
-    public boolean ignorePluginPurchaseEvents() {
-        return false;
-    }
-
-    public void onActivityResumed() {
-        // Empty
     }
 
     public void dispose() {
@@ -164,7 +163,33 @@ class GooglePlay implements IStore {
         mService = null;
     }
 
-    public JSONObject querySkuDetails(String sku) {
+    public void processPurchaseJson(JSONObject originalJson) {
+        try {
+            JSONObject payload = new JSONObject();
+            payload.put("purchase_token", originalJson.get("purchaseToken"));
+            payload.put("purchase_time", originalJson.get("purchaseTime"));
+            payload.put("product_id", originalJson.get("productId"));
+            if (originalJson.has("orderId")) {
+                payload.put("order_id", originalJson.get("orderId"));
+            }
+
+            JSONObject skuDetails = querySkuDetails((String) payload.get("product_id"));
+            if (skuDetails != null) {
+                if (skuDetails.has("price_amount_micros")) {
+                    payload.put("price_currency_code", skuDetails.getString("price_currency_code"));
+                    payload.put("price_amount_micros", skuDetails.getString("price_amount_micros"));
+                } else if (skuDetails.has("price_string")) {
+                    payload.put("price_string", skuDetails.getString("price_string"));
+                }
+            }
+
+            TeakEvent.postEvent(new PurchaseEvent(payload));
+        } catch (Exception e) {
+            Teak.log.exception(e);
+        }
+    }
+
+    private JSONObject querySkuDetails(String sku) {
         JSONObject ret = querySkuDetails(ITEM_TYPE_INAPP, sku);
         if (ret == null) {
             ret = querySkuDetails(ITEM_TYPE_SUBS, sku);
@@ -213,7 +238,7 @@ class GooglePlay implements IStore {
         return null;
     }
 
-    int getResponseCodeFromBundle(Bundle b) {
+    private int getResponseCodeFromBundle(Bundle b) {
         Object o = b.get(RESPONSE_CODE);
         if (o == null) {
             return BILLING_RESPONSE_RESULT_OK;
@@ -225,7 +250,7 @@ class GooglePlay implements IStore {
         }
     }
 
-    int getResponseCodeFromIntent(Intent i) {
+    private int getResponseCodeFromIntent(Intent i) {
         Object o = i.getExtras().get(RESPONSE_CODE);
         if (o == null) {
             return BILLING_RESPONSE_RESULT_OK;
@@ -249,12 +274,12 @@ class GooglePlay implements IStore {
 
             if (resultCode == Activity.RESULT_OK && responseCode == BILLING_RESPONSE_RESULT_OK) {
                 try {
-                    this.teakInstance.purchaseSucceeded(new JSONObject(purchaseData));
+                    processPurchaseJson(new JSONObject(purchaseData));
                 } catch (Exception e) {
                     Teak.log.exception(e);
                 }
             } else {
-                this.teakInstance.purchaseFailed(responseCode);
+                TeakEvent.postEvent(new PurchaseFailedEvent(responseCode));
             }
         } else {
             Teak.log.i("google_play", "Checking activity result for purchase.");

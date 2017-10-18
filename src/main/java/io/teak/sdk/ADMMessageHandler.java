@@ -38,7 +38,8 @@ public class ADMMessageHandler extends ADMMessageHandlerBase {
     @Override
     protected void onMessage(Intent intent) {
         if (Teak.Instance != null && Teak.Instance.isEnabled()) {
-            Teak.Instance.osListener.notification_onNotificationReceived(getApplicationContext(), intent);
+            // TODO: Event
+            //Teak.Instance.osListener.notification_onNotificationReceived(getApplicationContext(), intent);
         }
     }
 
@@ -176,7 +177,7 @@ public class ADMMessageHandler extends ADMMessageHandlerBase {
 
     ///// Event Listener
 
-    interface EventListener {
+    public interface EventListener {
         void onRegistered(String s);
         void onUnregistered();
     }

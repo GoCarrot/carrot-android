@@ -38,19 +38,23 @@ import java.util.UUID;
 import org.json.JSONObject;
 import org.json.JSONArray;
 
+import io.teak.sdk.configuration.RemoteConfiguration;
+import io.teak.sdk.core.Session;
+import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.io.DefaultHttpsRequest;
 import io.teak.sdk.io.IHttpsRequest;
 
-class Request implements Runnable {
+public class Request implements Runnable {
     private final String endpoint;
     private final String hostname;
     protected final Map<String, Object> payload;
     private final Session session;
     private final String requestId;
 
+    ///// Common configuration
+
     private static String teakApiKey;
     private static Map<String, Object> configurationPayload = new HashMap<>();
-    static Map<String, Object> dynamicCommonPayload = new HashMap<>();
 
     static {
         TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
@@ -58,7 +62,7 @@ class Request implements Runnable {
             public void onConfigurationReady(@NonNull TeakConfiguration configuration) {
                 Request.teakApiKey = configuration.appConfiguration.apiKey;
 
-                configurationPayload.put("sdk_version", Teak.SDKVersion);
+                configurationPayload.put("sdk_version", Teak.Version);
                 configurationPayload.put("game_id", configuration.appConfiguration.appId);
                 configurationPayload.put("app_version", String.valueOf(configuration.appConfiguration.appVersion));
                 configurationPayload.put("bundle_id", configuration.appConfiguration.bundleId);
@@ -75,25 +79,42 @@ class Request implements Runnable {
         });
     }
 
-    Request(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
-        this(session.remoteConfiguration.getHostnameForEndpoint(endpoint), endpoint, payload, session);
+    ///// Remote Configuration
+
+    private static RemoteConfiguration remoteConfiguration;
+    static {
+        TeakEvent.addEventListener(new TeakEvent.EventListener() {
+            @Override
+            public void onNewEvent(@NonNull TeakEvent event) {
+                if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
+                    Request.remoteConfiguration = ((RemoteConfigurationEvent)event).remoteConfiguration;
+                }
+            }
+        });
     }
 
-    Request(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
+    /////
+
+    public Request(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
+        this(Request.remoteConfiguration.getHostnameForEndpoint(endpoint), endpoint, payload, session);
+    }
+
+    public Request(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
         this.hostname = hostname;
         this.endpoint = endpoint;
         this.payload = new HashMap<>(payload);
         this.session = session;
         this.requestId = UUID.randomUUID().toString().replace("-", "");
 
-
+        // TODO: Would like to not rely on this
+        /*
         if (session.userId() != null) {
             this.payload.put("api_key", session.userId());
-        }
+        }*/
+
         this.payload.put("request_date", new Date().getTime() / 1000); // Milliseconds -> Seconds
 
         this.payload.putAll(Request.configurationPayload);
-        this.payload.putAll(Request.dynamicCommonPayload); // TODO: I don't like this, but it seems ok for now
     }
 
     @Override
@@ -184,7 +205,7 @@ class Request implements Runnable {
     protected void done(int responseCode, String responseBody) {
     }
 
-    public Map<String, Object> to_h() {
+    private Map<String, Object> to_h() {
         HashMap<String, Object> map = new HashMap<>();
         map.put("request_id", this.requestId);
         map.put("hostname", this.hostname);

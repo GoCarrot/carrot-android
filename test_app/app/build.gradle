@@ -37,9 +37,15 @@ dependencies {
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
 
     testCompile 'junit:junit:4.12'
+    testCompile group: 'org.skyscreamer', name: 'jsonassert', version: '1.5.0'
+    testCompile 'org.mockito:mockito-core:2.11.0'
+    testCompile ('org.powermock:powermock-mockito-release-full:1.6.0') {
+        exclude module: 'hamcrest-core'
+        exclude module: 'objenesis'
+    }
 
     androidTestCompile group: 'org.skyscreamer', name: 'jsonassert', version: '1.5.0'
-
+    androidTestCompile 'com.linkedin.dexmaker:dexmaker-mockito:2.2.0'
     androidTestCompile ('org.powermock:powermock-mockito-release-full:1.6.0') {
         exclude module: 'hamcrest-core'
         exclude module: 'objenesis'
@@ -50,6 +56,5 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-intents:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    androidTestCompile 'com.linkedin.dexmaker:dexmaker-mockito:2.2.0'
     androidTestCompile 'com.android.support.test.uiautomator:uiautomator-v18:2.1.1'
 }

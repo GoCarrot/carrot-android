@@ -1,4 +1,4 @@
-/* Teak -- Copyright (C) 2016 GoCarrot Inc.
+/* Teak -- Copyright (C) 2017 GoCarrot Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,19 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.teak.sdk.store;
+package io.teak.sdk.event;
 
-import android.content.Intent;
-import android.content.Context;
+import io.teak.sdk.TeakEvent;
 
-import org.json.JSONObject;
-
-public interface IStore {
-    void init(Context context);
-    void dispose();
-
-    void processPurchaseJson(JSONObject originalJson);
-    void checkActivityResultForPurchase(int resultCode, Intent data);
-
-    void launchPurchaseFlowForSKU(String sku);
+public class PurchaseFailedEvent extends TeakEvent {
+    public static final String Type = "PurchaseFailedEvent";
+    public final int errorCode;
+    public PurchaseFailedEvent(int errorCode) {
+        super(Type);
+        this.errorCode = errorCode;
+    }
 }

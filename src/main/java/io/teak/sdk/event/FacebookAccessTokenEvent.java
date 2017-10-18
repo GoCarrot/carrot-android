@@ -12,16 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.teak.sdk.event;
 
-package io.teak.sdk;
-
-import android.content.Context;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import io.teak.sdk.event.OSListener;
+import io.teak.sdk.TeakEvent;
 
-public interface ObjectFactory {
-    @NonNull OSListener getOSListener();
-    @Nullable IStore getIStore(Context context);
+public class FacebookAccessTokenEvent extends TeakEvent {
+    public static final String Type = "FacebookAccessTokenEvent";
+
+    public final String accessToken;
+
+    public FacebookAccessTokenEvent(@Nullable String accessToken) {
+        super(Type);
+        this.accessToken = accessToken;
+    }
 }

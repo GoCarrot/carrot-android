@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.teak.sdk;
+package io.teak.sdk.configuration;
 
+import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -40,9 +41,12 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.FutureTask;
 
+import io.teak.sdk.ADMMessageHandler;
 import io.teak.sdk.Helpers.mm;
+import io.teak.sdk.InstanceIDListenerService;
+import io.teak.sdk.Teak;
 
-class DeviceConfiguration {
+public class DeviceConfiguration {
     public String gcmId;
     public String admId;
 
@@ -68,6 +72,7 @@ class DeviceConfiguration {
 
     private static final String PREFERENCE_DEVICE_ID = "io.teak.sdk.Preferences.DeviceId";
 
+    @SuppressLint("HardwareIds") // The fallback device id uses these
     public DeviceConfiguration(@NonNull final Context context, @NonNull final AppConfiguration appConfiguration) {
         if (android.os.Build.VERSION.RELEASE == null) {
             this.platformString = "android_unknown";
@@ -225,13 +230,14 @@ class DeviceConfiguration {
             }));
             new Thread(this.gcm).start();
 
-            RemoteConfiguration.addEventListener(this.remoteConfigurationEventListener);
+            // TODO: Event this
+            //RemoteConfiguration.addEventListener(this.remoteConfigurationEventListener);
         }
 
         // Kick off Advertising Info request
         fetchAdvertisingInfo(context);
     }
-
+/*
     private final RemoteConfiguration.EventListener remoteConfigurationEventListener = new RemoteConfiguration.EventListener() {
         @Override
         public void onConfigurationReady(RemoteConfiguration configuration) {
@@ -240,7 +246,7 @@ class DeviceConfiguration {
             registerForGCM(appConfiguration, "remote_configuration");
         }
     };
-
+*/
     void reRegisterPushToken(@NonNull AppConfiguration appConfiguration, String source) {
         if (this.admIsSupported) {
             ADM adm = (ADM) this.admInstance;
@@ -273,6 +279,7 @@ class DeviceConfiguration {
             final FutureTask<AdvertisingIdClient.Info> adInfoFuture = new FutureTask<>(new RetriableTask<>(100, 7000L, new Callable<AdvertisingIdClient.Info>() {
                 @Override
                 public AdvertisingIdClient.Info call() throws Exception {
+                    //noinspection deprecation
                     if (GooglePlayServicesUtil.isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS) {
                         return AdvertisingIdClient.getAdvertisingIdInfo(context);
                     }
@@ -282,6 +289,7 @@ class DeviceConfiguration {
             new Thread(adInfoFuture).start();
 
             // TODO: This needs to be re-checked in case it's something like SERVICE_UPDATING or SERVICE_VERSION_UPDATE_REQUIRED
+            //noinspection deprecation
             if (GooglePlayServicesUtil.isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS) {
                 new Thread(new Runnable() {
                     @Override

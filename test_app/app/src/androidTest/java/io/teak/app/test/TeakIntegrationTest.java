@@ -28,7 +28,6 @@ import android.support.test.rule.ActivityTestRule;
 
 import org.junit.Rule;
 
-
 import java.io.BufferedInputStream;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
@@ -36,22 +35,26 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.Map;
 
-import io.teak.sdk.IStore;
-import io.teak.sdk.ObjectFactory;
+import io.teak.sdk.IObjectFactory;
 import io.teak.sdk.Teak;
-import io.teak.sdk.event.OSListener;
+import io.teak.sdk.TeakEvent;
+import io.teak.sdk.configuration.AppConfiguration;
+import io.teak.sdk.event.LifecycleEvent;
+import io.teak.sdk.io.IAndroidResources;
+import io.teak.sdk.store.IStore;
 
 import static junit.framework.TestCase.fail;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class TeakIntegrationTests {
-    OSListener osListener;
-    IStore iStore;
+class TeakIntegrationTest {
+    IStore store;
+    IAndroidResources androidResources;
+    TestTeakEventListener eventListener;
 
     @Rule
     public ActivityTestRule<MainActivity> testRule = new ActivityTestRule<MainActivity>(MainActivity.class, false, false) {
@@ -59,24 +62,35 @@ class TeakIntegrationTests {
         protected void beforeActivityLaunched() {
             super.beforeActivityLaunched();
 
+            // Reset Teak.Instance
             Teak.Instance = null;
 
-            osListener = mock(io.teak.sdk.event.OSListener.class);
-            when(osListener.lifecycle_onActivityCreated(any(Activity.class))).thenReturn(true);
+            // Create IStore mock
+            store = mock(io.teak.sdk.store.IStore.class);
 
-            iStore = mock(io.teak.sdk.IStore.class);
+            // Android Resources mock
+            androidResources = mock(io.teak.sdk.io.IAndroidResources.class);
+            when(androidResources.getStringResource(AppConfiguration.TEAK_APP_ID)).thenReturn("1136371193060244");
+            when(androidResources.getStringResource(AppConfiguration.TEAK_API_KEY)).thenReturn("1f3850f794b9093864a0778009744d03");
 
-            MainActivity.whateverFactory = new ObjectFactory() {
-                @NonNull
-                @Override
-                public io.teak.sdk.event.OSListener getOSListener() {
-                    return osListener;
-                }
+            // Create and add an easily mockable TeakEvent.EventListener
+            if (eventListener != null) {
+                TeakEvent.removeEventListener(eventListener);
+            }
+            eventListener = spy(TestTeakEventListener.class);
+            TeakEvent.addEventListener(eventListener);
 
+            MainActivity.whateverFactory = new IObjectFactory() {
                 @Nullable
                 @Override
                 public IStore getIStore(Context context) {
-                    return iStore;
+                    return store;
+                }
+
+                @NonNull
+                @Override
+                public IAndroidResources getAndroidResources(Context context) {
+                    return androidResources;
                 }
             };
         }
@@ -84,14 +98,14 @@ class TeakIntegrationTests {
         @Override
         protected void afterActivityLaunched() {
             super.afterActivityLaunched();
-            verify(osListener, times(1)).lifecycle_onActivityCreated(getActivity());
-            verify(osListener, times(1)).lifecycle_onActivityResumed(getActivity());
+            verify(eventListener, times(1)).eventRecieved(LifecycleEvent.class, LifecycleEvent.Created);
+            verify(eventListener, times(1)).eventRecieved(LifecycleEvent.class, LifecycleEvent.Resumed);
         }
 
         @Override
         protected void afterActivityFinished() {
             super.afterActivityFinished();
-            verify(osListener, timeout(5000).atLeastOnce()).lifecycle_onActivityPaused(getActivity());
+            verify(eventListener, timeout(5000).atLeastOnce()).eventRecieved(LifecycleEvent.class, LifecycleEvent.Paused);
         }
     };
 
@@ -201,6 +215,7 @@ class TeakIntegrationTests {
         InputStream is = new BufferedInputStream(new FileInputStream(fd));
         byte[] buf = new byte[1024];
         try {
+            //noinspection ResultOfMethodCallIgnored
             is.read(buf, 0, buf.length);
             output = new String(buf);
             android.util.Log.v("Teak:IntegrationTest", output);

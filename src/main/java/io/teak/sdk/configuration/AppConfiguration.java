@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.teak.sdk;
+package io.teak.sdk.configuration;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -28,9 +28,12 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import io.teak.sdk.Helpers;
+import io.teak.sdk.Teak;
+import io.teak.sdk.io.IAndroidResources;
 import io.teak.sdk.service.RavenService;
 
-class AppConfiguration {
+public class AppConfiguration {
     public final String appId;
     public final String apiKey;
     public final String pushSenderId;
@@ -40,11 +43,11 @@ class AppConfiguration {
     public final PackageManager packageManager;
     public final Context applicationContext;
 
-    private static final String TEAK_API_KEY = "io_teak_api_key";
-    private static final String TEAK_APP_ID = "io_teak_app_id";
-    private static final String TEAK_GCM_SENDER_ID = "io_teak_gcm_sender_id";
+    public static final String TEAK_API_KEY = "io_teak_api_key";
+    public static final String TEAK_APP_ID = "io_teak_app_id";
+    public static final String TEAK_GCM_SENDER_ID = "io_teak_gcm_sender_id";
 
-    public AppConfiguration(@NonNull Context context) {
+    public AppConfiguration(@NonNull Context context, @NonNull IAndroidResources androidResources) {
         this.applicationContext = context.getApplicationContext();
 
         Bundle metaData = null;
@@ -56,10 +59,10 @@ class AppConfiguration {
 
         // Teak App Id
         {
-            String tempAppId = Helpers.getStringResourceByName(TEAK_APP_ID, context);
-            if (tempAppId == null && metaData != null && metaData.getString(TEAK_APP_ID) != null) {
+            String tempAppId = androidResources.getStringResource(TEAK_APP_ID);
+            if (tempAppId == null && metaData != null) {
                 String temp = metaData.getString(TEAK_APP_ID);
-                if (temp.startsWith("teak")) {
+                if (temp != null && temp.startsWith("teak")) {
                     tempAppId = temp.substring(4);
                 }
             }
@@ -72,10 +75,10 @@ class AppConfiguration {
 
         // Teak API Key
         {
-            String tempApiKey = Helpers.getStringResourceByName(TEAK_API_KEY, context);
-            if (tempApiKey == null && metaData != null && metaData.getString(TEAK_API_KEY) != null) {
+            String tempApiKey = androidResources.getStringResource(TEAK_API_KEY);
+            if (tempApiKey == null && metaData != null) {
                 String temp = metaData.getString(TEAK_API_KEY);
-                if (temp.startsWith("teak")) {
+                if (temp != null && temp.startsWith("teak")) {
                     tempApiKey = temp.substring(4);
                 }
             }
@@ -88,7 +91,7 @@ class AppConfiguration {
 
         // Push Sender Id
         {
-            String tempPushSenderId = Helpers.getStringResourceByName(TEAK_GCM_SENDER_ID, context);
+            String tempPushSenderId = androidResources.getStringResource(TEAK_GCM_SENDER_ID);
             if (tempPushSenderId == null && metaData != null && metaData.getString(TEAK_GCM_SENDER_ID) != null) {
                 String temp = metaData.getString(TEAK_GCM_SENDER_ID);
                 if (temp.startsWith("teak")) {

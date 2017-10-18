@@ -20,68 +20,76 @@ import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import io.teak.sdk.event.OSListener;
+import io.teak.sdk.io.DefaultAndroidResources;
+import io.teak.sdk.io.IAndroidResources;
+import io.teak.sdk.store.IStore;
 
-class DefaultObjectFactory implements ObjectFactory {
-    @NonNull
-    @Override
-    public OSListener getOSListener() {
-        return new TeakCore();
-    }
-
+class DefaultObjectFactory implements IObjectFactory {
     @Nullable
     @Override
     public IStore getIStore(Context context) {
-        PackageManager packageManager = context.getPackageManager();
-        if (packageManager == null) {
-            Teak.log.e("factory.istore", "Unable to get Package Manager.");
-            return null;
-        }
+        if (this.iStore == null) {
+            PackageManager packageManager = context.getPackageManager();
+            if (packageManager == null) {
+                Teak.log.e("factory.istore", "Unable to get Package Manager.");
+                return null;
+            }
 
-        String bundleId = context.getPackageName();
-        if (bundleId == null) {
-            Teak.log.e("factory.istore", "Unable to get Bundle Id.");
-            return null;
-        }
+            String bundleId = context.getPackageName();
+            if (bundleId == null) {
+                Teak.log.e("factory.istore", "Unable to get Bundle Id.");
+                return null;
+            }
 
-        String installerPackage = packageManager.getInstallerPackageName(bundleId);
+            String installerPackage = packageManager.getInstallerPackageName(bundleId);
 
-        // Applicable store
-        IStore store = null;
-        if (installerPackage != null) {
-            Class<?> clazz = null;
-            if (installerPackage.equals("com.amazon.venezia")) {
-                try {
-                    clazz = Class.forName("com.amazon.device.iap.PurchasingListener");
-                } catch (Exception e) {
-                    Teak.log.exception(e);
-                }
-
-                if (clazz != null) {
+            // Applicable store
+            if (installerPackage != null) {
+                Class<?> clazz = null;
+                if (installerPackage.equals("com.amazon.venezia")) {
                     try {
-                        clazz = Class.forName("io.teak.sdk.Amazon");
+                        clazz = Class.forName("com.amazon.device.iap.PurchasingListener");
+                    } catch (Exception e) {
+                        Teak.log.exception(e);
+                    }
+
+                    if (clazz != null) {
+                        try {
+                            clazz = Class.forName("io.teak.sdk.Amazon");
+                        } catch (Exception e) {
+                            Teak.log.exception(e);
+                        }
+                    }
+                } else {
+                    // Default to Google Play
+                    try {
+                        clazz = Class.forName("io.teak.sdk.GooglePlay");
                     } catch (Exception e) {
                         Teak.log.exception(e);
                     }
                 }
-            } else {
-                // Default to Google Play
+
                 try {
-                    clazz = Class.forName("io.teak.sdk.GooglePlay");
+                    this.iStore = (IStore) (clazz != null ? clazz.newInstance() : null);
                 } catch (Exception e) {
                     Teak.log.exception(e);
                 }
+            } else {
+                Teak.log.e("factory.istore", "Installer package (Store) is null, purchase tracking disabled.");
             }
-
-            try {
-                store = (IStore) (clazz != null ? clazz.newInstance() : null);
-            } catch (Exception e) {
-                Teak.log.exception(e);
-            }
-        } else {
-            Teak.log.e("factory.istore", "Installer package (Store) is null, purchase tracking disabled.");
         }
 
-        return store;
+        return this.iStore;
     }
+    private IStore iStore;
+
+    @NonNull
+    @Override
+    public IAndroidResources getAndroidResources(Context context) {
+        if (this.defaultAndroidResources == null) {
+            this.defaultAndroidResources = new DefaultAndroidResources(context);
+        }
+        return this.defaultAndroidResources;
+    }
+    private DefaultAndroidResources defaultAndroidResources;
 }

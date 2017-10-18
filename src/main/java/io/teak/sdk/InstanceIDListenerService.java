@@ -28,7 +28,7 @@ public class InstanceIDListenerService extends com.google.android.gms.iid.Instan
 
     ///// Event Listener
 
-    interface EventListener {
+    public interface EventListener {
         void onTokenRefresh();
     }
 
