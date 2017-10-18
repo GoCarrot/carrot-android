@@ -61,9 +61,9 @@ public class AppConfiguration {
         {
             String tempAppId = androidResources.getStringResource(TEAK_APP_ID);
             if (tempAppId == null && metaData != null) {
-                String temp = metaData.getString(TEAK_APP_ID);
-                if (temp != null && temp.startsWith("teak")) {
-                    tempAppId = temp.substring(4);
+                String appIdFromMetaData = metaData.getString(TEAK_APP_ID);
+                if (appIdFromMetaData != null && appIdFromMetaData.startsWith("teak")) {
+                    tempAppId = appIdFromMetaData.substring(4);
                 }
             }
 
@@ -77,9 +77,9 @@ public class AppConfiguration {
         {
             String tempApiKey = androidResources.getStringResource(TEAK_API_KEY);
             if (tempApiKey == null && metaData != null) {
-                String temp = metaData.getString(TEAK_API_KEY);
-                if (temp != null && temp.startsWith("teak")) {
-                    tempApiKey = temp.substring(4);
+                String apiKeyFromMetaData = metaData.getString(TEAK_API_KEY);
+                if (apiKeyFromMetaData != null && apiKeyFromMetaData.startsWith("teak")) {
+                    tempApiKey = apiKeyFromMetaData.substring(4);
                 }
             }
 
@@ -92,10 +92,10 @@ public class AppConfiguration {
         // Push Sender Id
         {
             String tempPushSenderId = androidResources.getStringResource(TEAK_GCM_SENDER_ID);
-            if (tempPushSenderId == null && metaData != null && metaData.getString(TEAK_GCM_SENDER_ID) != null) {
-                String temp = metaData.getString(TEAK_GCM_SENDER_ID);
-                if (temp.startsWith("teak")) {
-                    tempPushSenderId = temp.substring(4);
+            if (tempPushSenderId == null && metaData != null) {
+                String pushSenderIdFromMetaData = metaData.getString(TEAK_GCM_SENDER_ID);
+                if (pushSenderIdFromMetaData != null && pushSenderIdFromMetaData.startsWith("teak")) {
+                    tempPushSenderId = pushSenderIdFromMetaData.substring(4);
                 }
             }
 
