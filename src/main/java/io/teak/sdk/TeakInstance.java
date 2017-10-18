@@ -35,7 +35,9 @@ import java.util.Map;
 
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.DeepLink;
+import io.teak.sdk.event.DeviceInfoEvent;
 import io.teak.sdk.event.LifecycleEvent;
+import io.teak.sdk.event.NotificationEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.TrackEventEvent;
@@ -171,6 +173,8 @@ public class TeakInstance {
             payload.put("object_type", objectTypeId);
             payload.put("object_instance_id", objectInstanceId);
             TeakEvent.postEvent(new TrackEventEvent(payload));
+
+            // TODO: Handle TrackEventEvent in TeakCore
             /*
             Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
                 @Override
@@ -200,14 +204,14 @@ public class TeakInstance {
 
         String action = intent.getAction();
         if (GCM_RECEIVE_INTENT_ACTION.equals(action)) {
-            //this.osListener.notification_onNotificationReceived(context, intent);
+            TeakEvent.postEvent(new NotificationEvent(NotificationEvent.Received, context, intent));
         } else if (GCM_REGISTRATION_INTENT_ACTION.equals(action)) {
             final String registrationId = intent.getStringExtra("registration_id");
-            // TODO: TeakIOListener
+            TeakEvent.postEvent(new DeviceInfoEvent(DeviceInfoEvent.GCMKey, registrationId));
         } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX)) {
-            //this.osListener.notification_onNotificationAction(context, intent);
+            TeakEvent.postEvent(new NotificationEvent(NotificationEvent.Interaction, context, intent));
         } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX)) {
-            //this.osListener.notification_onNotificationCleared(context, intent);
+            TeakEvent.postEvent(new NotificationEvent(NotificationEvent.Cleared, context, intent));
         }
     }
 
