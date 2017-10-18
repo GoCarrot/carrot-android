@@ -89,7 +89,7 @@ public class TeakInstance {
         });
 
         // Get Teak Configuration ready
-        if (!TeakConfiguration.initialize(context, this.objectFactory.getAndroidResources(context))) {
+        if (!TeakConfiguration.initialize(context, this.objectFactory)) {
             this.setState(State.Disabled);
             return;
         }

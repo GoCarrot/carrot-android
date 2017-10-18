@@ -20,7 +20,9 @@ import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import io.teak.sdk.io.DefaultAndroidDeviceInfo;
 import io.teak.sdk.io.DefaultAndroidResources;
+import io.teak.sdk.io.IAndroidDeviceInfo;
 import io.teak.sdk.io.IAndroidResources;
 import io.teak.sdk.store.IStore;
 
@@ -92,4 +94,14 @@ class DefaultObjectFactory implements IObjectFactory {
         return this.defaultAndroidResources;
     }
     private DefaultAndroidResources defaultAndroidResources;
+
+    @NonNull
+    @Override
+    public IAndroidDeviceInfo getAndroidDeviceInfo(Context context) {
+        if (this.androidDeviceInfo == null) {
+            this.androidDeviceInfo = new DefaultAndroidDeviceInfo(context);
+        }
+        return this.androidDeviceInfo;
+    }
+    private IAndroidDeviceInfo androidDeviceInfo;
 }

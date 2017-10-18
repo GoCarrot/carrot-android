@@ -26,11 +26,10 @@ import io.teak.sdk.configuration.DebugConfiguration;
 import io.teak.sdk.configuration.DeviceConfiguration;
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.event.RemoteConfigurationEvent;
-import io.teak.sdk.io.IAndroidResources;
 
 public class TeakConfiguration {
-    public static boolean initialize(@NonNull Context context, @NonNull IAndroidResources androidResources) {
-        TeakConfiguration teakConfiguration = new TeakConfiguration(context, androidResources);
+    public static boolean initialize(@NonNull Context context, @NonNull IObjectFactory objectFactory) {
+        TeakConfiguration teakConfiguration = new TeakConfiguration(context, objectFactory);
         if (teakConfiguration.deviceConfiguration.deviceId != null) {
             Instance = teakConfiguration;
             synchronized (eventListenersMutex) {
@@ -48,10 +47,10 @@ public class TeakConfiguration {
     public final DeviceConfiguration deviceConfiguration;
     public RemoteConfiguration remoteConfiguration;
 
-    private TeakConfiguration(@NonNull Context context, @NonNull IAndroidResources androidResources) {
+    private TeakConfiguration(@NonNull Context context, @NonNull IObjectFactory objectFactory) {
         this.debugConfiguration = new DebugConfiguration(context);
-        this.appConfiguration = new AppConfiguration(context, androidResources);
-        this.deviceConfiguration = new DeviceConfiguration(context);
+        this.appConfiguration = new AppConfiguration(context, objectFactory.getAndroidResources(context));
+        this.deviceConfiguration = new DeviceConfiguration(context, objectFactory.getAndroidDeviceInfo(context));
     }
 
     private static TeakConfiguration Instance;

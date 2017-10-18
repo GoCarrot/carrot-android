@@ -1,0 +1,144 @@
+package io.teak.sdk.io;
+
+import android.annotation.SuppressLint;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.Build;
+import android.provider.Settings;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.text.TextUtils;
+
+import com.amazon.device.messaging.ADM;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import io.teak.sdk.Teak;
+
+public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
+    private final Context context;
+
+    public DefaultAndroidDeviceInfo(@NonNull Context context) {
+        this.context = context;
+    }
+
+    @Override
+    public boolean hasGooglePlay() {
+        try {
+            Class.forName("com.google.android.gms.common.GooglePlayServicesUtil");
+            return true;
+        } catch (Exception ignored) {
+        }
+        return false;
+    }
+
+    @Override
+    public boolean hasADM() {
+        try {
+            Class.forName("com.amazon.device.messaging.ADM");
+            return new ADM(this.context).isSupported();
+        } catch (Exception ignored) {
+        }
+        return false;
+    }
+
+    @NonNull
+    @Override
+    public Map<String, String> getDeviceDescription() {
+        // https://raw.githubusercontent.com/jaredrummler/AndroidDeviceNames/master/library/src/main/java/com/jaredrummler/android/device/DeviceName.java
+        String deviceManufacturer = Build.MANUFACTURER == null ? "" : Build.MANUFACTURER;
+        String deviceModel = Build.MODEL == null ? "" : Build.MODEL;
+        String deviceFallback;
+        if (deviceModel.startsWith(Build.MANUFACTURER)) {
+            deviceFallback = capitalize(Build.MODEL);
+        } else {
+            deviceFallback = capitalize(Build.MANUFACTURER) + " " + Build.MODEL;
+        }
+
+        HashMap<String, String> info = new HashMap<>();
+        info.put("deviceManufacturer", deviceManufacturer);
+        info.put("deviceModel", deviceModel);
+        info.put("deviceFallback", deviceFallback);
+        return info;
+    }
+
+    @Nullable
+    @Override
+    @SuppressLint("HardwareIds") // The fallback device id uses these
+    public String getDeviceId() {
+        String tempDeviceId = null;
+        try {
+            tempDeviceId = UUID.nameUUIDFromBytes(android.os.Build.SERIAL.getBytes("utf8")).toString();
+        } catch (Exception e) {
+            Teak.log.e("getDeviceId", "android.os.Build.SERIAL not available, falling back to Settings.Secure.ANDROID_ID.");
+            Teak.log.exception(e);
+        }
+
+        if (tempDeviceId == null) {
+            try {
+                String androidId = Settings.Secure.getString(this.context.getContentResolver(), Settings.Secure.ANDROID_ID);
+                if (androidId.equals("9774d56d682e549c")) {
+                    Teak.log.e("getDeviceId", "Settings.Secure.ANDROID_ID == '9774d56d682e549c', falling back to random UUID stored in preferences.");
+                } else {
+                    tempDeviceId = UUID.nameUUIDFromBytes(androidId.getBytes("utf8")).toString();
+                }
+            } catch (Exception e) {
+                Teak.log.e("getDeviceId", "Error generating device id from Settings.Secure.ANDROID_ID, falling back to random UUID stored in preferences.");
+                Teak.log.exception(e);
+            }
+        }
+
+        if (tempDeviceId == null) {
+            SharedPreferences preferences = null;
+            try {
+                preferences = this.context.getSharedPreferences(Teak.PREFERENCES_FILE, Context.MODE_PRIVATE);
+            } catch (Exception ignored) {
+            }
+
+            if (preferences != null) {
+                tempDeviceId = preferences.getString(PREFERENCE_DEVICE_ID, null);
+                if (tempDeviceId == null) {
+                    try {
+                        String prefDeviceId = UUID.randomUUID().toString();
+                        SharedPreferences.Editor editor = preferences.edit();
+                        editor.putString(PREFERENCE_DEVICE_ID, prefDeviceId);
+                        editor.apply();
+                        tempDeviceId = prefDeviceId;
+                    } catch (Exception e) {
+                        Teak.log.e("getDeviceId", "Error storing random UUID, no more fallbacks.");
+                        Teak.log.exception(e);
+                    }
+                }
+            } else {
+                Teak.log.e("getDeviceId", "getSharedPreferences() returned null, unable to store random UUID, no more fallbacks.");
+            }
+        }
+
+        return tempDeviceId;
+    }
+
+    private static final String PREFERENCE_DEVICE_ID = "io.teak.sdk.Preferences.DeviceId";
+
+    // https://raw.githubusercontent.com/jaredrummler/AndroidDeviceNames/master/library/src/main/java/com/jaredrummler/android/device/DeviceName.java
+    private static String capitalize(String str) {
+        if (TextUtils.isEmpty(str)) {
+            return str;
+        }
+        char[] arr = str.toCharArray();
+        boolean capitalizeNext = true;
+        String phrase = "";
+        for (char c : arr) {
+            if (capitalizeNext && Character.isLetter(c)) {
+                phrase += Character.toUpperCase(c);
+                capitalizeNext = false;
+                continue;
+            } else if (Character.isWhitespace(c)) {
+                capitalizeNext = true;
+            }
+            phrase += c;
+        }
+        return phrase;
+    }
+}

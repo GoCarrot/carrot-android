@@ -42,6 +42,8 @@ import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.event.LifecycleEvent;
+import io.teak.sdk.io.DefaultAndroidDeviceInfo;
+import io.teak.sdk.io.IAndroidDeviceInfo;
 import io.teak.sdk.io.IAndroidResources;
 import io.teak.sdk.store.IStore;
 
@@ -57,6 +59,12 @@ class TeakIntegrationTest {
     IStore store;
     IAndroidResources androidResources;
     TestTeakEventListener eventListener;
+
+    private final DefaultAndroidDeviceInfo androidDeviceInfo;
+
+    TeakIntegrationTest() {
+        this.androidDeviceInfo  = new DefaultAndroidDeviceInfo(InstrumentationRegistry.getContext());
+    }
 
     @Before
     public void resetTeakEventListeners() throws NoSuchFieldException, IllegalAccessException {
@@ -98,6 +106,12 @@ class TeakIntegrationTest {
                 @Override
                 public IAndroidResources getAndroidResources(Context context) {
                     return androidResources;
+                }
+
+                @NonNull
+                @Override
+                public IAndroidDeviceInfo getAndroidDeviceInfo(Context context) {
+                    return androidDeviceInfo;
                 }
             };
         }

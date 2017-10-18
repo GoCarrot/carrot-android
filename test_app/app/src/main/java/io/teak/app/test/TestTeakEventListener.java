@@ -4,11 +4,12 @@ import android.support.annotation.NonNull;
 
 import io.teak.sdk.TeakEvent;
 
-abstract class TestTeakEventListener implements TeakEvent.EventListener {
+@SuppressWarnings("WeakerAccess") // Must be public in order to mock
+public abstract class TestTeakEventListener implements TeakEvent.EventListener {
     @Override
     public void onNewEvent(@NonNull TeakEvent event) {
         eventRecieved(event.getClass(), event.eventType);
     }
 
-    abstract void eventRecieved(Class eventClass, String eventType);
+    public abstract void eventRecieved(Class eventClass, String eventType);
 }

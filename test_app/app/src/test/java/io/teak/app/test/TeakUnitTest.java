@@ -11,6 +11,7 @@ import io.teak.sdk.IObjectFactory;
 import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.configuration.AppConfiguration;
+import io.teak.sdk.io.IAndroidDeviceInfo;
 import io.teak.sdk.io.IAndroidResources;
 import io.teak.sdk.store.IStore;
 
@@ -47,6 +48,9 @@ public class TeakUnitTest {
         when(androidResources.getStringResource(AppConfiguration.TEAK_APP_ID)).thenReturn("1136371193060244");
         when(androidResources.getStringResource(AppConfiguration.TEAK_API_KEY)).thenReturn("1f3850f794b9093864a0778009744d03");
 
+        // Android Device Info mock
+        final IAndroidDeviceInfo androidDeviceInfo = mock(IAndroidDeviceInfo.class);
+
         // Create and add an easily mockable TeakEvent.EventListener
         if (eventListener != null) {
             TeakEvent.removeEventListener(eventListener);
@@ -66,10 +70,16 @@ public class TeakUnitTest {
             public IAndroidResources getAndroidResources(Context context) {
                 return androidResources;
             }
+
+            @NonNull
+            @Override
+            public IAndroidDeviceInfo getAndroidDeviceInfo(Context context) {
+                return androidDeviceInfo;
+            }
         };
 
         // Re-initialize TeakConfiguration
-        if (!TeakConfiguration.initialize(context, objectFactory.getAndroidResources(context))) {
+        if (!TeakConfiguration.initialize(context, objectFactory)) {
             throw new IllegalArgumentException("TeakConfiguration initialization failed.");
         }
     }

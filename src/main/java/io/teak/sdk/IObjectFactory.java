@@ -19,6 +19,7 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import io.teak.sdk.io.IAndroidDeviceInfo;
 import io.teak.sdk.io.IAndroidResources;
 import io.teak.sdk.store.IStore;
 
@@ -28,4 +29,7 @@ public interface IObjectFactory {
 
     @NonNull
     IAndroidResources getAndroidResources(Context context);
+
+    @NonNull
+    IAndroidDeviceInfo getAndroidDeviceInfo(Context context);
 }

@@ -45,6 +45,7 @@ import io.teak.sdk.ADMMessageHandler;
 import io.teak.sdk.Helpers.mm;
 import io.teak.sdk.InstanceIDListenerService;
 import io.teak.sdk.Teak;
+import io.teak.sdk.io.IAndroidDeviceInfo;
 
 public class DeviceConfiguration {
     public String gcmId;
@@ -68,10 +69,7 @@ public class DeviceConfiguration {
     private Object admInstance;
     private String gcmSenderId;
 
-    private static final String PREFERENCE_DEVICE_ID = "io.teak.sdk.Preferences.DeviceId";
-
-    @SuppressLint("HardwareIds") // The fallback device id uses these
-    public DeviceConfiguration(@NonNull final Context context) {
+    public DeviceConfiguration(@NonNull final Context context, @NonNull IAndroidDeviceInfo androidDeviceInfo) {
         if (android.os.Build.VERSION.RELEASE == null) {
             this.platformString = "android_unknown";
         } else {
@@ -79,26 +77,10 @@ public class DeviceConfiguration {
         }
 
         // ADM support
-        {
-            boolean tempAdmSupported = false;
-            try {
-                Class.forName("com.amazon.device.messaging.ADM");
-                tempAdmSupported = new ADM(context).isSupported();
-            } catch (Exception ignored) {
-            }
-            this.admIsSupported = tempAdmSupported;
-        }
+        this.admIsSupported = androidDeviceInfo.hasADM();
 
         // Google Play support
-        {
-            boolean tempGooglePlaySupported = false;
-            try {
-                Class.forName("com.google.android.gms.common.GooglePlayServicesUtil");
-                tempGooglePlaySupported = true;
-            } catch (Exception ignored) {
-            }
-            this.googlePlayIsSupported = tempGooglePlaySupported;
-        }
+        this.googlePlayIsSupported = androidDeviceInfo.hasGooglePlay();
 
         // Preferences file
         {
@@ -117,66 +99,17 @@ public class DeviceConfiguration {
         }
 
         // Device model/manufacturer
-        // https://raw.githubusercontent.com/jaredrummler/AndroidDeviceNames/master/library/src/main/java/com/jaredrummler/android/device/DeviceName.java
         {
-            this.deviceManufacturer = Build.MANUFACTURER == null ? "" : Build.MANUFACTURER;
-            this.deviceModel = Build.MODEL == null ? "" : Build.MODEL;
-            if (this.deviceModel.startsWith(Build.MANUFACTURER)) {
-                this.deviceFallback = capitalize(Build.MODEL);
-            } else {
-                this.deviceFallback = capitalize(Build.MANUFACTURER) + " " + Build.MODEL;
-            }
+            Map<String, String> deviceInfo = androidDeviceInfo.getDeviceDescription();
+            this.deviceManufacturer = deviceInfo.get("deviceManufacturer");
+            this.deviceModel = deviceInfo.get("deviceModel");
+            this.deviceFallback = deviceInfo.get("deviceFallback");
         }
 
         // Device id
-        {
-            String tempDeviceId = null;
-            try {
-                tempDeviceId = UUID.nameUUIDFromBytes(android.os.Build.SERIAL.getBytes("utf8")).toString();
-            } catch (Exception e) {
-                Teak.log.e("device_configuration", "android.os.Build.SERIAL not available, falling back to Settings.Secure.ANDROID_ID.");
-                Teak.log.exception(e);
-            }
-
-            if (tempDeviceId == null) {
-                try {
-                    String androidId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
-                    if (androidId.equals("9774d56d682e549c")) {
-                        Teak.log.e("device_configuration", "Settings.Secure.ANDROID_ID == '9774d56d682e549c', falling back to random UUID stored in preferences.");
-                    } else {
-                        tempDeviceId = UUID.nameUUIDFromBytes(androidId.getBytes("utf8")).toString();
-                    }
-                } catch (Exception e) {
-                    Teak.log.e("device_configuration", "Error generating device id from Settings.Secure.ANDROID_ID, falling back to random UUID stored in preferences.");
-                    Teak.log.exception(e);
-                }
-            }
-
-            if (tempDeviceId == null) {
-                if (this.preferences != null) {
-                    tempDeviceId = this.preferences.getString(PREFERENCE_DEVICE_ID, null);
-                    if (tempDeviceId == null) {
-                        try {
-                            String prefDeviceId = UUID.randomUUID().toString();
-                            SharedPreferences.Editor editor = this.preferences.edit();
-                            editor.putString(PREFERENCE_DEVICE_ID, prefDeviceId);
-                            editor.apply();
-                            tempDeviceId = prefDeviceId;
-                        } catch (Exception e) {
-                            Teak.log.e("device_configuration", "Error storing random UUID, no more fallbacks.");
-                            Teak.log.exception(e);
-                        }
-                    }
-                } else {
-                    Teak.log.e("device_configuration", "getSharedPreferences() returned null, unable to store random UUID, no more fallbacks.");
-                }
-            }
-
-            this.deviceId = tempDeviceId;
-
-            if (this.deviceId == null) {
-                return;
-            }
+        this.deviceId = androidDeviceInfo.getDeviceId();
+        if (this.deviceId == null) {
+            return;
         }
 
         // Listen for events coming in from InstanceIDListenerService
@@ -399,29 +332,6 @@ public class DeviceConfiguration {
         synchronized (eventListenersMutex) {
             eventListeners.remove(e);
         }
-    }
-    // endregion
-
-    // region Helpers
-    // https://raw.githubusercontent.com/jaredrummler/AndroidDeviceNames/master/library/src/main/java/com/jaredrummler/android/device/DeviceName.java
-    private static String capitalize(String str) {
-        if (TextUtils.isEmpty(str)) {
-            return str;
-        }
-        char[] arr = str.toCharArray();
-        boolean capitalizeNext = true;
-        String phrase = "";
-        for (char c : arr) {
-            if (capitalizeNext && Character.isLetter(c)) {
-                phrase += Character.toUpperCase(c);
-                capitalizeNext = false;
-                continue;
-            } else if (Character.isWhitespace(c)) {
-                capitalizeNext = true;
-            }
-            phrase += c;
-        }
-        return phrase;
     }
     // endregion
 
