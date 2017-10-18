@@ -26,8 +26,7 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
 @RunWith(AndroidJUnit4.class)
-public class lifecycle_OSListenerIntegrationTests extends TeakIntegrationTest {
-
+public class Lifecycle extends TeakIntegrationTest {
     @Test
     public void basicLifecycle() {
         launchActivity();

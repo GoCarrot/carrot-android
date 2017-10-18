@@ -30,6 +30,7 @@ import android.support.annotation.NonNull;
 import org.json.JSONObject;
 
 import java.security.InvalidParameterException;
+import java.util.HashMap;
 import java.util.Map;
 
 import io.teak.sdk.configuration.RemoteConfiguration;
@@ -37,6 +38,7 @@ import io.teak.sdk.core.DeepLink;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
+import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.event.UserIdEvent;
 import io.teak.sdk.store.IStore;
 
@@ -164,15 +166,15 @@ public class TeakInstance {
         Teak.log.i("track_event", Helpers.mm.h("actionId", actionId, "objectTypeId", objectTypeId, "objectInstanceId", objectInstanceId));
 
         if (this.isEnabled()) {
-            // TODO: Post Event
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("action_type", actionId);
+            payload.put("object_type", objectTypeId);
+            payload.put("object_instance_id", objectInstanceId);
+            TeakEvent.postEvent(new TrackEventEvent(payload));
             /*
             Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
                 @Override
                 public void run(Session session) {
-                    HashMap<String, Object> payload = new HashMap<>();
-                    payload.put("action_type", actionId);
-                    payload.put("object_type", objectTypeId);
-                    payload.put("object_instance_id", objectInstanceId);
                     new Request("/me/events", payload, session).run();
                 }
             });*/
@@ -321,7 +323,6 @@ public class TeakInstance {
                 final Context context = activity.getApplicationContext();
 
                 // Create IStore
-                // TODO: App Stores should listen for events
                 appStore = objectFactory.getIStore(context);
                 if (appStore != null) {
                     appStore.init(context);

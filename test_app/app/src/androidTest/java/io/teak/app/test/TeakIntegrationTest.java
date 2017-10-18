@@ -26,12 +26,14 @@ import android.support.test.InstrumentationRegistry;
 import android.support.test.filters.SdkSuppress;
 import android.support.test.rule.ActivityTestRule;
 
+import org.junit.Before;
 import org.junit.Rule;
 
 import java.io.BufferedInputStream;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
 
@@ -55,6 +57,13 @@ class TeakIntegrationTest {
     IStore store;
     IAndroidResources androidResources;
     TestTeakEventListener eventListener;
+
+    @Before
+    public void resetTeakEventListeners() throws NoSuchFieldException, IllegalAccessException {
+        Field f = TeakEvent.class.getDeclaredField("eventListeners");
+        f.setAccessible(true);
+        f.set(null, new TeakEvent.EventListeners());
+    }
 
     @Rule
     public ActivityTestRule<MainActivity> testRule = new ActivityTestRule<MainActivity>(MainActivity.class, false, false) {
