@@ -8,8 +8,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.lang.reflect.Field;
-
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.event.UserIdEvent;
 
@@ -21,7 +19,7 @@ import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class TeakEventTests {
+public class TeakEventTests extends TeakUnitTest {
 
     ///// Verify that the event listener array gets reset in between tests
 
@@ -30,13 +28,6 @@ public class TeakEventTests {
     @BeforeClass
     public static void initResetVerification() {
         verifyResetListener = spy(TestTeakEventListener.class);
-    }
-
-    @Before
-    public void resetTeakEventListeners() throws NoSuchFieldException, IllegalAccessException {
-        Field f = TeakEvent.class.getDeclaredField("eventListeners");
-        f.setAccessible(true);
-        f.set(null, new TeakEvent.EventListeners());
     }
 
     @Test

@@ -60,9 +60,7 @@ class TeakIntegrationTest {
 
     @Before
     public void resetTeakEventListeners() throws NoSuchFieldException, IllegalAccessException {
-        Field f = TeakEvent.class.getDeclaredField("eventListeners");
-        f.setAccessible(true);
-        f.set(null, new TeakEvent.EventListeners());
+        TestHelpers.resetTeakEventListeners();
     }
 
     @Rule
