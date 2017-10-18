@@ -37,6 +37,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
 
+import io.teak.sdk.DefaultObjectFactory;
 import io.teak.sdk.IObjectFactory;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
@@ -45,6 +46,7 @@ import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.io.DefaultAndroidDeviceInfo;
 import io.teak.sdk.io.IAndroidDeviceInfo;
 import io.teak.sdk.io.IAndroidResources;
+import io.teak.sdk.push.IPushProvider;
 import io.teak.sdk.store.IStore;
 
 import static junit.framework.TestCase.fail;
@@ -61,9 +63,12 @@ class TeakIntegrationTest {
     TestTeakEventListener eventListener;
 
     private final DefaultAndroidDeviceInfo androidDeviceInfo;
+    private final IPushProvider pushProvider;
 
     TeakIntegrationTest() {
-        this.androidDeviceInfo  = new DefaultAndroidDeviceInfo(InstrumentationRegistry.getContext());
+        final Context context = InstrumentationRegistry.getContext();
+        this.androidDeviceInfo  = new DefaultAndroidDeviceInfo(context);
+        this.pushProvider = DefaultObjectFactory.createPushProvider(context);
     }
 
     @Before
@@ -98,20 +103,26 @@ class TeakIntegrationTest {
             MainActivity.whateverFactory = new IObjectFactory() {
                 @Nullable
                 @Override
-                public IStore getIStore(Context context) {
+                public IStore getIStore() {
                     return store;
                 }
 
                 @NonNull
                 @Override
-                public IAndroidResources getAndroidResources(Context context) {
+                public IAndroidResources getAndroidResources() {
                     return androidResources;
                 }
 
                 @NonNull
                 @Override
-                public IAndroidDeviceInfo getAndroidDeviceInfo(Context context) {
+                public IAndroidDeviceInfo getAndroidDeviceInfo() {
                     return androidDeviceInfo;
+                }
+
+                @Nullable
+                @Override
+                public IPushProvider getPushProvider() {
+                    return pushProvider;
                 }
             };
         }

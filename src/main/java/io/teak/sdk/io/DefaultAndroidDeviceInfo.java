@@ -130,6 +130,7 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
 
     @Override
     public void requestAdvertisingId() {
+        // TODO: I'm not certain if this is the best way to check if we need to use this method to get the advertising id
         if (this.hasADM()) {
             try {
                 ContentResolver cr = this.context.getContentResolver();

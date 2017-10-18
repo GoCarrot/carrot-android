@@ -49,8 +49,8 @@ public class TeakConfiguration {
 
     private TeakConfiguration(@NonNull Context context, @NonNull IObjectFactory objectFactory) {
         this.debugConfiguration = new DebugConfiguration(context);
-        this.appConfiguration = new AppConfiguration(context, objectFactory.getAndroidResources(context));
-        this.deviceConfiguration = new DeviceConfiguration(context, objectFactory.getAndroidDeviceInfo(context));
+        this.appConfiguration = new AppConfiguration(context, objectFactory.getAndroidResources());
+        this.deviceConfiguration = new DeviceConfiguration(objectFactory);
     }
 
     private static TeakConfiguration Instance;

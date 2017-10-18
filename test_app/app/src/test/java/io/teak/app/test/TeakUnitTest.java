@@ -62,20 +62,26 @@ public class TeakUnitTest {
         IObjectFactory objectFactory = new IObjectFactory() {
             @Nullable
             @Override
-            public IStore getIStore(Context context) {
+            public IStore getIStore() {
                 return store;
             }
 
             @NonNull
             @Override
-            public IAndroidResources getAndroidResources(Context context) {
+            public IAndroidResources getAndroidResources() {
                 return androidResources;
             }
 
             @NonNull
             @Override
-            public IAndroidDeviceInfo getAndroidDeviceInfo(Context context) {
+            public IAndroidDeviceInfo getAndroidDeviceInfo() {
                 return androidDeviceInfo;
+            }
+
+            @Nullable
+            @Override
+            public IPushProvider getPushProvider() {
+                return null;
             }
         };
 

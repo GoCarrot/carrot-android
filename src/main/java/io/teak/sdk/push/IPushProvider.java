@@ -1,4 +1,4 @@
-/* Teak -- Copyright (C) 2017 GoCarrot Inc.
+/* Teak -- Copyright (C) 2016 GoCarrot Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,27 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package io.teak.sdk;
+package io.teak.sdk.push;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
-import io.teak.sdk.io.IAndroidDeviceInfo;
-import io.teak.sdk.io.IAndroidResources;
-import io.teak.sdk.push.IPushProvider;
-import io.teak.sdk.store.IStore;
-
-public interface IObjectFactory {
-    @Nullable
-    IStore getIStore();
-
-    @NonNull
-    IAndroidResources getAndroidResources();
-
-    @NonNull
-    IAndroidDeviceInfo getAndroidDeviceInfo();
-
-    @Nullable
-    IPushProvider getPushProvider();
+public interface IPushProvider {
+    void requestPushKey(@NonNull String senderRegistration);
 }

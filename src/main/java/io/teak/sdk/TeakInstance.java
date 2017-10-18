@@ -35,10 +35,10 @@ import java.util.Map;
 
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.DeepLink;
-import io.teak.sdk.event.DeviceInfoEvent;
 import io.teak.sdk.event.LifecycleEvent;
-import io.teak.sdk.event.NotificationEvent;
+import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
+import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.event.UserIdEvent;
@@ -204,14 +204,14 @@ public class TeakInstance {
 
         String action = intent.getAction();
         if (GCM_RECEIVE_INTENT_ACTION.equals(action)) {
-            TeakEvent.postEvent(new NotificationEvent(NotificationEvent.Received, context, intent));
+            TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Received, context, intent));
         } else if (GCM_REGISTRATION_INTENT_ACTION.equals(action)) {
             final String registrationId = intent.getStringExtra("registration_id");
-            TeakEvent.postEvent(new DeviceInfoEvent(DeviceInfoEvent.GCMKey, registrationId));
+            TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", registrationId));
         } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX)) {
-            TeakEvent.postEvent(new NotificationEvent(NotificationEvent.Interaction, context, intent));
+            TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Interaction, context, intent));
         } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX)) {
-            TeakEvent.postEvent(new NotificationEvent(NotificationEvent.Cleared, context, intent));
+            TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Cleared, context, intent));
         }
     }
 
@@ -327,7 +327,7 @@ public class TeakInstance {
                 final Context context = activity.getApplicationContext();
 
                 // Create IStore
-                appStore = objectFactory.getIStore(context);
+                appStore = objectFactory.getIStore();
                 if (appStore != null) {
                     appStore.init(context);
                 }

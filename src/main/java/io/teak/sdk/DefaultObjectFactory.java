@@ -24,84 +24,107 @@ import io.teak.sdk.io.DefaultAndroidDeviceInfo;
 import io.teak.sdk.io.DefaultAndroidResources;
 import io.teak.sdk.io.IAndroidDeviceInfo;
 import io.teak.sdk.io.IAndroidResources;
+import io.teak.sdk.push.IPushProvider;
 import io.teak.sdk.store.IStore;
 
-class DefaultObjectFactory implements IObjectFactory {
+public class DefaultObjectFactory implements IObjectFactory {
+    private final Context context;
+    private final DefaultAndroidResources androidResources;
+    private final IStore store;
+    private final IAndroidDeviceInfo androidDeviceInfo;
+    private final IPushProvider pushProvider;
+
+    DefaultObjectFactory(@NonNull Context context) {
+        this.context = context;
+        this.androidResources = new DefaultAndroidResources(this.context);
+        this.store = createStore(context);
+        this.androidDeviceInfo = new DefaultAndroidDeviceInfo(this.context);
+        this.pushProvider = createPushProvider(context);
+    }
+
+    ///// IObjectFactory
+
     @Nullable
     @Override
-    public IStore getIStore(Context context) {
-        if (this.iStore == null) {
-            PackageManager packageManager = context.getPackageManager();
-            if (packageManager == null) {
-                Teak.log.e("factory.istore", "Unable to get Package Manager.");
-                return null;
-            }
+    public IStore getIStore() {
+        return this.store;
+    }
 
-            String bundleId = context.getPackageName();
-            if (bundleId == null) {
-                Teak.log.e("factory.istore", "Unable to get Bundle Id.");
-                return null;
-            }
+    @NonNull
+    @Override
+    public IAndroidResources getAndroidResources() {
+        return this.androidResources;
+    }
 
-            String installerPackage = packageManager.getInstallerPackageName(bundleId);
+    @NonNull
+    @Override
+    public IAndroidDeviceInfo getAndroidDeviceInfo() {
+        return this.androidDeviceInfo;
+    }
 
-            // Applicable store
-            if (installerPackage != null) {
-                Class<?> clazz = null;
-                if (installerPackage.equals("com.amazon.venezia")) {
-                    try {
-                        clazz = Class.forName("com.amazon.device.iap.PurchasingListener");
-                    } catch (Exception e) {
-                        Teak.log.exception(e);
-                    }
+    @Nullable
+    @Override
+    public IPushProvider getPushProvider() {
+        return this.pushProvider;
+    }
 
-                    if (clazz != null) {
-                        try {
-                            clazz = Class.forName("io.teak.sdk.Amazon");
-                        } catch (Exception e) {
-                            Teak.log.exception(e);
-                        }
-                    }
-                } else {
-                    // Default to Google Play
-                    try {
-                        clazz = Class.forName("io.teak.sdk.GooglePlay");
-                    } catch (Exception e) {
-                        Teak.log.exception(e);
-                    }
-                }
+    ///// Helpers
 
+    private IStore createStore(@NonNull Context context) {
+        final PackageManager packageManager = context.getPackageManager();
+        if (packageManager == null) {
+            Teak.log.e("factory.istore", "Unable to get Package Manager.");
+            return null;
+        }
+
+        final String bundleId = this.context.getPackageName();
+        if (bundleId == null) {
+            Teak.log.e("factory.istore", "Unable to get Bundle Id.");
+            return null;
+        }
+
+        final String installerPackage = packageManager.getInstallerPackageName(bundleId);
+
+        // Applicable store
+        if (installerPackage != null) {
+            Class<?> clazz = null;
+            if (installerPackage.equals("com.amazon.venezia")) {
                 try {
-                    this.iStore = (IStore) (clazz != null ? clazz.newInstance() : null);
+                    clazz = Class.forName("com.amazon.device.iap.PurchasingListener");
                 } catch (Exception e) {
                     Teak.log.exception(e);
                 }
+
+                if (clazz != null) {
+                    try {
+                        clazz = Class.forName("io.teak.sdk.Amazon");
+                    } catch (Exception e) {
+                        Teak.log.exception(e);
+                    }
+                }
             } else {
-                Teak.log.e("factory.istore", "Installer package (Store) is null, purchase tracking disabled.");
+                // Default to Google Play
+                try {
+                    clazz = Class.forName("io.teak.sdk.GooglePlay");
+                } catch (Exception e) {
+                    Teak.log.exception(e);
+                }
             }
+
+            try {
+                return (IStore) (clazz != null ? clazz.newInstance() : null);
+            } catch (Exception e) {
+                Teak.log.exception(e);
+            }
+        } else {
+            Teak.log.e("factory.istore", "Installer package (Store) is null, purchase tracking disabled.");
         }
 
-        return this.iStore;
+        return null;
     }
-    private IStore iStore;
 
-    @NonNull
-    @Override
-    public IAndroidResources getAndroidResources(Context context) {
-        if (this.defaultAndroidResources == null) {
-            this.defaultAndroidResources = new DefaultAndroidResources(context);
-        }
-        return this.defaultAndroidResources;
+    // This is used
+    public static IPushProvider createPushProvider(@NonNull Context context) {
+        return null;
     }
-    private DefaultAndroidResources defaultAndroidResources;
-
-    @NonNull
-    @Override
-    public IAndroidDeviceInfo getAndroidDeviceInfo(Context context) {
-        if (this.androidDeviceInfo == null) {
-            this.androidDeviceInfo = new DefaultAndroidDeviceInfo(context);
-        }
-        return this.androidDeviceInfo;
-    }
-    private IAndroidDeviceInfo androidDeviceInfo;
 }

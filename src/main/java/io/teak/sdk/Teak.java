@@ -70,6 +70,14 @@ public class Teak extends BroadcastReceiver {
     public static boolean forceDebug;
 
     /**
+     * Is Teak enabled?
+     * @return True if Teak is enabled; False if Teak has not been initialized, or is disabled.
+     */
+    public static boolean isEnabled() {
+        return Instance != null && Instance.isEnabled();
+    }
+
+    /**
      * Initialize Teak and tell it to listen to the lifecycle events of {@link Activity}.
      * <p/>
      * <p>Call this function from the {@link Activity#onCreate} function of your <code>Activity</code>
@@ -91,11 +99,11 @@ public class Teak extends BroadcastReceiver {
     public static void onCreate(@NonNull Activity activity, @Nullable IObjectFactory objectFactory) {
         // Unless something gave us an object factory, use the default one
         if (objectFactory == null) {
-            objectFactory = new DefaultObjectFactory();
+            objectFactory = new DefaultObjectFactory(activity.getApplicationContext());
         }
 
         // Add version info for Unity/Air
-        IAndroidResources androidResources = objectFactory.getAndroidResources(activity);
+        IAndroidResources androidResources = objectFactory.getAndroidResources();
         String wrapperSDKName = androidResources.getStringResource("io_teak_wrapper_sdk_name");
         String wrapperSDKVersion = androidResources.getStringResource("io_teak_wrapper_sdk_version");
         if (wrapperSDKName != null && wrapperSDKVersion != null) {

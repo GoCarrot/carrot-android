@@ -20,15 +20,15 @@ import android.support.annotation.NonNull;
 
 import io.teak.sdk.TeakEvent;
 
-public class NotificationEvent extends TeakEvent {
-    public static final String Received = "NotificationEvent.Received";
-    public static final String Cleared = "NotificationEvent.Cleared";
-    public static final String Interaction = "NotificationEvent.Interaction";
+public class PushNotificationEvent extends TeakEvent {
+    public static final String Received = "PushNotificationEvent.Received";
+    public static final String Cleared = "PushNotificationEvent.Cleared";
+    public static final String Interaction = "PushNotificationEvent.Interaction";
 
     public final Intent intent;
     public final Context context;
 
-    public NotificationEvent(@NonNull String type, @NonNull Context context, @NonNull Intent intent) {
+    public PushNotificationEvent(@NonNull String type, @NonNull Context context, @NonNull Intent intent) {
         super(type);
         if (type.equals(Received) || type.equals(Cleared) || type.equals(Interaction)) {
             this.intent = intent;
