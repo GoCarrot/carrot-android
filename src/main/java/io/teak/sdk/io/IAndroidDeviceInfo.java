@@ -9,8 +9,9 @@ public interface IAndroidDeviceInfo {
     boolean hasGooglePlay();
     boolean hasADM();
 
-    // MANUFACTURER, MODEL, FALLBACK
     @NonNull Map<String, String> getDeviceDescription();
 
     @Nullable String getDeviceId();
+
+    void requestAdvertisingId();
 }

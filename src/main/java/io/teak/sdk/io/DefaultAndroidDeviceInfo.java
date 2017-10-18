@@ -1,6 +1,7 @@
 package io.teak.sdk.io;
 
 import android.annotation.SuppressLint;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
@@ -10,12 +11,20 @@ import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
 import com.amazon.device.messaging.ADM;
+import com.google.android.gms.ads.identifier.AdvertisingIdClient;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
 
+import io.teak.sdk.RetriableTask;
 import io.teak.sdk.Teak;
+import io.teak.sdk.TeakEvent;
+import io.teak.sdk.event.AdvertisingInfoEvent;
 
 public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
     private final Context context;
@@ -117,6 +126,52 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
         }
 
         return tempDeviceId;
+    }
+
+    @Override
+    public void requestAdvertisingId() {
+        if (this.hasADM()) {
+            try {
+                ContentResolver cr = this.context.getContentResolver();
+                boolean limitAdTracking = Settings.Secure.getInt(cr, "limit_ad_tracking") != 0;
+                String advertisingId = Settings.Secure.getString(cr, "advertising_id");
+
+                TeakEvent.postEvent(new AdvertisingInfoEvent(advertisingId, limitAdTracking));
+            } catch (Exception ignored) {
+            }
+        } else if (this.hasGooglePlay()) {
+            final FutureTask<AdvertisingIdClient.Info> adInfoFuture = new FutureTask<>(new RetriableTask<>(10, 7000L, new Callable<AdvertisingIdClient.Info>() {
+                @Override
+                public AdvertisingIdClient.Info call() throws Exception {
+                    //noinspection deprecation
+                    if (GooglePlayServicesUtil.isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS) {
+                        return AdvertisingIdClient.getAdvertisingIdInfo(context);
+                    }
+                    throw new Exception("Retrying GooglePlayServicesUtil.isGooglePlayServicesAvailable()");
+                }
+            }));
+            new Thread(adInfoFuture).start();
+
+            // TODO: This needs to be re-checked in case it's something like SERVICE_UPDATING or SERVICE_VERSION_UPDATE_REQUIRED
+
+            //noinspection deprecation
+            if (GooglePlayServicesUtil.isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            AdvertisingIdClient.Info adInfo = adInfoFuture.get();
+                            String advertisingId = adInfo.getId();
+                            boolean limitAdTracking = adInfo.isLimitAdTrackingEnabled();
+
+                            TeakEvent.postEvent(new AdvertisingInfoEvent(advertisingId, limitAdTracking));
+                        } catch (Exception e) {
+                            Teak.log.exception(e);
+                        }
+                    }
+                }).start();
+            }
+        }
     }
 
     private static final String PREFERENCE_DEVICE_ID = "io.teak.sdk.Preferences.DeviceId";

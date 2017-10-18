@@ -8,7 +8,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import io.teak.sdk.TeakEvent;
 import io.teak.sdk.event.UserIdEvent;
 
 import static org.mockito.ArgumentMatchers.any;

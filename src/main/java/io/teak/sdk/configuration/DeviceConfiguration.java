@@ -14,42 +14,36 @@
  */
 package io.teak.sdk.configuration;
 
-import android.annotation.SuppressLint;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Build;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
-import android.text.TextUtils;
 
 import com.amazon.device.messaging.ADM;
-
-import com.google.android.gms.ads.identifier.AdvertisingIdClient;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.FutureTask;
 
 import io.teak.sdk.ADMMessageHandler;
 import io.teak.sdk.Helpers.mm;
 import io.teak.sdk.InstanceIDListenerService;
+import io.teak.sdk.RetriableTask;
 import io.teak.sdk.Teak;
+import io.teak.sdk.TeakEvent;
+import io.teak.sdk.event.AdvertisingInfoEvent;
+import io.teak.sdk.event.DeviceInfoEvent;
+import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.io.IAndroidDeviceInfo;
 
 public class DeviceConfiguration {
-    public String gcmId;
-    public String admId;
+    public Map<String, String> pushRegistration;
 
     public final boolean admIsSupported;
     public final boolean googlePlayIsSupported;
@@ -127,6 +121,22 @@ public class DeviceConfiguration {
             // This means that com.google.android.gms.iid.InstanceIDListenerService doesn't exist
         }
 
+        // Listen for Ad Info and Push Key events
+        TeakEvent.addEventListener(new TeakEvent.EventListener() {
+            @Override
+            public void onNewEvent(@NonNull TeakEvent event) {
+                if (event.eventType.equals(AdvertisingInfoEvent.Type)) {
+                    advertisingId = ((AdvertisingInfoEvent)event).advertisingId;
+                    limitAdTracking = ((AdvertisingInfoEvent)event).limitAdTracking;
+                } else if (event.eventType.equals(PushRegistrationEvent.Type)) {
+                    pushRegistration = ((PushRegistrationEvent)event).registration;
+                }
+            }
+        });
+
+        // Request Ad Info
+        androidDeviceInfo.requestAdvertisingId();
+
         // Listen for ADM messages if ADM is available
         if (this.admIsSupported) {
             ADMMessageHandler.addEventListener(new ADMMessageHandler.EventListener() {
@@ -162,9 +172,6 @@ public class DeviceConfiguration {
             // TODO: Event this
             //RemoteConfiguration.addEventListener(this.remoteConfigurationEventListener);
         }
-
-        // Kick off Advertising Info request
-        fetchAdvertisingInfo(context);
     }
 /*
     private final RemoteConfiguration.EventListener remoteConfigurationEventListener = new RemoteConfiguration.EventListener() {
@@ -182,69 +189,6 @@ public class DeviceConfiguration {
             adm.startRegister();
         } else {
             registerForGCM(source);
-        }
-    }
-
-    private void fetchAdvertisingInfo(@NonNull final Context context) {
-        if (this.admIsSupported) {
-            try {
-                ContentResolver cr = context.getContentResolver();
-                boolean limitAdTracking = Settings.Secure.getInt(cr, "limit_ad_tracking") != 0;
-                String advertisingId = Settings.Secure.getString(cr, "advertising_id");
-
-                if (!advertisingId.equals(this.advertisingId) || limitAdTracking != this.limitAdTracking) {
-                    this.limitAdTracking = limitAdTracking;
-                    this.advertisingId = advertisingId;
-                    synchronized (eventListenersMutex) {
-                        for (EventListener e : eventListeners) {
-                            e.onAdvertisingInfoChanged(this);
-                        }
-                    }
-                }
-            } catch (Exception ignored) {
-            }
-        } else if (this.googlePlayIsSupported) {
-            final DeviceConfiguration _this = this;
-            final FutureTask<AdvertisingIdClient.Info> adInfoFuture = new FutureTask<>(new RetriableTask<>(100, 7000L, new Callable<AdvertisingIdClient.Info>() {
-                @Override
-                public AdvertisingIdClient.Info call() throws Exception {
-                    //noinspection deprecation
-                    if (GooglePlayServicesUtil.isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS) {
-                        return AdvertisingIdClient.getAdvertisingIdInfo(context);
-                    }
-                    throw new Exception("Retrying GooglePlayServicesUtil.isGooglePlayServicesAvailable()");
-                }
-            }));
-            new Thread(adInfoFuture).start();
-
-            // TODO: This needs to be re-checked in case it's something like SERVICE_UPDATING or SERVICE_VERSION_UPDATE_REQUIRED
-            //noinspection deprecation
-            if (GooglePlayServicesUtil.isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            AdvertisingIdClient.Info adInfo = adInfoFuture.get();
-
-                            // Inform listeners Ad Info has changed
-                            if (_this.advertisingId == null ||
-                                    !_this.advertisingId.equals(adInfo.getId()) ||
-                                    _this.limitAdTracking != adInfo.isLimitAdTrackingEnabled()) {
-                                _this.advertisingId = adInfo.getId();
-                                _this.limitAdTracking = adInfo.isLimitAdTrackingEnabled();
-
-                                synchronized (eventListenersMutex) {
-                                    for (EventListener e : eventListeners) {
-                                        e.onAdvertisingInfoChanged(_this);
-                                    }
-                                }
-                            }
-                        } catch (Exception e) {
-                            Teak.log.exception(e);
-                        }
-                    }
-                }).start();
-            }
         }
     }
 
@@ -284,57 +228,6 @@ public class DeviceConfiguration {
         }
     }
 
-    public void assignGcmRegistration(final String registration) {
-        final DeviceConfiguration _this = this;
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    // Inform event listeners GCM is here
-                    if (!registration.equals(gcmId)) {
-                        _this.gcmId = registration;
-                        _this.notifyPushIdChangedListeners();
-                        Teak.log.i("gcm.key_updated", mm.h("gcm_id", registration));
-                    }
-                } catch (Exception e) {
-                    Teak.log.exception(e);
-                }
-            }
-        }).start();
-    }
-
-    private void notifyPushIdChangedListeners() {
-        synchronized (eventListenersMutex) {
-            for (EventListener e : eventListeners) {
-                e.onPushIdChanged(this);
-            }
-        }
-    }
-
-    // region Event Listener
-    interface EventListener {
-        void onPushIdChanged(DeviceConfiguration deviceConfiguration);
-
-        void onAdvertisingInfoChanged(DeviceConfiguration deviceConfiguration);
-    }
-
-    private static final Object eventListenersMutex = new Object();
-    private static ArrayList<EventListener> eventListeners = new ArrayList<>();
-
-    static void addEventListener(EventListener e) {
-        synchronized (eventListenersMutex) {
-            if (!eventListeners.contains(e)) {
-                eventListeners.add(e);
-            }
-        }
-    }
-
-    public static void removeEventListener(EventListener e) {
-        synchronized (eventListenersMutex) {
-            eventListeners.remove(e);
-        }
-    }
-    // endregion
-
     public Map<String, Object> to_h() {
         HashMap<String, Object> ret = new HashMap<>();
         ret.put("gcmId", this.gcmId);
@@ -352,33 +245,6 @@ public class DeviceConfiguration {
             return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.to_h())));
         } catch (Exception ignored) {
             return super.toString();
-        }
-    }
-
-    private class RetriableTask<T> implements Callable<T> {
-        private final Callable<T> wrappedTask;
-        private final int tries;
-        private final long retryDelay;
-
-        RetriableTask(final int tries, final long retryDelay, final Callable<T> taskToWrap) {
-            this.wrappedTask = taskToWrap;
-            this.tries = tries;
-            this.retryDelay = retryDelay;
-        }
-
-        public T call() throws Exception {
-            int triesLeft = this.tries;
-            while (true) {
-                try {
-                    return this.wrappedTask.call();
-                } catch (final CancellationException | InterruptedException e) {
-                    throw e;
-                } catch (final Exception e) {
-                    triesLeft--;
-                    if (triesLeft == 0) throw e;
-                    if (this.retryDelay > 0) Thread.sleep(this.retryDelay);
-                }
-            }
         }
     }
 }

@@ -16,22 +16,21 @@ package io.teak.sdk.event;
 
 import android.support.annotation.NonNull;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import io.teak.sdk.TeakEvent;
 
-// TODO: This could have a better name?
-public class DeviceInfoEvent extends TeakEvent {
-    public static final String AdvertisingId = "DeviceInfoEvent.AdvertisingId";
-    public static final String GCMKey = "DeviceInfoEvent.GCMKey";
-    public static final String ADMKey = "DeviceInfoEvent.ADMKey";
+public class PushRegistrationEvent extends TeakEvent {
+    public static final String Type = "PushRegistrationEvent";
 
-    public final String value;
+    public final Map<String, String> registration;
 
-    public DeviceInfoEvent(@NonNull String type, @NonNull String value) {
-        super(type);
-        if (type.equals(AdvertisingId) || type.equals(GCMKey) || type.equals(ADMKey)) {
-            this.value = value;
-        } else {
-            throw new IllegalArgumentException("Type must be one of 'AdvertisingId', 'GCMKey' or 'ADMKey'");
-        }
+    public PushRegistrationEvent(@NonNull String key, @NonNull String value) {
+        super(Type);
+        Map<String, String> map = new HashMap<>();
+        map.put(key, value);
+        this.registration = Collections.unmodifiableMap(map);
     }
 }
