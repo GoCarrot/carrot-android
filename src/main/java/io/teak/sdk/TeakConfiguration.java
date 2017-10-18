@@ -84,11 +84,11 @@ public class TeakConfiguration {
             if (!eventListeners.contains(e)) {
                 eventListeners.add(e);
             }
-        }
 
-        // Configuration is already ready, so call it now
-        if (Instance != null) {
-            e.onConfigurationReady(Instance);
+            // Configuration is already ready, so call it now
+            if (Instance != null) {
+                e.onConfigurationReady(Instance);
+            }
         }
     }
 
