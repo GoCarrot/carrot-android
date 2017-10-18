@@ -68,19 +68,15 @@ public class DeviceConfiguration {
     private Object admInstance;
     private String gcmSenderId;
 
-    private final AppConfiguration appConfiguration;
-
     private static final String PREFERENCE_DEVICE_ID = "io.teak.sdk.Preferences.DeviceId";
 
     @SuppressLint("HardwareIds") // The fallback device id uses these
-    public DeviceConfiguration(@NonNull final Context context, @NonNull final AppConfiguration appConfiguration) {
+    public DeviceConfiguration(@NonNull final Context context) {
         if (android.os.Build.VERSION.RELEASE == null) {
             this.platformString = "android_unknown";
         } else {
             this.platformString = "android_" + android.os.Build.VERSION.RELEASE;
         }
-
-        this.appConfiguration = appConfiguration;
 
         // ADM support
         {
@@ -190,7 +186,7 @@ public class DeviceConfiguration {
                 InstanceIDListenerService.addEventListener(new InstanceIDListenerService.EventListener() {
                     @Override
                     public void onTokenRefresh() {
-                        reRegisterPushToken(appConfiguration, "InstanceIDListenerService");
+                        reRegisterPushToken("InstanceIDListenerService");
                     }
                 });
             }
@@ -247,12 +243,12 @@ public class DeviceConfiguration {
         }
     };
 */
-    void reRegisterPushToken(@NonNull AppConfiguration appConfiguration, String source) {
+    void reRegisterPushToken(String source) {
         if (this.admIsSupported) {
             ADM adm = (ADM) this.admInstance;
             adm.startRegister();
         } else {
-            registerForGCM(appConfiguration, source);
+            registerForGCM(source);
         }
     }
 
@@ -319,7 +315,7 @@ public class DeviceConfiguration {
         }
     }
 
-    private void registerForGCM(@NonNull final AppConfiguration appConfiguration, final String source) {
+    private void registerForGCM(final String source) {
         try {
             if (gcmSenderId != null) {
                 final DeviceConfiguration _this = this;
