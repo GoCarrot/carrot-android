@@ -137,7 +137,7 @@ public class TeakCore implements ITeakCore {
                     /*
                     final Session session = Session.getCurrentSessionOrNull();
                     final TeakConfiguration teakConfiguration = TeakConfiguration.get();
-                    if (session != null && teakConfiguration != null) {
+                    if (session != null) {
                         HashMap<String, Object> payload = new HashMap<>();
                         payload.put("app_id", teakConfiguration.appConfiguration.appId);
                         payload.put("user_id", teakUserId);

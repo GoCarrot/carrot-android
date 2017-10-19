@@ -57,31 +57,29 @@ public class RemoteConfiguration {
                 // TODO: On Deep Links Ready event
                 if(true) {
                     final TeakConfiguration teakConfiguration = TeakConfiguration.get();
-                    if (teakConfiguration != null) {
-                        HashMap<String, Object> payload = new HashMap<>();
-                        payload.put("id", teakConfiguration.appConfiguration.appId);
-                        payload.put("deep_link_routes", DeepLink.getRouteNamesAndDescriptions());
+                    HashMap<String, Object> payload = new HashMap<>();
+                    payload.put("id", teakConfiguration.appConfiguration.appId);
+                    payload.put("deep_link_routes", DeepLink.getRouteNamesAndDescriptions());
 /*
-                        new Thread(new Request("gocarrot.com", "/games/" + teakConfiguration.appConfiguration.appId + "/settings.json", payload, session) {
-                            @Override
-                            protected void done(int responseCode, String responseBody) {
-                                try {
-                                    JSONObject response = new JSONObject(responseBody);
+                    new Thread(new Request("gocarrot.com", "/games/" + teakConfiguration.appConfiguration.appId + "/settings.json", payload, session) {
+                        @Override
+                        protected void done(int responseCode, String responseBody) {
+                            try {
+                                JSONObject response = new JSONObject(responseBody);
 
-                                    RemoteConfiguration configuration = new RemoteConfiguration(teakConfiguration.appConfiguration,
-                                            response.isNull("auth") ? "gocarrot.com" : response.getString("auth"),
-                                            nullInsteadOfEmpty(response.isNull("sdk_sentry_dsn") ? null : response.getString("sdk_sentry_dsn")),
-                                            nullInsteadOfEmpty(response.isNull("app_sentry_dsn") ? null : response.getString("app_sentry_dsn")),
-                                            nullInsteadOfEmpty(response.isNull("gcm_sender_id") ? null : response.getString("gcm_sender_id")));
+                                RemoteConfiguration configuration = new RemoteConfiguration(teakConfiguration.appConfiguration,
+                                        response.isNull("auth") ? "gocarrot.com" : response.getString("auth"),
+                                        nullInsteadOfEmpty(response.isNull("sdk_sentry_dsn") ? null : response.getString("sdk_sentry_dsn")),
+                                        nullInsteadOfEmpty(response.isNull("app_sentry_dsn") ? null : response.getString("app_sentry_dsn")),
+                                        nullInsteadOfEmpty(response.isNull("gcm_sender_id") ? null : response.getString("gcm_sender_id")));
 
-                                    Teak.log.i("configuration.remote", configuration.to_h());
-                                    TeakEvent.postEvent(new RemoteConfigurationEvent(configuration));
-                                } catch (Exception e) {
-                                    Teak.log.exception(e);
-                                }
+                                Teak.log.i("configuration.remote", configuration.to_h());
+                                TeakEvent.postEvent(new RemoteConfigurationEvent(configuration));
+                            } catch (Exception e) {
+                                Teak.log.exception(e);
                             }
-                        }).start();*/
-                    }
+                        }
+                    }).start();*/
                 }
             }
         });
