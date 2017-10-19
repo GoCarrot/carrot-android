@@ -29,7 +29,8 @@ import io.teak.sdk.event.RemoteConfigurationEvent;
 
 public class TeakConfiguration {
     public static boolean initialize(@NonNull Context context, @NonNull IObjectFactory objectFactory) {
-        TeakConfiguration teakConfiguration = new TeakConfiguration(context, objectFactory);
+        TeakConfiguration teakConfiguration = new TeakConfiguration(context.getApplicationContext(), objectFactory);
+
         if (teakConfiguration.deviceConfiguration.deviceId != null) {
             Instance = teakConfiguration;
             synchronized (eventListenersMutex) {
