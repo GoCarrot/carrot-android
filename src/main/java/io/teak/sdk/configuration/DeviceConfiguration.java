@@ -45,6 +45,7 @@ public class DeviceConfiguration {
     public boolean limitAdTracking;
 
     private final IPushProvider pushProvider;
+    private String pushSenderId;
 
     public DeviceConfiguration(@NonNull IObjectFactory objectFactory) {
         this.pushProvider = objectFactory.getPushProvider();
@@ -70,6 +71,9 @@ public class DeviceConfiguration {
         if (this.deviceId == null) {
             return;
         }
+
+        final TeakConfiguration teakConfiguration = TeakConfiguration.get();
+        this.pushSenderId = teakConfiguration.appConfiguration.pushSenderId;
 
         // Listen for Ad Info and Push Key events
         TeakEvent.addEventListener(new TeakEvent.EventListener() {
@@ -104,12 +108,6 @@ public class DeviceConfiguration {
             public void onNewEvent(@NonNull TeakEvent event) {
                 if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
                     final RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent)event).remoteConfiguration;
-                    final TeakConfiguration teakConfiguration = TeakConfiguration.get();
-
-                    String pushSenderId = null;
-                    if (teakConfiguration != null) {
-                        pushSenderId = teakConfiguration.appConfiguration.pushSenderId;
-                    }
 
                     // Override the provided GCM Sender Id with one from Teak, if applicable
                     if (remoteConfiguration.gcmSenderId != null) {
@@ -117,13 +115,17 @@ public class DeviceConfiguration {
                         // TODO: Future-Pat, when you add another push provider re-visit the RemoteConfiguration provided sender id
                     }
 
-                    if (pushProvider != null && pushSenderId != null) {
-                        // If the push provider isn't GCM, the push sender id parameter is ignored
-                        pushProvider.requestPushKey(pushSenderId);
-                    }
+                    requestNewPushToken();
                 }
             }
         });
+    }
+
+    public void requestNewPushToken() {
+        // If the push provider isn't GCM, the push sender id parameter is ignored
+        if (pushProvider != null) {
+            pushProvider.requestPushKey(pushSenderId);
+        }
     }
 
     public Map<String, Object> to_h() {
