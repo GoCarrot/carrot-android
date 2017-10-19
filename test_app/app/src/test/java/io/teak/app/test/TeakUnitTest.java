@@ -36,10 +36,15 @@ public class TeakUnitTest {
         // Package Manager mock
         PackageManager packageManager = mock(PackageManager.class);
 
+        // TODO: getInstallerPackageName ?
+
         // Context mock
         Context context = mock(Context.class);
         when(context.getPackageName()).thenReturn("io.teak.app.test");
         when(context.getPackageManager()).thenReturn(packageManager);
+        when(context.getApplicationContext()).thenReturn(context);
+
+        // TODO: getApplicationInfo - applicationInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE ?
 
         // Create IStore mock
         store = mock(io.teak.sdk.store.IStore.class);
