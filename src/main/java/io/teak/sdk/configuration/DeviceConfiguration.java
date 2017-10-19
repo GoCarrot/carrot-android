@@ -72,9 +72,6 @@ public class DeviceConfiguration {
             return;
         }
 
-        final TeakConfiguration teakConfiguration = TeakConfiguration.get();
-        this.pushSenderId = teakConfiguration.appConfiguration.pushSenderId;
-
         // Listen for Ad Info and Push Key events
         TeakEvent.addEventListener(new TeakEvent.EventListener() {
             @Override
@@ -122,9 +119,14 @@ public class DeviceConfiguration {
     }
 
     public void requestNewPushToken() {
+        if (this.pushSenderId == null) {
+            final TeakConfiguration teakConfiguration = TeakConfiguration.get();
+            this.pushSenderId = teakConfiguration.appConfiguration.pushSenderId;
+        }
+
         // If the push provider isn't GCM, the push sender id parameter is ignored
-        if (pushProvider != null) {
-            pushProvider.requestPushKey(pushSenderId);
+        if (this.pushProvider != null) {
+            this.pushProvider.requestPushKey(this.pushSenderId);
         }
     }
 
