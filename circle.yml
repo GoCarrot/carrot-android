@@ -1,6 +1,9 @@
 machine:
     java:
         version: oraclejdk8
+dependencies:
+  pre:
+    - if [ ! -d "/usr/local/android-sdk-linux/platforms/android-25" ]; then echo y | android update sdk --no-ui --all --filter "android-25"; fi
 checkout:
   post:
     - git fetch --tags
