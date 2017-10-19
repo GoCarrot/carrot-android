@@ -2,6 +2,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="io.teak.app.test">
 
+    <!-- Push notification permissions -->
+    <uses-permission android:name="io.teak.app.test.permission.C2D_MESSAGE" />
+    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
+    <permission android:name="io.teak.app.test.permission.C2D_MESSAGE" android:protectionLevel="signature" />
+
+    <!-- Teak-required permissions -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -17,8 +26,9 @@
             </intent-filter>
         </activity>
 
-        <!-- Remove android:permission="com.google.android.c2dm.permission.SEND" for automated testing -->
+        <!-- This is Teak's core Broadcast Listener -->
         <receiver android:name="io.teak.sdk.Teak" android:exported="true">
+            <!-- Removed android:permission="com.google.android.c2dm.permission.SEND" for automated testing -->
             <intent-filter>
                 <action android:name="io.teak.app.test.intent.TEAK_NOTIFICATION_OPENED" />
                 <action android:name="io.teak.app.test.intent.TEAK_NOTIFICATION_CLEARED" />
@@ -28,20 +38,14 @@
             </intent-filter>
         </receiver>
 
+        <!-- This listener is used by some versions of GCM, and will tell Teak to re-generate the GCM token -->
         <service android:name="io.teak.sdk.InstanceIDListenerService" android:exported="false" >
             <intent-filter>
                 <action android:name="com.google.android.gms.iid.InstanceID" />
             </intent-filter>
         </service>
 
+        <!-- This is Teak's internal exception reporting service, it allows the Teak SDK to self-report exceptions. -->
         <service android:name="io.teak.sdk.service.RavenService" android:process=":teak.raven" android:exported="false" />
     </application>
-
-    <!-- Push notification permissions -->
-    <permission android:name="io.teak.app.test.permission.C2D_MESSAGE" android:protectionLevel="signature" />
-    <uses-permission android:name="io.teak.app.test.permission.C2D_MESSAGE" />
-    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
 </manifest>
