@@ -14,7 +14,6 @@
  */
 package io.teak.sdk.configuration;
 
-import android.content.Context;
 import android.support.annotation.NonNull;
 
 import org.json.JSONObject;
@@ -96,7 +95,8 @@ public class DeviceConfiguration {
 
         // Listen for remote configuration events
         if (true) {
-            throw new AssertionError("RemoteConfiguration is already ready.");
+            // TODO: Test/handle the case where remote config is already ready.
+            //throw new AssertionError("RemoteConfiguration is already ready.");
         }
 
         TeakEvent.addEventListener(new TeakEvent.EventListener() {
@@ -117,7 +117,7 @@ public class DeviceConfiguration {
                         // TODO: Future-Pat, when you add another push provider re-visit the RemoteConfiguration provided sender id
                     }
 
-                    if (pushProvider != null) {
+                    if (pushProvider != null && pushSenderId != null) {
                         // If the push provider isn't GCM, the push sender id parameter is ignored
                         pushProvider.requestPushKey(pushSenderId);
                     }
