@@ -42,6 +42,7 @@ import io.teak.sdk.IObjectFactory;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.configuration.AppConfiguration;
+import io.teak.sdk.core.ITeakCore;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.io.DefaultAndroidDeviceInfo;
 import io.teak.sdk.io.DefaultAndroidNotification;
@@ -63,6 +64,7 @@ class TeakIntegrationTest {
     IStore store;
     IAndroidResources androidResources;
     TestTeakEventListener eventListener;
+    ITeakCore teakCore;
 
     private final DefaultAndroidDeviceInfo androidDeviceInfo;
     private final IPushProvider pushProvider;
@@ -91,6 +93,9 @@ class TeakIntegrationTest {
 
             // Create IStore mock
             store = mock(io.teak.sdk.store.IStore.class);
+
+            // Teak Core mock
+            teakCore = mock(ITeakCore.class);
 
             // Android Resources mock
             androidResources = mock(io.teak.sdk.io.IAndroidResources.class);
@@ -133,6 +138,12 @@ class TeakIntegrationTest {
                 @Override
                 public IAndroidNotification getAndroidNotification() {
                     return androidNotification;
+                }
+
+                @NonNull
+                @Override
+                public ITeakCore getTeakCore() {
+                    return teakCore;
                 }
             };
         }

@@ -11,6 +11,7 @@ import io.teak.sdk.IObjectFactory;
 import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.configuration.AppConfiguration;
+import io.teak.sdk.core.ITeakCore;
 import io.teak.sdk.io.IAndroidDeviceInfo;
 import io.teak.sdk.io.IAndroidNotification;
 import io.teak.sdk.io.IAndroidResources;
@@ -26,6 +27,7 @@ public class TeakUnitTest {
     IAndroidResources androidResources;
     TestTeakEventListener eventListener;
     IAndroidNotification androidNotification;
+    ITeakCore teakCore;
 
     @Before
     public void setupMocksAndTeakConfiguration() throws NoSuchFieldException, IllegalAccessException {
@@ -63,6 +65,9 @@ public class TeakUnitTest {
         // Android Notification mock
         androidNotification = mock(IAndroidNotification.class);
 
+        // Teak Core
+        teakCore = mock(ITeakCore.class);
+
         // Create and add an easily mockable TeakEvent.EventListener
         if (eventListener != null) {
             TeakEvent.removeEventListener(eventListener);
@@ -99,6 +104,12 @@ public class TeakUnitTest {
             @Override
             public IAndroidNotification getAndroidNotification() {
                 return androidNotification;
+            }
+
+            @NonNull
+            @Override
+            public ITeakCore getTeakCore() {
+                return teakCore;
             }
         };
 
