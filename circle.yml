@@ -11,10 +11,7 @@ dependencies:
     - find $ANDROID_HOME -xdev | sort > fs-after.txt
     - diff -daU 0 fs-before.txt fs-after.txt | grep -vE '^(@@|\+\+\+|---)' > fs.diff
   cache_directories:
-    #- /usr/local/android-sdk-linux/build-tools/26.0.2
-    #- /usr/local/android-sdk-linux/platforms/android-26
-    #- /usr/local/android-sdk-linux/extras/android/m2repository
-    # TODO: Play services is where?
+    # TODO: Use fs.diff to figure out what to cache
 checkout:
   post:
     - git fetch --tags
