@@ -66,7 +66,7 @@ class TeakIntegrationTest {
     private final IPushProvider pushProvider;
 
     TeakIntegrationTest() {
-        final Context context = InstrumentationRegistry.getContext();
+        final Context context = InstrumentationRegistry.getTargetContext();
         this.androidDeviceInfo  = new DefaultAndroidDeviceInfo(context);
         this.pushProvider = DefaultObjectFactory.createPushProvider(context);
     }
