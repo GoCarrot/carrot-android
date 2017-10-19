@@ -130,17 +130,9 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
 
     @Override
     public void requestAdvertisingId() {
-        // TODO: I'm not certain if this is the best way to check if we need to use this method to get the advertising id
-        if (this.hasADM()) {
-            try {
-                ContentResolver cr = this.context.getContentResolver();
-                boolean limitAdTracking = Settings.Secure.getInt(cr, "limit_ad_tracking") != 0;
-                String advertisingId = Settings.Secure.getString(cr, "advertising_id");
-
-                TeakEvent.postEvent(new AdvertisingInfoEvent(advertisingId, limitAdTracking));
-            } catch (Exception ignored) {
-            }
-        } else if (this.hasGooglePlay()) {
+        // First try to use Google Play
+        boolean usingGooglePlayForAdId = false;
+        try {
             final FutureTask<AdvertisingIdClient.Info> adInfoFuture = new FutureTask<>(new RetriableTask<>(10, 7000L, new Callable<AdvertisingIdClient.Info>() {
                 @Override
                 public AdvertisingIdClient.Info call() throws Exception {
@@ -151,10 +143,8 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
                     throw new Exception("Retrying GooglePlayServicesUtil.isGooglePlayServicesAvailable()");
                 }
             }));
-            new Thread(adInfoFuture).start();
 
             // TODO: This needs to be re-checked in case it's something like SERVICE_UPDATING or SERVICE_VERSION_UPDATE_REQUIRED
-
             //noinspection deprecation
             if (GooglePlayServicesUtil.isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS) {
                 new Thread(new Runnable() {
@@ -171,6 +161,25 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
                         }
                     }
                 }).start();
+
+                // Only start running the future if we get this far
+                new Thread(adInfoFuture).start();
+
+                // And we're good
+                usingGooglePlayForAdId = true;
+            }
+        } catch (Exception ignored) {
+        }
+
+        // If not using Google Play, try Settings.Secure
+        if (!usingGooglePlayForAdId) {
+            try {
+                ContentResolver cr = this.context.getContentResolver();
+                String advertisingId = Settings.Secure.getString(cr, "advertising_id");
+                boolean limitAdTracking = Settings.Secure.getInt(cr, "limit_ad_tracking") != 0;
+
+                TeakEvent.postEvent(new AdvertisingInfoEvent(advertisingId, limitAdTracking));
+            } catch (Exception ignored) {
             }
         }
     }
