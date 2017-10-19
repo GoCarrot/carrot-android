@@ -98,7 +98,7 @@ class Amazon implements IStore {
             JSONObject receipt = originalJson.getJSONObject("receipt");
             JSONObject userData = originalJson.getJSONObject("userData");
 
-            JSONObject payload = new JSONObject();
+            Map<String, Object> payload = new HashMap<>();
             payload.put("purchase_token", receipt.get("receiptId"));
             payload.put("purchase_time_string", receipt.get("purchaseDate"));
             payload.put("product_id", receipt.get("sku"));

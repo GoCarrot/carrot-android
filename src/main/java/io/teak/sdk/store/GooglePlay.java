@@ -27,10 +27,12 @@ import android.content.pm.ResolveInfo;
 import android.os.Bundle;
 import android.os.IBinder;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 
 import java.lang.reflect.Method;
+import java.util.Map;
 
 import org.json.JSONObject;
 
@@ -165,7 +167,7 @@ class GooglePlay implements IStore {
 
     public void processPurchaseJson(JSONObject originalJson) {
         try {
-            JSONObject payload = new JSONObject();
+            Map<String, Object> payload = new HashMap<>();
             payload.put("purchase_token", originalJson.get("purchaseToken"));
             payload.put("purchase_time", originalJson.get("purchaseTime"));
             payload.put("product_id", originalJson.get("productId"));
