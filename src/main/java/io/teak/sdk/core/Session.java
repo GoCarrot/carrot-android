@@ -618,21 +618,8 @@ public class Session {
 
             final TeakConfiguration teakConfiguration = TeakConfiguration.get();
 
-            // Check and see if this is (probably) the first time this app has been ever launched
-            boolean isFirstLaunch = false;
-            // TODO: Just make a TeakPreferences class or something
-            if (teakConfiguration.deviceConfiguration.preferences != null) {
-                long firstLaunch = teakConfiguration.deviceConfiguration.preferences.getLong(PREFERENCE_FIRST_RUN, 0);
-                if (firstLaunch == 0) {
-                    firstLaunch = new Date().getTime() / 1000;
-                    SharedPreferences.Editor editor = teakConfiguration.deviceConfiguration.preferences.edit();
-                    editor.putLong(PREFERENCE_FIRST_RUN, firstLaunch);
-                    editor.apply();
-                    isFirstLaunch = true;
-                }
-            }
-
-            // If this is the first launch, see if the InstallReferrerReceiver has anything for us.
+            // If this is the first launch, see if the InstallReferrerReceiver has anything for us
+            boolean isFirstLaunch = intent.getBooleanExtra("teakIsFirstLaunch", false);
             Future<String> deepLinkURL = null;
             if (isFirstLaunch) {
                 FutureTask<String> referrerPollTask = new FutureTask<>(new Callable<String>() {

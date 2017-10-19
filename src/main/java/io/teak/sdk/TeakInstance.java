@@ -21,6 +21,7 @@ import android.app.Application;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -30,6 +31,7 @@ import android.support.annotation.NonNull;
 import org.json.JSONObject;
 
 import java.security.InvalidParameterException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,6 +48,8 @@ import io.teak.sdk.store.IStore;
 
 class TeakInstance {
     private final IObjectFactory objectFactory;
+
+    private static final String PREFERENCE_FIRST_RUN = "io.teak.sdk.Preferences.FirstRun";
 
     @SuppressLint("ObsoleteSdkInt")
     TeakInstance(@NonNull Activity activity, @NonNull IObjectFactory objectFactory) {
@@ -173,15 +177,6 @@ class TeakInstance {
             payload.put("object_type", objectTypeId);
             payload.put("object_instance_id", objectInstanceId);
             TeakEvent.postEvent(new TrackEventEvent(payload));
-
-            // TODO: Handle TrackEventEvent in TeakCore
-            /*
-            Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
-                @Override
-                public void run(Session session) {
-                    new Request("/me/events", payload, session).run();
-                }
-            });*/
         }
     }
 
@@ -354,6 +349,26 @@ class TeakInstance {
                 if (intent == null) {
                     intent = new Intent();
                 }
+
+                // Check and see if this is (probably) the first time this app has been ever launched
+                boolean isFirstLaunch = false;
+                SharedPreferences preferences = null;
+                try {
+                    preferences = activity.getSharedPreferences(Teak.PREFERENCES_FILE, Context.MODE_PRIVATE);
+                    if (preferences != null) {
+                        long firstLaunch = preferences.getLong(PREFERENCE_FIRST_RUN, 0);
+                        if (firstLaunch == 0) {
+                            firstLaunch = new Date().getTime() / 1000;
+                            SharedPreferences.Editor editor = preferences.edit();
+                            editor.putLong(PREFERENCE_FIRST_RUN, firstLaunch);
+                            editor.apply();
+                            isFirstLaunch = true;
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+                intent.putExtra("teakIsFirstLaunch", isFirstLaunch);
+
                 TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Resumed, intent));
             }
         }
