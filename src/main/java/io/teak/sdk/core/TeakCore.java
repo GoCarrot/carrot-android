@@ -43,6 +43,7 @@ import io.teak.sdk.event.NotificationDisplayEvent;
 import io.teak.sdk.event.PurchaseEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
 import io.teak.sdk.event.PushNotificationEvent;
+import io.teak.sdk.event.TrackEventEvent;
 
 public class TeakCore implements ITeakCore {
     public TeakCore(Context context) {
@@ -66,6 +67,17 @@ public class TeakCore implements ITeakCore {
                         intent.putExtra("teakProcessedForPush", true);
                         checkIntentForPushLaunchAndSendBroadcasts(intent);
                     }
+                    break;
+                }
+                case TrackEventEvent.Type: {
+                    final Map<String, Object> payload = ((TrackEventEvent)event).payload;
+                    /*
+                    Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+                        @Override
+                        public void run(Session session) {
+                            new Request("/me/events", payload, session).run();
+                        }
+                    });*/
                     break;
                 }
                 case PurchaseEvent.Type: {
