@@ -287,13 +287,9 @@ class TeakInstance {
 
     void purchaseSucceeded(JSONObject originalJson) {
         if (this.appStore != null) {
-            try {
-                Teak.log.i("puchase.succeeded", Helpers.jsonToMap(originalJson));
-            } catch (Exception ignored) {
-            }
             this.appStore.processPurchaseJson(originalJson);
         } else {
-            Teak.log.e("puchase.succeeded", "Unable to process purchaseSucceeded, no active app store.");
+            Teak.log.e("purchase.succeeded.error", "Unable to process purchaseSucceeded, no active app store.");
         }
     }
 
@@ -306,7 +302,7 @@ class TeakInstance {
             if (this.appStore != null) {
                 this.appStore.checkActivityResultForPurchase(resultCode, data);
             } else {
-                Teak.log.e("puchase.failed", "Unable to checkActivityResultForPurchase, no active app store.");
+                Teak.log.e("purchase.failed.error", "Unable to checkActivityResultForPurchase, no active app store.");
             }
         }
     }
