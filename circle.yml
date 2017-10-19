@@ -1,10 +1,13 @@
 machine:
-    java:
-        version: oraclejdk8
+  java:
+    version: oraclejdk8
+  environment:
+    ANDROID_HOME: /usr/local/android-sdk-linux
 dependencies:
   pre:
-    - if [ ! -d "/usr/local/android-sdk-linux/platforms/android-25" ]; then echo y | android update sdk --no-ui --all --filter "android-25"; echo y | android update sdk -u -a -t 3; fi
-    - yes | sdkmanager --licenses
+    #- if [ ! -d "/usr/local/android-sdk-linux/platforms/android-25" ]; then echo y | android update sdk --no-ui --all --filter "android-25"; echo y | android update sdk -u -a -t 3; fi
+    - echo y | android update sdk --no-ui --all --filter tools,platform-tools,build-tools-25.0.0,android-25,extra-google-m2repository,extra-google-google_play_services
+    #- yes | sdkmanager --licenses
   cache_directories:
     - /usr/local/android-sdk-linux/tools
     - /usr/local/android-sdk-linux/platforms/android-25
