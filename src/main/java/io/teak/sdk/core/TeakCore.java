@@ -37,6 +37,7 @@ import io.teak.sdk.NotificationBuilder;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
+import io.teak.sdk.event.ExternalBroadcastEvent;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.NotificationDisplayEvent;
 import io.teak.sdk.event.PurchaseEvent;
@@ -54,8 +55,13 @@ public class TeakCore implements ITeakCore {
         @Override
         public void onNewEvent(@NonNull TeakEvent event) {
             switch (event.eventType) {
+                case ExternalBroadcastEvent.Type: {
+                    final Intent intent = ((ExternalBroadcastEvent)event).intent;
+                    sendLocalBroadcast(intent);
+                    break;
+                }
                 case LifecycleEvent.Resumed: {
-                    Intent intent = ((LifecycleEvent) event).intent;
+                    final Intent intent = ((LifecycleEvent) event).intent;
                     if (!intent.getBooleanExtra("teakProcessedForPush", false)) {
                         intent.putExtra("teakProcessedForPush", true);
                         checkIntentForPushLaunchAndSendBroadcasts(intent);
@@ -178,6 +184,10 @@ public class TeakCore implements ITeakCore {
         }
     };
 
+    private void sendLocalBroadcast(Intent intent) {
+        this.localBroadcastManager.sendBroadcast(intent);
+    }
+
     private void checkIntentForPushLaunchAndSendBroadcasts(Intent intent) {
         if (intent.hasExtra("teakNotifId")) {
             Bundle bundle = intent.getExtras();
@@ -214,7 +224,7 @@ public class TeakCore implements ITeakCore {
                                     // Broadcast reward only if everything goes well
                                     final Intent rewardIntent = new Intent(Teak.REWARD_CLAIM_ATTEMPT);
                                     rewardIntent.putExtra("reward", rewardMap);
-                                    localBroadcastManager.sendBroadcast(rewardIntent);
+                                    sendLocalBroadcast(rewardIntent);
                                 } catch (Exception e) {
                                     Teak.log.exception(e);
                                 }
