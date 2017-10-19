@@ -13,6 +13,7 @@ import io.teak.sdk.TeakEvent;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.io.IAndroidDeviceInfo;
 import io.teak.sdk.io.IAndroidResources;
+import io.teak.sdk.push.IPushProvider;
 import io.teak.sdk.store.IStore;
 
 import static org.mockito.Mockito.mock;
