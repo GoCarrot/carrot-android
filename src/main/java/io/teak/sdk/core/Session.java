@@ -605,7 +605,7 @@ public class Session {
 
             // If this intent has already been processed by Teak, just reset the state and we are done.
             // Otherwise, out-of-app deep links can cause a back-stack loop
-            if (intent.getBooleanExtra("processedByTeak", false)) {
+            if (intent.getBooleanExtra("teakSessionProcessed", false)) {
                 // Reset state on current session, if it is expiring
                 synchronized (currentSession.stateMutex) {
                     if (currentSession.state == State.Expiring) {
@@ -614,6 +614,7 @@ public class Session {
                 }
                 return;
             }
+            intent.putExtra("teakSessionProcessed", true);
 
             final TeakConfiguration teakConfiguration = TeakConfiguration.get();
 
