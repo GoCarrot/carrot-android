@@ -83,7 +83,7 @@ public class DebugConfiguration {
         Teak.log.useRapidIngestionEndpoint(this.isDevelopmentBuild);
     }
 
-    void setPreferenceForceDebug(boolean forceDebug) {
+    public void setPreferenceForceDebug(boolean forceDebug) {
         if (forceDebug != this.forceDebug) {
             try {
                 SharedPreferences.Editor editor = this.preferences.edit();
