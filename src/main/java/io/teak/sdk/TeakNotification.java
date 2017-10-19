@@ -72,11 +72,6 @@ import io.teak.sdk.core.Session;
  */
 public class TeakNotification {
     /**
-     * The 'tag' specified by Teak to the {@link NotificationCompat}
-     */
-    public static final String NOTIFICATION_TAG = "io.teak.sdk.TeakNotification";
-
-    /**
      * The {@link Intent} action sent by Teak when a notification has been opened by the user.
      * <p/>
      * This allows you to take special actions, it is not required that you listen for it.
@@ -432,38 +427,41 @@ public class TeakNotification {
 
     /**************************************************************************/
 
-    static final String INBOX_CACHE_CREATE_SQL = "CREATE TABLE IF NOT EXISTS inbox(teak_notification_id INTEGER, android_id INTEGER, notification_payload TEXT)";
-
     // Version of the push from Teak
     static final int TEAK_NOTIFICATION_V0 = 0;
     int notificationVersion = TEAK_NOTIFICATION_V0;
 
+    final String teakCreativeName;
+
     // v1
-    String message;
-    String longText;
-    String teakRewardId;
-    String imageAssetA;
-    String teakDeepLink;
-    int platformId;
-    long teakNotifId;
-    JSONObject extras;
+    public final int platformId;
+    public final long teakNotifId;
+
+    final String message;
+    final String longText;
+    final String imageAssetA;
+
+    final JSONObject extras;
+    final String teakDeepLink;
+    final String teakRewardId;
 
     // v2+
-    JSONObject display;
+    final JSONObject display;
 
-    static SparseArray<Thread> notificationUpdateThread = new SparseArray<>();
-
-    private TeakNotification(Bundle bundle) {
+    public TeakNotification(Bundle bundle) {
         this.message = bundle.getString("message");
         this.longText = bundle.getString("longText");
         this.teakRewardId = bundle.getString("teakRewardId");
         this.imageAssetA = bundle.getString("imageAssetA");
         this.teakDeepLink = bundle.getString("teakDeepLink");
+        this.teakCreativeName = bundle.getString("teakCreativeName");
+
+        JSONObject tempExtras = null;
         try {
-            this.extras = bundle.getString("extras") == null ? null : new JSONObject(bundle.getString("extras"));
-        } catch (JSONException e) {
-            this.extras = null;
+            tempExtras = bundle.getString("extras") == null ? null : new JSONObject(bundle.getString("extras"));
+        } catch (Exception ignored) {
         }
+        this.extras = tempExtras;
 
         try {
             this.notificationVersion = Integer.parseInt(bundle.getString("version"));
@@ -471,93 +469,24 @@ public class TeakNotification {
             this.notificationVersion = TEAK_NOTIFICATION_V0;
         }
 
+        JSONObject tempDisplay = null;
         if (bundle.getString("display") != null) {
             try {
-                this.display = new JSONObject(bundle.getString("display"));
+                tempDisplay = new JSONObject(bundle.getString("display"));
             } catch (Exception e) {
                 Teak.log.exception(e);
                 this.notificationVersion = TEAK_NOTIFICATION_V0;
             }
         }
+        this.display = tempDisplay;
 
+        long tempTeakNotifId = 0;
         try {
-            this.teakNotifId = Long.parseLong(bundle.getString("teakNotifId"));
-        } catch (Exception e) {
-            this.teakNotifId = 0;
+            tempTeakNotifId = Long.parseLong(bundle.getString("teakNotifId"));
+        } catch (Exception ignored) {
         }
+        this.teakNotifId = tempTeakNotifId;
 
         this.platformId = new Random().nextInt();
-    }
-
-    static NotificationManager notificationManager;
-
-    static TeakNotification remoteNotificationFromIntent(final Context context, Intent intent) {
-        final Bundle bundle = intent.getExtras();
-
-        if (!bundle.containsKey("teakNotifId")) {
-            return null;
-        }
-
-        final TeakNotification ret = new TeakNotification(bundle);
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                // Add platformId to bundle
-                bundle.putInt("platformId", ret.platformId);
-                // Create native notification
-                Notification nativeNotification = NotificationBuilder.createNativeNotification(context, bundle, ret);
-                if (nativeNotification != null) {
-                    displayNotification(context, ret, nativeNotification);
-                }
-            }
-        }).start();
-
-        return ret;
-    }
-
-    static void displayNotification(Context context, TeakNotification teakNotif, Notification nativeNotification) {
-        // TODO: This is TeakIO functionality
-        if (notificationManager == null) {
-            try {
-                notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            } catch (Exception e) {
-                Teak.log.exception(e);
-                return;
-            }
-        }
-
-        // Send it out
-        Teak.log.i("notification.show", Helpers.mm.h("teakNotifId", teakNotif.teakNotifId, "platformId", teakNotif.platformId));
-
-        try {
-            notificationManager.notify(NOTIFICATION_TAG, teakNotif.platformId, nativeNotification);
-        } catch (SecurityException ignored) {
-            // This likely means that they need the VIBRATE permission on old versions of Android
-            Teak.log.e("permission_needed.vibrate", "Please add this to your AndroidManifest.xml: <uses-permission android:name=\"android.permission.VIBRATE\" />");
-        }
-
-        // TODO: Here is where any kind of thread/update logic will live
-    }
-
-    static void cancel(Context context, int platformId) {
-        // TODO: This is TeakIO functionality
-        if (notificationManager == null) {
-            try {
-                notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            } catch (Exception e) {
-                Teak.log.exception(e);
-                return;
-            }
-        }
-
-        Teak.log.i("notification.cancel", Helpers.mm.h("platformId", platformId));
-
-        notificationManager.cancel(NOTIFICATION_TAG, platformId);
-
-        Thread updateThread = TeakNotification.notificationUpdateThread.get(platformId);
-        if (updateThread != null) {
-            updateThread.interrupt();
-        }
     }
 }

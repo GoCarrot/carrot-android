@@ -44,7 +44,9 @@ import io.teak.sdk.TeakEvent;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.io.DefaultAndroidDeviceInfo;
+import io.teak.sdk.io.DefaultAndroidNotification;
 import io.teak.sdk.io.IAndroidDeviceInfo;
+import io.teak.sdk.io.IAndroidNotification;
 import io.teak.sdk.io.IAndroidResources;
 import io.teak.sdk.push.IPushProvider;
 import io.teak.sdk.store.IStore;
@@ -64,11 +66,13 @@ class TeakIntegrationTest {
 
     private final DefaultAndroidDeviceInfo androidDeviceInfo;
     private final IPushProvider pushProvider;
+    private final IAndroidNotification androidNotification;
 
     TeakIntegrationTest() {
         final Context context = InstrumentationRegistry.getTargetContext();
         this.androidDeviceInfo  = new DefaultAndroidDeviceInfo(context);
         this.pushProvider = DefaultObjectFactory.createPushProvider(context);
+        this.androidNotification = new DefaultAndroidNotification(context);
     }
 
     @Before
@@ -123,6 +127,12 @@ class TeakIntegrationTest {
                 @Override
                 public IPushProvider getPushProvider() {
                     return pushProvider;
+                }
+
+                @NonNull
+                @Override
+                public IAndroidNotification getAndroidNotification() {
+                    return androidNotification;
                 }
             };
         }

@@ -58,14 +58,14 @@ public class NotificationBuilder {
             return createNativeNotificationV1Plus(context, bundle, teakNotificaton);
         } catch (Exception e) {
             HashMap<String, Object> extras = new HashMap<>();
-            if (bundle.getString("teakCreativeName") != null) extras.put("teakCreativeName", bundle.getString("teakCreativeName"));
+            if (teakNotificaton.teakCreativeName != null) extras.put("teakCreativeName", teakNotificaton.teakCreativeName);
             Teak.log.exception(e, extras);
             // TODO: Report to the 'callback' URL on the push when/if we implement that
             return null;
         }
     }
 
-    public static Notification createNativeNotificationV1Plus(final Context context, Bundle bundle, final TeakNotification teakNotificaton) throws Exception {
+    private static Notification createNativeNotificationV1Plus(final Context context, Bundle bundle, final TeakNotification teakNotificaton) throws Exception {
         // Because we can't be certain that the R class will line up with what is at SDK build time
         // like in the case of Unity et. al.
         class IdHelper {
@@ -175,7 +175,7 @@ public class NotificationBuilder {
         Notification nativeNotification = builder.build();
 
         class ViewBuilder {
-            public RemoteViews buildViews(String name) throws Exception {
+            private RemoteViews buildViews(String name) throws Exception {
                 int viewLayout = R.layout(name);
                 RemoteViews remoteViews = new RemoteViews(
                         context.getPackageName(),
@@ -208,7 +208,8 @@ public class NotificationBuilder {
                             Bitmap bitmap = loadBitmapFromURI(new URI(value));
                             remoteViews.setImageViewBitmap(viewElementId, bitmap);
                         }
-                    } else if (viewElement.getClass().equals(Button.class)) {
+                    } else //noinspection StatementWithEmptyBody
+                        if (viewElement.getClass().equals(Button.class)) {
                         // TODO: Need more config options for button, image, text, deep link
                     } else {
                         // TODO: report error to the dashboard
@@ -218,8 +219,8 @@ public class NotificationBuilder {
                 return remoteViews;
             }
 
-            public Bitmap loadBitmapFromURI(URI bitmapUri) throws Exception {
-                Bitmap ret = null;
+            private Bitmap loadBitmapFromURI(URI bitmapUri) throws Exception {
+                Bitmap ret;
                 URL aURL = new URL(bitmapUri.toString());
                 URLConnection conn = aURL.openConnection();
                 conn.connect();
@@ -269,7 +270,7 @@ public class NotificationBuilder {
         return nativeNotification;
     }
 
-    public static Notification createNativeNotificationV0(final Context context, Bundle bundle, TeakNotification teakNotificaton) {
+    private static Notification createNativeNotificationV0(final Context context, Bundle bundle, TeakNotification teakNotificaton) {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
 
         // Rich text message
@@ -283,7 +284,7 @@ public class NotificationBuilder {
         builder.setTicker(richMessageText);
 
         // Set small view image
-        int smallIconResourceId = 0;
+        int smallIconResourceId;
         try {
             PackageManager pm = context.getPackageManager();
             ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
@@ -359,7 +360,9 @@ public class NotificationBuilder {
 
             URI imageAssetA = null;
             try {
-                imageAssetA = new URI(teakNotificaton.imageAssetA);
+                if (teakNotificaton.imageAssetA != null) {
+                    imageAssetA = new URI(teakNotificaton.imageAssetA);
+                }
             } catch (Exception ignored) {
             }
 

@@ -21,8 +21,10 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import io.teak.sdk.io.DefaultAndroidDeviceInfo;
+import io.teak.sdk.io.DefaultAndroidNotification;
 import io.teak.sdk.io.DefaultAndroidResources;
 import io.teak.sdk.io.IAndroidDeviceInfo;
+import io.teak.sdk.io.IAndroidNotification;
 import io.teak.sdk.io.IAndroidResources;
 import io.teak.sdk.push.IPushProvider;
 import io.teak.sdk.store.IStore;
@@ -33,6 +35,7 @@ public class DefaultObjectFactory implements IObjectFactory {
     private final IStore store;
     private final IAndroidDeviceInfo androidDeviceInfo;
     private final IPushProvider pushProvider;
+    private final IAndroidNotification androidNotification;
 
     DefaultObjectFactory(@NonNull Context context) {
         this.context = context;
@@ -40,6 +43,7 @@ public class DefaultObjectFactory implements IObjectFactory {
         this.store = createStore(context);
         this.androidDeviceInfo = new DefaultAndroidDeviceInfo(this.context);
         this.pushProvider = createPushProvider(context);
+        this.androidNotification = new DefaultAndroidNotification(this.context);
     }
 
     ///// IObjectFactory
@@ -66,6 +70,12 @@ public class DefaultObjectFactory implements IObjectFactory {
     @Override
     public IPushProvider getPushProvider() {
         return this.pushProvider;
+    }
+
+    @NonNull
+    @Override
+    public IAndroidNotification getAndroidNotification() {
+        return this.androidNotification;
     }
 
     ///// Helpers
