@@ -5,13 +5,11 @@ machine:
     ANDROID_HOME: /usr/local/android-sdk-linux
 dependencies:
   pre:
-    #- if [ ! -e /usr/local/android-sdk-linux/build-tools/26.0.2 ]; then echo y | android update sdk --all --no-ui --filter "build-tools-26.0.2"; fi;
-    #- if [ ! -e /usr/local/android-sdk-linux/platforms/android-25 ]; then echo y | android update sdk --all --no-ui --filter "android-26"; fi;
-    #- if ! $(grep -q "Revision=43.0.0" /usr/local/android-sdk-linux/extras/android/m2repository/source.properties); then echo y | android update sdk --all --no-ui --filter "extra-android-m2repository"; fi;
+    - find $ANDROID_HOME -xdev | sort > fs-before.txt
     - echo y | android update sdk -u -a -t tools
-    #- yes | $ANDROID_HOME/tools/bin/sdkmanager --update
     - echo y | $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-25" "build-tools;25.0.2" "extras;google;m2repository" "extras;android;m2repository"
-    #- yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
+    - find $ANDROID_HOME -xdev | sort > fs-after.txt
+    - diff -daU 0 fs-before.txt fs-after.txt | grep -vE '^(@@|\+\+\+|---)' > fs.diff
   cache_directories:
     #- /usr/local/android-sdk-linux/build-tools/26.0.2
     #- /usr/local/android-sdk-linux/platforms/android-26
