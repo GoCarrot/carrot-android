@@ -44,7 +44,7 @@ import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.event.UserIdEvent;
 import io.teak.sdk.store.IStore;
 
-public class TeakInstance {
+class TeakInstance {
     private final IObjectFactory objectFactory;
 
     @SuppressLint("ObsoleteSdkInt")
@@ -335,7 +335,12 @@ public class TeakInstance {
                 // Facebook Access Token Broadcaster
                 facebookAccessTokenBroadcast = new FacebookAccessTokenBroadcast(context);
 
-                if (!TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Created, activity.getIntent()))) {
+                Intent intent = activity.getIntent();
+                if (intent == null) {
+                    intent = new Intent();
+                }
+
+                if (!TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Created, intent))) {
                     cleanup(activity);
                     setState(State.Disabled);
                 } else {
@@ -349,7 +354,11 @@ public class TeakInstance {
         public void onActivityResumed(Activity activity) {
             if (activity.hashCode() == activityHashCode && setState(State.Active)) {
                 Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityResumed"));
-                TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Resumed, activity.getIntent()));
+                Intent intent = activity.getIntent();
+                if (intent == null) {
+                    intent = new Intent();
+                }
+                TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Resumed, intent));
             }
         }
 
@@ -357,7 +366,11 @@ public class TeakInstance {
         public void onActivityPaused(Activity activity) {
             if (activity.hashCode() == activityHashCode && setState(State.Paused)) {
                 Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityPaused"));
-                TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Paused, activity.getIntent()));
+                Intent intent = activity.getIntent();
+                if (intent == null) {
+                    intent = new Intent();
+                }
+                TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Paused, intent));
             }
         }
 

@@ -27,7 +27,7 @@ public class LifecycleEvent extends TeakEvent {
 
     public final Intent intent;
 
-    public LifecycleEvent(@NonNull String type, @Nullable Intent intent) {
+    public LifecycleEvent(@NonNull String type, @NonNull Intent intent) {
         super(type);
         if (type.equals(Created) || type.equals(Paused) || type.equals(Resumed)) {
             this.intent = intent;
