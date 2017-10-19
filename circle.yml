@@ -28,6 +28,14 @@ compile:
     - ./gradlew assemble
 test:
   override:
-    - mkdir -p $CIRCLE_TEST_REPORTS/junit/
+    # Unit Tests
     - (cd test_app; ./gradlew test)
+    # Integration Tests
+    - emulator -avd circleci-android24 -no-window:
+        background: true
+        parallel: true
+    - circle-android wait-for-boot
+    - (cd test_app; ./gradlew connectedAndroidTest)
+    # Report test results to artifacts
+    - mkdir -p $CIRCLE_TEST_REPORTS/junit/
     - (cd test_app; find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;)
