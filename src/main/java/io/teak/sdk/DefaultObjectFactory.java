@@ -20,6 +20,8 @@ import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import com.amazon.device.messaging.ADM;
+
 import io.teak.sdk.core.ITeakCore;
 import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.io.DefaultAndroidDeviceInfo;
@@ -28,6 +30,8 @@ import io.teak.sdk.io.DefaultAndroidResources;
 import io.teak.sdk.io.IAndroidDeviceInfo;
 import io.teak.sdk.io.IAndroidNotification;
 import io.teak.sdk.io.IAndroidResources;
+import io.teak.sdk.push.ADMPushProvider;
+import io.teak.sdk.push.GCMPushProvider;
 import io.teak.sdk.push.IPushProvider;
 import io.teak.sdk.store.IStore;
 
@@ -143,8 +147,20 @@ public class DefaultObjectFactory implements IObjectFactory {
         return null;
     }
 
-    // This is used
     public static IPushProvider createPushProvider(@NonNull Context context) {
+        try {
+            Class.forName("com.amazon.device.messaging.ADM");
+            if(new ADM(context).isSupported()) {
+                return new ADMPushProvider(context);
+            }
+        } catch (Exception ignored) {
+        }
+
+        try {
+            Class.forName("com.google.android.gms.common.GooglePlayServicesUtil");
+            return new GCMPushProvider(context);
+        } catch (Exception ignored) {
+        }
         return null;
     }
 }
