@@ -180,8 +180,7 @@ public class Log {
     }
 
     protected void log(final @NonNull Level logLevel, final @NonNull String eventType, @Nullable Map<String, Object> eventData) {
-
-        // Payload including common payloar
+        // Payload including common payload
         final Map<String, Object> payload = new HashMap<>(this.commonPayload);
 
         payload.put("event_id", this.eventCounter.getAndAdd(1));
