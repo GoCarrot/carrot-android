@@ -302,16 +302,18 @@ public class Session {
         final Session _this = this;
         final TeakConfiguration teakConfiguration = TeakConfiguration.get();
 
+        // TODO: Revist this when we have time, if it is important
+        //noinspection deprecation - Alex said "ehhhhhhh" to changing the heartbeat param to a map
+        @SuppressWarnings("deprecation") final String teakSdkVersion = Teak.SDKVersion;
+
         this.heartbeatService = Executors.newSingleThreadScheduledExecutor();
         this.heartbeatService.scheduleAtFixedRate(new Runnable() {
             public void run() {
                 HttpsURLConnection connection = null;
                 try {
-                    // TODO: Ask Alex if we should use Teak.Version instead, and what needs to be changed
-                    //noinspection deprecation
                     String queryString = "game_id=" + URLEncoder.encode(teakConfiguration.appConfiguration.appId, "UTF-8") +
                             "&api_key=" + URLEncoder.encode(_this.userId, "UTF-8") +
-                            "&sdk_version=" + URLEncoder.encode(Teak.SDKVersion, "UTF-8") +
+                            "&sdk_version=" + URLEncoder.encode(teakSdkVersion, "UTF-8") +
                             "&sdk_platform=" + URLEncoder.encode(teakConfiguration.deviceConfiguration.platformString, "UTF-8") +
                             "&app_version=" + URLEncoder.encode(String.valueOf(teakConfiguration.appConfiguration.appVersion), "UTF-8") +
                             (_this.countryCode == null ? "" : "&country_code=" + URLEncoder.encode(String.valueOf(_this.countryCode), "UTF-8")) +

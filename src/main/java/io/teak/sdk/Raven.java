@@ -14,6 +14,7 @@
  */
 package io.teak.sdk;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
@@ -68,14 +69,16 @@ class Raven implements Thread.UncaughtExceptionHandler {
     }
 
     Raven(@NonNull Context context, @NonNull String appId, @NonNull TeakConfiguration configuration) {
+        //noinspection deprecation - This must be a string as per Sentry API
+        @SuppressWarnings("deprecation") final String teakSdkVersion = Teak.SDKVersion;
+
         this.applicationContext = context;
         this.appId = appId;
 
         // Fill in as much of the payload template as we can
         payloadTemplate.put("logger", "teak");
         payloadTemplate.put("platform", "java");
-        //noinspection deprecation - This must be a string as per Sentry API
-        payloadTemplate.put("release", Teak.SDKVersion);
+        payloadTemplate.put("release", teakSdkVersion);
         payloadTemplate.put("server_name", configuration.appConfiguration.bundleId);
 
         HashMap<String, Object> sdkAttribute = new HashMap<>();
