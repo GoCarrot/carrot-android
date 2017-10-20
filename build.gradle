@@ -8,10 +8,25 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:2.3.3'
+        classpath 'com.getkeepsafe.dexcount:dexcount-gradle-plugin:0.8.1'
     }
 }
 
 apply plugin: 'com.android.library'
+apply plugin: 'com.getkeepsafe.dexcount' // Outputs to ${buildDir}/outputs/dexcount/${variant}
+
+dexcount {
+    format = "list"
+    includeClasses = false
+    includeClassCount = false
+    includeFieldCount = true
+    includeTotalMethodCount = false
+    orderByMethodCount = false
+    verbose = false
+    maxTreeDepth = Integer.MAX_VALUE
+    runOnEachPackage = true
+    maxMethodCount = 1100 // This includes android.* etc dependencies, so I guess just do it this way for now
+}
 
 repositories {
     mavenCentral()
@@ -23,10 +38,6 @@ allprojects {
             options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
         }
     }
-}
-
-android.libraryVariants.all { variant ->
-
 }
 
 android.libraryVariants.all { variant ->
