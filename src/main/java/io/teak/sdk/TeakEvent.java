@@ -1,4 +1,4 @@
-/* Teak -- Copyright (C) 2016-2017 GoCarrot Inc.
+/* Teak -- Copyright (C) 2017 GoCarrot Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,8 @@ public class TeakEvent {
                             while ((event = eventQueue.take()).eventType != null) {
                                 TeakEvent.eventListeners.processEvent(event);
                             }
-                        } catch (Exception ignored){
+                        } catch (Exception e) {
+                            Teak.log.exception(e);
                         }
                     }
                 });
@@ -69,7 +70,7 @@ public class TeakEvent {
 
     public static class EventListeners {
         private final Object eventListenersMutex = new Object();
-        private final ArrayList<EventListener> eventListeners = new ArrayList<>();
+        private ArrayList<EventListener> eventListeners = new ArrayList<>();
 
         void add(EventListener e) {
             synchronized (this.eventListenersMutex) {
@@ -85,10 +86,47 @@ public class TeakEvent {
             }
         }
 
-        void processEvent(TeakEvent event) {
+        void processEvent(final TeakEvent event) {
+            // Because events can cause other event listeners to get added (and that should be allowed)
+            // copy the list on each event
+            // TODO: There is probably a better way
+            ArrayList<EventListener> eventListenersForEvent;
             synchronized (this.eventListenersMutex) {
-                for (EventListener e : this.eventListeners) {
-                    e.onNewEvent(event);
+                eventListenersForEvent = this.eventListeners;
+                this.eventListeners = new ArrayList<>(this.eventListeners);
+            }
+
+            for (EventListener e : eventListenersForEvent) {
+                // TODO: This seems...kind of horrible, but maybe the Java runtime will be fine with it
+                final EventListener currentListener = e;
+                Thread thread = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        currentListener.onNewEvent(event);
+                    }
+                });
+                thread.start();
+                try {
+                    thread.join(500);
+                } catch(Exception ignored) {
+                }
+
+                if (thread.isAlive()) {
+                    StackTraceElement[] trace = thread.getStackTrace();
+                    String backTrace = "";
+                    for (StackTraceElement element : trace) {
+                        backTrace += "\n\t" + element.toString();
+                    }
+
+                    String errorText = "Took too long processing '" + event.eventType + "' in:" + backTrace;
+
+                    // TODO: Probably shouldn't throw here, but report it somehow
+                    if (android.os.Debug.isDebuggerConnected()) {
+                        android.util.Log.e(Teak.LOG_TAG, errorText);
+                    } else {
+                        thread.interrupt();
+                        throw new IllegalStateException(errorText);
+                    }
                 }
             }
         }

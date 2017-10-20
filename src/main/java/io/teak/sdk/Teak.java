@@ -44,7 +44,7 @@ import io.teak.sdk.io.IAndroidResources;
  * Teak
  */
 public class Teak extends BroadcastReceiver {
-    private static final String LOG_TAG = "Teak";
+    static final String LOG_TAG = "Teak";
 
     /**
      * Version of the Teak SDK.
