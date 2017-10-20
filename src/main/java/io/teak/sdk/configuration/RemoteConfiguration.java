@@ -30,6 +30,7 @@ import io.teak.sdk.Request;
 //import io.teak.sdk.Session;
 import io.teak.sdk.Teak;
 import io.teak.sdk.core.Session;
+import io.teak.sdk.event.DeepLinksReadyEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.SessionStateEvent;
 
@@ -54,14 +55,13 @@ public class RemoteConfiguration {
         TeakEvent.addEventListener(new TeakEvent.EventListener() {
             @Override
             public void onNewEvent(@NonNull TeakEvent event) {
-                // TODO: On Deep Links Ready event
-                if(true) {
+                if (event.eventType.equals(DeepLinksReadyEvent.Type)) {
                     final TeakConfiguration teakConfiguration = TeakConfiguration.get();
                     HashMap<String, Object> payload = new HashMap<>();
                     payload.put("id", teakConfiguration.appConfiguration.appId);
                     payload.put("deep_link_routes", DeepLink.getRouteNamesAndDescriptions());
-/*
-                    new Thread(new Request("gocarrot.com", "/games/" + teakConfiguration.appConfiguration.appId + "/settings.json", payload, session) {
+
+                    new Thread(new Request("gocarrot.com", "/games/" + teakConfiguration.appConfiguration.appId + "/settings.json", payload, Session.NullSession) {
                         @Override
                         protected void done(int responseCode, String responseBody) {
                             try {
@@ -79,7 +79,7 @@ public class RemoteConfiguration {
                                 Teak.log.exception(e);
                             }
                         }
-                    }).start();*/
+                    }).start();
                 }
             }
         });
