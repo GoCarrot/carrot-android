@@ -19,38 +19,15 @@ import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.support.annotation.NonNull;
 
-import java.util.HashMap;
-
 import io.teak.sdk.Teak;
 
 public class DebugConfiguration {
     private static final String PREFERENCE_FORCE_DEBUG = "io.teak.sdk.Preferences.ForceDebug";
 
-    @SuppressWarnings("unused")
-    public static void addExternalDebugInfo(String key, Object value) {
-        if (key == null || key.isEmpty()) {
-            Teak.log.e("debug_configuration", "key can not be null or empty for addExternalDebugInfo(), ignoring.");
-            return;
-        }
-
-        try {
-            if (value == null || value.toString() == null || value.toString().isEmpty()) {
-                Teak.log.e("debug_configuration", "value can not be null or empty for addExternalDebugInfo(), ignoring.");
-                return;
-            }
-        } catch (Exception e) {
-            Teak.log.e("debug_configuration", "Error occured while converting value to string in addExternalDebugInfo(), ignoring.");
-            return;
-        }
-
-        DebugConfiguration.externalDebugInfo.put(key, value);
-    }
-    private static final HashMap<String, Object> externalDebugInfo = new HashMap<>();
-
     private final SharedPreferences preferences;
 
     private boolean forceDebug;
-    final boolean isDevelopmentBuild;
+    private final boolean isDevelopmentBuild;
 
     public DebugConfiguration(@NonNull Context context) {
         SharedPreferences tempPreferences = null;
