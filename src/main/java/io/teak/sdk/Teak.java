@@ -199,7 +199,7 @@ public class Teak extends BroadcastReceiver {
      */
     @SuppressWarnings("unused")
     public static void registerDeepLink(@NonNull String route, @NonNull String name, @NonNull String description, @NonNull Teak.DeepLink call) {
-        io.teak.sdk.core.DeepLink.registerRoute(route, name, description, call);
+        io.teak.sdk.core.DeepLink.internalRegisterRoute(route, name, description, call);
     }
 
     /**
