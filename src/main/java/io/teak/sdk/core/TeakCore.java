@@ -34,7 +34,9 @@ import java.util.concurrent.Future;
 
 import io.teak.sdk.Helpers;
 import io.teak.sdk.NotificationBuilder;
+import io.teak.sdk.Request;
 import io.teak.sdk.Teak;
+import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
 import io.teak.sdk.event.ExternalBroadcastEvent;
@@ -71,38 +73,38 @@ public class TeakCore implements ITeakCore {
                 }
                 case TrackEventEvent.Type: {
                     final Map<String, Object> payload = ((TrackEventEvent)event).payload;
-                    /*
+
                     Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
                         @Override
                         public void run(Session session) {
                             new Request("/me/events", payload, session).run();
                         }
-                    });*/
+                    });
                     break;
                 }
                 case PurchaseEvent.Type: {
                     final Map<String, Object> payload = ((PurchaseEvent) event).payload;
                     Teak.log.i("purchase.succeeded", payload);
-                    /*
+
                     Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
                         @Override
                         public void run(Session session) {
                             new Request("/me/purchase", payload, session).run();
                         }
-                    });*/
+                    });
                     break;
                 }
                 case PurchaseFailedEvent.Type: {
                     final Map<String, Object> payload = new HashMap<>();
                     payload.put("errorCode", ((PurchaseFailedEvent) event).errorCode);
                     Teak.log.i("purchase.failed", payload);
-                    /*
+
                     Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
                         @Override
                         public void run(Session session) {
                             new Request("/me/purchase", payload, session).run();
                         }
-                    });*/
+                    });
                     break;
                 }
                 case PushNotificationEvent.Received: {
@@ -130,8 +132,7 @@ public class TeakCore implements ITeakCore {
 
                     // Foreground notification?
                     boolean showInForeground = Helpers.getBooleanFromBundle(bundle, "teakShowInForeground");
-                    //if (!showInForeground && Session.isExpiringOrExpired()) break;
-                    // TODO: Session
+                    if (!showInForeground && Session.isExpiringOrExpired()) break;
 
                     // Create Teak Notification
                     final TeakNotification teakNotification = new TeakNotification(bundle);
@@ -151,8 +152,6 @@ public class TeakCore implements ITeakCore {
                     final String teakUserId = bundle.getString("teakUserId", null);
                     if (teakUserId == null) break;
 
-                    // TODO: Session
-                    /*
                     final Session session = Session.getCurrentSessionOrNull();
                     final TeakConfiguration teakConfiguration = TeakConfiguration.get();
                     if (session != null) {
@@ -165,7 +164,7 @@ public class TeakCore implements ITeakCore {
                         }
 
                         asyncExecutor.submit(new Request("parsnip.gocarrot.com", "/notification_received", payload, session));
-                    }*/
+                    }
                     break;
                 }
 
