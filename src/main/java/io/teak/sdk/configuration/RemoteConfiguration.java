@@ -18,7 +18,6 @@ import android.support.annotation.NonNull;
 
 import org.json.JSONObject;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -27,12 +26,10 @@ import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.core.DeepLink;
 import io.teak.sdk.Request;
-//import io.teak.sdk.Session;
 import io.teak.sdk.Teak;
 import io.teak.sdk.core.Session;
 import io.teak.sdk.event.DeepLinksReadyEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
-import io.teak.sdk.event.SessionStateEvent;
 
 public class RemoteConfiguration {
     public final AppConfiguration appConfiguration;
@@ -49,7 +46,7 @@ public class RemoteConfiguration {
         this.gcmSenderId = gcmSenderId;
     }
 
-    static {
+    public static void registerStaticEventListeners() {
         // When Deep Links are ready, send out request for remote settings.
         // Must wait for Deep Link Routes to be registered so we can send them along
         TeakEvent.addEventListener(new TeakEvent.EventListener() {

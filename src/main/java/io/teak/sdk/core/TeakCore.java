@@ -39,6 +39,7 @@ import io.teak.sdk.Teak;
 import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
+import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.event.ExternalBroadcastEvent;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.NotificationDisplayEvent;
@@ -52,6 +53,15 @@ public class TeakCore implements ITeakCore {
         this.localBroadcastManager = LocalBroadcastManager.getInstance(context);
 
         TeakEvent.addEventListener(teakEventListener);
+
+        registerStaticTeakEventListeners();
+    }
+
+    // TODO: Would love to make this Annotation based
+    private void registerStaticTeakEventListeners() {
+        RemoteConfiguration.registerStaticEventListeners();
+        Session.registerStaticEventListeners();
+        Request.registerStaticEventListeners();
     }
 
     private final TeakEvent.EventListener teakEventListener = new TeakEvent.EventListener() {

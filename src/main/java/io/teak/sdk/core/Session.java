@@ -475,30 +475,33 @@ public class Session {
     };
 
     // Static event listener
-    static {
-        TeakEvent.addEventListener(new TeakEvent.EventListener() {
-            @Override
-            public void onNewEvent(@NonNull TeakEvent event) {
-                switch (event.eventType) {
-                    case UserIdEvent.Type:
-                        String userId = ((UserIdEvent) event).userId;
-                        setUserId(userId);
-                        break;
-                    case LifecycleEvent.Paused:
-                        // Set state to 'Expiring'
-                        synchronized (currentSessionMutex) {
-                            if (currentSession != null) {
-                                currentSession.setState(State.Expiring);
-                            }
+    private static final TeakEvent.EventListener staticTeakEventListener = new TeakEvent.EventListener() {
+        @Override
+        public void onNewEvent(@NonNull TeakEvent event) {
+            switch (event.eventType) {
+                case UserIdEvent.Type:
+                    String userId = ((UserIdEvent) event).userId;
+                    setUserId(userId);
+                    break;
+                case LifecycleEvent.Paused:
+                    // Set state to 'Expiring'
+                    synchronized (currentSessionMutex) {
+                        if (currentSession != null) {
+                            currentSession.setState(State.Expiring);
                         }
-                        break;
-                    case LifecycleEvent.Resumed:
-                        Intent resumeIntent = ((LifecycleEvent) event).intent;
-                        onActivityResumed(resumeIntent);
-                        break;
-                }
+                    }
+                    break;
+                case LifecycleEvent.Resumed:
+                    Intent resumeIntent = ((LifecycleEvent) event).intent;
+                    onActivityResumed(resumeIntent);
+                    break;
             }
-        });
+        }
+    };
+
+    // TODO: I'd love to make this Annotation based
+    public static void registerStaticEventListeners() {
+        TeakEvent.addEventListener(Session.staticTeakEventListener);
     }
 
     static boolean isExpiringOrExpired() {
@@ -533,7 +536,7 @@ public class Session {
         }
     }
 
-    static abstract class SessionRunnable {
+    public static abstract class SessionRunnable {
         public abstract void run(Session session);
     }
 
@@ -555,7 +558,7 @@ public class Session {
     private static final Object userIdReadyRunnableQueueMutex = new Object();
     private static final ArrayList<WhenUserIdIsReadyRun> userIdReadyRunnableQueue = new ArrayList<>();
 
-    static void whenUserIdIsReadyRun(@NonNull SessionRunnable runnable) {
+    public static void whenUserIdIsReadyRun(@NonNull SessionRunnable runnable) {
         synchronized (currentSessionMutex) {
             if (currentSession == null) {
                 synchronized (userIdReadyRunnableQueueMutex) {
@@ -575,7 +578,7 @@ public class Session {
         }
     }
 
-    static void whenUserIdIsOrWasReadyRun(@NonNull SessionRunnable runnable) {
+    public static void whenUserIdIsOrWasReadyRun(@NonNull SessionRunnable runnable) {
         synchronized (currentSessionMutex) {
             if (currentSession == null) {
                 synchronized (userIdReadyRunnableQueueMutex) {

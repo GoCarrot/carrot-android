@@ -82,7 +82,7 @@ public class Request implements Runnable {
     ///// Remote Configuration
 
     private static RemoteConfiguration remoteConfiguration;
-    static {
+    public static void registerStaticEventListeners() {
         TeakEvent.addEventListener(new TeakEvent.EventListener() {
             @Override
             public void onNewEvent(@NonNull TeakEvent event) {
@@ -179,7 +179,7 @@ public class Request implements Runnable {
 
             URL url = new URL("https://" + this.hostname + this.endpoint);
 
-            IHttpsRequest request = new DefaultHttpsRequest(); // TODO: Do this properly
+            IHttpsRequest request = new DefaultHttpsRequest(); // TODO: Do this properly with a Factory
             IHttpsRequest.Response response = request.synchronousRequest(url, requestBody);
 
             if (response != null) {
