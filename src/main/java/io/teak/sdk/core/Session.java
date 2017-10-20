@@ -71,6 +71,8 @@ public class Session {
 
     private static long SAME_SESSION_TIME_DELTA = 120000;
 
+    public static final Session NullSession = new Session("Null Session");
+
     // region State machine
     public enum State {
         Invalid("Invalid"),
@@ -138,6 +140,12 @@ public class Session {
 
     // For cases where setUserId() is called before a Session has been created
     private static String pendingUserId;
+
+    // Used specifically for creating the "null session" which is just used for code-intent clarity
+    private Session(@NonNull String nullSessionId) {
+        this.startDate = new Date();
+        this.sessionId = nullSessionId;
+    }
 
     private Session() {
         // State: Created

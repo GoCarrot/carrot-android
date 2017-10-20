@@ -106,11 +106,9 @@ public class Request implements Runnable {
         this.session = session;
         this.requestId = UUID.randomUUID().toString().replace("-", "");
 
-        // TODO: Would like to not rely on this
-        /*
         if (session.userId() != null) {
             this.payload.put("api_key", session.userId());
-        }*/
+        }
 
         this.payload.put("request_date", new Date().getTime() / 1000); // Milliseconds -> Seconds
 
