@@ -224,7 +224,7 @@ public class TeakNotification {
                 }
             });
             new Thread(ret).start();
-/*
+
             Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
                 @Override
                 public void run(Session session) {
@@ -285,14 +285,14 @@ public class TeakNotification {
                         q.offer(reward);
                     } catch (Exception e) {
                         Teak.log.exception(e);
-                        q.offer(null);
+                        q.offer(null); // TODO: Fix this?
                     } finally {
                         if (connection != null) {
                             connection.disconnect();
                         }
                     }
                 }
-            });*/
+            });
 
             return ret;
         }
@@ -334,7 +334,7 @@ public class TeakNotification {
                 return null;
             }
         });
-/*
+
         Session.whenUserIdIsOrWasReadyRun(new Session.SessionRunnable() {
             @Override
             public void run(Session session) {
@@ -363,7 +363,7 @@ public class TeakNotification {
                     }
                 }.run();
             }
-        });*/
+        });
         return ret;
     }
 
@@ -396,7 +396,7 @@ public class TeakNotification {
                 return null;
             }
         });
-/*
+
         Session.whenUserIdIsOrWasReadyRun(new Session.SessionRunnable() {
             @Override
             public void run(Session session) {
@@ -420,7 +420,7 @@ public class TeakNotification {
                     }
                 }.run();
             }
-        });*/
+        });
 
         return ret;
     }
