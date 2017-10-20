@@ -13,7 +13,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 
-import io.teak.sdk.DeepLink;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakNotification;
 
@@ -75,8 +74,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Create a deep link route that opens the Google Play store to a specific SKU in your game
         final AppCompatActivity _this = this;
-        DeepLink.registerRoute("/store/:sku", "Store", "Link directly to purchase an item", new DeepLink.Call() {
-
+        Teak.registerDeepLink("/store/:sku", "Store", "Link directly to purchase an item", new Teak.DeepLink() {
             @Override
             public void call(Map<String, Object> parameters) {
                 String sku = (String)parameters.get("sku");

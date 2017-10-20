@@ -408,7 +408,7 @@ class TeakInstance {
     ///// Built-in deep links
 
     private void registerTeakInternalDeepLinks() {
-        DeepLink.registerRoute("/teak_internal/store/:sku", "", "", new DeepLink.Call() {
+        Teak.registerDeepLink("/teak_internal/store/:sku", "", "", new Teak.DeepLink() {
             @Override
             public void call(Map<String, Object> params) {
                 if (appStore != null) {

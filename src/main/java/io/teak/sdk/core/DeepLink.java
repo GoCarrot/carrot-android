@@ -28,11 +28,15 @@ import io.teak.sdk.regexp.Matcher;
 import io.teak.sdk.regexp.Pattern;
 
 public class DeepLink {
-    public static abstract class Call {
-        public abstract void call(Map<String, Object> parameters);
+    /**
+     * @deprecated Use the {@link Teak#registerDeepLink(String, String, String, Teak.DeepLink)} instead.
+     */
+    @Deprecated
+    public static void registerRoute(String route, String name, String description, Teak.DeepLink call) {
+        internalRegisterRoute(route, name, description, call);
     }
 
-    public static void registerRoute(String route, String name, String description, Call call) {
+    public static void internalRegisterRoute(String route, String name, String description, Teak.DeepLink call) {
         // https://github.com/rkh/mustermann/blob/master/mustermann-simple/lib/mustermann/simple.rb
         StringBuffer patternString = new StringBuffer();
         Pattern escape = Pattern.compile("[^\\?\\%\\\\/\\:\\*\\w]");
@@ -137,12 +141,12 @@ public class DeepLink {
     private static final Map<Pattern, DeepLink> routes = new HashMap<>();
 
     private final String route;
-    private final Call call;
+    private final Teak.DeepLink call;
     private final List<String> groupNames;
     private final String name;
     private final String description;
 
-    private DeepLink(String route, Call call, List<String> groupNames, String name, String description) {
+    private DeepLink(String route, Teak.DeepLink call, List<String> groupNames, String name, String description) {
         this.route = route;
         this.call = call;
         this.groupNames = groupNames;

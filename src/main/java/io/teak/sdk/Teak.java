@@ -184,6 +184,25 @@ public class Teak extends BroadcastReceiver {
     }
 
     /**
+     * Interface for running code when a deep link is received
+     */
+    public static abstract class DeepLink {
+        public abstract void call(Map<String, Object> parameters);
+    }
+
+    /**
+     * Register a deep link route with Teak.
+     * @param route A Sinatra-style route, eg /path/:capture
+     * @param name The name of the deep link, used in the Teak dashboard
+     * @param description The description of the deep link, used in the Teak dashboard
+     * @param call The code to invoke when this deep link is received
+     */
+    @SuppressWarnings("unused")
+    public static void registerDeepLink(@NonNull String route, @NonNull String name, @NonNull String description, @NonNull Teak.DeepLink call) {
+        io.teak.sdk.core.DeepLink.registerRoute(route, name, description, call);
+    }
+
+    /**
      * Intent action used by Teak to notify you that the app was launched from a notification.
      * <p/>
      * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
