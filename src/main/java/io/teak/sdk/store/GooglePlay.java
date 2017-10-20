@@ -149,7 +149,7 @@ class GooglePlay implements IStore {
             Bundle buyIntentBundle = (Bundle) m.invoke(mService, 3, mContext.getPackageName(), "inapp", sku);
             PendingIntent pendingIntent = buyIntentBundle.getParcelable("BUY_INTENT");
             if (pendingIntent != null) {
-                ((Activity)mContext).startIntentSenderForResult(pendingIntent.getIntentSender(), 1001, new Intent(), 0, 0, 0);
+                ((Activity) mContext).startIntentSenderForResult(pendingIntent.getIntentSender(), 1001, new Intent(), 0, 0, 0);
             }
         } catch (Exception ignored) {
         }

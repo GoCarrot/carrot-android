@@ -108,7 +108,7 @@ public class TeakEvent {
                 thread.start();
                 try {
                     thread.join(500);
-                } catch(Exception ignored) {
+                } catch (Exception ignored) {
                 }
 
                 if (thread.isAlive()) {
@@ -131,5 +131,6 @@ public class TeakEvent {
             }
         }
     }
+
     private static EventListeners eventListeners = new EventListeners();
 }

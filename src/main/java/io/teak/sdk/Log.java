@@ -74,7 +74,7 @@ public class Log {
     }
     // endregion
 
-    private Map<String, Object> commonPayload = new HashMap<>();
+    private final Map<String, Object> commonPayload = new HashMap<>();
 
     // region Public API
     public void e(@NonNull String eventType, @NonNull String message) {
@@ -148,7 +148,7 @@ public class Log {
         this.androidLogTag = androidLogTag;
         this.jsonIndentation = jsonIndentation;
         this.runId = UUID.randomUUID().toString().replace("-", "");
-        commonPayload.put("run_id", this.runId);
+        this.commonPayload.put("run_id", this.runId);
         this.eventCounter = new AtomicLong(0);
 
         TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {

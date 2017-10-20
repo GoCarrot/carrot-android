@@ -72,7 +72,6 @@ public class DebugConfiguration {
         }
         this.forceDebug = forceDebug;
 
-        // TODO: This should be listener based
         Teak.log.setLoggingEnabled(this.forceDebug || this.isDevelopmentBuild);
     }
 

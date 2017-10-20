@@ -15,7 +15,6 @@
 package io.teak.sdk.core;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
@@ -57,7 +56,6 @@ import io.teak.sdk.Teak;
 import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
-import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.event.AdvertisingInfoEvent;
 import io.teak.sdk.event.ExternalBroadcastEvent;
 import io.teak.sdk.event.FacebookAccessTokenEvent;
@@ -69,6 +67,7 @@ import io.teak.sdk.event.UserIdEvent;
 
 public class Session {
 
+    @SuppressWarnings("FieldCanBeLocal") // This can be changed by tests
     private static long SAME_SESSION_TIME_DELTA = 120000;
 
     public static final Session NullSession = new Session("Null Session");
@@ -120,6 +119,7 @@ public class Session {
 
     // State: Created
     private final Date startDate;
+    @SuppressWarnings("UnusedDeclaration")
     private final String sessionId;
 
     // State: Configured
@@ -500,7 +500,7 @@ public class Session {
     };
 
     // TODO: I'd love to make this Annotation based
-    public static void registerStaticEventListeners() {
+    static void registerStaticEventListeners() {
         TeakEvent.addEventListener(Session.staticTeakEventListener);
     }
 
@@ -628,7 +628,7 @@ public class Session {
                     public String call() throws Exception {
                         long startTime = System.nanoTime();
                         String referralString = InstallReferrerReceiver.installReferrerQueue.poll();
-                        while(referralString == null) {
+                        while (referralString == null) {
                             Thread.sleep(100);
                             referralString = InstallReferrerReceiver.installReferrerQueue.poll();
                             long elapsedTime = System.nanoTime() - startTime;
@@ -740,7 +740,7 @@ public class Session {
                             if (Teak.waitForDeepLink != null) {
                                 Teak.waitForDeepLink.get();
                             }
-                        } catch (Exception ignored){
+                        } catch (Exception ignored) {
                         }
 
                         try {

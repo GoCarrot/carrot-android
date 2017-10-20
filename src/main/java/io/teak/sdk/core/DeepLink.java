@@ -32,6 +32,7 @@ public class DeepLink {
      * @deprecated Use the {@link Teak#registerDeepLink(String, String, String, Teak.DeepLink)} instead.
      */
     @Deprecated
+    @SuppressWarnings("unused")
     public static void registerRoute(String route, String name, String description, Teak.DeepLink call) {
         internalRegisterRoute(route, name, description, call);
     }

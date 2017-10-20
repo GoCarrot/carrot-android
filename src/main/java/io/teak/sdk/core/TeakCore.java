@@ -64,12 +64,13 @@ public class TeakCore implements ITeakCore {
         Request.registerStaticEventListeners();
     }
 
+    @SuppressWarnings("FieldCanBeLocal")
     private final TeakEvent.EventListener teakEventListener = new TeakEvent.EventListener() {
         @Override
         public void onNewEvent(@NonNull TeakEvent event) {
             switch (event.eventType) {
                 case ExternalBroadcastEvent.Type: {
-                    final Intent intent = ((ExternalBroadcastEvent)event).intent;
+                    final Intent intent = ((ExternalBroadcastEvent) event).intent;
                     sendLocalBroadcast(intent);
                     break;
                 }
@@ -82,7 +83,7 @@ public class TeakCore implements ITeakCore {
                     break;
                 }
                 case TrackEventEvent.Type: {
-                    final Map<String, Object> payload = ((TrackEventEvent)event).payload;
+                    final Map<String, Object> payload = ((TrackEventEvent) event).payload;
 
                     Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
                         @Override
@@ -118,7 +119,7 @@ public class TeakCore implements ITeakCore {
                     break;
                 }
                 case PushNotificationEvent.Received: {
-                    final Intent intent = ((PushNotificationEvent)event).intent;
+                    final Intent intent = ((PushNotificationEvent) event).intent;
                     if (intent == null) break;
 
                     final Bundle bundle = intent.getExtras();
@@ -151,7 +152,7 @@ public class TeakCore implements ITeakCore {
                     bundle.putInt("platformId", teakNotification.platformId);
 
                     // Create native notification
-                    final Context context = ((PushNotificationEvent)event).context;
+                    final Context context = ((PushNotificationEvent) event).context;
                     Notification nativeNotification = NotificationBuilder.createNativeNotification(context, bundle, teakNotification);
                     if (nativeNotification == null) break;
 
@@ -179,7 +180,7 @@ public class TeakCore implements ITeakCore {
                 }
 
                 case PushNotificationEvent.Interaction: {
-                    final Intent intent = ((PushNotificationEvent)event).intent;
+                    final Intent intent = ((PushNotificationEvent) event).intent;
                     if (intent == null) break;
 
                     final Bundle bundle = intent.getExtras();
@@ -187,7 +188,7 @@ public class TeakCore implements ITeakCore {
                     Teak.log.i("notification.opened", Helpers.mm.h("teakNotifId", bundle.getString("teakNotifId"), "autoLaunch", autoLaunch));
 
                     // Launch the app
-                    final Context context = ((PushNotificationEvent)event).context;
+                    final Context context = ((PushNotificationEvent) event).context;
                     if (context != null && autoLaunch) {
                         Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
                         launchIntent.addCategory(Intent.CATEGORY_LAUNCHER);
@@ -222,8 +223,10 @@ public class TeakCore implements ITeakCore {
                 } else {
                     eventDataDict.put("incentivized", false);
                 }
-                if (bundle.getString("teakScheduleName") != null) eventDataDict.put("teakScheduleName", bundle.getString("teakScheduleName"));
-                if (bundle.getString("teakCreativeName") != null) eventDataDict.put("teakCreativeName", bundle.getString("teakCreativeName"));
+                if (bundle.getString("teakScheduleName") != null)
+                    eventDataDict.put("teakScheduleName", bundle.getString("teakScheduleName"));
+                if (bundle.getString("teakCreativeName") != null)
+                    eventDataDict.put("teakCreativeName", bundle.getString("teakCreativeName"));
 
                 final Intent broadcastEvent = new Intent(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
                 broadcastEvent.putExtras(bundle);

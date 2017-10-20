@@ -21,9 +21,11 @@ import org.json.JSONObject;
 
 public interface IStore {
     void init(Context context);
+
     void dispose();
 
     void processPurchaseJson(JSONObject originalJson);
+
     void checkActivityResultForPurchase(int resultCode, Intent data);
 
     void launchPurchaseFlowForSKU(String sku);

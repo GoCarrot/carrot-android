@@ -17,7 +17,6 @@ package io.teak.sdk;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 
@@ -55,7 +54,10 @@ public class TeakConfiguration {
     }
 
     private static TeakConfiguration Instance;
-    public static @NonNull TeakConfiguration get() {
+
+    public static
+    @NonNull
+    TeakConfiguration get() {
         if (Instance == null) {
             throw new IllegalStateException("Call to TeakConfiguration.get() before initialization.");
         }
@@ -68,7 +70,7 @@ public class TeakConfiguration {
             @Override
             public void onNewEvent(@NonNull TeakEvent event) {
                 if (event.eventType.equals(RemoteConfigurationEvent.Type) && Instance != null) {
-                    Instance.remoteConfiguration = ((RemoteConfigurationEvent)event).remoteConfiguration;
+                    Instance.remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
                 }
             }
         });
@@ -93,12 +95,6 @@ public class TeakConfiguration {
             if (Instance != null) {
                 e.onConfigurationReady(Instance);
             }
-        }
-    }
-
-    public static void removeEventListener(EventListener e) {
-        synchronized (eventListenersMutex) {
-            eventListeners.remove(e);
         }
     }
 }

@@ -32,10 +32,15 @@ import io.teak.sdk.event.DeepLinksReadyEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 
 public class RemoteConfiguration {
+    @SuppressWarnings("WeakerAccess")
     public final AppConfiguration appConfiguration;
+    @SuppressWarnings("WeakerAccess")
     private final String hostname;
+    @SuppressWarnings("WeakerAccess")
     public final String sdkSentryDsn;
+    @SuppressWarnings("WeakerAccess")
     public final String appSentryDsn;
+    @SuppressWarnings("WeakerAccess")
     public final String gcmSenderId;
 
     private RemoteConfiguration(@NonNull AppConfiguration appConfiguration, @NonNull String hostname, String sdkSentryDsn, String appSentryDsn, String gcmSenderId) {
@@ -97,7 +102,7 @@ public class RemoteConfiguration {
     }
     // endregion
 
-    public Map<String, Object> to_h() {
+    private Map<String, Object> to_h() {
         HashMap<String, Object> ret = new HashMap<>();
         ret.put("hostname", this.hostname);
         ret.put("sdkSentryDsn", this.sdkSentryDsn);

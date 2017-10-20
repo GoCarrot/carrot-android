@@ -47,7 +47,7 @@ public class RavenService extends Service {
     public static final String SENTRY_CLIENT = "teak-android/" + TEAK_SENTRY_VERSION;
 
     public static final String REPORT_EXCEPTION_INTENT_ACTION = "REPORT_EXCEPTION";
-    public static final String  SET_DSN_INTENT_ACTION = "SET_DSN";
+    public static final String SET_DSN_INTENT_ACTION = "SET_DSN";
 
     HashMap<String, AppReporter> appReporterMap = new HashMap<>();
 
@@ -102,22 +102,22 @@ public class RavenService extends Service {
 
     private static final String[] EXCEPTIONS_READ_COLUMNS = {"rowid", "payload", "timestamp", "retries"};
 
-    class AppReporter {
+    private class AppReporter {
         private DatabaseHelper databaseHelper;
         private String SENTRY_KEY;
         private String SENTRY_SECRET;
         private URL endpoint;
 
-        public AppReporter(Context context, String appId) {
+        AppReporter(Context context, String appId) {
             databaseHelper = new DatabaseHelper(context, "raven." + appId + ".db");
         }
 
-        public void reportException(Intent intent) {
+        void reportException(Intent intent) {
             Thread senderThread = new Thread(new ReportSender(intent));
             senderThread.start();
         }
 
-        public void setDsn(Intent intent) {
+        void setDsn(Intent intent) {
             String dsn = intent.getStringExtra("dsn");
             if (dsn == null || dsn.isEmpty()) {
                 Log.e(LOG_TAG, "DSN empty for app: " + intent.getStringExtra("appId"));
@@ -149,7 +149,7 @@ public class RavenService extends Service {
             long timestamp;
             JSONObject requestBody;
 
-            public ReportSender(Intent intent) {
+            ReportSender(Intent intent) {
                 timestamp = intent.getLongExtra("timestamp", new Date().getTime() / 1000L);
                 try {
                     requestBody = new JSONObject(intent.getStringExtra("payload"));
@@ -217,7 +217,7 @@ public class RavenService extends Service {
             private AtomicInteger openCounter = new AtomicInteger();
             private SQLiteDatabase database;
 
-            public DatabaseHelper(Context context, String name) {
+            DatabaseHelper(Context context, String name) {
                 super(context, name, null, DATABASE_VERSION);
             }
 

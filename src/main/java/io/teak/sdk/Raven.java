@@ -64,6 +64,7 @@ class Raven implements Thread.UncaughtExceptionHandler {
     private Thread.UncaughtExceptionHandler previousUncaughtExceptionHandler;
 
     private static final SimpleDateFormat timestampFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
+
     static {
         timestampFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
@@ -101,7 +102,7 @@ class Raven implements Thread.UncaughtExceptionHandler {
             @Override
             public void onNewEvent(@NonNull TeakEvent event) {
                 if (event instanceof UserIdEvent) {
-                    addUserData("id", ((UserIdEvent)event).userId);
+                    addUserData("id", ((UserIdEvent) event).userId);
                 }
             }
         });

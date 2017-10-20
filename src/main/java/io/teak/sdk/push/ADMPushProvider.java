@@ -1,4 +1,4 @@
-/* Teak -- Copyright (C) 2016 GoCarrot Inc.
+/* Teak -- Copyright (C) 2017 GoCarrot Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,7 +152,7 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
                                 Teak.log.e("amazon.adm.registration_error.debugging", Helpers.mm.h("sha256", sigSha256, "api_key.sha256", json.getString("appsigSha256")));
                                 throw new Exception("App signature SHA-256 does not match api_key.txt");
                             }
-                            Teak.log.i("amazon.adm.registration_error.debugging",  "[✓] App signature matches signature inside 'api_key.txt'");
+                            Teak.log.i("amazon.adm.registration_error.debugging", "[✓] App signature matches signature inside 'api_key.txt'");
                         } else if (json.has("appsig")) {
                             String sigMd5 = formatSig(sig, "MD5");
                             if (!sigMd5.equalsIgnoreCase(json.getString("appsig"))) {

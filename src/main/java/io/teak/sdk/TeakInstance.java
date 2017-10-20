@@ -36,7 +36,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.teak.sdk.configuration.RemoteConfiguration;
-import io.teak.sdk.core.DeepLink;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
@@ -76,7 +75,7 @@ class TeakInstance {
             @Override
             public void onNewEvent(@NonNull TeakEvent event) {
                 if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
-                    RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent)event).remoteConfiguration;
+                    RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
 
                     if (remoteConfiguration.sdkSentryDsn != null && sdkRaven != null) {
                         sdkRaven.setDsn(remoteConfiguration.sdkSentryDsn);
@@ -188,7 +187,7 @@ class TeakInstance {
     ///// Broadcast Receiver
 
     private static final String GCM_RECEIVE_INTENT_ACTION = "com.google.android.c2dm.intent.RECEIVE";
-    private static final String GCM_REGISTRATION_INTENT_ACTION  = "com.google.android.c2dm.intent.REGISTRATION";
+    private static final String GCM_REGISTRATION_INTENT_ACTION = "com.google.android.c2dm.intent.REGISTRATION";
 
     void onReceive(Context inContext, Intent intent) {
         final Context context = inContext.getApplicationContext();
@@ -352,7 +351,7 @@ class TeakInstance {
 
                 // Check and see if this is (probably) the first time this app has been ever launched
                 boolean isFirstLaunch = false;
-                SharedPreferences preferences = null;
+                SharedPreferences preferences;
                 try {
                     preferences = activity.getSharedPreferences(Teak.PREFERENCES_FILE, Context.MODE_PRIVATE);
                     if (preferences != null) {
@@ -412,7 +411,7 @@ class TeakInstance {
             @Override
             public void call(Map<String, Object> params) {
                 if (appStore != null) {
-                    appStore.launchPurchaseFlowForSKU((String)params.get("sku"));
+                    appStore.launchPurchaseFlowForSKU((String) params.get("sku"));
                 }
             }
         });

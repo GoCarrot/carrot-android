@@ -14,17 +14,9 @@
  */
 package io.teak.sdk;
 
-import android.app.NotificationManager;
 import android.os.Bundle;
 
 import android.content.Intent;
-import android.content.Context;
-
-import android.app.Notification;
-
-import android.support.v4.app.NotificationCompat;
-
-import android.util.SparseArray;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -46,7 +38,6 @@ import java.net.URLEncoder;
 import javax.net.ssl.HttpsURLConnection;
 
 import org.json.JSONObject;
-import org.json.JSONException;
 
 import io.teak.sdk.Helpers.mm;
 import io.teak.sdk.core.Session;
@@ -76,6 +67,7 @@ public class TeakNotification {
      * <p/>
      * This allows you to take special actions, it is not required that you listen for it.
      */
+    @SuppressWarnings("WeakerAccess")
     public static final String TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX = ".intent.TEAK_NOTIFICATION_OPENED";
 
     /**
@@ -83,6 +75,7 @@ public class TeakNotification {
      * <p/>
      * This allows you to take special actions, it is not required that you listen for it.
      */
+    @SuppressWarnings("WeakerAccess")
     public static final String TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX = ".intent.TEAK_NOTIFICATION_CLEARED";
 
     /**
@@ -95,6 +88,7 @@ public class TeakNotification {
         return this.extras;
     }
 
+    @SuppressWarnings("WeakerAccess")
     public static class Reward {
 
         /**
@@ -273,9 +267,9 @@ public class TeakNotification {
 
                         JSONObject fullParsedResponse = new JSONObject();
                         fullParsedResponse.put("status", rewardResponse.get("status"));
-                        if(rewardResponse.optJSONObject("reward") != null) {
+                        if (rewardResponse.optJSONObject("reward") != null) {
                             fullParsedResponse.put("reward", rewardResponse.get("reward"));
-                        } else if(rewardResponse.opt("reward") != null) {
+                        } else if (rewardResponse.opt("reward") != null) {
                             fullParsedResponse.put("reward", new JSONObject(rewardResponse.getString("reward")));
                         }
                         Reward reward = new Reward(fullParsedResponse);
@@ -306,7 +300,7 @@ public class TeakNotification {
      * @param delayInSeconds The delay in seconds from now to send the notification.
      * @return The identifier of the scheduled notification (see {@link TeakNotification#cancelNotification(String)} or null.
      */
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static FutureTask<String> scheduleNotification(final String creativeId, final String defaultMessage, final long delayInSeconds) {
         if (Teak.Instance == null || !Teak.Instance.isEnabled()) {
             Teak.log.e("notification.schedule.disabled", "Teak is disabled, ignoring scheduleNotification().");
@@ -370,10 +364,10 @@ public class TeakNotification {
     /**
      * Cancel a push notification that was scheduled with {@link TeakNotification#scheduleNotification(String, String, long)}
      *
-     * @param scheduleId
-     * @return
+     * @param scheduleId Id returned by {@link TeakNotification#scheduleNotification(String, String, long)}
+     * @return The status of the operation
      */
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static FutureTask<String> cancelNotification(final String scheduleId) {
         if (Teak.Instance == null || !Teak.Instance.isEnabled()) {
             Teak.log.e("notification.cancel.disabled", "Teak is disabled, ignoring cancelNotification().");
@@ -441,8 +435,11 @@ public class TeakNotification {
     final String longText;
     final String imageAssetA;
 
+    @SuppressWarnings("WeakerAccess")
     final JSONObject extras;
+    @SuppressWarnings("WeakerAccess")
     final String teakDeepLink;
+    @SuppressWarnings("WeakerAccess")
     final String teakRewardId;
 
     // v2+

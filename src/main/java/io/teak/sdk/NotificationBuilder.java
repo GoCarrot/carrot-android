@@ -58,7 +58,8 @@ public class NotificationBuilder {
             return createNativeNotificationV1Plus(context, bundle, teakNotificaton);
         } catch (Exception e) {
             HashMap<String, Object> extras = new HashMap<>();
-            if (teakNotificaton.teakCreativeName != null) extras.put("teakCreativeName", teakNotificaton.teakCreativeName);
+            if (teakNotificaton.teakCreativeName != null)
+                extras.put("teakCreativeName", teakNotificaton.teakCreativeName);
             Teak.log.exception(e, extras);
             // TODO: Report to the 'callback' URL on the push when/if we implement that
             return null;
@@ -210,10 +211,10 @@ public class NotificationBuilder {
                         }
                     } else //noinspection StatementWithEmptyBody
                         if (viewElement.getClass().equals(Button.class)) {
-                        // TODO: Need more config options for button, image, text, deep link
-                    } else {
-                        // TODO: report error to the dashboard
-                    }
+                            // TODO: Need more config options for button, image, text, deep link
+                        } else {
+                            // TODO: report error to the dashboard
+                        }
                 }
 
                 return remoteViews;

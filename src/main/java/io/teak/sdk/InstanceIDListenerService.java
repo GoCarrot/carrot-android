@@ -42,10 +42,4 @@ public class InstanceIDListenerService extends com.google.android.gms.iid.Instan
             }
         }
     }
-
-    public static void removeEventListener(EventListener e) {
-        synchronized (eventListenersMutex) {
-            eventListeners.remove(e);
-        }
-    }
 }

@@ -28,23 +28,33 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import io.teak.sdk.Helpers;
 import io.teak.sdk.Teak;
 import io.teak.sdk.io.IAndroidResources;
 import io.teak.sdk.service.RavenService;
 
 public class AppConfiguration {
+    @SuppressWarnings("WeakerAccess")
     public final String appId;
+    @SuppressWarnings("WeakerAccess")
     public final String apiKey;
+    @SuppressWarnings("WeakerAccess")
     public final String pushSenderId;
+    @SuppressWarnings("WeakerAccess")
     public final int appVersion;
+    @SuppressWarnings("WeakerAccess")
     public final String bundleId;
+    @SuppressWarnings("WeakerAccess")
     public final String installerPackage;
+    @SuppressWarnings("WeakerAccess")
     public final PackageManager packageManager;
+    @SuppressWarnings("WeakerAccess")
     public final Context applicationContext;
 
+    @SuppressWarnings("WeakerAccess")
     public static final String TEAK_API_KEY = "io_teak_api_key";
+    @SuppressWarnings("WeakerAccess")
     public static final String TEAK_APP_ID = "io_teak_app_id";
+    @SuppressWarnings("WeakerAccess")
     public static final String TEAK_GCM_SENDER_ID = "io_teak_gcm_sender_id";
 
     public AppConfiguration(@NonNull Context context, @NonNull IAndroidResources androidResources) {

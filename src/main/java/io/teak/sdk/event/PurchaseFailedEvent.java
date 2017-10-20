@@ -19,6 +19,7 @@ import io.teak.sdk.TeakEvent;
 public class PurchaseFailedEvent extends TeakEvent {
     public static final String Type = "PurchaseFailedEvent";
     public final int errorCode;
+
     public PurchaseFailedEvent(int errorCode) {
         super(Type);
         this.errorCode = errorCode;

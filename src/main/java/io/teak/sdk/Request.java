@@ -56,6 +56,7 @@ public class Request implements Runnable {
     private static String teakApiKey;
     private static Map<String, Object> configurationPayload = new HashMap<>();
 
+    // TODO: Can't do this as a static-init block, will screw up unit tests
     static {
         TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
             @Override
@@ -82,12 +83,13 @@ public class Request implements Runnable {
     ///// Remote Configuration
 
     private static RemoteConfiguration remoteConfiguration;
+
     public static void registerStaticEventListeners() {
         TeakEvent.addEventListener(new TeakEvent.EventListener() {
             @Override
             public void onNewEvent(@NonNull TeakEvent event) {
                 if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
-                    Request.remoteConfiguration = ((RemoteConfigurationEvent)event).remoteConfiguration;
+                    Request.remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
                 }
             }
         });

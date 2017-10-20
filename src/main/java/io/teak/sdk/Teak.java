@@ -1,4 +1,4 @@
-/* Teak -- Copyright (C) 2017 GoCarrot Inc.
+/* Teak -- Copyright (C) 2016 GoCarrot Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,18 +48,20 @@ public class Teak extends BroadcastReceiver {
 
     /**
      * Version of the Teak SDK.
+     *
      * @deprecated Use the {@link Teak#Version} member instead.
      */
     public static final String SDKVersion = io.teak.sdk.BuildConfig.VERSION_NAME;
 
     /**
      * Version of the Teak SDK, and Unity/Air SDK if applicable.
-     *
+     * <p>
      * You must call {@link Teak#onCreate(Activity)} in order to get Unity/Air SDK version info.
      */
     public static final Map<String, Object> Version;
 
     private static final Map<String, Object> sdkMap = new HashMap<>();
+
     static {
         sdkMap.put("android", io.teak.sdk.BuildConfig.VERSION_NAME);
         Version = Collections.unmodifiableMap(sdkMap);
@@ -72,6 +74,7 @@ public class Teak extends BroadcastReceiver {
 
     /**
      * Is Teak enabled?
+     *
      * @return True if Teak is enabled; False if Teak has not been initialized, or is disabled.
      */
     public static boolean isEnabled() {
@@ -94,7 +97,7 @@ public class Teak extends BroadcastReceiver {
     /**
      * Used for internal testing.
      *
-     * @param activity The main <code>Activity</code> of your app.
+     * @param activity      The main <code>Activity</code> of your app.
      * @param objectFactory Teak Object Factory to use, or null for default.
      */
     public static void onCreate(@NonNull Activity activity, @Nullable IObjectFactory objectFactory) {
@@ -192,10 +195,11 @@ public class Teak extends BroadcastReceiver {
 
     /**
      * Register a deep link route with Teak.
-     * @param route A Sinatra-style route, eg /path/:capture
-     * @param name The name of the deep link, used in the Teak dashboard
+     *
+     * @param route       A Sinatra-style route, eg /path/:capture
+     * @param name        The name of the deep link, used in the Teak dashboard
      * @param description The description of the deep link, used in the Teak dashboard
-     * @param call The code to invoke when this deep link is received
+     * @param call        The code to invoke when this deep link is received
      */
     @SuppressWarnings("unused")
     public static void registerDeepLink(@NonNull String route, @NonNull String name, @NonNull String description, @NonNull Teak.DeepLink call) {
@@ -332,11 +336,12 @@ public class Teak extends BroadcastReceiver {
     ///// Give SDK wrappers the ability to delay deep link resolution
 
     public static Future<Void> waitForDeepLink;
+
     static {
         TeakEvent.addEventListener(new TeakEvent.EventListener() {
             @Override
             public void onNewEvent(@NonNull TeakEvent event) {
-                if (event.eventType.equals(SessionStateEvent.Type) && ((SessionStateEvent)event).state == Session.State.Created) {
+                if (event.eventType.equals(SessionStateEvent.Type) && ((SessionStateEvent) event).state == Session.State.Created) {
 
                     // Use thread instead of executor here, since this could block for a while
                     new Thread(new Runnable() {

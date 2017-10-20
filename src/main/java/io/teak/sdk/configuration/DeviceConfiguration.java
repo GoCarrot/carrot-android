@@ -94,17 +94,14 @@ public class DeviceConfiguration {
         // Request Ad Info, event will inform us when it's ready
         androidDeviceInfo.requestAdvertisingId();
 
-        // Listen for remote configuration events
-        if (true) {
-            // TODO: Test/handle the case where remote config is already ready.
-            //throw new AssertionError("RemoteConfiguration is already ready.");
-        }
+        // TODO: Test/handle the case where remote config is already ready.
 
+        // Listen for remote configuration events
         TeakEvent.addEventListener(new TeakEvent.EventListener() {
             @Override
             public void onNewEvent(@NonNull TeakEvent event) {
                 if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
-                    final RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent)event).remoteConfiguration;
+                    final RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
 
                     // Override the provided GCM Sender Id with one from Teak, if applicable
                     if (remoteConfiguration.gcmSenderId != null) {

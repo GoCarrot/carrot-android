@@ -14,8 +14,6 @@
  */
 package io.teak.sdk;
 
-import android.content.Context;
-
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 
@@ -84,7 +82,8 @@ public class Helpers {
     public static class mm {
         public static Map<String, Object> h(@NonNull Object... args) {
             Map<String, Object> ret = new HashMap<>();
-            if (args.length % 2 != 0) throw new InvalidParameterException("Args must be in key value pairs.");
+            if (args.length % 2 != 0)
+                throw new InvalidParameterException("Args must be in key value pairs.");
             for (int i = 0; i < args.length; i += 2) {
                 ret.put(args[i].toString(), args[i + 1]);
             }
