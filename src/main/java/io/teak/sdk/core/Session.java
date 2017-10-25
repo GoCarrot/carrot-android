@@ -180,12 +180,12 @@ public class Session {
     private boolean setState(@NonNull State newState) {
         synchronized (stateMutex) {
             if (this.state == newState) {
-                Teak.log.i("session.same_state", Helpers.mm.h("state", this.state));
+                Teak.log.i("session.same_state", Helpers.mm.h("state", this.state, "session_id", this.sessionId));
                 return false;
             }
 
             if (!this.state.canTransitionTo(newState)) {
-                Teak.log.e("session.invalid_state", mm.h("state", this.state, "new_state", newState));
+                Teak.log.e("session.invalid_state", mm.h("state", this.state, "new_state", newState, "session_id", this.sessionId));
                 return false;
             }
 
@@ -275,6 +275,7 @@ public class Session {
                 }
                 h.put("state", this.state);
                 h.put("new_state", newState);
+                h.put("session_id", this.sessionId);
                 Teak.log.e("session.invalid_values", h);
 
                 // Invalidate this session
@@ -285,7 +286,7 @@ public class Session {
             this.previousState = this.state;
             this.state = newState;
 
-            Teak.log.i("session.state", Helpers.mm.h("state", this.state.name, "old_state", this.previousState.name));
+            Teak.log.i("session.state", Helpers.mm.h("state", this.state.name, "old_state", this.previousState.name, "session_id", this.sessionId));
             TeakEvent.postEvent(new SessionStateEvent(this, this.state, this.previousState));
 
             TeakConfiguration teakConfiguration = TeakConfiguration.get();
@@ -384,7 +385,7 @@ public class Session {
                         payload.putAll(teakConfiguration.deviceConfiguration.pushRegistration);
                     }
 
-                    Teak.log.i("session.identify_user", Helpers.mm.h("userId", _this.userId, "timezone", tzOffset, "locale", locale));
+                    Teak.log.i("session.identify_user", Helpers.mm.h("userId", _this.userId, "timezone", tzOffset, "locale", locale, "session_id", _this.sessionId));
 
                     new Request("/games/" + teakConfiguration.appConfiguration.appId + "/users.json", payload, _this) {
                         @Override
@@ -432,7 +433,7 @@ public class Session {
                     String newAccessToken = ((FacebookAccessTokenEvent) event).accessToken;
                     if (newAccessToken != null && !newAccessToken.equals(facebookAccessToken)) {
                         facebookAccessToken = newAccessToken;
-                        Teak.log.i("session.fb_access_token", Helpers.mm.h("access_token", facebookAccessToken));
+                        Teak.log.i("session.fb_access_token", Helpers.mm.h("access_token", facebookAccessToken, "session_id", sessionId));
                         userInfoWasUpdated();
                     }
                     break;
