@@ -153,7 +153,8 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
                             Teak.log.exception(e);
                         }
                     }
-                }).start();
+                })
+                    .start();
 
                 // Only start running the future if we get this far
                 new Thread(adInfoFuture).start();

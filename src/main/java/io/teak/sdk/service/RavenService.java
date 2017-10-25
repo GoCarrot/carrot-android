@@ -91,7 +91,6 @@ public class RavenService extends Service {
     public void onDestroy() {
         Log.d(LOG_TAG, "Lifecycle - onDestroy");
         for (Map.Entry<String, AppReporter> entry : appReporterMap.entrySet()) {
-
         }
     }
 
@@ -139,7 +138,7 @@ public class RavenService extends Service {
                 SENTRY_SECRET = userInfo[1];
 
                 endpoint = new URL(String.format("%s://%s%s/api%s/store/",
-                        uri.getScheme(), uri.getHost(), port, project));
+                    uri.getScheme(), uri.getHost(), port, project));
             } catch (Exception e) {
                 Log.e(LOG_TAG, "Error parsing DSN: '" + uri.toString() + "'" + Log.getStackTraceString(e));
             }
@@ -173,8 +172,8 @@ public class RavenService extends Service {
                     connection.setRequestProperty("Content-Encoding", "gzip");
                     connection.setRequestProperty("User-Agent", SENTRY_CLIENT);
                     connection.setRequestProperty("X-Sentry-Auth",
-                            String.format(Locale.US, "Sentry sentry_version=%d,sentry_timestamp=%d,sentry_key=%s,sentry_secret=%s,sentry_client=%s",
-                                    SENTRY_VERSION, timestamp, SENTRY_KEY, SENTRY_SECRET, SENTRY_CLIENT));
+                        String.format(Locale.US, "Sentry sentry_version=%d,sentry_timestamp=%d,sentry_key=%s,sentry_secret=%s,sentry_client=%s",
+                            SENTRY_VERSION, timestamp, SENTRY_KEY, SENTRY_SECRET, SENTRY_CLIENT));
 
                     GZIPOutputStream wr = new GZIPOutputStream(connection.getOutputStream());
                     wr.write(requestBody.toString().getBytes());

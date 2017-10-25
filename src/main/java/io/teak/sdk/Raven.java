@@ -71,7 +71,8 @@ class Raven implements Thread.UncaughtExceptionHandler {
 
     Raven(@NonNull Context context, @NonNull String appId, @NonNull TeakConfiguration configuration) {
         //noinspection deprecation - This must be a string as per Sentry API
-        @SuppressWarnings("deprecation") final String teakSdkVersion = Teak.SDKVersion;
+        @SuppressWarnings("deprecation")
+        final String teakSdkVersion = Teak.SDKVersion;
 
         this.applicationContext = context;
         this.appId = appId;
@@ -214,7 +215,8 @@ class Raven implements Thread.UncaughtExceptionHandler {
     }
 
     private synchronized void addUserData(@NonNull String key, Object value) {
-        @SuppressWarnings("unchecked") HashMap<String, Object> user = (HashMap<String, Object>) payloadTemplate.get("user");
+        @SuppressWarnings("unchecked")
+        HashMap<String, Object> user = (HashMap<String, Object>) payloadTemplate.get("user");
         if (user == null) {
             user = new HashMap<>();
             payloadTemplate.put("user", user);

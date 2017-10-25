@@ -69,5 +69,4 @@ public interface MatchResult extends java.util.regex.MatchResult {
      * @return the offset
      */
     public int end(String groupName);
-
 }

@@ -201,9 +201,8 @@ public class Log {
                 public void run() {
                     HttpsURLConnection connection = null;
                     try {
-                        URL endpoint = sendToRapidIngestion ?
-                                new URL("https://logs.gocarrot.com/dev.sdk.log." + logLevel.name)
-                                : new URL("https://logs.gocarrot.com/sdk.log." + logLevel.name);
+                        URL endpoint = sendToRapidIngestion ? new URL("https://logs.gocarrot.com/dev.sdk.log." + logLevel.name)
+                                                            : new URL("https://logs.gocarrot.com/sdk.log." + logLevel.name);
                         connection = (HttpsURLConnection) endpoint.openConnection();
                         connection.setRequestProperty("Accept-Charset", "UTF-8");
                         connection.setUseCaches(false);
@@ -239,7 +238,8 @@ public class Log {
                         }
                     }
                 }
-            }).start();
+            })
+                .start();
         }
 
         // Log to Android log

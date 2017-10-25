@@ -358,7 +358,8 @@ public class Teak extends BroadcastReceiver {
                             // TODO: Is there a more general event that should be used here?
                             TeakEvent.postEvent(new DeepLinksReadyEvent());
                         }
-                    }).start();
+                    })
+                        .start();
                 }
             }
         });

@@ -44,7 +44,7 @@ public class DefaultHttpsRequest implements IHttpsRequest {
             connection.setDoOutput(true);
             connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
             connection.setRequestProperty("Content-Length",
-                    "" + Integer.toString(requestBody.getBytes().length));
+                "" + Integer.toString(requestBody.getBytes().length));
 
             // Send request
             DataOutputStream wr = new DataOutputStream(connection.getOutputStream());

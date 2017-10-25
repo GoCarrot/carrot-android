@@ -96,7 +96,8 @@ public class GCMPushProvider implements IPushProvider {
                         Teak.log.exception(e);
                     }
                 }
-            }).start();
+            })
+                .start();
         } catch (Exception e) {
             Teak.log.exception(e);
         }

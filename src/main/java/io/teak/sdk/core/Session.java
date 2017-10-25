@@ -86,15 +86,14 @@ public class Session {
         //public static final Integer length = 1 + Expired.ordinal();
 
         private static final State[][] allowedTransitions = {
-                {},
-                {State.Created, State.Expiring},
-                {State.Configured, State.Expiring},
-                {State.IdentifyingUser, State.Expiring},
-                {State.UserIdentified, State.Expiring},
-                {State.Expiring},
-                {State.Created, State.Configured, State.IdentifyingUser, State.UserIdentified, State.Expired},
-                {}
-        };
+            {},
+            {State.Created, State.Expiring},
+            {State.Configured, State.Expiring},
+            {State.IdentifyingUser, State.Expiring},
+            {State.UserIdentified, State.Expiring},
+            {State.Expiring},
+            {State.Created, State.Configured, State.IdentifyingUser, State.UserIdentified, State.Expired},
+            {}};
 
         public final String name;
 
@@ -170,7 +169,7 @@ public class Session {
     private boolean hasExpired() {
         synchronized (stateMutex) {
             if (this.state == State.Expiring &&
-                    (new Date().getTime() - this.endDate.getTime() > SAME_SESSION_TIME_DELTA)) {
+                (new Date().getTime() - this.endDate.getTime() > SAME_SESSION_TIME_DELTA)) {
                 setState(State.Expired);
             }
             return (this.state == State.Expired);
@@ -196,13 +195,12 @@ public class Session {
             switch (newState) {
                 case Created: {
                     if (this.startDate == null) {
-                        invalidValuesForTransition.add(new Object[]{"startDate", "null"});
+                        invalidValuesForTransition.add(new Object[] {"startDate", "null"});
                         break;
                     }
 
                     TeakEvent.addEventListener(this.remoteConfigurationEventListener);
-                }
-                break;
+                } break;
 
                 case Configured: {
                     TeakEvent.removeEventListener(this.remoteConfigurationEventListener);
@@ -215,23 +213,22 @@ public class Session {
                                 _this.identifyUser();
                             }
                         }
-                    }).start();
-                }
-                break;
+                    })
+                        .start();
+                } break;
 
                 case IdentifyingUser: {
                     if (this.userId == null) {
-                        invalidValuesForTransition.add(new Object[]{"userId", "null"});
+                        invalidValuesForTransition.add(new Object[] {"userId", "null"});
                         break;
                     }
-                }
-                break;
+                } break;
 
                 case UserIdentified: {
 
                     // Start heartbeat, heartbeat service should be null right now
                     if (this.heartbeatService != null) {
-                        invalidValuesForTransition.add(new Object[]{"heartbeatService", this.heartbeatService});
+                        invalidValuesForTransition.add(new Object[] {"heartbeatService", this.heartbeatService});
                         break;
                     }
 
@@ -243,8 +240,7 @@ public class Session {
                         }
                         userIdReadyRunnableQueue.clear();
                     }
-                }
-                break;
+                } break;
 
                 case Expiring: {
                     this.endDate = new Date();
@@ -256,15 +252,13 @@ public class Session {
                         this.heartbeatService.shutdown();
                         this.heartbeatService = null;
                     }
-                }
-                break;
+                } break;
 
                 case Expired: {
                     TeakEvent.removeEventListener(this.teakEventListener);
 
                     // TODO: Report Session to server, once we collect that info.
-                }
-                break;
+                } break;
             }
 
             // Print out any invalid values
@@ -305,7 +299,8 @@ public class Session {
 
         // TODO: Revist this when we have time, if it is important
         //noinspection deprecation - Alex said "ehhhhhhh" to changing the heartbeat param to a map
-        @SuppressWarnings("deprecation") final String teakSdkVersion = Teak.SDKVersion;
+        @SuppressWarnings("deprecation")
+        final String teakSdkVersion = Teak.SDKVersion;
 
         this.heartbeatService = Executors.newSingleThreadScheduledExecutor();
         this.heartbeatService.scheduleAtFixedRate(new Runnable() {
@@ -313,12 +308,12 @@ public class Session {
                 HttpsURLConnection connection = null;
                 try {
                     String queryString = "game_id=" + URLEncoder.encode(teakConfiguration.appConfiguration.appId, "UTF-8") +
-                            "&api_key=" + URLEncoder.encode(_this.userId, "UTF-8") +
-                            "&sdk_version=" + URLEncoder.encode(teakSdkVersion, "UTF-8") +
-                            "&sdk_platform=" + URLEncoder.encode(teakConfiguration.deviceConfiguration.platformString, "UTF-8") +
-                            "&app_version=" + URLEncoder.encode(String.valueOf(teakConfiguration.appConfiguration.appVersion), "UTF-8") +
-                            (_this.countryCode == null ? "" : "&country_code=" + URLEncoder.encode(String.valueOf(_this.countryCode), "UTF-8")) +
-                            "&buster=" + URLEncoder.encode(UUID.randomUUID().toString(), "UTF-8");
+                                         "&api_key=" + URLEncoder.encode(_this.userId, "UTF-8") +
+                                         "&sdk_version=" + URLEncoder.encode(teakSdkVersion, "UTF-8") +
+                                         "&sdk_platform=" + URLEncoder.encode(teakConfiguration.deviceConfiguration.platformString, "UTF-8") +
+                                         "&app_version=" + URLEncoder.encode(String.valueOf(teakConfiguration.appConfiguration.appVersion), "UTF-8") +
+                                         (_this.countryCode == null ? "" : "&country_code=" + URLEncoder.encode(String.valueOf(_this.countryCode), "UTF-8")) +
+                                         "&buster=" + URLEncoder.encode(UUID.randomUUID().toString(), "UTF-8");
                     URL url = new URL("https://iroko.gocarrot.com/ping?" + queryString);
                     connection = (HttpsURLConnection) url.openConnection();
                     connection.setRequestProperty("Accept-Charset", "UTF-8");
@@ -419,10 +414,12 @@ public class Session {
 
                             super.done(responseCode, responseBody);
                         }
-                    }.run();
+                    }
+                        .run();
                 }
             }
-        }).start();
+        })
+            .start();
     }
 
     private final TeakEvent.EventListener teakEventListener = new TeakEvent.EventListener() {
@@ -588,7 +585,7 @@ public class Session {
             } else {
                 synchronized (currentSession.stateMutex) {
                     if (currentSession.state == State.UserIdentified ||
-                            (currentSession.state == State.Expiring && currentSession.previousState == State.UserIdentified)) {
+                        (currentSession.state == State.Expiring && currentSession.previousState == State.UserIdentified)) {
                         new Thread(new WhenUserIdIsReadyRun(runnable)).start();
                     } else {
                         synchronized (userIdReadyRunnableQueueMutex) {
@@ -783,13 +780,15 @@ public class Session {
                                                 Teak.log.exception(e);
                                             }
                                         }
-                                    }).start();
+                                    })
+                                        .start();
                                 }
                             }
                         } catch (Exception ignored) {
                         }
                     }
-                }).start();
+                })
+                    .start();
             }
 
             // If the current session has a launch different attribution, it's a new session

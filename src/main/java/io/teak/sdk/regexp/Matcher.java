@@ -259,7 +259,7 @@ public class Matcher implements MatchResult {
     public String group(String groupName) {
         int idx = groupIndex(groupName);
         if (idx < 0) {
-          throw new IndexOutOfBoundsException("No group \"" + groupName + "\"");
+            throw new IndexOutOfBoundsException("No group \"" + groupName + "\"");
         }
         return group(idx);
     }
@@ -493,7 +493,7 @@ public class Matcher implements MatchResult {
         if (!(obj instanceof Matcher)) {
             return false;
         }
-        Matcher other = (Matcher)obj;
+        Matcher other = (Matcher) obj;
         if (!parentPattern.equals(other.parentPattern)) {
             return false;
         }

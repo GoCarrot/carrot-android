@@ -104,8 +104,8 @@ class TeakInstance {
             // (LAUNCH_SINGLE_INSTANCE == LAUNCH_SINGLE_TASK | LAUNCH_SINGLE_TOP) but let's not
             // assume that those values will stay the same
             if ((ai.launchMode & ActivityInfo.LAUNCH_SINGLE_INSTANCE) == 0 &&
-                    (ai.launchMode & ActivityInfo.LAUNCH_SINGLE_TASK) == 0 &&
-                    (ai.launchMode & ActivityInfo.LAUNCH_SINGLE_TOP) == 0) {
+                (ai.launchMode & ActivityInfo.LAUNCH_SINGLE_TASK) == 0 &&
+                (ai.launchMode & ActivityInfo.LAUNCH_SINGLE_TOP) == 0) {
                 Teak.log.w("launch_mode", "The android:launchMode of this activity is not set to 'singleTask', 'singleTop' or 'singleInstance'. This could cause undesired behavior.");
             }
         } catch (Exception e) {
@@ -163,7 +163,7 @@ class TeakInstance {
         }
 
         if ((objectInstanceId != null && !objectInstanceId.isEmpty()) &&
-                (objectTypeId == null || objectTypeId.isEmpty())) {
+            (objectTypeId == null || objectTypeId.isEmpty())) {
             Teak.log.e("track_event.error", "objectTypeId can not be null or empty if objectInstanceId is present for trackEvent(), ignoring.");
             return;
         }
@@ -222,13 +222,12 @@ class TeakInstance {
         //public static final Integer length = 1 + Destroyed.ordinal();
 
         private static final State[][] allowedTransitions = {
-                {},
-                {State.Created},
-                {State.Active},
-                {State.Paused},
-                {State.Destroyed, State.Active},
-                {}
-        };
+            {},
+            {State.Created},
+            {State.Active},
+            {State.Paused},
+            {State.Destroyed, State.Active},
+            {}};
 
         public final String name;
 

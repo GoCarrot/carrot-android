@@ -84,7 +84,7 @@ public class GroupInfo implements Serializable {
         if (!(obj instanceof GroupInfo)) {
             return false;
         }
-        GroupInfo other = (GroupInfo)obj;
+        GroupInfo other = (GroupInfo) obj;
         return (pos == other.pos) && (groupIndex == other.groupIndex);
     }
 

@@ -55,9 +55,7 @@ public class TeakConfiguration {
 
     private static TeakConfiguration Instance;
 
-    public static
-    @NonNull
-    TeakConfiguration get() {
+    public static @NonNull TeakConfiguration get() {
         if (Instance == null) {
             throw new IllegalStateException("Call to TeakConfiguration.get() before initialization.");
         }

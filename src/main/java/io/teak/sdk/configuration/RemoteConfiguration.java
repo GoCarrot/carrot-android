@@ -70,10 +70,10 @@ public class RemoteConfiguration {
                                 JSONObject response = new JSONObject(responseBody);
 
                                 RemoteConfiguration configuration = new RemoteConfiguration(teakConfiguration.appConfiguration,
-                                        response.isNull("auth") ? "gocarrot.com" : response.getString("auth"),
-                                        nullInsteadOfEmpty(response.isNull("sdk_sentry_dsn") ? null : response.getString("sdk_sentry_dsn")),
-                                        nullInsteadOfEmpty(response.isNull("app_sentry_dsn") ? null : response.getString("app_sentry_dsn")),
-                                        nullInsteadOfEmpty(response.isNull("gcm_sender_id") ? null : response.getString("gcm_sender_id")));
+                                    response.isNull("auth") ? "gocarrot.com" : response.getString("auth"),
+                                    nullInsteadOfEmpty(response.isNull("sdk_sentry_dsn") ? null : response.getString("sdk_sentry_dsn")),
+                                    nullInsteadOfEmpty(response.isNull("app_sentry_dsn") ? null : response.getString("app_sentry_dsn")),
+                                    nullInsteadOfEmpty(response.isNull("gcm_sender_id") ? null : response.getString("gcm_sender_id")));
 
                                 Teak.log.i("configuration.remote", configuration.to_h());
                                 TeakEvent.postEvent(new RemoteConfigurationEvent(configuration));
@@ -81,7 +81,8 @@ public class RemoteConfiguration {
                                 Teak.log.exception(e);
                             }
                         }
-                    }).start();
+                    })
+                        .start();
                 }
             }
         });

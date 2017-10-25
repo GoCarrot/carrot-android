@@ -80,7 +80,8 @@ public class DeepLink {
                     routes.put(regex, link);
                 }
             }
-        }).start();
+        })
+            .start();
     }
 
     static boolean processUri(Uri uri) {

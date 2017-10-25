@@ -133,15 +133,14 @@ class FacebookAccessTokenBroadcast {
                     }
 
                     if (this.com_facebook_Session_getActiveSession != null &&
-                            this.com_facebook_Session_getAccessToken != null &&
-                            this.facebook_3_x_BroadcastAction != null) {
+                        this.com_facebook_Session_getAccessToken != null &&
+                        this.facebook_3_x_BroadcastAction != null) {
                         IntentFilter filter = new IntentFilter();
                         filter.addAction(this.facebook_3_x_BroadcastAction);
 
                         this.broadcastManager.registerReceiver(this.broadcastReceiver, filter);
                     }
-                }
-                break;
+                } break;
 
                 case 4: {
                     Class<?> com_facebook_AccessToken;
@@ -164,14 +163,13 @@ class FacebookAccessTokenBroadcast {
                     }
 
                     if (this.com_facebook_AccessToken_getToken != null &&
-                            this.facebook_4_x_BroadcastAction != null) {
+                        this.facebook_4_x_BroadcastAction != null) {
                         IntentFilter filter = new IntentFilter();
                         filter.addAction(this.facebook_4_x_BroadcastAction);
 
                         this.broadcastManager.registerReceiver(this.broadcastReceiver, filter);
                     }
-                }
-                break;
+                } break;
 
                 default: {
                     Teak.log.e("facebook", "Don't know how to use Facebook SDK version " + versionInts[0]);

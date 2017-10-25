@@ -238,7 +238,7 @@ public class TeakNotification {
                         connection.setDoOutput(true);
                         connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
                         connection.setRequestProperty("Content-Length",
-                                "" + Integer.toString(requestBody.getBytes().length));
+                            "" + Integer.toString(requestBody.getBytes().length));
 
                         // Send request
                         DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
@@ -355,7 +355,8 @@ public class TeakNotification {
 
                         ret.run();
                     }
-                }.run();
+                }
+                    .run();
             }
         });
         return ret;
@@ -412,7 +413,8 @@ public class TeakNotification {
                         }
                         ret.run();
                     }
-                }.run();
+                }
+                    .run();
             }
         });
 

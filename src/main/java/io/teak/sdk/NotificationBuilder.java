@@ -149,7 +149,7 @@ public class NotificationBuilder {
         Bitmap largeNotificationIcon = null;
         try {
             largeNotificationIcon = BitmapFactory.decodeResource(context.getResources(),
-                    R.drawable("io_teak_large_notification_icon"));
+                R.drawable("io_teak_large_notification_icon"));
         } catch (Exception ignored) {
         }
 
@@ -179,9 +179,8 @@ public class NotificationBuilder {
             private RemoteViews buildViews(String name) throws Exception {
                 int viewLayout = R.layout(name);
                 RemoteViews remoteViews = new RemoteViews(
-                        context.getPackageName(),
-                        viewLayout
-                );
+                    context.getPackageName(),
+                    viewLayout);
 
                 // To let us query for information about the view
                 LayoutInflater factory = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -211,10 +210,10 @@ public class NotificationBuilder {
                         }
                     } else //noinspection StatementWithEmptyBody
                         if (viewElement.getClass().equals(Button.class)) {
-                            // TODO: Need more config options for button, image, text, deep link
-                        } else {
-                            // TODO: report error to the dashboard
-                        }
+                        // TODO: Need more config options for button, image, text, deep link
+                    } else {
+                        // TODO: report error to the dashboard
+                    }
                 }
 
                 return remoteViews;
@@ -336,9 +335,8 @@ public class NotificationBuilder {
 
         // Configure notification small view
         RemoteViews smallView = new RemoteViews(
-                context.getPackageName(),
-                R.layout("teak_notif_no_title")
-        );
+            context.getPackageName(),
+            R.layout("teak_notif_no_title"));
 
         // Set small view image
         smallView.setImageViewResource(R.id("left_image"), smallIconResourceId);
@@ -349,12 +347,11 @@ public class NotificationBuilder {
 
         // Check for Jellybean (API 16, 4.1)+ for expanded view
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN &&
-                teakNotificaton.longText != null &&
-                !teakNotificaton.longText.isEmpty()) {
+            teakNotificaton.longText != null &&
+            !teakNotificaton.longText.isEmpty()) {
             RemoteViews bigView = new RemoteViews(
-                    context.getPackageName(),
-                    R.layout("teak_big_notif_image_text")
-            );
+                context.getPackageName(),
+                R.layout("teak_big_notif_image_text"));
 
             // Set big view text
             bigView.setTextViewText(R.id("text"), Html.fromHtml(teakNotificaton.longText));
