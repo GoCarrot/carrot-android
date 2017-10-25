@@ -2,7 +2,4 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-ANDROID_HOME=/usr/local/share/android-sdk
-export ANDROID_HOME
-
 infer run --fail-on-issue -- ./gradlew clean assemble

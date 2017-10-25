@@ -10,6 +10,7 @@ dependencies:
     - echo y | $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-25" "build-tools;25.0.2" "extras;google;m2repository" "extras;android;m2repository"
     - find $ANDROID_HOME -xdev | sort > fs-after.txt
     - diff -daU 0 fs-before.txt fs-after.txt | grep -vE '^(@@|\+\+\+|---)' > fs.diff
+    - if [ "$(which infer)" == "" ]; then brew install infer; fi
   cache_directories:
     # TODO: Use fs.diff to figure out what to cache
 checkout:
@@ -25,7 +26,7 @@ deployment:
       - aws s3 cp build/outputs/aar/teak-release.aar s3://teak-build-artifacts/android/teak.aar --acl public-read
 compile:
   override:
-    - ./gradlew assemble
+    - infer run --fail-on-issue -- ./gradlew assemble
 test:
   override:
     # Unit Tests

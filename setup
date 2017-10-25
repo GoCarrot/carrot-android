@@ -12,6 +12,7 @@ fi
 
 if [ "$(which ant)" == "" ]; then brew install ant; fi
 if [ "$(which mvn)" == "" ]; then brew install maven; fi
+if [ "$(which infer)" == "" ]; then brew install infer; fi
 if [ "$(which android)" == "" ]; then
   brew cask install android-sdk
 fi
