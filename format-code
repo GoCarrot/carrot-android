@@ -1,0 +1,5 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+
+find src -type f -name "*.java" | xargs clang-format -style=file -i

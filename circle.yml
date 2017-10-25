@@ -26,6 +26,7 @@ deployment:
       - aws s3 cp build/outputs/aar/teak-release.aar s3://teak-build-artifacts/android/teak.aar --acl public-read
 compile:
   override:
+    - ./validate-code-format
     - infer run --fail-on-issue -- ./gradlew assemble
 test:
   override:
