@@ -141,6 +141,7 @@ public class DefaultObjectFactory implements IObjectFactory {
                 Teak.log.exception(e);
             }
         } else {
+            // TODO: This will happen before Logs are initialized, need to figure out a reasonable solution
             Teak.log.e("factory.istore", "Installer package (Store) is null, purchase tracking disabled.");
         }
 

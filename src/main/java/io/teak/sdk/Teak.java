@@ -338,6 +338,7 @@ public class Teak extends BroadcastReceiver {
     public static Future<Void> waitForDeepLink;
 
     static {
+        // TODO: This may not (shouldn't?) get called during unit tests, so make sure something else does it.
         TeakEvent.addEventListener(new TeakEvent.EventListener() {
             @Override
             public void onNewEvent(@NonNull TeakEvent event) {
