@@ -15,6 +15,7 @@
 
 package io.teak.sdk;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 
 import android.content.Intent;
@@ -89,6 +90,7 @@ public class Teak extends BroadcastReceiver {
      *
      * @param activity The main <code>Activity</code> of your app.
      */
+    @SuppressLint("infer")
     @SuppressWarnings("unused")
     public static void onCreate(@NonNull Activity activity) {
         onCreate(activity, null);
@@ -108,10 +110,13 @@ public class Teak extends BroadcastReceiver {
 
         // Add version info for Unity/Air
         IAndroidResources androidResources = objectFactory.getAndroidResources();
-        String wrapperSDKName = androidResources.getStringResource("io_teak_wrapper_sdk_name");
-        String wrapperSDKVersion = androidResources.getStringResource("io_teak_wrapper_sdk_version");
-        if (wrapperSDKName != null && wrapperSDKVersion != null) {
-            Teak.sdkMap.put(wrapperSDKName, wrapperSDKVersion);
+        //noinspection ConstantConditions - Infer isn't picking up the @NonNull for some reason
+        if (androidResources != null) {
+            String wrapperSDKName = androidResources.getStringResource("io_teak_wrapper_sdk_name");
+            String wrapperSDKVersion = androidResources.getStringResource("io_teak_wrapper_sdk_version");
+            if (wrapperSDKName != null && wrapperSDKVersion != null) {
+                Teak.sdkMap.put(wrapperSDKName, wrapperSDKVersion);
+            }
         }
 
         // Create Instance

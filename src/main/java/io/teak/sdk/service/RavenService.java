@@ -162,6 +162,7 @@ public class RavenService extends Service {
                 if (requestBody == null || endpoint == null) return;
 
                 HttpsURLConnection connection = null;
+                BufferedReader rd = null;
 
                 try {
                     connection = (HttpsURLConnection) endpoint.openConnection();
@@ -186,14 +187,13 @@ public class RavenService extends Service {
                     } else {
                         is = connection.getErrorStream();
                     }
-                    BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+                    rd = new BufferedReader(new InputStreamReader(is));
                     String line;
                     StringBuilder response = new StringBuilder();
                     while ((line = rd.readLine()) != null) {
                         response.append(line);
                         response.append('\r');
                     }
-                    rd.close();
 
                     try {
                         JSONObject jsonResponse = new JSONObject(response.toString());
@@ -204,6 +204,13 @@ public class RavenService extends Service {
                 } catch (Exception e) {
                     Log.e(LOG_TAG, Log.getStackTraceString(e));
                 } finally {
+                    if (rd != null) {
+                        try {
+                            rd.close();
+                        } catch (Exception ignored) {
+                        }
+                    }
+
                     if (connection != null) {
                         connection.disconnect();
                     }

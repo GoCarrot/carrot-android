@@ -36,6 +36,8 @@ public class DefaultHttpsRequest implements IHttpsRequest {
         Response ret = null;
 
         HttpsURLConnection connection = null;
+        BufferedReader rd = null;
+
         try {
             connection = (HttpsURLConnection) url.openConnection();
 
@@ -59,7 +61,7 @@ public class DefaultHttpsRequest implements IHttpsRequest {
             } else {
                 is = connection.getErrorStream();
             }
-            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+            rd = new BufferedReader(new InputStreamReader(is));
             String line;
             StringBuilder response = new StringBuilder();
             while ((line = rd.readLine()) != null) {
@@ -82,6 +84,12 @@ public class DefaultHttpsRequest implements IHttpsRequest {
         } catch (SocketException sock_e) {
             // Ignored, Sentry issue 'TEAK-SDK-S'
         } finally {
+            if (rd != null) {
+                try {
+                    rd.close();
+                } catch (Exception ignored) {
+                }
+            }
             if (connection != null) {
                 connection.disconnect();
             }
