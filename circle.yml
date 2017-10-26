@@ -10,7 +10,6 @@ dependencies:
     - echo y | $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-25" "build-tools;25.0.2" "extras;google;m2repository" "extras;android;m2repository"
     - find $ANDROID_HOME -xdev | sort > fs-after.txt
     - diff -daU 0 fs-before.txt fs-after.txt | grep -vE '^(@@|\+\+\+|---)' > fs.diff
-    - if [ "$(which infer)" == "" ]; then brew install infer; fi
   cache_directories:
     # TODO: Use fs.diff to figure out what to cache
 checkout:
@@ -27,7 +26,7 @@ deployment:
 compile:
   override:
     - ./validate-code-format
-    - infer run --fail-on-issue -- ./gradlew assemble
+    - ./gradlew assemble
 test:
   override:
     # Unit Tests
