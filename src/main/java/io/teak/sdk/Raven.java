@@ -285,7 +285,7 @@ class Raven implements Thread.UncaughtExceptionHandler {
 
         void sendToService(Map<String, Object> extras) {
             payload.putAll(payloadTemplate);
-            if (extras != null) payload.putAll(extras);
+            if (extras != null) payload.put("extra", extras);
             try {
                 Intent intent = new Intent(RavenService.REPORT_EXCEPTION_INTENT_ACTION, null, applicationContext, RavenService.class);
                 intent.putExtra("appId", appId);
