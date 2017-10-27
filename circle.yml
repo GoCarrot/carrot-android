@@ -9,7 +9,7 @@ dependencies:
     #- sudo apt-get install clang-format
     - find $ANDROID_HOME -xdev | sort > fs-before.txt
     - echo y | android update sdk -u -a -t tools
-    - echo y | $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-25" "build-tools;25.0.2" "extras;google;m2repository" "extras;android;m2repository"
+    - echo y | $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-25" "build-tools;26.0.2" "extras;google;m2repository" "extras;android;m2repository"
     - find $ANDROID_HOME -xdev | sort > fs-after.txt
     - diff -daU 0 fs-before.txt fs-after.txt | grep -vE '^(@@|\+\+\+|---)' > fs.diff
   cache_directories:

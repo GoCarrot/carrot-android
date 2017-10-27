@@ -84,20 +84,6 @@ android.libraryVariants.all { variant ->
 
         from fileTree(dir: "src/main", include: 'res/**')
     })
-
-    // Rename AARs
-    variant.outputs.each { output ->
-        def outputFile = output.outputFile
-        if (outputFile != null && outputFile.name.endsWith('.aar')) {
-            def fileName
-            if (variant.buildType.name.equals(BuilderConstants.DEBUG)) {
-                fileName = "${archivesBaseName}-${variant.name}.aar"
-            } else {
-                fileName = "${archivesBaseName}-${variant.name}.aar"
-            }
-            output.outputFile = new File(outputFile.parent, fileName)
-        }
-    }
 }
 
 def getVersionName = { ->
@@ -112,7 +98,7 @@ def getVersionName = { ->
 android {
     // IMPORTANT: Changing versions?  Update `setup` as well!
     compileSdkVersion 23
-    buildToolsVersion '25.0.0'
+    buildToolsVersion '26.0.2'
 
     defaultConfig {
         minSdkVersion 14
