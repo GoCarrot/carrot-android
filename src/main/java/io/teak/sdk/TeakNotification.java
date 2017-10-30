@@ -487,7 +487,7 @@ public class TeakNotification {
                             final Map<String, Object> contents = new HashMap<>();
                             contents.put("status", "error.internal");
                             q.offer(new JSONObject(contents).toString());
-                            Teak.log.exception(e, _.h("scheduleId", scheduleId));
+                            Teak.log.exception(e, mm.h("scheduleId", scheduleId));
                         }
                         ret.run();
                     }
@@ -551,7 +551,7 @@ public class TeakNotification {
                             final Map<String, Object> contents = new HashMap<>();
                             contents.put("status", "error.internal");
                             q.offer(new JSONObject(contents).toString());
-                            Teak.log.exception(e, _.h("responseBody", responseBody));
+                            Teak.log.exception(e, mm.h("responseBody", responseBody));
                         }
                         ret.run();
                     }
