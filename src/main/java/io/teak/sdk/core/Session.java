@@ -164,6 +164,7 @@ public class Session {
         this();
         this.launchAttribution = launchAttribution;
         this.userId = session.userId;
+        this.facebookAccessToken = session.facebookAccessToken;
     }
 
     private boolean hasExpired() {
