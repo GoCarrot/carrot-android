@@ -46,7 +46,8 @@ import io.teak.sdk.event.UserIdEvent;
 import io.teak.sdk.store.IStore;
 
 class TeakInstance {
-    private final IObjectFactory objectFactory;
+    @SuppressWarnings("WeakerAccess") // Adobe AIR
+    final IObjectFactory objectFactory;
 
     private static final String PREFERENCE_FIRST_RUN = "io.teak.sdk.Preferences.FirstRun";
 
