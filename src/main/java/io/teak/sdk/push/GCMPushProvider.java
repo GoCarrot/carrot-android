@@ -74,7 +74,7 @@ public class GCMPushProvider implements IPushProvider {
                     Teak.log.i("device_configuration", Helpers.mm.h("sender_id", gcmSenderId));
 
                     //noinspection deprecation - Using deprecated method for backward compatibility
-                    return gcm.register(gcmSenderId);
+                    return gcm == null ? null : gcm.register(gcmSenderId);
                 }
             }));
             new Thread(gcmRegistration).start();
