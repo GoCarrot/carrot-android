@@ -153,31 +153,37 @@ public class TeakCore implements ITeakCore {
                     // Add platformId to bundle
                     bundle.putInt("platformId", teakNotification.platformId);
 
-                    // Create native notification
+                    // Create & display native notification asynchronously, image downloads etc
                     final Context context = ((PushNotificationEvent) event).context;
-                    Notification nativeNotification = NotificationBuilder.createNativeNotification(context, bundle, teakNotification);
-                    if (nativeNotification == null) break;
+                    asyncExecutor.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            // Create native notification
+                            Notification nativeNotification = NotificationBuilder.createNativeNotification(context, bundle, teakNotification);
+                            if (nativeNotification == null) return;
 
-                    // Send display event
-                    TeakEvent.postEvent(new NotificationDisplayEvent(teakNotification, nativeNotification));
+                            // Send display event
+                            TeakEvent.postEvent(new NotificationDisplayEvent(teakNotification, nativeNotification));
 
-                    // Send metric
-                    final String teakUserId = bundle.getString("teakUserId", null);
-                    if (teakUserId == null) break;
+                            // Send metric
+                            final String teakUserId = bundle.getString("teakUserId", null);
+                            if (teakUserId != null) {
+                                final Session session = Session.getCurrentSessionOrNull();
+                                final TeakConfiguration teakConfiguration = TeakConfiguration.get();
+                                if (session != null) {
+                                    HashMap<String, Object> payload = new HashMap<>();
+                                    payload.put("app_id", teakConfiguration.appConfiguration.appId);
+                                    payload.put("user_id", teakUserId);
+                                    payload.put("platform_id", teakNotification.teakNotifId);
+                                    if (teakNotification.teakNotifId == 0) {
+                                        payload.put("impression", false);
+                                    }
 
-                    final Session session = Session.getCurrentSessionOrNull();
-                    final TeakConfiguration teakConfiguration = TeakConfiguration.get();
-                    if (session != null) {
-                        HashMap<String, Object> payload = new HashMap<>();
-                        payload.put("app_id", teakConfiguration.appConfiguration.appId);
-                        payload.put("user_id", teakUserId);
-                        payload.put("platform_id", teakNotification.teakNotifId);
-                        if (teakNotification.teakNotifId == 0) {
-                            payload.put("impression", false);
+                                    asyncExecutor.submit(new Request("parsnip.gocarrot.com", "/notification_received", payload, session));
+                                }
+                            }
                         }
-
-                        asyncExecutor.submit(new Request("parsnip.gocarrot.com", "/notification_received", payload, session));
-                    }
+                    });
                     break;
                 }
 
