@@ -145,7 +145,7 @@ public class TeakCore implements ITeakCore {
 
                     // Foreground notification?
                     boolean showInForeground = Helpers.getBooleanFromBundle(bundle, "teakShowInForeground");
-                    if (!showInForeground && Session.isExpiringOrExpired()) break;
+                    if (showInForeground || !Session.isExpiringOrExpired()) break;
 
                     // Create Teak Notification
                     final TeakNotification teakNotification = new TeakNotification(bundle);
