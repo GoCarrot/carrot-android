@@ -19,6 +19,7 @@ import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import org.json.JSONObject;
 
@@ -147,6 +148,10 @@ public class Session {
     }
 
     private Session() {
+        this(null, null);
+    }
+
+    private Session(@Nullable Session session, @Nullable Future<Map<String, Object>> launchAttribution) {
         // State: Created
         // Valid data:
         // - startDate
@@ -154,17 +159,14 @@ public class Session {
         // - deviceConfiguration
         this.startDate = new Date();
         this.sessionId = UUID.randomUUID().toString().replace("-", "");
-
+        this.launchAttribution = launchAttribution;
+        if (session != null) {
+            this.userId = session.userId;
+            this.facebookAccessToken = session.facebookAccessToken;
+        }
         TeakEvent.addEventListener(this.teakEventListener);
 
         setState(State.Created);
-    }
-
-    private Session(@NonNull Session session, Future<Map<String, Object>> launchAttribution) {
-        this();
-        this.launchAttribution = launchAttribution;
-        this.userId = session.userId;
-        this.facebookAccessToken = session.facebookAccessToken;
     }
 
     private boolean hasExpired() {
