@@ -143,9 +143,13 @@ public class Log {
     }
 
     public void exception(@NonNull Throwable t) {
+        exception(t, null);
+    }
+
+    public void exception(@NonNull Throwable t, @Nullable Map<String, Object> extras) {
         // Send to Raven
         if (Teak.sdkRaven != null) {
-            Teak.sdkRaven.reportException(t);
+            Teak.sdkRaven.reportException(t, extras);
         }
 
         this.log(Level.Error, "exception", Raven.throwableToMap(t));
@@ -193,7 +197,7 @@ public class Log {
         payload.put("event_data", eventData);
 
         // Remote logging
-        if (Teak.debugConfiguration.isDebug()) {
+        if (Teak.debugConfiguration != null && Teak.debugConfiguration.isDebug()) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -240,7 +244,7 @@ public class Log {
         }
 
         // Log to Android log
-        if (Teak.debugConfiguration.isDebug() && android.util.Log.isLoggable(this.androidLogTag, logLevel.androidLogPriority)) {
+        if (Teak.debugConfiguration == null || (Teak.debugConfiguration.isDebug() && android.util.Log.isLoggable(this.androidLogTag, logLevel.androidLogPriority))) {
             String jsonStringForAndroidLog = "{}";
             try {
                 if (this.jsonIndentation > 0) {

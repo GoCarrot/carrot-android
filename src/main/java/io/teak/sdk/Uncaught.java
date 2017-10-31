@@ -27,7 +27,7 @@ class Uncaught implements Thread.UncaughtExceptionHandler {
         if (thread != createdOnThread) {
             Log.d(LOG_TAG, "TeakExceptionHandler created on " + createdOnThread.toString() + " getting exception from " + thread.toString());
         }
-        Teak.sdkRaven.reportException(ex);
+        Teak.sdkRaven.reportException(ex, null);
     }
 
     public static synchronized Uncaught begin() {

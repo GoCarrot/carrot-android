@@ -293,7 +293,7 @@ class DeviceConfiguration {
                     public String call() throws Exception {
                         GoogleCloudMessaging gcm = _this.gcm.get();
                         Teak.log.i("device_configuration", _.h("sender_id", gcmSenderId, "source", source));
-                        return gcm.register(gcmSenderId);
+                        return gcm == null ? null : gcm.register(gcmSenderId);
                     }
                 }));
                 new Thread(gcmRegistration).start();

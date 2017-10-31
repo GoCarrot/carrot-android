@@ -44,6 +44,7 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
 
@@ -56,7 +57,9 @@ class NotificationBuilder {
         try {
             return createNativeNotificationV1Plus(context, bundle, teakNotificaton);
         } catch (Exception e) {
-            Teak.log.exception(e);
+            HashMap<String, Object> extras = new HashMap<>();
+            if (bundle.getString("teakCreativeName") != null) extras.put("teakCreativeName", bundle.getString("teakCreativeName"));
+            Teak.log.exception(e, extras);
             // TODO: Report to the 'callback' URL on the push when/if we implement that
             return null;
         }
