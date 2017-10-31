@@ -24,12 +24,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.zip.GZIPOutputStream;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -59,7 +59,7 @@ import javax.net.ssl.HttpsURLConnection;
 
 public class Log {
     // region Log Level enum
-    public enum Level {
+    private enum Level {
         Verbose("VERBOSE", android.util.Log.VERBOSE),
         Info("INFO", android.util.Log.INFO),
         Warn("WARN", android.util.Log.WARN),
@@ -75,32 +75,9 @@ public class Log {
     }
     // endregion
 
-    Map<String, Object> sdkVersion;
-    DeviceConfiguration deviceConfiguration;
-    AppConfiguration appConfiguration;
-    RemoteConfiguration remoteConfiguration;
+    private final Map<String, Object> commonPayload = new HashMap<>();
 
     // region Public API
-    public void useSdk(@NonNull Map<String, Object> sdkVersion) {
-        this.sdkVersion = sdkVersion;
-        this.log(Level.Info, "sdk_init", null);
-    }
-
-    public void useDeviceConfiguration(@NonNull DeviceConfiguration deviceConfiguration) {
-        this.log(Level.Info, "device_configuration", deviceConfiguration.to_h());
-        this.deviceConfiguration = deviceConfiguration;
-    }
-
-    public void useAppConfiguration(@NonNull AppConfiguration appConfiguration) {
-        this.log(Level.Info, "app_configuration", appConfiguration.to_h());
-        this.appConfiguration = appConfiguration;
-    }
-
-    public void useRemoteConfiguration(@NonNull RemoteConfiguration remoteConfiguration) {
-        this.log(Level.Info, "remote_configuration", remoteConfiguration.to_h());
-        this.remoteConfiguration = remoteConfiguration;
-    }
-
     public void e(@NonNull String eventType, @NonNull String message) {
         Map<String, Object> eventData = new HashMap<>();
         eventData.put("message", message);
@@ -148,8 +125,8 @@ public class Log {
 
     public void exception(@NonNull Throwable t, @Nullable Map<String, Object> extras) {
         // Send to Raven
-        if (Teak.sdkRaven != null) {
-            Teak.sdkRaven.reportException(t, extras);
+        if (Teak.Instance != null && Teak.Instance.sdkRaven != null) {
+            Teak.Instance.sdkRaven.reportException(t, extras);
         }
 
         this.log(Level.Error, "exception", Raven.throwableToMap(t));
@@ -158,54 +135,107 @@ public class Log {
 
     // region State
     // Always available, can't change
-    public final String androidLogTag;
+    private final String androidLogTag;
     private final int jsonIndentation;
-    public final String runId;
+    final String runId;
     private final AtomicLong eventCounter;
+
+    private boolean logLocally;
+    private boolean logRemotely;
+    private boolean sendToRapidIngestion;
     // endregion
 
     public Log(String androidLogTag, int jsonIndentation) {
         this.androidLogTag = androidLogTag;
         this.jsonIndentation = jsonIndentation;
         this.runId = UUID.randomUUID().toString().replace("-", "");
+        this.commonPayload.put("run_id", this.runId);
         this.eventCounter = new AtomicLong(0);
+
+        TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
+            @Override
+            public void onConfigurationReady(@NonNull TeakConfiguration configuration) {
+                // Add sdk version to common payload, and log init message
+                commonPayload.put("sdk_version", Teak.Version);
+                log(Level.Info, "sdk_init", null);
+
+                // Log full device configuration, then add common payload after
+                log(Level.Info, "configuration.device", configuration.deviceConfiguration.to_h());
+                commonPayload.put("device_id", configuration.deviceConfiguration.deviceId);
+
+                // Log full app configuration, then add common payload after
+                log(Level.Info, "configuration.app", configuration.appConfiguration.to_h());
+                commonPayload.put("bundle_id", configuration.appConfiguration.bundleId);
+                commonPayload.put("app_id", configuration.appConfiguration.appId);
+                commonPayload.put("client_app_version", configuration.appConfiguration.appVersion);
+
+                synchronized (queuedLogEvents) {
+                    for (LogEvent event : queuedLogEvents) {
+                        logEvent(event);
+                    }
+                    processedQueuedLogEvents = true;
+                }
+            }
+        });
     }
 
+    public void useRapidIngestionEndpoint(boolean useRapidIngestionEndpoint) {
+        this.sendToRapidIngestion = useRapidIngestionEndpoint;
+    }
+
+    public void setLoggingEnabled(boolean enableLogs) {
+        this.logLocally = this.logRemotely = enableLogs;
+    }
+
+    protected class LogEvent {
+        final Level logLevel;
+        final String eventType;
+        final Map<String, Object> eventData;
+
+        LogEvent(final @NonNull Level logLevel, final @NonNull String eventType, @Nullable Map<String, Object> eventData) {
+            this.logLevel = logLevel;
+            this.eventType = eventType;
+            this.eventData = eventData;
+        }
+    }
+
+    private boolean processedQueuedLogEvents = false;
+    private final ArrayList<LogEvent> queuedLogEvents = new ArrayList<>();
+
     protected void log(final @NonNull Level logLevel, final @NonNull String eventType, @Nullable Map<String, Object> eventData) {
-        final Map<String, Object> payload = new HashMap<>();
-        payload.put("run_id", this.runId);
+        LogEvent logEvent = new LogEvent(logLevel, eventType, eventData);
+        synchronized (queuedLogEvents) {
+            if (processedQueuedLogEvents) {
+                this.logEvent(logEvent);
+            } else {
+                queuedLogEvents.add(logEvent);
+            }
+        }
+    }
+
+    private void logEvent(final @NonNull LogEvent logEvent) {
+        // Payload including common payload
+        final Map<String, Object> payload = new HashMap<>(this.commonPayload);
+
         payload.put("event_id", this.eventCounter.getAndAdd(1));
         payload.put("timestamp", new Date().getTime() / 1000); // Milliseconds -> Seconds
-        payload.put("log_level", logLevel.name);
-        payload.put("sdk_version", this.sdkVersion);
-
-        if (this.deviceConfiguration != null) {
-            payload.put("device_id", this.deviceConfiguration.deviceId);
-        }
-
-        if (this.appConfiguration != null) {
-            payload.put("bundle_id", this.appConfiguration.bundleId);
-            payload.put("app_id", this.appConfiguration.appId);
-            payload.put("client_app_version", this.appConfiguration.appVersion);
-        }
+        payload.put("log_level", logEvent.logLevel.name);
 
         // Event-specific payload
-        payload.put("event_type", eventType);
-        if (eventData == null) {
-            eventData = new HashMap<>();
+        payload.put("event_type", logEvent.eventType);
+        if (logEvent.eventData != null) {
+            payload.put("event_data", logEvent.eventData);
         }
-        payload.put("event_data", eventData);
 
         // Remote logging
-        if (Teak.debugConfiguration != null && Teak.debugConfiguration.isDebug()) {
+        if (this.logRemotely) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
                     HttpsURLConnection connection = null;
                     try {
-                        URL endpoint = Teak.debugConfiguration.isDevelopmentBuild ?
-                                new URL("https://logs.gocarrot.com/dev.sdk.log." + logLevel.name)
-                                : new URL("https://logs.gocarrot.com/sdk.log." + logLevel.name);
+                        URL endpoint = sendToRapidIngestion ? new URL("https://logs.gocarrot.com/dev.sdk.log." + logEvent.logLevel.name)
+                                                            : new URL("https://logs.gocarrot.com/sdk.log." + logEvent.logLevel.name);
                         connection = (HttpsURLConnection) endpoint.openConnection();
                         connection.setRequestProperty("Accept-Charset", "UTF-8");
                         connection.setUseCaches(false);
@@ -227,6 +257,7 @@ public class Log {
                         }
                         BufferedReader rd = new BufferedReader(new InputStreamReader(is));
                         String line;
+                        //noinspection MismatchedQueryAndUpdateOfStringBuilder
                         StringBuilder response = new StringBuilder();
                         while ((line = rd.readLine()) != null) {
                             response.append(line);
@@ -240,11 +271,12 @@ public class Log {
                         }
                     }
                 }
-            }).start();
+            })
+                .start();
         }
 
         // Log to Android log
-        if (Teak.debugConfiguration == null || (Teak.debugConfiguration.isDebug() && android.util.Log.isLoggable(this.androidLogTag, logLevel.androidLogPriority))) {
+        if (this.logLocally && android.util.Log.isLoggable(this.androidLogTag, logEvent.logLevel.androidLogPriority)) {
             String jsonStringForAndroidLog = "{}";
             try {
                 if (this.jsonIndentation > 0) {
@@ -254,7 +286,7 @@ public class Log {
                 }
             } catch (Exception ignored) {
             }
-            android.util.Log.println(logLevel.androidLogPriority, this.androidLogTag, jsonStringForAndroidLog);
+            android.util.Log.println(logEvent.logLevel.androidLogPriority, this.androidLogTag, jsonStringForAndroidLog);
         }
     }
 }

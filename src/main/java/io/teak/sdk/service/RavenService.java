@@ -47,7 +47,7 @@ public class RavenService extends Service {
     public static final String SENTRY_CLIENT = "teak-android/" + TEAK_SENTRY_VERSION;
 
     public static final String REPORT_EXCEPTION_INTENT_ACTION = "REPORT_EXCEPTION";
-    public static final String  SET_DSN_INTENT_ACTION = "SET_DSN";
+    public static final String SET_DSN_INTENT_ACTION = "SET_DSN";
 
     HashMap<String, AppReporter> appReporterMap = new HashMap<>();
 
@@ -91,7 +91,6 @@ public class RavenService extends Service {
     public void onDestroy() {
         Log.d(LOG_TAG, "Lifecycle - onDestroy");
         for (Map.Entry<String, AppReporter> entry : appReporterMap.entrySet()) {
-
         }
     }
 
@@ -102,22 +101,22 @@ public class RavenService extends Service {
 
     private static final String[] EXCEPTIONS_READ_COLUMNS = {"rowid", "payload", "timestamp", "retries"};
 
-    class AppReporter {
+    private class AppReporter {
         private DatabaseHelper databaseHelper;
         private String SENTRY_KEY;
         private String SENTRY_SECRET;
         private URL endpoint;
 
-        public AppReporter(Context context, String appId) {
+        AppReporter(Context context, String appId) {
             databaseHelper = new DatabaseHelper(context, "raven." + appId + ".db");
         }
 
-        public void reportException(Intent intent) {
+        void reportException(Intent intent) {
             Thread senderThread = new Thread(new ReportSender(intent));
             senderThread.start();
         }
 
-        public void setDsn(Intent intent) {
+        void setDsn(Intent intent) {
             String dsn = intent.getStringExtra("dsn");
             if (dsn == null || dsn.isEmpty()) {
                 Log.e(LOG_TAG, "DSN empty for app: " + intent.getStringExtra("appId"));
@@ -139,7 +138,7 @@ public class RavenService extends Service {
                 SENTRY_SECRET = userInfo[1];
 
                 endpoint = new URL(String.format("%s://%s%s/api%s/store/",
-                        uri.getScheme(), uri.getHost(), port, project));
+                    uri.getScheme(), uri.getHost(), port, project));
             } catch (Exception e) {
                 Log.e(LOG_TAG, "Error parsing DSN: '" + uri.toString() + "'" + Log.getStackTraceString(e));
             }
@@ -149,7 +148,7 @@ public class RavenService extends Service {
             long timestamp;
             JSONObject requestBody;
 
-            public ReportSender(Intent intent) {
+            ReportSender(Intent intent) {
                 timestamp = intent.getLongExtra("timestamp", new Date().getTime() / 1000L);
                 try {
                     requestBody = new JSONObject(intent.getStringExtra("payload"));
@@ -163,6 +162,7 @@ public class RavenService extends Service {
                 if (requestBody == null || endpoint == null) return;
 
                 HttpsURLConnection connection = null;
+                BufferedReader rd = null;
 
                 try {
                     connection = (HttpsURLConnection) endpoint.openConnection();
@@ -173,8 +173,8 @@ public class RavenService extends Service {
                     connection.setRequestProperty("Content-Encoding", "gzip");
                     connection.setRequestProperty("User-Agent", SENTRY_CLIENT);
                     connection.setRequestProperty("X-Sentry-Auth",
-                            String.format(Locale.US, "Sentry sentry_version=%d,sentry_timestamp=%d,sentry_key=%s,sentry_secret=%s,sentry_client=%s",
-                                    SENTRY_VERSION, timestamp, SENTRY_KEY, SENTRY_SECRET, SENTRY_CLIENT));
+                        String.format(Locale.US, "Sentry sentry_version=%d,sentry_timestamp=%d,sentry_key=%s,sentry_secret=%s,sentry_client=%s",
+                            SENTRY_VERSION, timestamp, SENTRY_KEY, SENTRY_SECRET, SENTRY_CLIENT));
 
                     GZIPOutputStream wr = new GZIPOutputStream(connection.getOutputStream());
                     wr.write(requestBody.toString().getBytes());
@@ -187,14 +187,13 @@ public class RavenService extends Service {
                     } else {
                         is = connection.getErrorStream();
                     }
-                    BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+                    rd = new BufferedReader(new InputStreamReader(is));
                     String line;
                     StringBuilder response = new StringBuilder();
                     while ((line = rd.readLine()) != null) {
                         response.append(line);
                         response.append('\r');
                     }
-                    rd.close();
 
                     try {
                         JSONObject jsonResponse = new JSONObject(response.toString());
@@ -205,6 +204,13 @@ public class RavenService extends Service {
                 } catch (Exception e) {
                     Log.e(LOG_TAG, Log.getStackTraceString(e));
                 } finally {
+                    if (rd != null) {
+                        try {
+                            rd.close();
+                        } catch (Exception ignored) {
+                        }
+                    }
+
                     if (connection != null) {
                         connection.disconnect();
                     }
@@ -217,7 +223,7 @@ public class RavenService extends Service {
             private AtomicInteger openCounter = new AtomicInteger();
             private SQLiteDatabase database;
 
-            public DatabaseHelper(Context context, String name) {
+            DatabaseHelper(Context context, String name) {
                 super(context, name, null, DATABASE_VERSION);
             }
 

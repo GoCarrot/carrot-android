@@ -14,6 +14,7 @@
  */
 package io.teak.sdk;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
@@ -32,12 +33,13 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 
+import io.teak.sdk.event.UserIdEvent;
 import io.teak.sdk.service.RavenService;
 
-public class Raven implements Thread.UncaughtExceptionHandler {
-    public static final String LOG_TAG = "Teak.Raven";
+class Raven implements Thread.UncaughtExceptionHandler {
+    private static final String LOG_TAG = "Teak.Raven";
 
-    public enum Level {
+    private enum Level {
         FATAL("fatal"),
         ERROR("error"),
         WARNING("warning"),
@@ -67,15 +69,19 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         timestampFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
-    public Raven(@NonNull Context context, @NonNull String appId, @NonNull AppConfiguration appConfiguration, @NonNull DeviceConfiguration deviceConfiguration) {
+    Raven(@NonNull Context context, @NonNull String appId, @NonNull TeakConfiguration configuration) {
+        //noinspection deprecation - This must be a string as per Sentry API
+        @SuppressWarnings("deprecation")
+        final String teakSdkVersion = Teak.SDKVersion;
+
         this.applicationContext = context;
         this.appId = appId;
 
         // Fill in as much of the payload template as we can
         payloadTemplate.put("logger", "teak");
         payloadTemplate.put("platform", "java");
-        payloadTemplate.put("release", Teak.SDKVersion);
-        payloadTemplate.put("server_name", appConfiguration.bundleId);
+        payloadTemplate.put("release", teakSdkVersion);
+        payloadTemplate.put("server_name", configuration.appConfiguration.bundleId);
 
         HashMap<String, Object> sdkAttribute = new HashMap<>();
         sdkAttribute.put("name", "teak");
@@ -83,22 +89,32 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         payloadTemplate.put("sdk", sdkAttribute);
 
         HashMap<String, Object> deviceAttribute = new HashMap<>();
-        deviceAttribute.put("name", deviceConfiguration.deviceFallback);
+        deviceAttribute.put("name", configuration.deviceConfiguration.deviceFallback);
         deviceAttribute.put("version", Build.VERSION.SDK_INT);
         deviceAttribute.put("build", Build.VERSION.RELEASE);
         payloadTemplate.put("device", deviceAttribute);
 
         HashMap<String, Object> user = new HashMap<>();
-        user.put("device_id", deviceConfiguration.deviceId);
+        user.put("device_id", configuration.deviceConfiguration.deviceId);
+        user.put("log_run_id", Teak.log.runId); // Run id is always available
         payloadTemplate.put("user", user);
 
+        TeakEvent.addEventListener(new TeakEvent.EventListener() {
+            @Override
+            public void onNewEvent(@NonNull TeakEvent event) {
+                if (event instanceof UserIdEvent) {
+                    addUserData("id", ((UserIdEvent) event).userId);
+                }
+            }
+        });
+
         HashMap<String, Object> tagsAttribute = new HashMap<>();
-        tagsAttribute.put("app_id", appConfiguration.appId);
-        tagsAttribute.put("app_version", appConfiguration.appVersion);
+        tagsAttribute.put("app_id", configuration.appConfiguration.appId);
+        tagsAttribute.put("app_version", configuration.appConfiguration.appVersion);
         payloadTemplate.put("tags", tagsAttribute);
     }
 
-    public void setAsUncaughtExceptionHandler() {
+    void setAsUncaughtExceptionHandler() {
         if (Thread.getDefaultUncaughtExceptionHandler() instanceof Raven) {
             Raven raven = (Raven) Thread.getDefaultUncaughtExceptionHandler();
             raven.unsetAsUncaughtExceptionHandler();
@@ -107,7 +123,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         Thread.setDefaultUncaughtExceptionHandler(this);
     }
 
-    public void unsetAsUncaughtExceptionHandler() {
+    private void unsetAsUncaughtExceptionHandler() {
         Thread.setDefaultUncaughtExceptionHandler(previousUncaughtExceptionHandler);
         previousUncaughtExceptionHandler = null;
     }
@@ -117,14 +133,14 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         reportException(ex, null);
     }
 
-    public void setDsn(@NonNull String dsn) {
+    void setDsn(@NonNull String dsn) {
         Intent intent = new Intent(RavenService.SET_DSN_INTENT_ACTION, null, applicationContext, RavenService.class);
         intent.putExtra("appId", appId);
         intent.putExtra("dsn", dsn);
         applicationContext.startService(intent);
     }
 
-    public static Map<String, Object> throwableToMap(Throwable t) {
+    static Map<String, Object> throwableToMap(Throwable t) {
         if (t instanceof InvocationTargetException && t.getCause() != null) {
             t = t.getCause();
         }
@@ -174,7 +190,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         return exception;
     }
 
-    public void reportException(Throwable t, Map<String, Object> extras) {
+    void reportException(Throwable t, Map<String, Object> extras) {
         if (t == null) {
             return;
         }
@@ -198,8 +214,9 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         }
     }
 
-    public synchronized void addUserData(@NonNull String key, Object value) {
-        @SuppressWarnings("unchecked") HashMap<String, Object> user = (HashMap<String, Object>) payloadTemplate.get("user");
+    private synchronized void addUserData(@NonNull String key, Object value) {
+        @SuppressWarnings("unchecked")
+        HashMap<String, Object> user = (HashMap<String, Object>) payloadTemplate.get("user");
         if (user == null) {
             user = new HashMap<>();
             payloadTemplate.put("user", user);
@@ -212,7 +229,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         }
     }
 
-    public Map<String, Object> to_h() {
+    private Map<String, Object> to_h() {
         HashMap<String, Object> ret = new HashMap<>();
         ret.put("appId", this.appId);
         ret.put("applicationContext", this.applicationContext);
@@ -229,11 +246,11 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         }
     }
 
-    class Report {
+    private class Report {
         HashMap<String, Object> payload = new HashMap<>();
         Date timestamp = new Date();
 
-        public Report(String message, @NonNull Level level, HashMap<String, Object> additions) {
+        Report(String message, @NonNull Level level, HashMap<String, Object> additions) {
             if (message == null || message.length() < 1) {
                 message = "undefined";
             }
@@ -266,9 +283,9 @@ public class Raven implements Thread.UncaughtExceptionHandler {
             }
         }
 
-        public void sendToService(Map<String, Object> extras) {
+        void sendToService(Map<String, Object> extras) {
             payload.putAll(payloadTemplate);
-            if (extras != null) payload.putAll(extras);
+            if (extras != null) payload.put("extra", extras);
             try {
                 Intent intent = new Intent(RavenService.REPORT_EXCEPTION_INTENT_ACTION, null, applicationContext, RavenService.class);
                 intent.putExtra("appId", appId);
@@ -280,7 +297,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
             }
         }
 
-        public Map<String, Object> to_h() {
+        Map<String, Object> to_h() {
             HashMap<String, Object> ret = new HashMap<>();
             ret.put("payload", this.payload);
             ret.put("timestamp", this.timestamp);

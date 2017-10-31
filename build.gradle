@@ -5,13 +5,29 @@ import java.util.regex.Pattern
 buildscript {
     repositories {
         jcenter()
+        google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.3'
+        classpath 'com.android.tools.build:gradle:3.0.0'
+        classpath 'com.getkeepsafe.dexcount:dexcount-gradle-plugin:0.8.1'
     }
 }
 
 apply plugin: 'com.android.library'
+apply plugin: 'com.getkeepsafe.dexcount' // Outputs to ${buildDir}/outputs/dexcount/${variant}
+
+dexcount {
+    format = "list"
+    includeClasses = false
+    includeClassCount = false
+    includeFieldCount = true
+    includeTotalMethodCount = false
+    orderByMethodCount = false
+    verbose = false
+    maxTreeDepth = Integer.MAX_VALUE
+    runOnEachPackage = true
+    maxMethodCount = 1150 // This includes android.* etc dependencies, so I guess just do it this way for now
+}
 
 repositories {
     mavenCentral()
@@ -23,10 +39,6 @@ allprojects {
             options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
         }
     }
-}
-
-android.libraryVariants.all { variant ->
-
 }
 
 android.libraryVariants.all { variant ->
@@ -73,20 +85,6 @@ android.libraryVariants.all { variant ->
 
         from fileTree(dir: "src/main", include: 'res/**')
     })
-
-    // Rename AARs
-    variant.outputs.each { output ->
-        def outputFile = output.outputFile
-        if (outputFile != null && outputFile.name.endsWith('.aar')) {
-            def fileName
-            if (variant.buildType.name.equals(BuilderConstants.DEBUG)) {
-                fileName = "${archivesBaseName}-${variant.name}.aar"
-            } else {
-                fileName = "${archivesBaseName}-${variant.name}.aar"
-            }
-            output.outputFile = new File(outputFile.parent, fileName)
-        }
-    }
 }
 
 def getVersionName = { ->
@@ -101,7 +99,7 @@ def getVersionName = { ->
 android {
     // IMPORTANT: Changing versions?  Update `setup` as well!
     compileSdkVersion 23
-    buildToolsVersion '25.0.0'
+    buildToolsVersion '26.0.2'
 
     defaultConfig {
         minSdkVersion 14
@@ -114,11 +112,11 @@ android {
 }
 
 dependencies {
-    // Google Play files
-    compile 'com.google.android.gms:play-services-gcm:7.5.0'
-    compile 'com.google.android.gms:play-services-ads:7.5.0'
+    // Google Play files - Old versions intentional, don't update them.
+    implementation 'com.google.android.gms:play-services-gcm:7.5.0'
+    implementation 'com.google.android.gms:play-services-ads:7.5.0'
 
     // Amazon files, compile-time only dependencies
-    provided files('libs/amazon-device-messaging-1.0.1.jar')
-    provided files('libs/in-app-purchasing-2.0.76.jar')
+    compileOnly files('libs/amazon-device-messaging-1.0.1.jar')
+    compileOnly files('libs/in-app-purchasing-2.0.76.jar')
 }

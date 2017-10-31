@@ -12,6 +12,7 @@ fi
 
 if [ "$(which ant)" == "" ]; then brew install ant; fi
 if [ "$(which mvn)" == "" ]; then brew install maven; fi
+if [ "$(which infer)" == "" ]; then brew install infer; fi
 if [ "$(which android)" == "" ]; then
   brew cask install android-sdk
 fi
@@ -19,7 +20,4 @@ fi
 ANDROID_HOME=/usr/local/share/android-sdk
 export ANDROID_HOME
 
-sdkmanager "build-tools;23.0.2"
-sdkmanager "platforms;android-23"
-sdkmanager "extras;google;m2repository"
-sdkmanager "extras;android;m2repository"
+sdkmanager "platforms;android-25" "build-tools;25.0.2" "extras;google;m2repository" "extras;android;m2repository"

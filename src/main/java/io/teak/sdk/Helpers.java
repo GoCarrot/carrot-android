@@ -14,8 +14,6 @@
  */
 package io.teak.sdk;
 
-import android.content.Context;
-
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 
@@ -30,18 +28,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-class Helpers {
-    static String getStringResourceByName(String name, Context context) {
-        try {
-            String packageName = context.getPackageName();
-            int resId = context.getResources().getIdentifier(name, "string", packageName);
-            return context.getString(resId);
-        } catch (Exception ignored) {
-        }
-        return null;
-    }
-
-    static boolean getBooleanFromBundle(Bundle b, String key) {
+public class Helpers {
+    public static boolean getBooleanFromBundle(Bundle b, String key) {
         String boolAsStringMaybe = b.getString(key);
         if (boolAsStringMaybe != null) {
             return Boolean.parseBoolean(boolAsStringMaybe);
@@ -49,7 +37,7 @@ class Helpers {
         return b.getBoolean(key);
     }
 
-    static HashMap<String, Object> jsonToMap(JSONObject json) throws JSONException {
+    public static HashMap<String, Object> jsonToMap(JSONObject json) throws JSONException {
         HashMap<String, Object> retMap = new HashMap<>();
 
         if (json != JSONObject.NULL) {
@@ -90,11 +78,11 @@ class Helpers {
         return list;
     }
 
-
-    public static class _ {
+    public static class mm {
         public static Map<String, Object> h(@NonNull Object... args) {
             Map<String, Object> ret = new HashMap<>();
-            if (args.length % 2 != 0) throw new InvalidParameterException("Args must be in key value pairs.");
+            if (args.length % 2 != 0)
+                throw new InvalidParameterException("Args must be in key value pairs.");
             for (int i = 0; i < args.length; i += 2) {
                 ret.put(args[i].toString(), args[i + 1]);
             }

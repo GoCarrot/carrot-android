@@ -14,11 +14,32 @@
  */
 package io.teak.sdk;
 
+import java.util.ArrayList;
+
 public class InstanceIDListenerService extends com.google.android.gms.iid.InstanceIDListenerService {
     @Override
     public void onTokenRefresh() {
-        if (Teak.deviceConfiguration != null) {
-            Teak.deviceConfiguration.reRegisterPushToken(Teak.appConfiguration, "InstanceIDListenerService");
+        synchronized (eventListenersMutex) {
+            for (EventListener e : eventListeners) {
+                e.onTokenRefresh();
+            }
+        }
+    }
+
+    ///// Event Listener
+
+    public interface EventListener {
+        void onTokenRefresh();
+    }
+
+    private static final Object eventListenersMutex = new Object();
+    private static ArrayList<EventListener> eventListeners = new ArrayList<>();
+
+    public static void addEventListener(EventListener e) {
+        synchronized (eventListenersMutex) {
+            if (!eventListeners.contains(e)) {
+                eventListeners.add(e);
+            }
         }
     }
 }
