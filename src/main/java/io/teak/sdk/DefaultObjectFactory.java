@@ -149,19 +149,28 @@ public class DefaultObjectFactory implements IObjectFactory {
     }
 
     public static IPushProvider createPushProvider(@NonNull Context context) {
+        IPushProvider ret = null;
         try {
             Class.forName("com.amazon.device.messaging.ADM");
             if (new ADM(context).isSupported()) {
-                return new ADMPushProvider(context);
+                ret = new ADMPushProvider(context);
+                Teak.log.i("factory.pushProvider", Helpers.mm.h("type", "adm"));
             }
         } catch (Exception ignored) {
         }
 
-        try {
-            Class.forName("com.google.android.gms.common.GooglePlayServicesUtil");
-            return new GCMPushProvider(context);
-        } catch (Exception ignored) {
+        if (ret == null) {
+            try {
+                Class.forName("com.google.android.gms.common.GooglePlayServicesUtil");
+                ret = new GCMPushProvider(context);
+                Teak.log.i("factory.pushProvider", Helpers.mm.h("type", "gcm"));
+            } catch (Exception ignored) {
+            }
         }
-        return null;
+
+        if (ret == null) {
+            Teak.log.e("factory.pushProvider", Helpers.mm.h("type", "none"));
+        }
+        return ret;
     }
 }
