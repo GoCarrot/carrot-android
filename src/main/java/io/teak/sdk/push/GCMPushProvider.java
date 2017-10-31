@@ -87,9 +87,9 @@ public class GCMPushProvider implements IPushProvider {
                         if (registrationId == null) {
                             Teak.log.e("google.gcm.null_token", "Got null token during GCM registration.");
                         } else {
-                            Teak.log.i("google.gcm.registered", Helpers.mm.h("admId", registrationId));
+                            Teak.log.i("google.gcm.registered", Helpers.mm.h("gcmId", registrationId));
                             if (Teak.isEnabled()) {
-                                TeakEvent.postEvent(new PushRegistrationEvent("adm_push_key", registrationId));
+                                TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", registrationId));
                             }
                         }
                     } catch (Exception e) {
