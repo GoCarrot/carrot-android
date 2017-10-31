@@ -493,7 +493,8 @@ public class TeakNotification {
                         }
                         ret.run();
                     }
-                }.run();
+                }
+                    .run();
             }
         });
 
@@ -546,7 +547,7 @@ public class TeakNotification {
                                 ArrayList<Map<String, Object>> canceled = new ArrayList<>();
                                 JSONArray jArray = response.getJSONArray("canceled");
                                 if (jArray != null) {
-                                    for (int i = 0; i< jArray.length(); i++) {
+                                    for (int i = 0; i < jArray.length(); i++) {
                                         canceled.add(Helpers.jsonToMap(jArray.getJSONObject(i)));
                                     }
                                 }

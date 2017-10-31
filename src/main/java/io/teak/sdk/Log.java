@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -167,6 +168,13 @@ public class Log {
                 commonPayload.put("bundle_id", configuration.appConfiguration.bundleId);
                 commonPayload.put("app_id", configuration.appConfiguration.appId);
                 commonPayload.put("client_app_version", configuration.appConfiguration.appVersion);
+
+                synchronized (queuedLogEvents) {
+                    for (LogEvent event : queuedLogEvents) {
+                        logEvent(event);
+                    }
+                    processedQueuedLogEvents = true;
+                }
             }
         });
     }
@@ -179,20 +187,45 @@ public class Log {
         this.logLocally = this.logRemotely = enableLogs;
     }
 
+    protected class LogEvent {
+        final Level logLevel;
+        final String eventType;
+        final Map<String, Object> eventData;
+
+        LogEvent(final @NonNull Level logLevel, final @NonNull String eventType, @Nullable Map<String, Object> eventData) {
+            this.logLevel = logLevel;
+            this.eventType = eventType;
+            this.eventData = eventData;
+        }
+    }
+
+    private boolean processedQueuedLogEvents = false;
+    private final ArrayList<LogEvent> queuedLogEvents = new ArrayList<>();
+
     protected void log(final @NonNull Level logLevel, final @NonNull String eventType, @Nullable Map<String, Object> eventData) {
+        LogEvent logEvent = new LogEvent(logLevel, eventType, eventData);
+        synchronized (queuedLogEvents) {
+            if (processedQueuedLogEvents) {
+                this.logEvent(logEvent);
+            } else {
+                queuedLogEvents.add(logEvent);
+            }
+        }
+    }
+
+    private void logEvent(final @NonNull LogEvent logEvent) {
         // Payload including common payload
         final Map<String, Object> payload = new HashMap<>(this.commonPayload);
 
         payload.put("event_id", this.eventCounter.getAndAdd(1));
         payload.put("timestamp", new Date().getTime() / 1000); // Milliseconds -> Seconds
-        payload.put("log_level", logLevel.name);
+        payload.put("log_level", logEvent.logLevel.name);
 
         // Event-specific payload
-        payload.put("event_type", eventType);
-        if (eventData == null) {
-            eventData = new HashMap<>();
+        payload.put("event_type", logEvent.eventType);
+        if (logEvent.eventData != null) {
+            payload.put("event_data", logEvent.eventData);
         }
-        payload.put("event_data", eventData);
 
         // Remote logging
         if (this.logRemotely) {
@@ -201,8 +234,8 @@ public class Log {
                 public void run() {
                     HttpsURLConnection connection = null;
                     try {
-                        URL endpoint = sendToRapidIngestion ? new URL("https://logs.gocarrot.com/dev.sdk.log." + logLevel.name)
-                                                            : new URL("https://logs.gocarrot.com/sdk.log." + logLevel.name);
+                        URL endpoint = sendToRapidIngestion ? new URL("https://logs.gocarrot.com/dev.sdk.log." + logEvent.logLevel.name)
+                                                            : new URL("https://logs.gocarrot.com/sdk.log." + logEvent.logLevel.name);
                         connection = (HttpsURLConnection) endpoint.openConnection();
                         connection.setRequestProperty("Accept-Charset", "UTF-8");
                         connection.setUseCaches(false);
@@ -243,7 +276,7 @@ public class Log {
         }
 
         // Log to Android log
-        if (this.logLocally && android.util.Log.isLoggable(this.androidLogTag, logLevel.androidLogPriority)) {
+        if (this.logLocally && android.util.Log.isLoggable(this.androidLogTag, logEvent.logLevel.androidLogPriority)) {
             String jsonStringForAndroidLog = "{}";
             try {
                 if (this.jsonIndentation > 0) {
@@ -253,7 +286,7 @@ public class Log {
                 }
             } catch (Exception ignored) {
             }
-            android.util.Log.println(logLevel.androidLogPriority, this.androidLogTag, jsonStringForAndroidLog);
+            android.util.Log.println(logEvent.logLevel.androidLogPriority, this.androidLogTag, jsonStringForAndroidLog);
         }
     }
 }
