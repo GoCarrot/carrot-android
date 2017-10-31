@@ -50,6 +50,7 @@ public class AppConfiguration {
     @SuppressWarnings("WeakerAccess")
     public final Context applicationContext;
 
+    // These are public for unit tests, can we clean that up?
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_API_KEY = "io_teak_api_key";
     @SuppressWarnings("WeakerAccess")
@@ -60,89 +61,60 @@ public class AppConfiguration {
     public AppConfiguration(@NonNull Context context, @NonNull IAndroidResources androidResources) {
         this.applicationContext = context.getApplicationContext();
 
-        Bundle metaData = null;
-        try {
-            ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-            metaData = appInfo.metaData;
-        } catch (Exception ignored) {
-        }
-
-        // Teak App Id
-        {
-            String tempAppId = androidResources.getStringResource(TEAK_APP_ID);
-            if (tempAppId == null && metaData != null) {
-                String appIdFromMetaData = metaData.getString(TEAK_APP_ID);
-                if (appIdFromMetaData != null && appIdFromMetaData.startsWith("teak")) {
-                    tempAppId = appIdFromMetaData.substring(4);
-                }
-            }
-
-            this.appId = tempAppId;
-            if (this.appId == null) {
-                throw new RuntimeException("Failed to find R.string." + TEAK_APP_ID);
-            }
-        }
-
-        // Teak API Key
-        {
-            String tempApiKey = androidResources.getStringResource(TEAK_API_KEY);
-            if (tempApiKey == null && metaData != null) {
-                String apiKeyFromMetaData = metaData.getString(TEAK_API_KEY);
-                if (apiKeyFromMetaData != null && apiKeyFromMetaData.startsWith("teak")) {
-                    tempApiKey = apiKeyFromMetaData.substring(4);
-                }
-            }
-
-            this.apiKey = tempApiKey;
-            if (this.apiKey == null) {
-                throw new RuntimeException("Failed to find R.string." + TEAK_API_KEY);
-            }
-        }
-
-        // Push Sender Id
-        {
-            String tempPushSenderId = androidResources.getStringResource(TEAK_GCM_SENDER_ID);
-            if (tempPushSenderId == null && metaData != null) {
-                String pushSenderIdFromMetaData = metaData.getString(TEAK_GCM_SENDER_ID);
-                if (pushSenderIdFromMetaData != null && pushSenderIdFromMetaData.startsWith("teak")) {
-                    tempPushSenderId = pushSenderIdFromMetaData.substring(4);
-                }
-            }
-
-            this.pushSenderId = tempPushSenderId;
-            if (this.pushSenderId == null) {
-                Teak.log.e("app_configuration", "R.string." + TEAK_GCM_SENDER_ID + " not present, push notifications disabled.");
-            }
-        }
-
-        // Package Id
-        {
-            this.bundleId = context.getPackageName();
-            if (this.bundleId == null) {
-                throw new RuntimeException("Failed to get Bundle Id.");
-            }
-        }
-
         this.packageManager = context.getPackageManager();
         if (this.packageManager == null) {
             throw new RuntimeException("Unable to get Package Manager.");
         }
 
-        // App Version
-        {
-            int tempAppVersion = 0;
-            try {
-                tempAppVersion = this.packageManager.getPackageInfo(this.bundleId, 0).versionCode;
-            } catch (Exception e) {
-                Teak.log.exception(e);
-            } finally {
-                this.appVersion = tempAppVersion;
-            }
+        this.bundleId = context.getPackageName();
+        if (this.bundleId == null) {
+            throw new RuntimeException("Failed to get Bundle Id.");
         }
 
-        // Get the installer package
-        {
-            this.installerPackage = this.packageManager.getInstallerPackageName(this.bundleId);
+        this.installerPackage = this.packageManager.getInstallerPackageName(this.bundleId);
+
+        int tmpAppVersion = 0;
+        try {
+            tmpAppVersion = this.packageManager.getPackageInfo(this.bundleId, 0).versionCode;
+        } catch (Exception e) {
+            Teak.log.exception(e);
+        }
+        this.appVersion = tmpAppVersion;
+
+        Bundle metaData = null;
+        try {
+            metaData = this.packageManager.getApplicationInfo(this.bundleId, PackageManager.GET_META_DATA).metaData;
+        } catch (Exception ignored) {}
+
+
+        String[] standardVariables = {TEAK_APP_ID, TEAK_API_KEY, TEAK_GCM_SENDER_ID};
+        String[] configurationValues = new String[standardVariables.length];
+        for(int i = 0; i < standardVariables.length; i++) {
+            String variable = standardVariables[i];
+            String tempVariable = androidResources.getStringResource(variable);
+            if (tempVariable == null && metaData != null) {
+                String variableFromMetaData = metaData.getString(variable);
+                if (variableFromMetaData != null && variableFromMetaData.startsWith("teak")) {
+                    tempVariable = variableFromMetaData.substring(4);
+                }
+            }
+            configurationValues[i] = tempVariable;
+        }
+
+        this.appId = configurationValues[0];
+        this.apiKey = configurationValues[1];
+        this.pushSenderId = configurationValues[2];
+
+        if (this.appId == null) {
+            throw new RuntimeException("Failed to find R.string." + TEAK_APP_ID);
+        }
+
+        if (this.apiKey == null) {
+            throw new RuntimeException("Failed to find R.string." + TEAK_API_KEY);
+        }
+
+        if (this.pushSenderId == null) {
+            Teak.log.e("app_configuration", "R.string." + TEAK_GCM_SENDER_ID + " not present, push notifications disabled.");
         }
 
         // Tell the Raven service about the app id
