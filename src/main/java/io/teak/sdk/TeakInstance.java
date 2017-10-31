@@ -45,9 +45,8 @@ import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.event.UserIdEvent;
 import io.teak.sdk.store.IStore;
 
-class TeakInstance {
-    @SuppressWarnings("WeakerAccess") // Adobe AIR
-    final IObjectFactory objectFactory;
+public class TeakInstance {
+    public final IObjectFactory objectFactory;
 
     private static final String PREFERENCE_FIRST_RUN = "io.teak.sdk.Preferences.FirstRun";
 
@@ -198,6 +197,8 @@ class TeakInstance {
         }
 
         String action = intent.getAction();
+        if (action == null) return;
+
         if (GCM_RECEIVE_INTENT_ACTION.equals(action)) {
             TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Received, context, intent));
         } else if (GCM_REGISTRATION_INTENT_ACTION.equals(action)) {
@@ -306,9 +307,9 @@ class TeakInstance {
     private final int activityHashCode;
     private FacebookAccessTokenBroadcast facebookAccessTokenBroadcast;
 
-    // Needs to be package-accessable for Adobe Air Application workaround
+    // Needs to be public for Adobe Air Application workaround
     @SuppressWarnings("WeakerAccess")
-    final Application.ActivityLifecycleCallbacks lifecycleCallbacks = new Application.ActivityLifecycleCallbacks() {
+    public final Application.ActivityLifecycleCallbacks lifecycleCallbacks = new Application.ActivityLifecycleCallbacks() {
         @Override
         public void onActivityCreated(Activity activity, Bundle bundle) {
             if (activity.hashCode() == activityHashCode && setState(State.Created)) {

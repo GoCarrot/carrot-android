@@ -26,7 +26,7 @@ dexcount {
     verbose = false
     maxTreeDepth = Integer.MAX_VALUE
     runOnEachPackage = true
-    maxMethodCount = 1150 // This includes android.* etc dependencies, so I guess just do it this way for now
+    maxMethodCount = 1250 // This includes android.* etc dependencies, so I guess just do it this way for now
 }
 
 repositories {
@@ -116,7 +116,9 @@ dependencies {
     implementation 'com.google.android.gms:play-services-gcm:7.5.0'
     implementation 'com.google.android.gms:play-services-ads:7.5.0'
 
-    // Amazon files, compile-time only dependencies
+    // Amazon, Air, Unity compile-time-only dependencies
     compileOnly files('libs/amazon-device-messaging-1.0.1.jar')
     compileOnly files('libs/in-app-purchasing-2.0.76.jar')
+    compileOnly files('libs/FlashRuntimeExtensions.jar')
+    compileOnly files('libs/UnityClasses.jar')
 }
