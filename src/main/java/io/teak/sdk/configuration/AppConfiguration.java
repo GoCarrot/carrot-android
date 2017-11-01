@@ -29,6 +29,9 @@ import java.util.Locale;
 import java.util.Map;
 
 import io.teak.sdk.Teak;
+import io.teak.sdk.TeakEvent;
+import io.teak.sdk.event.RemoteConfigurationEvent;
+import io.teak.sdk.event.PushSenderIdChangedEvent;
 import io.teak.sdk.io.IAndroidResources;
 import io.teak.sdk.service.RavenService;
 
@@ -38,7 +41,7 @@ public class AppConfiguration {
     @SuppressWarnings("WeakerAccess")
     public final String apiKey;
     @SuppressWarnings("WeakerAccess")
-    public final String pushSenderId;
+    public String pushSenderId;
     @SuppressWarnings("WeakerAccess")
     public final int appVersion;
     @SuppressWarnings("WeakerAccess")
@@ -128,6 +131,23 @@ public class AppConfiguration {
         } catch (Exception e) {
             Teak.log.exception(e);
         }
+
+        // Listen for remote configuration events
+        TeakEvent.addEventListener(new TeakEvent.EventListener() {
+            @Override
+            public void onNewEvent(@NonNull TeakEvent event) {
+                if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
+                    final RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
+
+                    // Override the provided GCM Sender Id with one from Teak, if applicable
+                    if (remoteConfiguration.gcmSenderId != null && pushSenderId != remoteConfiguration.gcmSenderId) {
+                        pushSenderId = remoteConfiguration.gcmSenderId;
+                        TeakEvent.postEvent(new PushSenderIdChangedEvent());
+                        // TODO: Future-Pat, when you add another push provider re-visit the RemoteConfiguration provided sender id
+                    }
+                }
+            }
+        });
     }
 
     public Map<String, Object> to_h() {

@@ -29,6 +29,7 @@ import io.teak.sdk.TeakEvent;
 import io.teak.sdk.event.AdvertisingInfoEvent;
 import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
+import io.teak.sdk.event.PushSenderIdChangedEvent;
 import io.teak.sdk.io.IAndroidDeviceInfo;
 import io.teak.sdk.push.IPushProvider;
 
@@ -45,7 +46,6 @@ public class DeviceConfiguration {
     public boolean limitAdTracking;
 
     private final IPushProvider pushProvider;
-    private String pushSenderId;
 
     public DeviceConfiguration(@NonNull IObjectFactory objectFactory) {
         this.pushProvider = objectFactory.getPushProvider();
@@ -87,43 +87,27 @@ public class DeviceConfiguration {
                     case PushRegistrationEvent.UnRegistered:
                         // TODO: Do we want to do something on un-register?
                         break;
+                    case PushSenderIdChangedEvent.Type:
+                        requestNewPushToken();
+                        break;
                 }
             }
         });
 
         // Request Ad Info, event will inform us when it's ready
         androidDeviceInfo.requestAdvertisingId();
-
-        // TODO: Test/handle the case where remote config is already ready.
-
-        // Listen for remote configuration events
-        TeakEvent.addEventListener(new TeakEvent.EventListener() {
+        TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
             @Override
-            public void onNewEvent(@NonNull TeakEvent event) {
-                if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
-                    final RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
-
-                    // Override the provided GCM Sender Id with one from Teak, if applicable
-                    if (remoteConfiguration.gcmSenderId != null) {
-                        pushSenderId = remoteConfiguration.gcmSenderId;
-                        // TODO: Future-Pat, when you add another push provider re-visit the RemoteConfiguration provided sender id
-                    }
-
-                    requestNewPushToken();
-                }
+            public void onConfigurationReady(@NonNull TeakConfiguration configuration) {
+                requestNewPushToken();
             }
         });
     }
 
     public void requestNewPushToken() {
-        if (this.pushSenderId == null) {
-            final TeakConfiguration teakConfiguration = TeakConfiguration.get();
-            this.pushSenderId = teakConfiguration.appConfiguration.pushSenderId;
-        }
-
         // If the push provider isn't GCM, the push sender id parameter is ignored
         if (this.pushProvider != null) {
-            this.pushProvider.requestPushKey(this.pushSenderId);
+            this.pushProvider.requestPushKey();
         }
     }
 

@@ -17,5 +17,5 @@ package io.teak.sdk.push;
 import android.support.annotation.NonNull;
 
 public interface IPushProvider {
-    void requestPushKey(@NonNull String senderRegistration);
+    void requestPushKey();
 }

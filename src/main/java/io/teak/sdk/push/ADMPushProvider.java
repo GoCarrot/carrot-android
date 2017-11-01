@@ -52,11 +52,11 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
     ///// IPushProvider
 
     @Override
-    public void requestPushKey(@NonNull String ignored) {
-        if (this.admInstance.getRegistrationId() == null) {
+    public void requestPushKey() {
+        final String registrationId = this.admInstance.getRegistrationId();
+        if (registrationId == null) {
             this.admInstance.startRegister();
         } else {
-            String registrationId = this.admInstance.getRegistrationId();
             sendRegistrationEvent(registrationId);
         }
     }

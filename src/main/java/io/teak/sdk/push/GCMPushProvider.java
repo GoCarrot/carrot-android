@@ -26,14 +26,16 @@ import io.teak.sdk.Helpers;
 import io.teak.sdk.InstanceIDListenerService;
 import io.teak.sdk.RetriableTask;
 import io.teak.sdk.Teak;
+import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.event.PushRegistrationEvent;
 
 public class GCMPushProvider implements IPushProvider {
     private final FutureTask<GoogleCloudMessaging> gcmFuture;
-    private String gcmSenderId;
+    private boolean registeredInstanceIDListener;
 
     public GCMPushProvider(@NonNull final Context context) {
+        this.registeredInstanceIDListener = false;
         this.gcmFuture = new FutureTask<>(new RetriableTask<>(100, 2000L, new Callable<GoogleCloudMessaging>() {
             @Override
             public GoogleCloudMessaging call() throws Exception {
@@ -41,30 +43,14 @@ public class GCMPushProvider implements IPushProvider {
             }
         }));
         new Thread(this.gcmFuture).start();
-
-        // Listen for events coming in from InstanceIDListenerService
-        try {
-            Class<?> clazz = Class.forName("com.google.android.gms.iid.InstanceIDListenerService");
-            if (clazz != null) {
-                InstanceIDListenerService.addEventListener(new InstanceIDListenerService.EventListener() {
-                    @Override
-                    public void onTokenRefresh() {
-                        if (gcmSenderId == null) {
-                            Teak.log.e("google.gcm.sender_id", "InstanceIDListenerService requested a token refresh, but gcmSenderId is null.");
-                        } else {
-                            requestPushKey(gcmSenderId);
-                        }
-                    }
-                });
-            }
-        } catch (Exception ignored) {
-            // This means that com.google.android.gms.iid.InstanceIDListenerService doesn't exist, which is fine
-        }
     }
 
     @Override
-    public void requestPushKey(@NonNull final String gcmSenderId) {
-        this.gcmSenderId = gcmSenderId;
+    public void requestPushKey() {
+        // Wait until here to register the id listener, to ensure it doesn't fire before
+        // we're configured
+        registerInstanceIdListener();
+        final String gcmSenderId = TeakConfiguration.get().appConfiguration.pushSenderId;
 
         try {
             final FutureTask<String> gcmRegistration = new FutureTask<>(new RetriableTask<>(100, 7000L, new Callable<String>() {
@@ -100,6 +86,27 @@ public class GCMPushProvider implements IPushProvider {
                 .start();
         } catch (Exception e) {
             Teak.log.exception(e);
+        }
+    }
+
+    private void registerInstanceIdListener() {
+        if(this.registeredInstanceIDListener) {
+            return;
+        }
+        this.registeredInstanceIDListener = true;
+        // Listen for events coming in from InstanceIDListenerService
+        try {
+            Class<?> clazz = Class.forName("com.google.android.gms.iid.InstanceIDListenerService");
+            if (clazz != null) {
+                InstanceIDListenerService.addEventListener(new InstanceIDListenerService.EventListener() {
+                    @Override
+                    public void onTokenRefresh() {
+                        requestPushKey();
+                    }
+                });
+            }
+        } catch (Exception ignored) {
+            // This means that com.google.android.gms.iid.InstanceIDListenerService doesn't exist, which is fine
         }
     }
 }
