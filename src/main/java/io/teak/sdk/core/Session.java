@@ -452,11 +452,17 @@ public class Session {
 
     private void userInfoWasUpdated() {
         // TODO: Revisit/double-check this logic
-        synchronized (stateMutex) {
-            if (state == State.UserIdentified) {
-                identifyUser();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                synchronized (stateMutex) {
+                    if (state == State.UserIdentified) {
+                        identifyUser();
+                    }
+                }
             }
-        }
+        })
+            .start();
     }
 
     // This is separate so it can be removed/added independently

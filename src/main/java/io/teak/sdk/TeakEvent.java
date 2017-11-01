@@ -107,15 +107,15 @@ public class TeakEvent {
                 });
                 thread.start();
                 try {
-                    thread.join(500);
+                    thread.join(1000);
                 } catch (Exception ignored) {
                 }
 
                 if (thread.isAlive()) {
                     StackTraceElement[] trace = thread.getStackTrace();
-                    String backTrace = "";
+                    StringBuilder backTrace = new StringBuilder();
                     for (StackTraceElement element : trace) {
-                        backTrace += "\n\t" + element.toString();
+                        backTrace.append("\n\t").append(element.toString());
                     }
 
                     String errorText = "Took too long processing '" + event.eventType + "' in:" + backTrace;
