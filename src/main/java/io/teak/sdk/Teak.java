@@ -501,7 +501,12 @@ public class Teak extends BroadcastReceiver {
                         final Intent broadcastEvent = new Intent(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
                         broadcastEvent.putExtras(bundle);
                         broadcastEvent.putExtra("eventData", eventDataDict);
-                        Teak.localBroadcastManager.sendBroadcast(broadcastEvent);
+                        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+                            @Override
+                            public void run(Session session) {
+                                Teak.localBroadcastManager.sendBroadcast(broadcastEvent);
+                            }
+                        });
 
                         String teakRewardId = bundle.getString("teakRewardId");
                         if (teakRewardId != null) {
@@ -518,7 +523,12 @@ public class Teak extends BroadcastReceiver {
                                             // Broadcast reward only if everything goes well
                                             final Intent rewardIntent = new Intent(Teak.REWARD_CLAIM_ATTEMPT);
                                             rewardIntent.putExtra("reward", rewardMap);
-                                            Teak.localBroadcastManager.sendBroadcast(rewardIntent);
+                                            Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+                                                @Override
+                                                public void run(Session session) {
+                                                    Teak.localBroadcastManager.sendBroadcast(rewardIntent);
+                                                }
+                                            });
                                         } catch (Exception e) {
                                             Teak.log.exception(e);
                                         }
