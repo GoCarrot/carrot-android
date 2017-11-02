@@ -813,7 +813,12 @@ class Session {
                                                 HashMap<String, Object> rewardMap = Helpers.jsonToMap(reward.json);
                                                 final Intent rewardIntent = new Intent(Teak.REWARD_CLAIM_ATTEMPT);
                                                 rewardIntent.putExtra("reward", rewardMap);
-                                                Teak.localBroadcastManager.sendBroadcast(rewardIntent);
+                                                Session.whenUserIdIsReadyRun(new SessionRunnable() {
+                                                    @Override
+                                                    public void run(Session session) {
+                                                        Teak.localBroadcastManager.sendBroadcast(rewardIntent);
+                                                    }
+                                                });
                                             } catch (Exception e) {
                                                 Teak.log.exception(e);
                                             }
