@@ -155,25 +155,27 @@ public class Log {
         TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
             @Override
             public void onConfigurationReady(@NonNull TeakConfiguration configuration) {
-                // Add sdk version to common payload, and log init message
-                commonPayload.put("sdk_version", Teak.Version);
-                log(Level.Info, "sdk_init", null);
+                synchronized (commonPayload) {
+                    // Add sdk version to common payload, and log init message
+                    commonPayload.put("sdk_version", Teak.Version);
+                    log(Level.Info, "sdk_init", null);
 
-                // Log full device configuration, then add common payload after
-                log(Level.Info, "configuration.device", configuration.deviceConfiguration.to_h());
-                commonPayload.put("device_id", configuration.deviceConfiguration.deviceId);
+                    // Log full device configuration, then add common payload after
+                    log(Level.Info, "configuration.device", configuration.deviceConfiguration.to_h());
+                    commonPayload.put("device_id", configuration.deviceConfiguration.deviceId);
 
-                // Log full app configuration, then add common payload after
-                log(Level.Info, "configuration.app", configuration.appConfiguration.to_h());
-                commonPayload.put("bundle_id", configuration.appConfiguration.bundleId);
-                commonPayload.put("app_id", configuration.appConfiguration.appId);
-                commonPayload.put("client_app_version", configuration.appConfiguration.appVersion);
+                    // Log full app configuration, then add common payload after
+                    log(Level.Info, "configuration.app", configuration.appConfiguration.to_h());
+                    commonPayload.put("bundle_id", configuration.appConfiguration.bundleId);
+                    commonPayload.put("app_id", configuration.appConfiguration.appId);
+                    commonPayload.put("client_app_version", configuration.appConfiguration.appVersion);
 
-                synchronized (queuedLogEvents) {
-                    for (LogEvent event : queuedLogEvents) {
-                        logEvent(event);
+                    synchronized (queuedLogEvents) {
+                        for (LogEvent event : queuedLogEvents) {
+                            logEvent(event);
+                        }
+                        processedQueuedLogEvents = true;
                     }
-                    processedQueuedLogEvents = true;
                 }
             }
         });

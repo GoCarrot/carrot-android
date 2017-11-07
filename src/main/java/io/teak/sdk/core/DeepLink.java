@@ -95,7 +95,7 @@ public class DeepLink {
 
                 Matcher matcher = key.matcher(uri.getPath());
                 if (matcher.matches()) {
-                    Map<String, Object> parameterDict = new HashMap<>();
+                    final Map<String, Object> parameterDict = new HashMap<>();
                     for (String name : value.groupNames) {
                         try {
                             parameterDict.put(name, matcher.group(name));

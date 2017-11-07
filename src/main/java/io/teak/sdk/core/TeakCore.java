@@ -179,7 +179,7 @@ public class TeakCore implements ITeakCore {
                                         payload.put("impression", false);
                                     }
 
-                                    asyncExecutor.submit(new Request("parsnip.gocarrot.com", "/notification_received", payload, session));
+                                    asyncExecutor.execute(new Request("parsnip.gocarrot.com", "/notification_received", payload, session));
                                 }
                             }
                         }
@@ -255,7 +255,7 @@ public class TeakCore implements ITeakCore {
                 if (teakRewardId != null) {
                     final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
                     if (rewardFuture != null) {
-                        this.asyncExecutor.submit(new Runnable() {
+                        this.asyncExecutor.execute(new Runnable() {
                             @Override
                             public void run() {
                                 try {

@@ -81,37 +81,37 @@ class Raven implements Thread.UncaughtExceptionHandler {
         payloadTemplate.put("logger", "teak");
         payloadTemplate.put("platform", "java");
         payloadTemplate.put("release", teakSdkVersion);
-        payloadTemplate.put("server_name", configuration.appConfiguration.bundleId);
+        this.payloadTemplate.put("server_name", configuration.appConfiguration.bundleId);
 
-        HashMap<String, Object> sdkAttribute = new HashMap<>();
+        final HashMap<String, Object> sdkAttribute = new HashMap<>();
         sdkAttribute.put("name", "teak");
         sdkAttribute.put("version", RavenService.TEAK_SENTRY_VERSION);
-        payloadTemplate.put("sdk", sdkAttribute);
+        this.payloadTemplate.put("sdk", sdkAttribute);
 
-        HashMap<String, Object> deviceAttribute = new HashMap<>();
+        final HashMap<String, Object> deviceAttribute = new HashMap<>();
         deviceAttribute.put("name", configuration.deviceConfiguration.deviceFallback);
         deviceAttribute.put("version", Build.VERSION.SDK_INT);
         deviceAttribute.put("build", Build.VERSION.RELEASE);
-        payloadTemplate.put("device", deviceAttribute);
+        this.payloadTemplate.put("device", deviceAttribute);
 
-        HashMap<String, Object> user = new HashMap<>();
+        final HashMap<String, Object> user = new HashMap<>();
         user.put("device_id", configuration.deviceConfiguration.deviceId);
         user.put("log_run_id", Teak.log.runId); // Run id is always available
-        payloadTemplate.put("user", user);
+        this.payloadTemplate.put("user", user);
 
         TeakEvent.addEventListener(new TeakEvent.EventListener() {
             @Override
             public void onNewEvent(@NonNull TeakEvent event) {
                 if (event instanceof UserIdEvent) {
-                    addUserData("id", ((UserIdEvent) event).userId);
+                    user.put("id", ((UserIdEvent) event).userId);
                 }
             }
         });
 
-        HashMap<String, Object> tagsAttribute = new HashMap<>();
+        final HashMap<String, Object> tagsAttribute = new HashMap<>();
         tagsAttribute.put("app_id", configuration.appConfiguration.appId);
         tagsAttribute.put("app_version", configuration.appConfiguration.appVersion);
-        payloadTemplate.put("tags", tagsAttribute);
+        this.payloadTemplate.put("tags", tagsAttribute);
     }
 
     void setAsUncaughtExceptionHandler() {
@@ -211,21 +211,6 @@ class Raven implements Thread.UncaughtExceptionHandler {
             report.sendToService(extras);
         } catch (Exception e) {
             Log.e(LOG_TAG, "Unable to report Teak SDK exception. " + Log.getStackTraceString(t) + "\n" + Log.getStackTraceString(e));
-        }
-    }
-
-    private synchronized void addUserData(@NonNull String key, Object value) {
-        @SuppressWarnings("unchecked")
-        HashMap<String, Object> user = (HashMap<String, Object>) payloadTemplate.get("user");
-        if (user == null) {
-            user = new HashMap<>();
-            payloadTemplate.put("user", user);
-        }
-
-        if (value != null) {
-            user.put(key, value);
-        } else {
-            user.remove(key);
         }
     }
 

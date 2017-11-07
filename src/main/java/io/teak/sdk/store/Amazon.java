@@ -139,7 +139,7 @@ class Amazon implements IStore {
             RequestId requestId = productDataResponse.getRequestId();
             ArrayBlockingQueue<String> queue = skuDetailsRequestMap.get(requestId);
 
-            if (productDataResponse.getRequestStatus() == ProductDataResponse.RequestStatus.SUCCESSFUL) {
+            if (productDataResponse.getRequestStatus() == ProductDataResponse.RequestStatus.SUCCESSFUL && queue != null) {
                 Map<String, Product> skuMap = productDataResponse.getProductData();
 
                 for (Map.Entry<String, Product> entry : skuMap.entrySet()) {
