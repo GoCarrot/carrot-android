@@ -219,8 +219,13 @@ public class TeakCore implements ITeakCore {
         this.localBroadcastManager.registerReceiver(broadcastReceiver, filter);
     }
 
-    private void sendLocalBroadcast(Intent intent) {
-        this.localBroadcastManager.sendBroadcast(intent);
+    private void sendLocalBroadcast(final Intent intent) {
+        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+            @Override
+            public void run(Session session) {
+                localBroadcastManager.sendBroadcast(intent);
+            }
+        });
     }
 
     private void checkIntentForPushLaunchAndSendBroadcasts(Intent intent) {
@@ -244,7 +249,7 @@ public class TeakCore implements ITeakCore {
                 final Intent broadcastEvent = new Intent(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
                 broadcastEvent.putExtras(bundle);
                 broadcastEvent.putExtra("eventData", eventDataDict);
-                this.localBroadcastManager.sendBroadcast(broadcastEvent);
+                sendLocalBroadcast(broadcastEvent);
 
                 String teakRewardId = bundle.getString("teakRewardId");
                 if (teakRewardId != null) {
