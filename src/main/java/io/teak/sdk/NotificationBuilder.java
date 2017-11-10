@@ -185,6 +185,9 @@ public class NotificationBuilder {
 
                 // To let us query for information about the view
                 LayoutInflater factory = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                if (factory == null) {
+                    throw new Exception("Unable to get LayoutInflater service.");
+                }
                 View inflatedView = factory.inflate(viewLayout, null);
 
                 // Configure view
