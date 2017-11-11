@@ -15,7 +15,10 @@
 package io.teak.sdk;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -23,6 +26,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
@@ -67,6 +71,38 @@ public class NotificationBuilder {
         }
     }
 
+    private static String notificationChannelId;
+    private static String getNotificationChannelId(Context context) {
+        // Notification channel, required for targeting API 26+
+        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (notificationChannelId == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
+            try {
+                int importance = NotificationManager.IMPORTANCE_HIGH;
+                String id = "teak";
+                NotificationChannel channel = new NotificationChannel(id, "Notifications", importance);
+                channel.enableLights(true);
+                channel.setLightColor(Color.RED);
+                channel.enableVibration(true);
+                channel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
+                notificationManager.createNotificationChannel(channel);
+                notificationChannelId = id;
+            } catch (Exception ignored){
+            }
+        }
+        return notificationChannelId;
+    }
+
+    private static NotificationCompat.Builder getNotificationCompatBuilder(Context context) {
+        NotificationCompat.Builder builder;
+        if (TeakConfiguration.get().appConfiguration.targetSdkVersion >= Build.VERSION_CODES.O) {
+            builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
+        } else {
+            //noinspection deprecation
+            builder = new NotificationCompat.Builder(context);
+        }
+        return builder;
+    }
+
     private static Notification createNativeNotificationV1Plus(final Context context, Bundle bundle, final TeakNotification teakNotificaton) throws Exception {
         // Because we can't be certain that the R class will line up with what is at SDK build time
         // like in the case of Unity et. al.
@@ -105,7 +141,7 @@ public class NotificationBuilder {
         }
         final IdHelper R = new IdHelper(); // Declaring local as 'R' ensures we don't accidentally use the other R
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
+        NotificationCompat.Builder builder = getNotificationCompatBuilder(context);
 
         // Rich text message
         Spanned richMessageText = Html.fromHtml(teakNotificaton.message);
@@ -279,7 +315,7 @@ public class NotificationBuilder {
     }
 
     private static Notification createNativeNotificationV0(final Context context, Bundle bundle, TeakNotification teakNotificaton) {
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
+        NotificationCompat.Builder builder = getNotificationCompatBuilder(context);
 
         // Rich text message
         Spanned richMessageText = Html.fromHtml(teakNotificaton.message);
