@@ -161,15 +161,19 @@ public class NotificationBuilder {
 
         Random rng = new Random();
 
+        ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
+
         // Create intent to fire if/when notification is cleared
         Intent pushClearedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX);
         pushClearedIntent.putExtras(bundle);
+        pushClearedIntent.setComponent(cn);
         PendingIntent pushClearedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
         builder.setDeleteIntent(pushClearedPendingIntent);
 
         // Create intent to fire if/when notification is opened, attach bundle info
         Intent pushOpenedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX);
         pushOpenedIntent.putExtras(bundle);
+        pushOpenedIntent.setComponent(cn);
         PendingIntent pushOpenedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
         builder.setContentIntent(pushOpenedPendingIntent);
 
@@ -301,15 +305,19 @@ public class NotificationBuilder {
 
         Random rng = new Random();
 
+        ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
+
         // Create intent to fire if/when notification is cleared
         Intent pushClearedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX);
         pushClearedIntent.putExtras(bundle);
+        pushClearedIntent.setComponent(cn);
         PendingIntent pushClearedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
         builder.setDeleteIntent(pushClearedPendingIntent);
 
         // Create intent to fire if/when notification is opened, attach bundle info
         Intent pushOpenedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX);
         pushOpenedIntent.putExtras(bundle);
+        pushOpenedIntent.setComponent(cn);
         PendingIntent pushOpenedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
         builder.setContentIntent(pushOpenedPendingIntent);
 
