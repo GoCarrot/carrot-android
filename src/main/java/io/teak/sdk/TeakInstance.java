@@ -18,12 +18,9 @@ package io.teak.sdk;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -91,26 +88,17 @@ public class TeakInstance {
             }
         });
 
+        // Create requirements checker, hooks into TeakConfiguration
+        RequirementsCheck requirementsCheck = new RequirementsCheck();
+
         // Get Teak Configuration ready
         if (!TeakConfiguration.initialize(context, this.objectFactory)) {
             this.setState(State.Disabled);
             return;
         }
 
-        // Check the launch mode of the activity for debugging purposes
-        try {
-            ComponentName cn = new ComponentName(activity, activity.getClass());
-            ActivityInfo ai = activity.getPackageManager().getActivityInfo(cn, PackageManager.GET_META_DATA);
-            // (LAUNCH_SINGLE_INSTANCE == LAUNCH_SINGLE_TASK | LAUNCH_SINGLE_TOP) but let's not
-            // assume that those values will stay the same
-            if ((ai.launchMode & ActivityInfo.LAUNCH_SINGLE_INSTANCE) == 0 &&
-                (ai.launchMode & ActivityInfo.LAUNCH_SINGLE_TASK) == 0 &&
-                (ai.launchMode & ActivityInfo.LAUNCH_SINGLE_TOP) == 0) {
-                Teak.log.w("launch_mode", "The android:launchMode of this activity is not set to 'singleTask', 'singleTop' or 'singleInstance'. This could cause undesired behavior.");
-            }
-        } catch (Exception e) {
-            Teak.log.exception(e);
-        }
+        // Check Activity
+        requirementsCheck.checkActivity(activity);
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
             Teak.log.e("api_level", "Teak requires API level 14 to operate. Teak is disabled.");
