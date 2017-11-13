@@ -39,6 +39,7 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -115,6 +116,7 @@ public class Session {
     private State state = State.Allocated;
     private State previousState = null;
     private final Object stateMutex = new Object();
+    private final ExecutorService executionQueue = Executors.newSingleThreadExecutor();
     // endregion
 
     // State: Created
@@ -209,15 +211,14 @@ public class Session {
                     TeakEvent.removeEventListener(this.remoteConfigurationEventListener);
 
                     final Session _this = this;
-                    new Thread(new Runnable() {
+                    this.executionQueue.execute(new Runnable() {
                         @Override
                         public void run() {
                             if (_this.userId != null) {
                                 _this.identifyUser();
                             }
                         }
-                    })
-                        .start();
+                    });
                 } break;
 
                 case IdentifyingUser: {
@@ -237,12 +238,17 @@ public class Session {
 
                     startHeartbeat();
 
-                    synchronized (userIdReadyRunnableQueueMutex) {
-                        for (WhenUserIdIsReadyRun runnable : userIdReadyRunnableQueue) {
-                            new Thread(runnable).start();
+                    executionQueue.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            synchronized (userIdReadyRunnableQueueMutex) {
+                                for (WhenUserIdIsReadyRun runnable : userIdReadyRunnableQueue) {
+                                    new Thread(runnable).start();
+                                }
+                                userIdReadyRunnableQueue.clear();
+                            }
                         }
-                        userIdReadyRunnableQueue.clear();
-                    }
+                    });
                 } break;
 
                 case Expiring: {
@@ -336,7 +342,7 @@ public class Session {
         final Session _this = this;
         final TeakConfiguration teakConfiguration = TeakConfiguration.get();
 
-        new Thread(new Runnable() {
+        this.executionQueue.execute(new Runnable() {
             public void run() {
                 synchronized (_this.stateMutex) {
                     if (_this.state != State.UserIdentified && !_this.setState(State.IdentifyingUser)) {
@@ -421,8 +427,7 @@ public class Session {
                         .run();
                 }
             }
-        })
-            .start();
+        });
     }
 
     private final TeakEvent.EventListener teakEventListener = new TeakEvent.EventListener() {
@@ -452,7 +457,7 @@ public class Session {
 
     private void userInfoWasUpdated() {
         // TODO: Revisit/double-check this logic
-        new Thread(new Runnable() {
+        this.executionQueue.execute(new Runnable() {
             @Override
             public void run() {
                 synchronized (stateMutex) {
@@ -461,8 +466,7 @@ public class Session {
                     }
                 }
             }
-        })
-            .start();
+        });
     }
 
     // This is separate so it can be removed/added independently
