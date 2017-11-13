@@ -20,39 +20,53 @@
         android:maxLines="5"
         android:textAppearance="@style/Teak.Notification.MessageText" />
 
-    <!--<RelativeLayout
-        android:id="@+id/actionButtonLayout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true">
-
-        <LinearLayout
+        <!--<RelativeLayout
+            android:id="@+id/actionButtonLayout"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="2dp"
-            android:gravity="end"
-            android:orientation="horizontal">
-
+            android:layout_height="48dp"
+            android:layout_alignParentBottom="true"
+            style="?android:buttonBarStyle">
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dip"
+                android:layout_marginLeft="4dip"
+                android:layout_marginRight="4dip"
+                android:background="?android:attr/dividerVertical"
+                android:layout_alignParentTop="true"/>
+            <View
+                android:id="@+id/button1_button2_divider"
+                android:layout_width="1dip"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentBottom="true"
+                android:layout_marginBottom="4dip"
+                android:layout_marginTop="4dip"
+                android:background="?android:attr/dividerVertical"
+                android:layout_centerHorizontal="true"/>
             <Button
                 android:id="@+id/button1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="A" />
-
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentTop="true"
+                android:layout_toLeftOf="@id/button1_button2_divider"
+                android:background="?android:attr/selectableItemBackground"
+                android:text="@android:string/cancel"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentStart="true"
+                android:layout_toStartOf="@id/button1_button2_divider" />
             <Button
                 android:id="@+id/button2"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="B" />
-
-            <Button
-                android:id="@+id/button3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="C" />
-
-        </LinearLayout>
-
-    </RelativeLayout>-->
+                android:layout_height="match_parent"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentTop="true"
+                android:background="?android:attr/selectableItemBackground"
+                android:text="@android:string/ok"
+                android:layout_alignParentBottom="true"
+                android:layout_toRightOf="@id/button1_button2_divider"
+                android:layout_alignParentEnd="true"
+                android:layout_toEndOf="@id/button1_button2_divider" />
+        </RelativeLayout>-->
 
 </RelativeLayout>
