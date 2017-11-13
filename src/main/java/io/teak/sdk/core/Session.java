@@ -486,16 +486,21 @@ public class Session {
         @Override
         public void onNewEvent(@NonNull TeakEvent event) {
             if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
-                currentSession.stateLock.lock();
-                try {
-                    if (currentSession.state == State.Expiring) {
-                        currentSession.previousState = State.Configured;
-                    } else {
-                        setState(State.Configured);
+                executionQueue.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        stateLock.lock();
+                        try {
+                            if (state == State.Expiring) {
+                                previousState = State.Configured;
+                            } else {
+                                setState(State.Configured);
+                            }
+                        } finally {
+                            stateLock.unlock();
+                        }
                     }
-                } finally {
-                    currentSession.stateLock.unlock();
-                }
+                });
             }
         }
     };
