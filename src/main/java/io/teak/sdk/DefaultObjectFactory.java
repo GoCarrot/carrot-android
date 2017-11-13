@@ -148,7 +148,7 @@ public class DefaultObjectFactory implements IObjectFactory {
         return null;
     }
 
-    private static IPushProvider createPushProvider(@NonNull Context context) {
+    public static IPushProvider createPushProvider(@NonNull Context context) {
         IPushProvider ret = null;
         try {
             Class.forName("com.amazon.device.messaging.ADM");

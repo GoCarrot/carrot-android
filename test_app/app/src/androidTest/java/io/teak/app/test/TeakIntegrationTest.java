@@ -33,7 +33,6 @@ import java.io.BufferedInputStream;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
 
@@ -43,6 +42,7 @@ import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.core.ITeakCore;
+import io.teak.sdk.core.InstrumentableReentrantLock;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.io.DefaultAndroidDeviceInfo;
 import io.teak.sdk.io.DefaultAndroidNotification;
@@ -79,6 +79,8 @@ class TeakIntegrationTest {
 
     @Before
     public void resetTeakEventListeners() throws NoSuchFieldException, IllegalAccessException {
+        // Enable lock contention timeout/checks
+        InstrumentableReentrantLock.interruptLongLocksAndReport = true;
         TestHelpers.resetTeakEventListeners();
     }
 

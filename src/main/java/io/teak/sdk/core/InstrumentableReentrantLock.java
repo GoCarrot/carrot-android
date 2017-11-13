@@ -19,7 +19,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 @SuppressWarnings("WeakerAccess")
 public class InstrumentableReentrantLock extends ReentrantLock {
-    public static boolean interruptLongLocksAndReport = true; // HAX FALSE
+    public static boolean interruptLongLocksAndReport = false;
     public static long interruptTimeoutMS = 2;
 
     @Override

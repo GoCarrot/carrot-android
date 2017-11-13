@@ -12,6 +12,7 @@ import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.core.ITeakCore;
+import io.teak.sdk.core.InstrumentableReentrantLock;
 import io.teak.sdk.io.IAndroidDeviceInfo;
 import io.teak.sdk.io.IAndroidNotification;
 import io.teak.sdk.io.IAndroidResources;
@@ -31,6 +32,9 @@ public class TeakUnitTest {
 
     @Before
     public void setupMocksAndTeakConfiguration() throws NoSuchFieldException, IllegalAccessException {
+        // Enable lock contention timeout/checks
+        InstrumentableReentrantLock.interruptLongLocksAndReport = true;
+
         // Reset TeakEvent
         TestHelpers.resetTeakEventListeners();
 
