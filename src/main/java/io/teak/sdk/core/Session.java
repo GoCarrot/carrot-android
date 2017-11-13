@@ -115,7 +115,7 @@ public class Session {
 
     private State state = State.Allocated;
     private State previousState = null;
-    private final Object stateMutex = new Object();
+    private final InstrumentableReentrantLock stateLock = new InstrumentableReentrantLock();
     private final ExecutorService executionQueue = Executors.newSingleThreadExecutor();
     // endregion
 
@@ -172,17 +172,21 @@ public class Session {
     }
 
     private boolean hasExpired() {
-        synchronized (stateMutex) {
+        this.stateLock.lock();
+        try {
             if (this.state == State.Expiring &&
                 (new Date().getTime() - this.endDate.getTime() > SAME_SESSION_TIME_DELTA)) {
                 setState(State.Expired);
             }
             return (this.state == State.Expired);
+        } finally {
+            this.stateLock.unlock();
         }
     }
 
     private boolean setState(@NonNull State newState) {
-        synchronized (stateMutex) {
+        this.stateLock.lock();
+        try {
             if (this.state == newState) {
                 Teak.log.i("session.same_state", Helpers.mm.h("state", this.state, "session_id", this.sessionId));
                 return false;
@@ -238,17 +242,15 @@ public class Session {
 
                     startHeartbeat();
 
-                    executionQueue.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            synchronized (userIdReadyRunnableQueueMutex) {
-                                for (WhenUserIdIsReadyRun runnable : userIdReadyRunnableQueue) {
-                                    new Thread(runnable).start();
-                                }
-                                userIdReadyRunnableQueue.clear();
-                            }
+                    userIdReadyRunnableQueueLock.lock();
+                    try {
+                        for (WhenUserIdIsReadyRun runnable : userIdReadyRunnableQueue) {
+                            this.executionQueue.execute(runnable);
                         }
-                    });
+                        userIdReadyRunnableQueue.clear();
+                    } finally {
+                        userIdReadyRunnableQueueLock.unlock();
+                    }
                 } break;
 
                 case Expiring: {
@@ -299,6 +301,8 @@ public class Session {
             } else {
                 return true;
             }
+        } finally {
+            this.stateLock.unlock();
         }
     }
 
@@ -344,7 +348,8 @@ public class Session {
 
         this.executionQueue.execute(new Runnable() {
             public void run() {
-                synchronized (_this.stateMutex) {
+                _this.stateLock.lock();
+                try {
                     if (_this.state != State.UserIdentified && !_this.setState(State.IdentifyingUser)) {
                         return;
                     }
@@ -394,6 +399,7 @@ public class Session {
                     new Request("/games/" + teakConfiguration.appConfiguration.appId + "/users.json", payload, _this) {
                         @Override
                         protected void done(int responseCode, String responseBody) {
+                            _this.stateLock.lock();
                             try {
                                 JSONObject response = new JSONObject(responseBody);
 
@@ -419,12 +425,15 @@ public class Session {
                                     _this.setState(State.UserIdentified);
                                 }
                             } catch (Exception ignored) {
+                            } finally {
+                                _this.stateLock.unlock();
                             }
 
                             super.done(responseCode, responseBody);
                         }
-                    }
-                        .run();
+                    });
+                } finally {
+                    _this.stateLock.unlock();
                 }
             }
         });
@@ -460,10 +469,13 @@ public class Session {
         this.executionQueue.execute(new Runnable() {
             @Override
             public void run() {
-                synchronized (stateMutex) {
+                stateLock.lock();
+                try {
                     if (state == State.UserIdentified) {
                         identifyUser();
                     }
+                } finally {
+                    stateLock.unlock();
                 }
             }
         });
@@ -474,12 +486,15 @@ public class Session {
         @Override
         public void onNewEvent(@NonNull TeakEvent event) {
             if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
-                synchronized (currentSession.stateMutex) {
+                currentSession.stateLock.lock();
+                try {
                     if (currentSession.state == State.Expiring) {
                         currentSession.previousState = State.Configured;
                     } else {
                         setState(State.Configured);
                     }
+                } finally {
+                    currentSession.stateLock.unlock();
                 }
             }
         }
@@ -496,10 +511,13 @@ public class Session {
                     break;
                 case LifecycleEvent.Paused:
                     // Set state to 'Expiring'
-                    synchronized (currentSessionMutex) {
+                    currentSessionLock.lock();
+                    try {
                         if (currentSession != null) {
                             currentSession.setState(State.Expiring);
                         }
+                    } finally {
+                        currentSessionLock.unlock();
                     }
                     break;
                 case LifecycleEvent.Resumed:
@@ -516,18 +534,23 @@ public class Session {
     }
 
     static boolean isExpiringOrExpired() {
-        synchronized (currentSessionMutex) {
+        currentSessionLock.lock();
+        try {
             return currentSession == null || currentSession.hasExpired() || currentSession.state == State.Expiring;
+        } finally {
+            currentSessionLock.unlock();
         }
     }
 
     private static void setUserId(@NonNull String userId) {
         // If the user id has changed, create a new session
-        synchronized (currentSessionMutex) {
+        currentSessionLock.lock();
+        try {
             if (currentSession == null) {
                 Session.pendingUserId = userId;
             } else {
-                synchronized (currentSession.stateMutex) {
+                currentSession.stateLock.lock();
+                try {
                     if (currentSession.userId != null && !currentSession.userId.equals(userId)) {
                         Session newSession = new Session(currentSession, currentSession.launchAttribution);
 
@@ -542,8 +565,12 @@ public class Session {
                     if (currentSession.state == State.Configured) {
                         currentSession.identifyUser();
                     }
+                } finally {
+                    currentSession.stateLock.unlock();
                 }
             }
+        } finally {
+            currentSessionLock.unlock();
         }
     }
 
@@ -560,69 +587,100 @@ public class Session {
 
         @Override
         public void run() {
-            synchronized (currentSessionMutex) {
+            currentSessionLock.lock();
+            try {
                 this.runnable.run(currentSession);
+            } finally {
+                currentSessionLock.unlock();
             }
         }
     }
 
-    private static final Object userIdReadyRunnableQueueMutex = new Object();
+    private static final InstrumentableReentrantLock userIdReadyRunnableQueueLock = new InstrumentableReentrantLock();
     private static final ArrayList<WhenUserIdIsReadyRun> userIdReadyRunnableQueue = new ArrayList<>();
 
     public static void whenUserIdIsReadyRun(@NonNull SessionRunnable runnable) {
-        synchronized (currentSessionMutex) {
+        currentSessionLock.lock();
+        try {
             if (currentSession == null) {
-                synchronized (userIdReadyRunnableQueueMutex) {
+                userIdReadyRunnableQueueLock.lock();
+                try {
                     userIdReadyRunnableQueue.add(new WhenUserIdIsReadyRun(runnable));
+                } finally {
+                    userIdReadyRunnableQueueLock.unlock();
                 }
             } else {
-                synchronized (currentSession.stateMutex) {
+                currentSession.stateLock.lock();
+                try {
                     if (currentSession.state == State.UserIdentified) {
-                        new Thread(new WhenUserIdIsReadyRun(runnable)).start();
+                        currentSession.executionQueue.execute(new WhenUserIdIsReadyRun(runnable));
                     } else {
-                        synchronized (userIdReadyRunnableQueueMutex) {
+                        userIdReadyRunnableQueueLock.lock();
+                        try {
                             userIdReadyRunnableQueue.add(new WhenUserIdIsReadyRun(runnable));
+                        } finally {
+                            userIdReadyRunnableQueueLock.unlock();
                         }
                     }
+                } finally {
+                    currentSession.stateLock.unlock();
                 }
             }
+        } finally {
+            currentSessionLock.unlock();
         }
     }
 
     public static void whenUserIdIsOrWasReadyRun(@NonNull SessionRunnable runnable) {
-        synchronized (currentSessionMutex) {
+        currentSessionLock.lock();
+        try {
             if (currentSession == null) {
-                synchronized (userIdReadyRunnableQueueMutex) {
+                userIdReadyRunnableQueueLock.lock();
+                try {
                     userIdReadyRunnableQueue.add(new WhenUserIdIsReadyRun(runnable));
+                } finally {
+                    userIdReadyRunnableQueueLock.unlock();
                 }
             } else {
-                synchronized (currentSession.stateMutex) {
+                currentSession.stateLock.lock();
+                try {
                     if (currentSession.state == State.UserIdentified ||
                         (currentSession.state == State.Expiring && currentSession.previousState == State.UserIdentified)) {
-                        new Thread(new WhenUserIdIsReadyRun(runnable)).start();
+                        currentSession.executionQueue.execute(new WhenUserIdIsReadyRun(runnable));
                     } else {
-                        synchronized (userIdReadyRunnableQueueMutex) {
+                        userIdReadyRunnableQueueLock.lock();
+                        try {
                             userIdReadyRunnableQueue.add(new WhenUserIdIsReadyRun(runnable));
+                        } finally {
+                            userIdReadyRunnableQueueLock.unlock();
                         }
                     }
+                } finally {
+                    currentSession.stateLock.unlock();
                 }
             }
+        } finally {
+            currentSessionLock.unlock();
         }
     }
 
     private static void onActivityResumed(final Intent intent) {
         // Call getCurrentSession() so the null || Expired logic stays in one place
-        synchronized (currentSessionMutex) {
+        currentSessionLock.lock();
+        try {
             getCurrentSession();
 
             // If this intent has already been processed by Teak, just reset the state and we are done.
             // Otherwise, out-of-app deep links can cause a back-stack loop
             if (intent.getBooleanExtra("teakSessionProcessed", false)) {
                 // Reset state on current session, if it is expiring
-                synchronized (currentSession.stateMutex) {
+                currentSession.stateLock.lock();
+                try {
                     if (currentSession.state == State.Expiring) {
                         currentSession.setState(currentSession.previousState);
                     }
+                } finally {
+                    currentSession.stateLock.unlock();
                 }
                 return;
             }
@@ -810,18 +868,26 @@ public class Session {
             } else if (sessionAttribution != null) {
                 Session oldSession = currentSession;
                 currentSession = new Session(oldSession, sessionAttribution);
-                synchronized (oldSession.stateMutex) {
+                oldSession.stateLock.lock();
+                try {
                     oldSession.setState(State.Expiring);
                     oldSession.setState(State.Expired);
+                } finally {
+                    oldSession.stateLock.unlock();
                 }
             } else {
                 // Reset state on current session, if it is expiring
-                synchronized (currentSession.stateMutex) {
+                currentSession.stateLock.lock();
+                try {
                     if (currentSession.state == State.Expiring) {
                         currentSession.setState(currentSession.previousState);
                     }
+                } finally {
+                    currentSession.stateLock.unlock();
                 }
             }
+        } finally {
+            currentSessionLock.unlock();
         }
     }
 
@@ -918,10 +984,11 @@ public class Session {
 
     // region Current Session
     private static Session currentSession;
-    private static final Object currentSessionMutex = new Object();
+    private static final InstrumentableReentrantLock currentSessionLock = new InstrumentableReentrantLock();
 
-    private static Session getCurrentSession() {
-        synchronized (currentSessionMutex) {
+    private static void getCurrentSession() {
+        currentSessionLock.lock();
+        try {
             if (currentSession == null || currentSession.hasExpired()) {
                 Session oldSession = currentSession;
                 currentSession = new Session();
@@ -937,13 +1004,17 @@ public class Session {
                     Session.pendingUserId = null;
                 }
             }
-            return currentSession;
+        } finally {
+            currentSessionLock.unlock();
         }
     }
 
     static Session getCurrentSessionOrNull() {
-        synchronized (currentSessionMutex) {
+        currentSessionLock.lock();
+        try {
             return currentSession;
+        } finally {
+            currentSessionLock.unlock();
         }
     }
     // endregion
