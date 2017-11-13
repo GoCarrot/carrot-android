@@ -19,7 +19,7 @@ import com.amazon.device.messaging.ADMMessageReceiver;
 import io.teak.sdk.push.ADMPushProvider;
 
 // This class just exists so people don't need to change their AndroidManifest.xml values
-public class ADMMessageHandler {
+public class ADMMessageHandler extends ADMPushProvider {
     public static class MessageAlertReceiver extends ADMMessageReceiver {
         public MessageAlertReceiver() {
             super(ADMPushProvider.class);

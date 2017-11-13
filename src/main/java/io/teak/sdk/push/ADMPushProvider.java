@@ -42,10 +42,13 @@ import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.event.PushRegistrationEvent;
 
 public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvider {
-    private final ADM admInstance;
+    private ADM admInstance;
 
-    public ADMPushProvider(@NonNull Context context) {
+    public ADMPushProvider() {
         super(ADMPushProvider.class.getName());
+    }
+
+    public void initialize(@NonNull Context context) {
         this.admInstance = new ADM(context);
     }
 

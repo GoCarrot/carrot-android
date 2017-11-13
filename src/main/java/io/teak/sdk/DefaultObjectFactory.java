@@ -148,12 +148,14 @@ public class DefaultObjectFactory implements IObjectFactory {
         return null;
     }
 
-    public static IPushProvider createPushProvider(@NonNull Context context) {
+    private static IPushProvider createPushProvider(@NonNull Context context) {
         IPushProvider ret = null;
         try {
             Class.forName("com.amazon.device.messaging.ADM");
             if (new ADM(context).isSupported()) {
-                ret = new ADMPushProvider(context);
+                ADMPushProvider admPushProvider = new ADMPushProvider();
+                admPushProvider.initialize(context);
+                ret = admPushProvider;
                 Teak.log.i("factory.pushProvider", Helpers.mm.h("type", "adm"));
             }
         } catch (Exception ignored) {
