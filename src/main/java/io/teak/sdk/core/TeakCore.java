@@ -90,7 +90,7 @@ public class TeakCore implements ITeakCore {
                     Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
                         @Override
                         public void run(Session session) {
-                            new Request("/me/events", payload, session).run();
+                            asyncExecutor.execute(new Request("/me/events", payload, session));
                         }
                     });
                     break;
@@ -102,7 +102,7 @@ public class TeakCore implements ITeakCore {
                     Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
                         @Override
                         public void run(Session session) {
-                            new Request("/me/purchase", payload, session).run();
+                            asyncExecutor.execute(new Request("/me/purchase", payload, session));
                         }
                     });
                     break;
@@ -115,7 +115,7 @@ public class TeakCore implements ITeakCore {
                     Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
                         @Override
                         public void run(Session session) {
-                            new Request("/me/purchase", payload, session).run();
+                            asyncExecutor.execute(new Request("/me/purchase", payload, session));
                         }
                     });
                     break;
