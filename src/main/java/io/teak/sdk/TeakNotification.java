@@ -370,8 +370,11 @@ public class TeakNotification {
                     return q.take();
                 } catch (InterruptedException e) {
                     Teak.log.exception(e);
+
+                    final Map<String, Object> err = new HashMap<>();
+                    err.put("status", "error.exception.exception");
+                    return new JSONObject(err).toString();
                 }
-                return null;
             }
         });
 
