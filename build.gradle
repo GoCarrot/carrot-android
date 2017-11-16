@@ -42,6 +42,12 @@ allprojects {
     }
 }
 
+tasks.whenTaskAdded { task ->
+    if(task.name.contains("Test")) {
+        task.enabled = false
+    }
+}
+
 android.libraryVariants.all { variant ->
     // Javadoc task
     task("generate${variant.name.capitalize()}Javadoc", type: Javadoc) {
