@@ -52,6 +52,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
 
+import javax.net.ssl.SSLException;
+
 public class NotificationBuilder {
     public static Notification createNativeNotification(Context context, Bundle bundle, TeakNotification teakNotificaton) {
         if (teakNotificaton.notificationVersion == TeakNotification.TEAK_NOTIFICATION_V0) {
@@ -250,7 +252,9 @@ public class NotificationBuilder {
                             remoteViews.setImageViewResource(viewElementId, appIconResourceId);
                         } else {
                             Bitmap bitmap = loadBitmapFromURI(new URI(value));
-                            remoteViews.setImageViewBitmap(viewElementId, bitmap);
+                            if (bitmap != null) {
+                                remoteViews.setImageViewBitmap(viewElementId, bitmap);
+                            }
                         }
                     } else //noinspection StatementWithEmptyBody
                         if (viewElement.getClass().equals(Button.class)) {
@@ -264,15 +268,18 @@ public class NotificationBuilder {
             }
 
             private Bitmap loadBitmapFromURI(URI bitmapUri) throws Exception {
-                Bitmap ret;
-                URL aURL = new URL(bitmapUri.toString());
-                URLConnection conn = aURL.openConnection();
-                conn.connect();
-                InputStream is = conn.getInputStream();
-                BufferedInputStream bis = new BufferedInputStream(is);
-                ret = BitmapFactory.decodeStream(bis);
-                bis.close();
-                is.close();
+                Bitmap ret = null;
+                try {
+                    URL aURL = new URL(bitmapUri.toString());
+                    URLConnection conn = aURL.openConnection();
+                    conn.connect();
+                    InputStream is = conn.getInputStream();
+                    BufferedInputStream bis = new BufferedInputStream(is);
+                    ret = BitmapFactory.decodeStream(bis);
+                    bis.close();
+                    is.close();
+                } catch (SSLException ignored) {
+                }
                 return ret;
             }
         }
