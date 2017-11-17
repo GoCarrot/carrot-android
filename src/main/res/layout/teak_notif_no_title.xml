@@ -9,7 +9,8 @@
         android:layout_height="match_parent"
         android:layout_centerInParent="true"
         android:scaleType="centerCrop"
-        android:id="@+id/notification_background" />
+        android:id="@+id/notification_background"
+        android:contentDescription="@null"/>
 
     <ImageView
         android:tag="default: BUILTIN_APP_ICON&#10;aspect_ratio: 48x48&#10;description: The 'app icon' of the app, on the left of the notification. Set to the text BUILTIN_APP_ICON unless you really think this should be changed or hidden."
@@ -18,7 +19,8 @@
         android:layout_height="48dp"
         android:layout_margin="8dp"
         android:layout_centerVertical="true"
-        android:src="@android:drawable/sym_def_app_icon" />
+        android:src="@android:drawable/sym_def_app_icon"
+        android:contentDescription="@null"/>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -32,13 +34,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:src="@android:drawable/divider_horizontal_textfield"
-            android:paddingBottom="1dp" />
+            android:paddingBottom="1dp"
+            android:contentDescription="@null"/>
 
         <ImageView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:src="@android:drawable/divider_horizontal_textfield"
-            android:paddingBottom="1dp" />
+            android:paddingBottom="1dp"
+            android:contentDescription="@null"/>
     </LinearLayout>
 
     <LinearLayout
@@ -48,7 +52,8 @@
         android:layout_margin="8dp"
         android:layout_toRightOf="@+id/left_image"
         android:gravity="center_vertical"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:layout_toEndOf="@+id/left_image">
 
         <TextView
             android:tag="max_length: 48&#10;description: Text of the notification, can be HTML."
