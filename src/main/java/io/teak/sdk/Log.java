@@ -29,6 +29,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -145,6 +147,8 @@ public class Log {
     private boolean sendToRapidIngestion;
     // endregion
 
+    private final ExecutorService remoteLogQueue = Executors.newSingleThreadExecutor();
+
     public Log(String androidLogTag, int jsonIndentation) {
         this.androidLogTag = androidLogTag;
         this.jsonIndentation = jsonIndentation;
@@ -231,7 +235,7 @@ public class Log {
 
         // Remote logging
         if (this.logRemotely) {
-            new Thread(new Runnable() {
+            this.remoteLogQueue.execute(new Runnable() {
                 @Override
                 public void run() {
                     HttpsURLConnection connection = null;
@@ -273,8 +277,7 @@ public class Log {
                         }
                     }
                 }
-            })
-                .start();
+            });
         }
 
         // Log to Android log

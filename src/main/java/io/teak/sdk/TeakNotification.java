@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.Random;
 
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.Callable;
@@ -368,8 +370,11 @@ public class TeakNotification {
                     return q.take();
                 } catch (InterruptedException e) {
                     Teak.log.exception(e);
+
+                    final Map<String, Object> err = new HashMap<>();
+                    err.put("status", "error.exception.exception");
+                    return new JSONObject(err).toString();
                 }
-                return null;
             }
         });
 
@@ -381,7 +386,7 @@ public class TeakNotification {
                 payload.put("message", defaultMessage);
                 payload.put("offset", delayInSeconds);
 
-                new Request("/me/local_notify.json", payload, session) {
+                asyncExecutor.execute(new Request("/me/local_notify.json", payload, session) {
                     @Override
                     protected void done(int responseCode, String responseBody) {
                         try {
@@ -408,8 +413,7 @@ public class TeakNotification {
 
                         ret.run();
                     }
-                }
-                    .run();
+                });
             }
         });
         return ret;
@@ -469,7 +473,7 @@ public class TeakNotification {
                 HashMap<String, Object> payload = new HashMap<>();
                 payload.put("id", scheduleId);
 
-                new Request("/me/cancel_local_notify.json", payload, session) {
+                asyncExecutor.execute(new Request("/me/cancel_local_notify.json", payload, session) {
                     @Override
                     protected void done(int responseCode, String responseBody) {
                         try {
@@ -493,8 +497,7 @@ public class TeakNotification {
                         }
                         ret.run();
                     }
-                }
-                    .run();
+                });
             }
         });
 
@@ -534,7 +537,7 @@ public class TeakNotification {
             public void run(Session session) {
                 HashMap<String, Object> payload = new HashMap<>();
 
-                new Request("/me/cancel_all_local_notifications.json", payload, session) {
+                asyncExecutor.execute(new Request("/me/cancel_all_local_notifications.json", payload, session) {
                     @Override
                     protected void done(int responseCode, String responseBody) {
                         try {
@@ -565,13 +568,14 @@ public class TeakNotification {
                         }
                         ret.run();
                     }
-                }
-                    .run();
+                });
             }
         });
 
         return ret;
     }
+
+    private static final ExecutorService asyncExecutor = Executors.newCachedThreadPool();
 
     /**************************************************************************/
 

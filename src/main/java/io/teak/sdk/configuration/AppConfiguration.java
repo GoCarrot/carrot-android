@@ -49,6 +49,8 @@ public class AppConfiguration {
     public final PackageManager packageManager;
     @SuppressWarnings("WeakerAccess")
     public final Context applicationContext;
+    @SuppressWarnings("WeakerAccess")
+    public final int targetSdkVersion;
 
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_API_KEY = "io_teak_api_key";
@@ -61,11 +63,14 @@ public class AppConfiguration {
         this.applicationContext = context.getApplicationContext();
 
         Bundle metaData = null;
+        int tempTargetSdkVersion = 0;
         try {
             ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
             metaData = appInfo.metaData;
+            tempTargetSdkVersion = appInfo.targetSdkVersion;
         } catch (Exception ignored) {
         }
+        this.targetSdkVersion = tempTargetSdkVersion;
 
         // Teak App Id
         {

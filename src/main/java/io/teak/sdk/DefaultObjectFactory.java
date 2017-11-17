@@ -153,7 +153,9 @@ public class DefaultObjectFactory implements IObjectFactory {
         try {
             Class.forName("com.amazon.device.messaging.ADM");
             if (new ADM(context).isSupported()) {
-                ret = new ADMPushProvider(context);
+                ADMPushProvider admPushProvider = new ADMPushProvider();
+                admPushProvider.initialize(context);
+                ret = admPushProvider;
                 Teak.log.i("factory.pushProvider", Helpers.mm.h("type", "adm"));
             }
         } catch (Exception ignored) {

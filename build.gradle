@@ -26,11 +26,12 @@ dexcount {
     verbose = false
     maxTreeDepth = Integer.MAX_VALUE
     runOnEachPackage = true
-    maxMethodCount = 1250 // This includes android.* etc dependencies, so I guess just do it this way for now
+    maxMethodCount = 1260 // This includes android.* etc dependencies, so I guess just do it this way for now
 }
 
 repositories {
     mavenCentral()
+    google()
 }
 
 allprojects {
@@ -38,6 +39,12 @@ allprojects {
         tasks.withType(JavaCompile) {
             options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
         }
+    }
+}
+
+tasks.whenTaskAdded { task ->
+    if(task.name.contains("Test")) {
+        task.enabled = false
     }
 }
 
@@ -98,12 +105,12 @@ def getVersionName = { ->
 
 android {
     // IMPORTANT: Changing versions?  Update `setup` as well!
-    compileSdkVersion 23
+    compileSdkVersion 26
     buildToolsVersion '26.0.2'
 
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 23
+        targetSdkVersion 26
         versionCode 2
         versionName getVersionName()
         consumerProguardFiles 'proguard.txt'
@@ -112,9 +119,11 @@ android {
 }
 
 dependencies {
+    implementation 'com.android.support:support-core-utils:26.0.0'
+
     // Google Play files - Old versions intentional, don't update them.
-    implementation 'com.google.android.gms:play-services-gcm:7.5.0'
-    implementation 'com.google.android.gms:play-services-ads:7.5.0'
+    implementation 'com.google.android.gms:play-services-gcm:10.2.1'
+    implementation 'com.google.android.gms:play-services-ads:10.2.1'
 
     // Amazon, Air, Unity compile-time-only dependencies
     compileOnly files('libs/amazon-device-messaging-1.0.1.jar')
