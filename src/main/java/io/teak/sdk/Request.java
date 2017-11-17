@@ -117,44 +117,13 @@ public class Request implements Runnable {
         this.payload.putAll(Request.configurationPayload);
     }
 
-    @Override
-    public void run() {
-        SecretKeySpec keySpec = new SecretKeySpec(Request.teakApiKey.getBytes(), "HmacSHA256");
-        String requestBody;
-
-        try {
-            ArrayList<String> payloadKeys = new ArrayList<>(this.payload.keySet());
-            Collections.sort(payloadKeys);
-
-            StringBuilder builder = new StringBuilder();
-            for (String key : payloadKeys) {
-                Object value = this.payload.get(key);
-                if (value != null) {
-                    String valueString;
-                    if (value instanceof Map) {
-                        valueString = new JSONObject((Map) value).toString();
-                    } else if (value instanceof Array) {
-                        valueString = new JSONArray(Collections.singletonList(value)).toString();
-                    } else if (value instanceof Collection) {
-                        valueString = new JSONArray((Collection) value).toString();
-                    } else {
-                        valueString = value.toString();
-                    }
-                    builder.append(key).append("=").append(valueString).append("&");
-                } else {
-                    Teak.log.e("request", "Value for key is null.", Helpers.mm.h("key", key));
-                }
-            }
-            builder.deleteCharAt(builder.length() - 1);
-
-            String stringToSign = "POST\n" + this.hostname + "\n" + this.endpoint + "\n" + builder.toString();
-            Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(keySpec);
-            byte[] result = mac.doFinal(stringToSign.getBytes());
-
-            builder = new StringBuilder();
-            for (String key : payloadKeys) {
-                Object value = this.payload.get(key);
+    private StringBuilder payloadToSigningString(Map<String, Object> payload) {
+        ArrayList<String> payloadKeys = new ArrayList<>(payload.keySet());
+        Collections.sort(payloadKeys);
+        StringBuilder builder = new StringBuilder();
+        for (String key : payloadKeys) {
+            Object value = payload.get(key);
+            if (value != null) {
                 String valueString;
                 if (value instanceof Map) {
                     valueString = new JSONObject((Map) value).toString();
@@ -165,8 +134,29 @@ public class Request implements Runnable {
                 } else {
                     valueString = value.toString();
                 }
-                builder.append(key).append("=").append(URLEncoder.encode(valueString, "UTF-8")).append("&");
+                builder.append(key).append("=").append(valueString).append("&");
+            } else {
+                Teak.log.e("request", "Value for key is null.", Helpers.mm.h("key", key));
             }
+        }
+        return builder;
+    }
+
+    @Override
+    public void run() {
+        SecretKeySpec keySpec = new SecretKeySpec(Request.teakApiKey.getBytes(), "HmacSHA256");
+        String requestBody;
+
+        try {
+            StringBuilder builder = payloadToSigningString(this.payload);
+            builder.deleteCharAt(builder.length() - 1);
+
+            String stringToSign = "POST\n" + this.hostname + "\n" + this.endpoint + "\n" + builder.toString();
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(keySpec);
+            byte[] result = mac.doFinal(stringToSign.getBytes());
+
+            builder = payloadToSigningString(this.payload);
             builder.append("sig=").append(URLEncoder.encode(Base64.encodeToString(result, Base64.NO_WRAP), "UTF-8"));
 
             requestBody = builder.toString();
