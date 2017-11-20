@@ -35,6 +35,7 @@ import android.text.Spanned;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RemoteViews;
 import android.widget.TextView;
@@ -245,9 +246,16 @@ public class NotificationBuilder {
                     int viewElementId = R.id(key);
                     View viewElement = inflatedView.findViewById(viewElementId);
 
-                    if (viewElement.getClass().equals(TextView.class)) {
+                    //noinspection StatementWithEmptyBody
+                    if (isUIType(viewElement, Button.class)) {
+                        // Button must go before TextView, because Button is a TextView
+                        // TODO: Need more config options for button, image, text, deep link
+                    } else if (isUIType(viewElement, TextView.class)) {
                         remoteViews.setTextViewText(viewElementId, Html.fromHtml(value));
-                    } else if (viewElement.getClass().equals(ImageView.class)) {
+                    } else //noinspection StatementWithEmptyBody
+                        if (isUIType(viewElement, ImageButton.class)) {
+                        // ImageButton must go before ImageView, because ImageButton is a ImageView
+                    } else if (isUIType(viewElement, ImageView.class)) {
                         if (value.equalsIgnoreCase("BUILTIN_APP_ICON")) {
                             remoteViews.setImageViewResource(viewElementId, appIconResourceId);
                         } else {
@@ -256,12 +264,8 @@ public class NotificationBuilder {
                                 remoteViews.setImageViewBitmap(viewElementId, bitmap);
                             }
                         }
-                    } else //noinspection StatementWithEmptyBody
-                        if (viewElement.getClass().equals(Button.class)) {
-                        // TODO: Need more config options for button, image, text, deep link
-                    } else {
-                        // TODO: report error to the dashboard
                     }
+                    // TODO: Else, report error to dashboard.
                 }
 
                 return remoteViews;
@@ -281,6 +285,11 @@ public class NotificationBuilder {
                 } catch (SSLException ignored) {
                 }
                 return ret;
+            }
+
+            private boolean isUIType(View viewElement, Class clazz) {
+                // TODO: Do more error checking to see if this is an AppCompat* class, and don't use InstanceOf
+                return clazz.isInstance(viewElement);
             }
         }
         ViewBuilder viewBuilder = new ViewBuilder();
