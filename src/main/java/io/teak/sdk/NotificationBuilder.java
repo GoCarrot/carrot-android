@@ -259,6 +259,8 @@ public class NotificationBuilder {
                     } else if (isUIType(viewElement, ImageView.class)) {
                         if (value.equalsIgnoreCase("BUILTIN_APP_ICON")) {
                             remoteViews.setImageViewResource(viewElementId, appIconResourceId);
+                        } else if (value.equalsIgnoreCase("NONE")) {
+                            remoteViews.setViewVisibility(viewElementId, View.GONE);
                         } else {
                             Bitmap bitmap = loadBitmapFromURI(new URI(value));
                             if (bitmap != null) {
