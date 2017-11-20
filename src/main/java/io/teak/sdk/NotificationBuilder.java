@@ -327,16 +327,6 @@ public class NotificationBuilder {
                 bigContentViewField.set(nativeNotification, bigContentView);
             } catch (Exception ignored) {
             }
-        } else {
-            String pulldownContentView = "pulldown_layout";
-            if (teakNotificaton.display.has("pulldownContentView")) {
-                pulldownContentView = teakNotificaton.display.getString("pulldownContentView");
-            }
-
-            try {
-                contentView.setViewVisibility(R.id(pulldownContentView), View.GONE);
-            } catch (Exception ignored) {
-            }
         }
 
         return nativeNotification;
