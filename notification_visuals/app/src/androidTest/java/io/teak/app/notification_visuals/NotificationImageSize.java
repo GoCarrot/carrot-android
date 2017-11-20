@@ -3,9 +3,10 @@ package io.teak.app.notification_visuals;
 import android.Manifest;
 import android.app.Activity;
 import android.app.Instrumentation;
+import android.content.Context;
 import android.content.Intent;
 
-import android.os.Environment;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.test.rule.GrantPermissionRule;
 import android.support.test.InstrumentationRegistry;
@@ -17,23 +18,20 @@ import android.support.test.uiautomator.UiObject2;
 import android.support.test.uiautomator.Until;
 
 
+import org.json.JSONObject;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.nio.channels.FileChannel;
+import java.io.FileNotFoundException;
 import java.util.Locale;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
 
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
-import io.teak.sdk.TeakNotification;
 import io.teak.sdk.event.LifecycleEvent;
 
+import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.event.UserIdEvent;
 
 import static junit.framework.Assert.assertNotNull;
@@ -82,20 +80,14 @@ public class NotificationImageSize {
         Teak.identifyUser(userId);
         verify(listener, timeout(5000).times(1)).eventRecieved(UserIdEvent.class, UserIdEvent.Type);
 
-        // Send notification
-        FutureTask<String> notificationTask = TeakNotification.scheduleNotification(creativeId, searchText, 10);
-        String response = null;
-        try {
-            response = notificationTask.get(20000, TimeUnit.MILLISECONDS);
-        } catch (Exception ignored) {
-        }
-        assertNotNull(response);
-
         // Background app
         Intent i = new Intent(Intent.ACTION_MAIN);
         i.addCategory(Intent.CATEGORY_HOME);
         activity.startActivity(i);
         verify(eventListener, timeout(5000).times(1)).eventRecieved(LifecycleEvent.class, LifecycleEvent.Paused);
+
+        // Simulate notification
+        simulateNotification(activity);
 
         // Wait for notification
         UiDevice device = UiDevice.getInstance(instrumentation);
@@ -114,6 +106,35 @@ public class NotificationImageSize {
         boolean success = UiDevice.getInstance(instrumentation).takeScreenshot(file);
         assertTrue(success);
         android.util.Log.i("Teak.NotificationVisuals", "Wrote screenshot to file: " + file.toString());
+    }
+
+    private void simulateNotification(Context context) {
+        Intent intent = new Intent();
+        intent.putExtra("teakNotifId", "fake-notif-id");
+        intent.putExtra("version", "1");
+        intent.putExtra("message", "Teak");
+
+        // UI template
+        JSONObject teak_notif_no_title = new JSONObject();
+        try {
+            teak_notif_no_title.put("text", "Teak");
+            teak_notif_no_title.put("notification_background", "assets:///pixelgrid_2000x2000.png");
+            teak_notif_no_title.put("left_image", "BUILTIN_APP_ICON");
+        } catch (Exception ignored) {
+        }
+
+        // Display
+        JSONObject display = new JSONObject();
+        try {
+            display.put("contentView", "teak_notif_no_title");
+            display.put("teak_notif_no_title", teak_notif_no_title);
+        } catch (Exception ignored) {
+        }
+
+        // Add display to intent
+        intent.putExtra("display", display.toString());
+
+        TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Received, context, intent));
     }
 
     @SuppressWarnings("WeakerAccess") // Must be public in order to mock
