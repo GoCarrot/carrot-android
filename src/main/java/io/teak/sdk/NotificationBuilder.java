@@ -43,6 +43,7 @@ import android.widget.TextView;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -274,15 +275,24 @@ public class NotificationBuilder {
             private Bitmap loadBitmapFromURI(URI bitmapUri) throws Exception {
                 Bitmap ret = null;
                 try {
-                    URL aURL = new URL(bitmapUri.toString());
-                    URLConnection conn = aURL.openConnection();
-                    conn.connect();
-                    InputStream is = conn.getInputStream();
-                    BufferedInputStream bis = new BufferedInputStream(is);
-                    ret = BitmapFactory.decodeStream(bis);
-                    bis.close();
-                    is.close();
+                    if (bitmapUri.getScheme().equals("assets")) {
+                        String assetFilePath = bitmapUri.getPath();
+                        assetFilePath = assetFilePath.startsWith("/") ? assetFilePath.substring(1) : assetFilePath;
+                        InputStream is = context.getAssets().open(assetFilePath);
+                        ret = BitmapFactory.decodeStream(is);
+                        is.close();
+                    } else {
+                        URL aURL = new URL(bitmapUri.toString());
+                        URLConnection conn = aURL.openConnection();
+                        conn.connect();
+                        InputStream is = conn.getInputStream();
+                        BufferedInputStream bis = new BufferedInputStream(is);
+                        ret = BitmapFactory.decodeStream(bis);
+                        bis.close();
+                        is.close();
+                    }
                 } catch (SSLException ignored) {
+                } catch (FileNotFoundException ignored) {
                 }
                 return ret;
             }
