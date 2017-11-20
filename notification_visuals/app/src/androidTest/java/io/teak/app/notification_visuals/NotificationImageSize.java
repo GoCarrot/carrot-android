@@ -119,7 +119,16 @@ public class NotificationImageSize {
         try {
             teak_notif_no_title.put("text", "Teak");
             teak_notif_no_title.put("notification_background", "assets:///pixelgrid_2000x2000.png");
+            //teak_notif_no_title.put("notification_background", "https://s3.amazonaws.com/carrot-images/creative_translations-media/45333/original-base64Default.txt?1510768708");
             teak_notif_no_title.put("left_image", "BUILTIN_APP_ICON");
+            //teak_notif_no_title.put("left_image", "NONE");
+        } catch (Exception ignored) {
+        }
+
+        JSONObject teak_big_notif_image_text = new JSONObject();
+        try {
+            teak_big_notif_image_text.put("text", "Teak");
+            teak_big_notif_image_text.put("notification_background", "assets:///pixelgrid_2000x2000.png");
         } catch (Exception ignored) {
         }
 
@@ -127,7 +136,9 @@ public class NotificationImageSize {
         JSONObject display = new JSONObject();
         try {
             display.put("contentView", "teak_notif_no_title");
+            display.put("bigContentView", "teak_big_notif_image_text");
             display.put("teak_notif_no_title", teak_notif_no_title);
+            display.put("teak_big_notif_image_text", teak_big_notif_image_text);
         } catch (Exception ignored) {
         }
 
