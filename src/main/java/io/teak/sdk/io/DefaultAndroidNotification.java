@@ -16,6 +16,7 @@ package io.teak.sdk.io;
 
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -29,6 +30,7 @@ import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
 import io.teak.sdk.event.NotificationDisplayEvent;
 import io.teak.sdk.event.PushNotificationEvent;
+import io.teak.sdk.service.NotificationAnimationService;
 
 public class DefaultAndroidNotification implements IAndroidNotification {
     private final NotificationManager notificationManager;
@@ -69,6 +71,12 @@ public class DefaultAndroidNotification implements IAndroidNotification {
                 }
             }
         });
+
+        Intent intent = new Intent(context, NotificationAnimationService.class);
+        ComponentName componentName = context.startService(intent);
+        if (componentName == null) {
+            Teak.log.w("notification.animation", "Unable to communicate with notification animation service. Please add:\n\t<service android:name=\"io.teak.sdk.service.NotificationAnimationService\" android:process=\":teak.animation\" android:exported=\"false\"/>\nTo the <application> section of your AndroidManifest.xml");
+        }
     }
 
     @Override
