@@ -92,7 +92,7 @@ public class NotificationImageSize {
         // Wait for notification
         UiDevice device = UiDevice.getInstance(instrumentation);
         device.openNotification();
-        device.wait(Until.hasObject(By.text(searchText)), 60000);
+        device.wait(Until.hasObject(By.text(searchText)), 10000);
         UiObject2 title = device.findObject(By.text(searchText));
         assertNotNull(title);
 
