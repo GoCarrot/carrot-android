@@ -13,6 +13,7 @@ import android.support.test.InstrumentationRegistry;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
 import android.support.test.uiautomator.By;
+import android.support.test.uiautomator.Direction;
 import android.support.test.uiautomator.UiDevice;
 import android.support.test.uiautomator.UiObject2;
 import android.support.test.uiautomator.Until;
@@ -86,14 +87,26 @@ public class NotificationImageSize {
         activity.startActivity(i);
         verify(eventListener, timeout(5000).times(1)).eventRecieved(LifecycleEvent.class, LifecycleEvent.Paused);
 
+        // Open notification tray and clear existing notifications
+        UiDevice device = UiDevice.getInstance(instrumentation);
+        device.openNotification();
+        device.wait(Until.hasObject(By.text("CLEAR ALL")), 5000); // TODO: Make sure text is consistent on versions
+        UiObject2 clearAll = device.findObject(By.text("CLEAR ALL"));
+        assertNotNull(clearAll);
+        clearAll.click();
+
         // Simulate notification
         simulateNotification(activity);
 
         // Wait for notification
-        UiDevice device = UiDevice.getInstance(instrumentation);
-        device.openNotification();
-        device.wait(Until.hasObject(By.text(searchText)), 10000);
-        UiObject2 title = device.findObject(By.text(searchText));
+        device.wait(Until.hasObject(By.text("teak_notif_no_title")), 5000);
+        UiObject2 title = device.findObject(By.text("teak_notif_no_title"));
+        if (title == null) {
+            title = device.findObject(By.text("teak_big_notif_image_text"));
+        } else {
+            // TODO: Try and expand it?
+            //title.getParent(/* LinearLayout */).getParent(/* RelativeLayout */).getParent(/* ? */).swipe(Direction.DOWN, 0.5f);
+        }
         assertNotNull(title);
 
         // Screenshot
@@ -117,7 +130,7 @@ public class NotificationImageSize {
         // UI template
         JSONObject teak_notif_no_title = new JSONObject();
         try {
-            teak_notif_no_title.put("text", "Teak");
+            teak_notif_no_title.put("text", "teak_notif_no_title");
             teak_notif_no_title.put("notification_background", "assets:///pixelgrid_2000x2000.png");
             //teak_notif_no_title.put("notification_background", "https://s3.amazonaws.com/carrot-images/creative_translations-media/45333/original-base64Default.txt?1510768708");
             teak_notif_no_title.put("left_image", "BUILTIN_APP_ICON");
@@ -127,7 +140,7 @@ public class NotificationImageSize {
 
         JSONObject teak_big_notif_image_text = new JSONObject();
         try {
-            teak_big_notif_image_text.put("text", "Teak");
+            teak_big_notif_image_text.put("text", "teak_big_notif_image_text");
             teak_big_notif_image_text.put("notification_background", "assets:///pixelgrid_2000x2000.png");
         } catch (Exception ignored) {
         }
