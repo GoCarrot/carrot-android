@@ -53,6 +53,7 @@ import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
+import java.util.UUID;
 
 import javax.net.ssl.SSLException;
 
@@ -100,6 +101,7 @@ public class NotificationBuilder {
         NotificationCompat.Builder builder;
         if (TeakConfiguration.get().appConfiguration.targetSdkVersion >= Build.VERSION_CODES.O) {
             builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
+            builder.setGroup(UUID.randomUUID().toString());
         } else {
             //noinspection deprecation
             builder = new NotificationCompat.Builder(context);
