@@ -48,7 +48,7 @@ public class DefaultAndroidNotification implements IAndroidNotification {
                 switch (event.eventType) {
                     case PushNotificationEvent.Cleared: {
                         final Intent intent = ((PushNotificationEvent) event).intent;
-                        if (intent != null) {
+                        if (intent != null && intent.getExtras() != null) {
                             final Bundle bundle = intent.getExtras();
                             cancelNotification(bundle.getInt("platformId"));
                         }
@@ -56,10 +56,10 @@ public class DefaultAndroidNotification implements IAndroidNotification {
                     }
                     case PushNotificationEvent.Interaction: {
                         final Intent intent = ((PushNotificationEvent) event).intent;
-                        if (intent == null) break;
-
-                        final Bundle bundle = intent.getExtras();
-                        cancelNotification(bundle.getInt("platformId"));
+                        if (intent != null && intent.getExtras() != null) {
+                            final Bundle bundle = intent.getExtras();
+                            cancelNotification(bundle.getInt("platformId"));
+                        }
                         break;
                     }
                     case NotificationDisplayEvent.Type: {
