@@ -156,7 +156,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void testNotification(View view) {
-        scheduleTestNotification("test", "Some text!", "5");
+        scheduleTestNotification("Animated", "Default text", "5");
     }
 
     public void makePurchase(View view) {

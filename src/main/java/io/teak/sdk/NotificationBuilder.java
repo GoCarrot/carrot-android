@@ -278,7 +278,7 @@ public class NotificationBuilder {
                         } else if (value.equalsIgnoreCase("NONE")) {
                             remoteViews.setViewVisibility(viewElementId, View.GONE);
                         } else {
-                            Bitmap bitmap = loadBitmapFromURI(new URI("assets:///777-animated-phone-it-in.png")); //loadBitmapFromURI(new URI(value));
+                            Bitmap bitmap = loadBitmapFromURI(new URI("assets:///777-animated-phone-it-in-snow.png")); //loadBitmapFromURI(new URI(value));
                             if(true) { // HAX - Animated
                                 try {
                                     //stream = context.getAssets().open("777-animated-phone-it-in.png");
