@@ -221,6 +221,7 @@ public class NotificationBuilder {
 
         // Notification builder
         Notification nativeNotification = builder.build();
+        nativeNotification.flags |= Notification.FLAG_ONLY_ALERT_ONCE; // Only buzz/sound once
 
         class ViewBuilder {
             private RemoteViews buildViews(String name) throws Exception {
