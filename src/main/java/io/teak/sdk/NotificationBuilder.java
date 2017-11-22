@@ -29,6 +29,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.v4.app.NotificationCompat;
 import android.text.Html;
 import android.text.Spanned;
@@ -54,6 +56,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
 
 import javax.net.ssl.SSLException;
 
@@ -225,17 +229,26 @@ public class NotificationBuilder {
 
         class ViewBuilder {
             private RemoteViews buildViews(String name) throws Exception {
-                int viewLayout = R.layout(name);
+                final int viewLayout = R.layout(name);
                 RemoteViews remoteViews = new RemoteViews(
                     context.getPackageName(),
                     viewLayout);
 
                 // To let us query for information about the view
-                LayoutInflater factory = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                final LayoutInflater factory = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                 if (factory == null) {
                     throw new Exception("Unable to get LayoutInflater service.");
                 }
-                View inflatedView = factory.inflate(viewLayout, null);
+
+                // ViewFlipper must inflate on main thread
+                FutureTask<View> viewInflaterRunnable = new FutureTask<>(new Callable<View>() {
+                    @Override
+                    public View call() throws Exception {
+                        return factory.inflate(viewLayout, null);
+                    }
+                });
+                new Handler(Looper.getMainLooper()).post(viewInflaterRunnable);
+                View inflatedView = viewInflaterRunnable.get();
 
                 // Configure view
                 JSONObject viewConfig = teakNotificaton.display.getJSONObject(name);
