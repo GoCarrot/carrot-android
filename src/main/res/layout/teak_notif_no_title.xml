@@ -12,6 +12,64 @@
         android:id="@+id/notification_background"
         android:contentDescription="@null"/>
 
+    <ViewFlipper android:id="@+id/view_animator"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_centerInParent="true"
+        android:measureAllChildren="false"
+        android:scaleType="centerCrop"
+        android:autoStart="true"
+        android:flipInterval="500">
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:id="@+id/frame_0"
+            android:contentDescription="@null"/>
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:id="@+id/frame_1"
+            android:contentDescription="@null"/>
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:id="@+id/frame_2"
+            android:contentDescription="@null"/>
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:id="@+id/frame_3"
+            android:contentDescription="@null"/>
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:id="@+id/frame_4"
+            android:contentDescription="@null"/>
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:id="@+id/frame_5"
+            android:contentDescription="@null"/>
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:id="@+id/frame_6"
+            android:contentDescription="@null"/>
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:id="@+id/frame_7"
+            android:contentDescription="@null"/>
+    </ViewFlipper>
+
     <ImageView
         android:tag="default: BUILTIN_APP_ICON&#10;aspect_ratio: 48x48&#10;description: The 'app icon' of the app, on the left of the notification. Set to the text BUILTIN_APP_ICON unless you really think this should be changed or hidden."
         android:id="@+id/left_image"

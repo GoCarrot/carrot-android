@@ -278,8 +278,33 @@ public class NotificationBuilder {
                         } else if (value.equalsIgnoreCase("NONE")) {
                             remoteViews.setViewVisibility(viewElementId, View.GONE);
                         } else {
-                            Bitmap bitmap = loadBitmapFromURI(new URI(value));
-                            if (bitmap != null) {
+                            Bitmap bitmap = loadBitmapFromURI(new URI("assets:///777-animated-phone-it-in.png")); //loadBitmapFromURI(new URI(value));
+                            if(true) { // HAX - Animated
+                                try {
+                                    //stream = context.getAssets().open("777-animated-phone-it-in.png");
+                                    //stream = context.getAssets().open("777-animated-phone-it-in-snow.png");
+                                    final int numCols = 2;
+                                    final int numRows = 4;
+                                    final int frameWidth = 512;
+                                    final int frameHeight = 256;
+
+                                    int frameIdx = 0;
+                                    for (int x = 0; x < numCols; x++) {
+                                        for (int y = 0; y < numRows; y++) {
+                                            final int startX = x * frameWidth;
+                                            final int startY = y * frameHeight;
+                                            Bitmap frame = Bitmap.createBitmap(bitmap, startX, startY, frameWidth, frameHeight);
+
+                                            int frameViewId = R.id("frame_" + frameIdx);
+                                            remoteViews.setImageViewBitmap(frameViewId, frame);
+
+                                            frameIdx++;
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    Teak.log.exception(e);
+                                }
+                            } else if (bitmap != null) {
                                 remoteViews.setImageViewBitmap(viewElementId, bitmap);
                             }
                         }
