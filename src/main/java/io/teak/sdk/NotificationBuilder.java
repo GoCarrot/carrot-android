@@ -310,8 +310,7 @@ public class NotificationBuilder {
         ViewBuilder viewBuilder = new ViewBuilder();
 
         // Configure 'contentView'
-        RemoteViews contentView = viewBuilder.buildViews(teakNotificaton.display.getString("contentView"));
-        nativeNotification.contentView = contentView;
+        nativeNotification.contentView = viewBuilder.buildViews(teakNotificaton.display.getString("contentView"));
 
         // Check for Jellybean (API 16, 4.1)+ for expanded view
         RemoteViews bigContentView = null;
