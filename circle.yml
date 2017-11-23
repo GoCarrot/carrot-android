@@ -35,6 +35,7 @@ compile:
   override:
     #- ./validate-code-format
     - ./gradlew assemble
+    - ./check_size
 test:
   override:
     # Unit Tests
