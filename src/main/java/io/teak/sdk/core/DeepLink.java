@@ -14,8 +14,6 @@
  */
 package io.teak.sdk.core;
 
-import android.net.Uri;
-
 import java.net.URI;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -24,6 +22,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -73,17 +73,16 @@ public class DeepLink {
             throw new IllegalArgumentException("Duplicate variable names in TeakLink for route: " + route);
         }
 
-        final Pattern regex = Pattern.compile(pattern);
+        final String patternKey = pattern;
         final DeepLink link = new DeepLink(route, call, groupNames, name, description);
-        new Thread(new Runnable() {
+        executor.execute(new Runnable() {
             @Override
             public void run() {
                 synchronized (routes) {
-                    routes.put(regex, link);
+                    routes.put(patternKey, link);
                 }
             }
-        })
-            .start();
+        });
     }
 
     public static boolean processUri(URI uri) {
@@ -91,11 +90,12 @@ public class DeepLink {
         // TODO: Check uri.getAuthority(), and if it exists, make sure it matches one we care about
 
         synchronized (routes) {
-            for (Map.Entry<Pattern, DeepLink> entry : routes.entrySet()) {
-                Pattern key = entry.getKey();
+            for (Map.Entry<String, DeepLink> entry : routes.entrySet()) {
+                String key = entry.getKey();
                 DeepLink value = entry.getValue();
 
-                Matcher matcher = key.matcher(uri.getPath());
+                Pattern pattern = Pattern.compile(key);
+                Matcher matcher = pattern.matcher(uri.getPath());
                 if (matcher.matches()) {
                     final Map<String, Object> parameterDict = new HashMap<>();
                     int idx = 1; // Index 0 = full match
@@ -129,11 +129,11 @@ public class DeepLink {
 
                     try {
                         value.call.call(parameterDict);
+                        return true;
                     } catch (Exception e) {
                         Teak.log.exception(e);
                         return false;
                     }
-                    return true;
                 }
             }
         }
@@ -143,7 +143,7 @@ public class DeepLink {
     public static List<Map<String, String>> getRouteNamesAndDescriptions() {
         List<Map<String, String>> routeNamesAndDescriptions = new ArrayList<>();
         synchronized (routes) {
-            for (Map.Entry<Pattern, DeepLink> entry : routes.entrySet()) {
+            for (Map.Entry<String, DeepLink> entry : routes.entrySet()) {
                 DeepLink link = entry.getValue();
                 if (link.name != null && !link.name.isEmpty()) {
                     Map<String, String> item = new HashMap<>();
@@ -157,11 +157,8 @@ public class DeepLink {
         return routeNamesAndDescriptions;
     }
 
-    public static void clearRoutes() {
-        routes.clear();
-    }
-
-    private static final Map<Pattern, DeepLink> routes = new HashMap<>();
+    public static final Map<String, DeepLink> routes = new HashMap<>();
+    private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final String route;
     private final Teak.DeepLink call;

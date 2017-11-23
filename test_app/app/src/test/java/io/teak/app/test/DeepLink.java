@@ -7,6 +7,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import io.teak.sdk.Teak;
 
@@ -19,10 +20,12 @@ import static org.mockito.Mockito.verify;
 public class DeepLink extends TeakUnitTest {
     @Test
     public void simple() throws Exception {
-        io.teak.sdk.core.DeepLink.clearRoutes();
+        io.teak.sdk.core.DeepLink.routes.clear();
 
         final Teak.DeepLink callback = mock(Teak.DeepLink.class);
-        Teak.registerDeepLink("/foo/:bar/:baz", "", "", callback);
+        Teak.registerDeepLink("/foo/:bar/:baz", "Test", "Also test", callback);
+        Thread.sleep(10); // sleep to make sure the async happens
+        assertTrue(io.teak.sdk.core.DeepLink.routes.containsKey("/foo/(?<bar>[^/?#]+)/(?<baz>[^/?#]+)"));
 
         final URI uri = new URI("/foo/1234/abcd");
         assertNotNull(uri);
@@ -36,10 +39,12 @@ public class DeepLink extends TeakUnitTest {
 
     @Test
     public void withQuery() throws Exception {
-        io.teak.sdk.core.DeepLink.clearRoutes();
+        io.teak.sdk.core.DeepLink.routes.clear();
 
         final Teak.DeepLink callback = mock(Teak.DeepLink.class);
         Teak.registerDeepLink("/foo/:bar/:baz", "", "", callback);
+        Thread.sleep(10);
+        assertTrue(io.teak.sdk.core.DeepLink.routes.containsKey("/foo/(?<bar>[^/?#]+)/(?<baz>[^/?#]+)"));
 
         final URI uri = new URI("/foo/1234/abcd?foo=bar");
         assertNotNull(uri);
@@ -54,10 +59,12 @@ public class DeepLink extends TeakUnitTest {
 
     @Test
     public void queryOverwritesPath() throws Exception {
-        io.teak.sdk.core.DeepLink.clearRoutes();
+        io.teak.sdk.core.DeepLink.routes.clear();
 
         final Teak.DeepLink callback = mock(Teak.DeepLink.class);
         Teak.registerDeepLink("/foo/:bar/:baz", "", "", callback);
+        Thread.sleep(10);
+        assertTrue(io.teak.sdk.core.DeepLink.routes.containsKey("/foo/(?<bar>[^/?#]+)/(?<baz>[^/?#]+)"));
 
         final URI uri = new URI("/foo/1234/abcd?bar=barbar");
         assertNotNull(uri);
