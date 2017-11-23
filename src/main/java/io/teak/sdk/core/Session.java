@@ -26,6 +26,7 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.text.DecimalFormat;
@@ -820,13 +821,13 @@ public class Session {
                         try {
                             // Resolve the deepLinkAttribution future
                             Map<String, Object> attribution = deepLinkAttribution.get(5, TimeUnit.SECONDS);
-                            Uri uri = Uri.parse((String) attribution.get("deep_link"));
+                            URI uri = new URI((String) attribution.get("deep_link"));
 
                             // See if TeakLinks can do anything with the deep link
                             if (!DeepLink.processUri(uri) && teakNotifId != null) {
                                 // If this was a deep link from a Teak Notification, then go ahead and
                                 // try to find a different app to launch.
-                                Intent uriIntent = new Intent(Intent.ACTION_VIEW, uri);
+                                Intent uriIntent = new Intent(Intent.ACTION_VIEW, Uri.parse((String) attribution.get("deep_link")));
                                 uriIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                                 List<ResolveInfo> resolvedActivities = teakConfiguration.appConfiguration.packageManager.queryIntentActivities(uriIntent, 0);
                                 boolean safeToRedirect = true;

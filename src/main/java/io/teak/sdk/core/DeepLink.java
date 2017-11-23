@@ -16,16 +16,18 @@ package io.teak.sdk.core;
 
 import android.net.Uri;
 
+import java.net.URI;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.teak.sdk.Teak;
-import io.teak.sdk.regexp.Matcher;
-import io.teak.sdk.regexp.Pattern;
 
 public class DeepLink {
     /**
@@ -84,7 +86,7 @@ public class DeepLink {
             .start();
     }
 
-    static boolean processUri(Uri uri) {
+    public static boolean processUri(URI uri) {
         if (uri == null) return false;
         // TODO: Check uri.getAuthority(), and if it exists, make sure it matches one we care about
 
@@ -96,18 +98,33 @@ public class DeepLink {
                 Matcher matcher = key.matcher(uri.getPath());
                 if (matcher.matches()) {
                     final Map<String, Object> parameterDict = new HashMap<>();
+                    int idx = 1; // Index 0 = full match
                     for (String name : value.groupNames) {
                         try {
-                            parameterDict.put(name, matcher.group(name));
+                            parameterDict.put(name, matcher.group(idx));
+                            idx++;
                         } catch (Exception e) {
                             Teak.log.exception(e);
                             return false;
                         }
                     }
 
+                    Map<String, String> query = new HashMap<String, String>();
+                    if (uri.getQuery() != null) {
+                        String[] pairs = uri.getQuery().split("&");
+                        for (String pair : pairs) {
+                            int eqIdx = pair.indexOf("=");
+                            try {
+                                query.put(URLDecoder.decode(pair.substring(0, eqIdx), "UTF-8"),
+                                        URLDecoder.decode(pair.substring(eqIdx + 1), "UTF-8"));
+                            } catch (Exception ignored) {
+                            }
+                        }
+                    }
+
                     // Add the query parameters, allow them to overwrite path parameters
-                    for (String name : uri.getQueryParameterNames()) {
-                        parameterDict.put(name, uri.getQueryParameter(name));
+                    for (String name : query.keySet()) {
+                        parameterDict.put(name, query.get(name));
                     }
 
                     try {
@@ -138,6 +155,10 @@ public class DeepLink {
             }
         }
         return routeNamesAndDescriptions;
+    }
+
+    public static void clearRoutes() {
+        routes.clear();
     }
 
     private static final Map<Pattern, DeepLink> routes = new HashMap<>();
