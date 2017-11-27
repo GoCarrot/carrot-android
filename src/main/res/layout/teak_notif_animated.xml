@@ -3,14 +3,16 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <ImageView
-        android:tag="aspect_ratio: 1111x2222&#10;description: Background image for the notification."
+    <ViewFlipper android:id="@+id/view_animator"
+        android:tag="aspect_ratio: 1111x2222&#10;description: Background animation for the notification."
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_centerInParent="true"
+        android:measureAllChildren="false"
         android:scaleType="centerCrop"
-        android:id="@+id/notification_background"
-        android:contentDescription="@null"/>
+        android:autoStart="true"
+        android:flipInterval="500">
+    </ViewFlipper>
 
     <ImageView
         android:tag="default: BUILTIN_APP_ICON&#10;aspect_ratio: 48x48&#10;description: The 'app icon' of the app, on the left of the notification. Set to the text BUILTIN_APP_ICON unless you really think this should be changed or hidden."

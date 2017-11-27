@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
@@ -14,7 +15,9 @@ import android.os.Bundle;
 import android.util.Log;
 
 import io.teak.sdk.Teak;
+import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
+import io.teak.sdk.event.PushNotificationEvent;
 
 import android.view.View;
 
@@ -130,6 +133,52 @@ public class MainActivity extends AppCompatActivity {
     ///////
     // Not required for Teak integration
 
+    private void simulateNotification(Context context) {
+        Intent intent = new Intent();
+        intent.putExtra("teakNotifId", "fake-notif-id");
+        intent.putExtra("version", "1");
+        intent.putExtra("message", "Teak");
+
+        // UI template
+        JSONObject teak_notif_animated = new JSONObject();
+        try {
+            JSONObject animated = new JSONObject();
+            animated.put("sprite_sheet", "assets:///777-animated-phone-it-in-snow.png");
+            animated.put("rows", 4);
+            animated.put("columns", 2);
+            animated.put("width", 512);
+            animated.put("height", 256);
+
+            teak_notif_animated.put("text", "");
+            teak_notif_animated.put("view_animator", animated);
+            //teak_notif_animated.put("left_image", "BUILTIN_APP_ICON");
+            teak_notif_animated.put("left_image", "NONE");
+        } catch (Exception ignored) {
+        }
+
+        JSONObject teak_big_notif_image_text = new JSONObject();
+        try {
+            teak_big_notif_image_text.put("text", "teak_big_notif_image_text");
+            teak_big_notif_image_text.put("notification_background", "assets:///pixelgrid_2000x2000.png");
+        } catch (Exception ignored) {
+        }
+
+        // Display
+        JSONObject display = new JSONObject();
+        try {
+            display.put("contentView", "teak_notif_animated");
+            display.put("bigContentView", "teak_big_notif_image_text");
+            display.put("teak_notif_animated", teak_notif_animated);
+            display.put("teak_big_notif_image_text", teak_big_notif_image_text);
+        } catch (Exception ignored) {
+        }
+
+        // Add display to intent
+        intent.putExtra("display", display.toString());
+
+        TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Received, context, intent));
+    }
+
     private void showPurchaseDialogForSku(final String sku) {
         final AppCompatActivity _this = this;
         new Thread(new Runnable() {
@@ -156,7 +205,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void testNotification(View view) {
-        scheduleTestNotification("Animated", "Default text", "5");
+        // Schedule Notification
+        //scheduleTestNotification("Animated", "Default text", "5");
+
+        // Simulate Notification
+        final Intent i = new Intent(Intent.ACTION_MAIN);
+        i.addCategory(Intent.CATEGORY_HOME);
+        this.startActivity(i);
+
+        final AppCompatActivity _this = this;
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                simulateNotification(_this);
+            }
+        }, 1000);
     }
 
     public void makePurchase(View view) {

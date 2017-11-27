@@ -46,12 +46,10 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
     private class AnimationEntry {
         final Notification notification;
         int notificationId;
-        final int animatedViewId;
 
-        AnimationEntry(Notification notification, int notificationId, int animatedViewId) {
+        AnimationEntry(Notification notification, int notificationId) {
             this.notification = notification;
             this.notificationId = notificationId;
-            this.animatedViewId = animatedViewId;
         }
     }
 
@@ -129,10 +127,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
 
             if (teakNotification.isAnimated) {
                 synchronized (this.animatedNotifications) {
-                    // TODO: Pull out the update element(s) and any needed data here
-                    // HAX
-                    int viewElementId = this.context.getResources().getIdentifier("view_animator", "id", this.context.getPackageName());
-                    this.animatedNotifications.add(new AnimationEntry(nativeNotification, teakNotification.platformId, viewElementId));
+                    this.animatedNotifications.add(new AnimationEntry(nativeNotification, teakNotification.platformId));
                 }
             }
         } catch (SecurityException ignored) {

@@ -41,6 +41,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RemoteViews;
 import android.widget.TextView;
+import android.widget.ViewFlipper;
 
 import org.json.JSONObject;
 
@@ -230,9 +231,7 @@ public class NotificationBuilder {
         class ViewBuilder {
             private RemoteViews buildViews(String name) throws Exception {
                 final int viewLayout = R.layout(name);
-                RemoteViews remoteViews = new RemoteViews(
-                    context.getPackageName(),
-                    viewLayout);
+                final RemoteViews remoteViews = new RemoteViews(context.getPackageName(), viewLayout);
 
                 // To let us query for information about the view
                 final LayoutInflater factory = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -256,57 +255,58 @@ public class NotificationBuilder {
 
                 while (keys.hasNext()) {
                     String key = (String) keys.next();
-                    String value = viewConfig.getString(key);
 
-                    if (value == null || value.length() == 0) continue;
-
-                    int viewElementId = R.id(key);
-                    View viewElement = inflatedView.findViewById(viewElementId);
+                    final int viewElementId = R.id(key);
+                    final View viewElement = inflatedView.findViewById(viewElementId);
 
                     //noinspection StatementWithEmptyBody
                     if (isUIType(viewElement, Button.class)) {
                         // Button must go before TextView, because Button is a TextView
                         // TODO: Need more config options for button, image, text, deep link
                     } else if (isUIType(viewElement, TextView.class)) {
+                        final String value = viewConfig.getString(key);
                         remoteViews.setTextViewText(viewElementId, Html.fromHtml(value));
                     } else //noinspection StatementWithEmptyBody
                         if (isUIType(viewElement, ImageButton.class)) {
                         // ImageButton must go before ImageView, because ImageButton is a ImageView
                     } else if (isUIType(viewElement, ImageView.class)) {
+                        final String value = viewConfig.getString(key);
                         if (value.equalsIgnoreCase("BUILTIN_APP_ICON")) {
                             remoteViews.setImageViewResource(viewElementId, appIconResourceId);
                         } else if (value.equalsIgnoreCase("NONE")) {
                             remoteViews.setViewVisibility(viewElementId, View.GONE);
                         } else {
-                            Bitmap bitmap = loadBitmapFromURI(new URI("assets:///777-animated-phone-it-in-snow.png")); //loadBitmapFromURI(new URI(value));
-                            if(true) { // HAX - Animated
-                                try {
-                                    //stream = context.getAssets().open("777-animated-phone-it-in.png");
-                                    //stream = context.getAssets().open("777-animated-phone-it-in-snow.png");
-                                    final int numCols = 2;
-                                    final int numRows = 4;
-                                    final int frameWidth = 512;
-                                    final int frameHeight = 256;
-
-                                    int frameIdx = 0;
-                                    for (int x = 0; x < numCols; x++) {
-                                        for (int y = 0; y < numRows; y++) {
-                                            final int startX = x * frameWidth;
-                                            final int startY = y * frameHeight;
-                                            Bitmap frame = Bitmap.createBitmap(bitmap, startX, startY, frameWidth, frameHeight);
-
-                                            int frameViewId = R.id("frame_" + frameIdx);
-                                            remoteViews.setImageViewBitmap(frameViewId, frame);
-
-                                            frameIdx++;
-                                        }
-                                    }
-                                } catch (Exception e) {
-                                    Teak.log.exception(e);
-                                }
-                            } else if (bitmap != null) {
+                            final Bitmap bitmap = loadBitmapFromURI(new URI(value));
+                            if (bitmap != null) {
                                 remoteViews.setImageViewBitmap(viewElementId, bitmap);
                             }
+                        }
+                    } else if (isUIType(viewElement, ViewFlipper.class)) {
+                        final JSONObject animationConfig = viewConfig.getJSONObject(key);
+                        try {
+                            final Bitmap bitmap = loadBitmapFromURI(new URI(animationConfig.getString("sprite_sheet")));
+                            final int numCols = animationConfig.getInt("columns");
+                            final int numRows = animationConfig.getInt("rows");
+                            final int frameWidth = animationConfig.getInt("width");
+                            final int frameHeight = animationConfig.getInt("height");
+
+                            for (int x = 0; x < numCols; x++) {
+                                for (int y = 0; y < numRows; y++) {
+                                    final int startX = x * frameWidth;
+                                    final int startY = y * frameHeight;
+                                    Bitmap frame = Bitmap.createBitmap(bitmap, startX, startY, frameWidth, frameHeight);
+
+                                    final RemoteViews frameView = new RemoteViews(context.getPackageName(), R.layout("teak_frame"));
+                                    final int frameViewId = R.id("frame");
+                                    frameView.setImageViewBitmap(frameViewId, frame);
+                                    remoteViews.addView(viewElementId, frameView);
+                                }
+                            }
+
+                            // Mark notification as containing animated element(s)
+                            teakNotificaton.isAnimated = true;
+                        } catch (Exception e) {
+                            Teak.log.exception(e);
                         }
                     }
                     // TODO: Else, report error to dashboard.

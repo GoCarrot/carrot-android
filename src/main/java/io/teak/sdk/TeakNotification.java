@@ -93,11 +93,6 @@ public class TeakNotification {
         return this.extras;
     }
 
-    /**
-     * Is this notification animated?
-     */
-    public final boolean isAnimated;
-
     @SuppressWarnings("WeakerAccess")
     public static class Reward {
 
@@ -608,6 +603,9 @@ public class TeakNotification {
     // v2+
     final JSONObject display;
 
+    // Animation
+    public boolean isAnimated;
+
     public TeakNotification(Bundle bundle) {
         this.message = bundle.getString("message");
         this.longText = bundle.getString("longText");
@@ -615,7 +613,7 @@ public class TeakNotification {
         this.imageAssetA = bundle.getString("imageAssetA");
         this.teakDeepLink = bundle.getString("teakDeepLink");
         this.teakCreativeName = bundle.getString("teakCreativeName");
-        this.isAnimated = true; //bundle.getBoolean("animate"); // HAX
+        this.isAnimated = false;
 
         JSONObject tempExtras = null;
         try {
