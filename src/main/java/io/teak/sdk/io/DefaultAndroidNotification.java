@@ -16,6 +16,7 @@ package io.teak.sdk.io;
 
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -41,15 +42,14 @@ import io.teak.sdk.service.NotificationAnimationService;
 public class DefaultAndroidNotification extends BroadcastReceiver implements IAndroidNotification {
     private final NotificationManager notificationManager;
     private final ArrayList<AnimationEntry> animatedNotifications = new ArrayList<>();
-    private final Context context;
 
     private class AnimationEntry {
         final Notification notification;
-        int notificationId;
+        final TeakNotification teakNotification;
 
-        AnimationEntry(Notification notification, int notificationId) {
+        AnimationEntry(Notification notification, TeakNotification teakNotification) {
             this.notification = notification;
-            this.notificationId = notificationId;
+            this.teakNotification = teakNotification;
         }
     }
 
@@ -59,13 +59,12 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
     private static final String NOTIFICATION_TAG = "io.teak.sdk.TeakNotification";
 
     public DefaultAndroidNotification(@NonNull Context context) {
-        this.context = context;
-        this.notificationManager = (NotificationManager) this.context.getSystemService(Context.NOTIFICATION_SERVICE);
+        this.notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
         IntentFilter screenStateFilter = new IntentFilter();
         screenStateFilter.addAction(NotificationAnimationService.START_ANIMATING);
         screenStateFilter.addAction(NotificationAnimationService.STOP_ANIMATING);
-        this.context.registerReceiver(this, screenStateFilter);
+        context.registerReceiver(this, screenStateFilter);
 
         TeakEvent.addEventListener(new TeakEvent.EventListener() {
             @Override
@@ -96,8 +95,8 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
             }
         });
 
-        Intent intent = new Intent(this.context, NotificationAnimationService.class);
-        ComponentName componentName = this.context.startService(intent);
+        Intent intent = new Intent(context, NotificationAnimationService.class);
+        ComponentName componentName = context.startService(intent);
         if (componentName == null) {
             Teak.log.w("notification.animation", "Unable to communicate with notification animation service. Please add:\n\t<service android:name=\"io.teak.sdk.service.NotificationAnimationService\" android:process=\":teak.animation\" android:exported=\"false\"/>\nTo the <application> section of your AndroidManifest.xml");
         }
@@ -110,11 +109,13 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
         notificationManager.cancel(NOTIFICATION_TAG, platformId);
 
         synchronized (this.animatedNotifications) {
+            ArrayList<AnimationEntry> removeList = new ArrayList<>();
             for (int i = 0; i < this.animatedNotifications.size(); i++) {
-                if (this.animatedNotifications.get(i).notificationId == platformId) {
-                    this.animatedNotifications.remove(i);
+                if (this.animatedNotifications.get(i).teakNotification.platformId == platformId) {
+                    removeList.add(this.animatedNotifications.get(i));
                 }
             }
+            this.animatedNotifications.removeAll(removeList);
         }
     }
 
@@ -128,7 +129,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
 
             if (teakNotification.isAnimated) {
                 synchronized (this.animatedNotifications) {
-                    this.animatedNotifications.add(new AnimationEntry(nativeNotification, teakNotification.platformId));
+                    this.animatedNotifications.add(new AnimationEntry(nativeNotification, teakNotification));
                 }
             }
         } catch (SecurityException ignored) {
@@ -138,7 +139,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
     }
 
     @Override
-    public void onReceive(Context context, Intent intent) {
+    public void onReceive(final Context context, final Intent intent) {
         if (NotificationAnimationService.START_ANIMATING.equals(intent.getAction())) {
             Teak.log.i("notification.animation", Helpers.mm.h("animating", true));
         } else if (NotificationAnimationService.STOP_ANIMATING.equals(intent.getAction())) {
@@ -151,11 +152,29 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                         Random rng = new Random();
                         for (AnimationEntry entry : animatedNotifications) {
                             try {
-                                notificationManager.cancel(NOTIFICATION_TAG, entry.notificationId);
+                                notificationManager.cancel(NOTIFICATION_TAG, entry.teakNotification.platformId);
 
                                 entry.notification.defaults = 0; // Disable sound/vibrate etc
-                                entry.notificationId = rng.nextInt();
-                                notificationManager.notify(NOTIFICATION_TAG, entry.notificationId, entry.notification);
+                                entry.teakNotification.platformId = rng.nextInt();
+                                entry.teakNotification.bundle.putInt("platformId", entry.teakNotification.platformId);
+
+                                // Now it needs new intents
+                                ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
+
+                                // Create intent to fire if/when notification is cleared
+                                Intent pushClearedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX);
+                                pushClearedIntent.putExtras(entry.teakNotification.bundle);
+                                pushClearedIntent.setComponent(cn);
+                                entry.notification.deleteIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
+
+                                // Create intent to fire if/when notification is opened, attach bundle info
+                                Intent pushOpenedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX);
+                                pushOpenedIntent.putExtras(entry.teakNotification.bundle);
+                                pushOpenedIntent.setComponent(cn);
+                                entry.notification.contentIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
+
+
+                                notificationManager.notify(NOTIFICATION_TAG, entry.teakNotification.platformId, entry.notification);
                             } catch (Exception e) {
                                 Teak.log.exception(e);
                             }

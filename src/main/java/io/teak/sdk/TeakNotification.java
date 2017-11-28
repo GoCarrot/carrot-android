@@ -586,7 +586,7 @@ public class TeakNotification {
     final String teakCreativeName;
 
     // v1
-    public final int platformId;
+    public int platformId;
     public final long teakNotifId;
 
     final String message;
@@ -606,6 +606,8 @@ public class TeakNotification {
     // Animation
     public boolean isAnimated;
 
+    public final Bundle bundle;
+
     public TeakNotification(Bundle bundle) {
         this.message = bundle.getString("message");
         this.longText = bundle.getString("longText");
@@ -614,6 +616,7 @@ public class TeakNotification {
         this.teakDeepLink = bundle.getString("teakDeepLink");
         this.teakCreativeName = bundle.getString("teakCreativeName");
         this.isAnimated = false;
+        this.bundle = bundle;
 
         JSONObject tempExtras = null;
         try {

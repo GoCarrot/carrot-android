@@ -43,6 +43,7 @@ import io.teak.sdk.TeakEvent;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.core.ITeakCore;
 import io.teak.sdk.core.InstrumentableReentrantLock;
+import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.io.DefaultAndroidDeviceInfo;
 import io.teak.sdk.io.DefaultAndroidNotification;
@@ -53,6 +54,7 @@ import io.teak.sdk.push.IPushProvider;
 import io.teak.sdk.store.IStore;
 
 import static junit.framework.TestCase.fail;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
@@ -60,28 +62,41 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings({"WeakerAccess", "unused"})
 class TeakIntegrationTest {
     IStore store;
     IAndroidResources androidResources;
     TestTeakEventListener eventListener;
     ITeakCore teakCore;
+    private final boolean useDefaultTeakCore;
 
     private final DefaultAndroidDeviceInfo androidDeviceInfo;
     private final IPushProvider pushProvider;
     private final IAndroidNotification androidNotification;
 
     TeakIntegrationTest() {
+        this(false);
+    }
+
+    TeakIntegrationTest(boolean useDefaultTeakCore) {
         final Context context = InstrumentationRegistry.getTargetContext();
         this.androidDeviceInfo  = new DefaultAndroidDeviceInfo(context);
         this.pushProvider = DefaultObjectFactory.createPushProvider(context);
         this.androidNotification = new DefaultAndroidNotification(context);
+
+        this.useDefaultTeakCore = useDefaultTeakCore;
+        if (this.useDefaultTeakCore) {
+            this.teakCore = new TeakCore(context);
+        }
     }
 
     @Before
     public void resetTeakEventListeners() throws NoSuchFieldException, IllegalAccessException {
         // Enable lock contention timeout/checks
         InstrumentableReentrantLock.interruptLongLocksAndReport = true;
-        TestHelpers.resetTeakEventListeners();
+        if (!this.useDefaultTeakCore) {
+            TestHelpers.resetTeakEventListeners();
+        }
     }
 
     @Rule
@@ -97,7 +112,9 @@ class TeakIntegrationTest {
             store = mock(io.teak.sdk.store.IStore.class);
 
             // Teak Core mock
-            teakCore = mock(ITeakCore.class);
+            if (!useDefaultTeakCore) {
+                teakCore = mock(ITeakCore.class);
+            }
 
             // Android Resources mock
             androidResources = mock(io.teak.sdk.io.IAndroidResources.class);
@@ -233,6 +250,7 @@ class TeakIntegrationTest {
     void foregroundApp() {
         PackageManager manager = getActivity().getPackageManager();
         Intent i = manager.getLaunchIntentForPackage(getActivity().getPackageName());
+        assertNotNull(i);
         i.addCategory(Intent.CATEGORY_LAUNCHER);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         InstrumentationRegistry.getTargetContext().startActivity(i);
@@ -247,25 +265,25 @@ class TeakIntegrationTest {
 
     @SdkSuppress(minSdkVersion = 21)
     String sendBroadcast(@NonNull String event, @Nullable Map<String, Object> extras) {
-        String adbString = "am broadcast -a " + event;
+        StringBuilder adbString = new StringBuilder("am broadcast -a " + event);
         if (extras != null) {
             for (Map.Entry<String, Object> entry : extras.entrySet()) {
                 if (entry.getValue().getClass() == String.class) {
-                    adbString += " --es \"" + entry.getKey() + "\" \"" + entry.getValue() + "\"";
+                    adbString.append(" --es \"").append(entry.getKey()).append("\" \"").append(entry.getValue()).append("\"");
                 } else if (entry.getValue().getClass() == boolean.class) {
-                    adbString += " --ez \"" + entry.getKey() + "\" " + (((boolean)entry.getValue()) ? "true" : "false");
+                    adbString.append(" --ez \"").append(entry.getKey()).append("\" ").append(((boolean) entry.getValue()) ? "true" : "false");
                 } else if (entry.getValue().getClass() == int.class) {
-                    adbString += " --ei \"" + entry.getKey() + "\" " + entry.getValue();
+                    adbString.append(" --ei \"").append(entry.getKey()).append("\" ").append(entry.getValue());
                 } else if (entry.getValue().getClass() == long.class) {
-                    adbString += " --el \"" + entry.getKey() + "\" " + entry.getValue();
+                    adbString.append(" --el \"").append(entry.getKey()).append("\" ").append(entry.getValue());
                 } else if (entry.getValue().getClass() == float.class) {
-                    adbString += " --ef \"" + entry.getKey() + "\" " + entry.getValue();
+                    adbString.append(" --ef \"").append(entry.getKey()).append("\" ").append(entry.getValue());
                 }
             }
         }
 
         String output = null;
-        ParcelFileDescriptor pfd = InstrumentationRegistry.getInstrumentation().getUiAutomation().executeShellCommand(adbString);
+        ParcelFileDescriptor pfd = InstrumentationRegistry.getInstrumentation().getUiAutomation().executeShellCommand(adbString.toString());
         FileDescriptor fd = pfd.getFileDescriptor();
         InputStream is = new BufferedInputStream(new FileInputStream(fd));
         byte[] buf = new byte[1024];
