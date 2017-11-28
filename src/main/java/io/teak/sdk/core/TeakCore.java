@@ -125,7 +125,7 @@ public class TeakCore implements ITeakCore {
                     if (intent == null) break;
 
                     final Bundle bundle = intent.getExtras();
-                    if (!bundle.containsKey("teakNotifId")) break;
+                    if (bundle == null || !bundle.containsKey("teakNotifId")) break;
 
                     // Debug output
                     HashMap<String, Object> debugHash = new HashMap<>();
@@ -192,13 +192,16 @@ public class TeakCore implements ITeakCore {
                     if (intent == null) break;
 
                     final Bundle bundle = intent.getExtras();
+                    if (bundle == null) break;
                     final boolean autoLaunch = !Helpers.getBooleanFromBundle(bundle, "noAutolaunch");
                     Teak.log.i("notification.opened", Helpers.mm.h("teakNotifId", bundle.getString("teakNotifId"), "autoLaunch", autoLaunch));
 
                     // Launch the app
                     final Context context = ((PushNotificationEvent) event).context;
                     if (context != null && autoLaunch) {
-                        Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+                        final Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+                        if (launchIntent == null) break;
+
                         launchIntent.addCategory(Intent.CATEGORY_LAUNCHER);
                         launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                         launchIntent.putExtras(bundle);
@@ -229,8 +232,8 @@ public class TeakCore implements ITeakCore {
     }
 
     private void checkIntentForPushLaunchAndSendBroadcasts(Intent intent) {
-        if (intent.hasExtra("teakNotifId")) {
-            Bundle bundle = intent.getExtras();
+        if (intent.hasExtra("teakNotifId") && intent.getExtras() != null) {
+            final Bundle bundle = intent.getExtras();
 
             // Send broadcast
             if (this.localBroadcastManager != null) {
