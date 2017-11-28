@@ -37,7 +37,7 @@ import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
 import io.teak.sdk.event.NotificationDisplayEvent;
 import io.teak.sdk.event.PushNotificationEvent;
-import io.teak.sdk.service.NotificationAnimationService;
+import io.teak.sdk.service.DeviceStateService;
 
 public class DefaultAndroidNotification extends BroadcastReceiver implements IAndroidNotification {
     private final NotificationManager notificationManager;
@@ -62,8 +62,8 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
         this.notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
         IntentFilter screenStateFilter = new IntentFilter();
-        screenStateFilter.addAction(NotificationAnimationService.START_ANIMATING);
-        screenStateFilter.addAction(NotificationAnimationService.STOP_ANIMATING);
+        screenStateFilter.addAction(DeviceStateService.SCREEN_ON);
+        screenStateFilter.addAction(DeviceStateService.SCREEN_OFF);
         context.registerReceiver(this, screenStateFilter);
 
         TeakEvent.addEventListener(new TeakEvent.EventListener() {
@@ -95,10 +95,10 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
             }
         });
 
-        Intent intent = new Intent(context, NotificationAnimationService.class);
+        Intent intent = new Intent(context, DeviceStateService.class);
         ComponentName componentName = context.startService(intent);
         if (componentName == null) {
-            Teak.log.w("notification.animation", "Unable to communicate with notification animation service. Please add:\n\t<service android:name=\"io.teak.sdk.service.NotificationAnimationService\" android:process=\":teak.animation\" android:exported=\"false\"/>\nTo the <application> section of your AndroidManifest.xml");
+            Teak.log.w("notification.animation", "Unable to communicate with notification animation service. Please add:\n\t<service android:name=\"io.teak.sdk.service.DeviceStateService\" android:process=\":teak.animation\" android:exported=\"false\"/>\nTo the <application> section of your AndroidManifest.xml");
         }
     }
 
@@ -140,9 +140,9 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
 
     @Override
     public void onReceive(final Context context, final Intent intent) {
-        if (NotificationAnimationService.START_ANIMATING.equals(intent.getAction())) {
+        if (DeviceStateService.SCREEN_ON.equals(intent.getAction())) {
             Teak.log.i("notification.animation", Helpers.mm.h("animating", true));
-        } else if (NotificationAnimationService.STOP_ANIMATING.equals(intent.getAction())) {
+        } else if (DeviceStateService.SCREEN_OFF.equals(intent.getAction())) {
             Teak.log.i("notification.animation", Helpers.mm.h("animating", false));
 
             new Timer().schedule(new TimerTask() {

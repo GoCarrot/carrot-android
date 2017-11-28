@@ -26,9 +26,9 @@ import android.os.PowerManager;
 import android.support.annotation.NonNull;
 import android.view.Display;
 
-public class NotificationAnimationService extends Service {
-    public static final String START_ANIMATING = "NotificationAnimationService.START_ANIMATING";
-    public static final String STOP_ANIMATING = "NotificationAnimationService.STOP_ANIMATING";
+public class DeviceStateService extends Service {
+    public static final String SCREEN_ON = "DeviceStateService.SCREEN_ON";
+    public static final String SCREEN_OFF = "DeviceStateService.SCREEN_OFF";
 
     private BroadcastReceiver screenStateReceiver = new BroadcastReceiver() {
         @Override
@@ -82,8 +82,8 @@ public class NotificationAnimationService extends Service {
                 this.state = newState;
 
                 Intent intent = this.state == State.ScreenOn ?
-                        new Intent(NotificationAnimationService.START_ANIMATING) :
-                        new Intent(NotificationAnimationService.STOP_ANIMATING);
+                        new Intent(DeviceStateService.SCREEN_ON) :
+                        new Intent(DeviceStateService.SCREEN_OFF);
                 this.sendBroadcast(intent);
             } else {
                 android.util.Log.e("Teak.Animation", this.state.toString() + " xx " + newState.toString());
@@ -132,7 +132,7 @@ public class NotificationAnimationService extends Service {
 
     @Override
     public void onDestroy() {
-        this.sendBroadcast(new Intent(NotificationAnimationService.STOP_ANIMATING));
+        this.sendBroadcast(new Intent(DeviceStateService.SCREEN_OFF));
         unregisterReceiver(screenStateReceiver);
 
         android.util.Log.i("Teak.Animation", "Service stopped.");
