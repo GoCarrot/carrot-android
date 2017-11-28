@@ -90,6 +90,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                     case NotificationDisplayEvent.Type: {
                         NotificationDisplayEvent notificationDisplayEvent = (NotificationDisplayEvent) event;
                         displayNotification(notificationDisplayEvent.teakNotification, notificationDisplayEvent.nativeNotification);
+                        break;
                     }
                 }
             }

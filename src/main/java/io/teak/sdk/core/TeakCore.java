@@ -54,7 +54,7 @@ public class TeakCore implements ITeakCore {
     public TeakCore(Context context) {
         this.localBroadcastManager = LocalBroadcastManager.getInstance(context);
 
-        TeakEvent.addEventListener(teakEventListener);
+        TeakEvent.addEventListener(this.teakEventListener);
 
         registerStaticTeakEventListeners();
     }
