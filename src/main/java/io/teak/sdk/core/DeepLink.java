@@ -116,7 +116,7 @@ public class DeepLink {
                             int eqIdx = pair.indexOf("=");
                             try {
                                 query.put(URLDecoder.decode(pair.substring(0, eqIdx), "UTF-8"),
-                                        URLDecoder.decode(pair.substring(eqIdx + 1), "UTF-8"));
+                                    URLDecoder.decode(pair.substring(eqIdx + 1), "UTF-8"));
                             } catch (Exception ignored) {
                             }
                         }

@@ -51,10 +51,9 @@ public class DeviceStateService extends Service {
         //public static final Integer length = 1 + Expired.ordinal();
 
         private static final State[][] allowedTransitions = {
-                {State.ScreenOn, State.ScreenOff},
-                {State.ScreenOff},
-                {State.ScreenOn}
-        };
+            {State.ScreenOn, State.ScreenOff},
+            {State.ScreenOff},
+            {State.ScreenOn}};
 
         public final String name;
         public final int ordinal;
@@ -81,9 +80,7 @@ public class DeviceStateService extends Service {
                 android.util.Log.i("Teak.Animation", this.state.toString() + " -> " + newState.toString());
                 this.state = newState;
 
-                Intent intent = this.state == State.ScreenOn ?
-                        new Intent(DeviceStateService.SCREEN_ON) :
-                        new Intent(DeviceStateService.SCREEN_OFF);
+                Intent intent = this.state == State.ScreenOn ? new Intent(DeviceStateService.SCREEN_ON) : new Intent(DeviceStateService.SCREEN_OFF);
                 this.sendBroadcast(intent);
             } else {
                 android.util.Log.e("Teak.Animation", this.state.toString() + " xx " + newState.toString());
