@@ -15,28 +15,27 @@
 
 package io.teak.app.test;
 
-        import android.app.Instrumentation;
-        import android.content.Context;
-        import android.content.Intent;
-        import android.support.test.InstrumentationRegistry;
-        import android.support.test.runner.AndroidJUnit4;
-        import android.support.test.uiautomator.By;
-        import android.support.test.uiautomator.UiDevice;
-        import android.support.test.uiautomator.UiObject2;
-        import android.support.test.uiautomator.Until;
+import android.app.Instrumentation;
+import android.content.Intent;
+import android.support.test.InstrumentationRegistry;
+import android.support.test.runner.AndroidJUnit4;
+import android.support.test.uiautomator.By;
+import android.support.test.uiautomator.UiDevice;
+import android.support.test.uiautomator.UiObject2;
+import android.support.test.uiautomator.Until;
 
-        import org.json.JSONObject;
-        import org.junit.Test;
-        import org.junit.runner.RunWith;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
-        import io.teak.sdk.TeakEvent;
-        import io.teak.sdk.event.LifecycleEvent;
-        import io.teak.sdk.event.PushNotificationEvent;
+import io.teak.sdk.event.LifecycleEvent;
+import io.teak.sdk.event.NotificationReDisplayEvent;
+import io.teak.sdk.event.PushNotificationEvent;
+import io.teak.sdk.service.DeviceStateService;
 
-        import static org.junit.Assert.assertNotNull;
-        import static org.junit.Assert.assertNull;
-        import static org.mockito.Mockito.timeout;
-        import static org.mockito.Mockito.verify;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
 
 @RunWith(AndroidJUnit4.class)
 public class NotificationIntents extends TeakIntegrationTest {
@@ -45,7 +44,7 @@ public class NotificationIntents extends TeakIntegrationTest {
     }
 
     @Test
-    public void integratedLifecycle() {
+    public void clearIntent() {
         launchActivity();
 
         final Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
