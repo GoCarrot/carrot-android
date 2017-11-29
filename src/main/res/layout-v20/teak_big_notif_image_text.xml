@@ -4,6 +4,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <!-- This is layout v20+ -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -59,6 +60,7 @@
                 android:text="Button0" />
 
             <RelativeLayout
+                android:id="@+id/divider_button0_button1"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_marginBottom="4dp"
@@ -76,6 +78,7 @@
                 android:text="Button1" />
 
             <RelativeLayout
+                android:id="@+id/divider_button1_button2"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_marginBottom="4dp"
