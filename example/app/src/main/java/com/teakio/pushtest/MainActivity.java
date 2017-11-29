@@ -150,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
             animated.put("height", 256);
 
             teak_notif_animated.put("text", "");
-            teak_notif_animated.put("view_animator", animated);
+            //teak_notif_animated.put("view_animator", animated);
             //teak_notif_animated.put("left_image", "BUILTIN_APP_ICON");
             teak_notif_animated.put("left_image", "NONE");
         } catch (Exception ignored) {
@@ -158,6 +158,14 @@ public class MainActivity extends AppCompatActivity {
 
         JSONObject teak_big_notif_image_text = new JSONObject();
         try {
+            JSONObject button0 = new JSONObject();
+            button0.put("text", "The Button0");
+            teak_big_notif_image_text.put("button0", button0);
+
+            JSONObject button2 = new JSONObject();
+            button0.put("text", "The Button2");
+            //teak_big_notif_image_text.put("button2", button0);
+
             teak_big_notif_image_text.put("text", "teak_big_notif_image_text");
             teak_big_notif_image_text.put("notification_background", "assets:///pixelgrid_2000x2000.png");
         } catch (Exception ignored) {

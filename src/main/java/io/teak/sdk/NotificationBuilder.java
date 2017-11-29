@@ -253,6 +253,9 @@ public class NotificationBuilder {
                 JSONObject viewConfig = teakNotificaton.display.getJSONObject(name);
                 Iterator<?> keys = viewConfig.keys();
 
+                // Action buttons
+                final boolean[] actionButtonsConfigured = new boolean[3];
+
                 while (keys.hasNext()) {
                     String key = (String) keys.next();
 
@@ -263,6 +266,11 @@ public class NotificationBuilder {
                     if (isUIType(viewElement, Button.class)) {
                         // Button must go before TextView, because Button is a TextView
                         // TODO: Need more config options for button, image, text, deep link
+                        try {
+                            final int actionButtonIndex = Integer.parseInt(key.substring(6));
+                            actionButtonsConfigured[actionButtonIndex] = true;
+                        } catch (Exception ignored) {
+                        }
                     } else if (isUIType(viewElement, TextView.class)) {
                         final String value = viewConfig.getString(key);
                         remoteViews.setTextViewText(viewElementId, Html.fromHtml(value));
@@ -310,6 +318,40 @@ public class NotificationBuilder {
                         }
                     }
                     // TODO: Else, report error to dashboard.
+                }
+
+                // Button bar show/hide
+                if (actionButtonsConfigured[0] || actionButtonsConfigured[1] || actionButtonsConfigured[2]) {
+                    try {
+                        // Unhide action button bar
+                        final int actionButtonLayoutId = R.id("actionButtonLayout");
+                        remoteViews.setViewVisibility(actionButtonLayoutId, View.VISIBLE);
+
+                        // Hide unused buttons
+                        for (int i = 0; i < actionButtonsConfigured.length; i++) {
+                            final int actionButtonId = R.id("button" + i);
+                            remoteViews.setViewVisibility(actionButtonId, actionButtonsConfigured[i] ? View.VISIBLE : View.GONE);
+                        }
+
+                        // Hide unused dividers
+                        if (!actionButtonsConfigured[1]) {
+                            final int dividerButton1_2 = R.id("divider_button1_button2");
+                            remoteViews.setViewVisibility(dividerButton1_2, View.GONE);
+                        }
+
+                        if (!actionButtonsConfigured[0]) {
+                            final int dividerButton0_1 = R.id("divider_button0_button1");
+                            remoteViews.setViewVisibility(dividerButton0_1, View.GONE);
+                        }
+                    } catch (Exception ignored) {
+                    }
+                } else {
+                    // Hide action button bar
+                    try {
+                        final int actionButtonLayoutId = R.id("actionButtonLayout");
+                        remoteViews.setViewVisibility(actionButtonLayoutId, View.GONE);
+                    } catch (Exception ignored) {
+                    }
                 }
 
                 return remoteViews;
