@@ -36,6 +36,7 @@ import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
 import io.teak.sdk.event.NotificationDisplayEvent;
+import io.teak.sdk.event.NotificationReDisplayEvent;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.service.DeviceStateService;
 
@@ -173,8 +174,8 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                                 pushOpenedIntent.setComponent(cn);
                                 entry.notification.contentIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
 
-
                                 notificationManager.notify(NOTIFICATION_TAG, entry.teakNotification.platformId, entry.notification);
+                                TeakEvent.postEvent(new NotificationReDisplayEvent(entry.teakNotification, entry.notification));
                             } catch (Exception e) {
                                 Teak.log.exception(e);
                             }
