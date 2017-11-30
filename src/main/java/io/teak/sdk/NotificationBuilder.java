@@ -114,7 +114,7 @@ public class NotificationBuilder {
         return builder;
     }
 
-    private static Notification createNativeNotificationV1Plus(final Context context, Bundle bundle, final TeakNotification teakNotificaton) throws Exception {
+    private static Notification createNativeNotificationV1Plus(final Context context, final Bundle bundle, final TeakNotification teakNotificaton) throws Exception {
         // Because we can't be certain that the R class will line up with what is at SDK build time
         // like in the case of Unity et. al.
         class IdHelper {
@@ -206,23 +206,24 @@ public class NotificationBuilder {
             builder.setLargeIcon(largeNotificationIcon);
         }
 
-        Random rng = new Random();
-
-        ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
+        // Intent creation helper
+        final Random rng = new Random();
+        final ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
+        class PendingIntentHelper {
+            PendingIntent get(String action) {
+                Intent pushOpenedIntent = new Intent(action);
+                pushOpenedIntent.putExtras(bundle);
+                pushOpenedIntent.setComponent(cn);
+                return PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
+            }
+        }
+        final PendingIntentHelper pendingIntent = new PendingIntentHelper();
 
         // Create intent to fire if/when notification is cleared
-        Intent pushClearedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX);
-        pushClearedIntent.putExtras(bundle);
-        pushClearedIntent.setComponent(cn);
-        PendingIntent pushClearedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
-        builder.setDeleteIntent(pushClearedPendingIntent);
+        builder.setDeleteIntent(pendingIntent.get(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX));
 
         // Create intent to fire if/when notification is opened, attach bundle info
-        Intent pushOpenedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX);
-        pushOpenedIntent.putExtras(bundle);
-        pushOpenedIntent.setComponent(cn);
-        PendingIntent pushOpenedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
-        builder.setContentIntent(pushOpenedPendingIntent);
+        builder.setContentIntent(pendingIntent.get(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX));
 
         // Notification builder
         Notification nativeNotification = builder.build();
