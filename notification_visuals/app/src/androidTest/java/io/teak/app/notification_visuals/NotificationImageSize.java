@@ -119,6 +119,10 @@ public class NotificationImageSize {
         boolean success = UiDevice.getInstance(instrumentation).takeScreenshot(file);
         assertTrue(success);
         android.util.Log.i("Teak.NotificationVisuals", "Wrote screenshot to file: " + file.toString());
+
+        // Close notification tray
+        Intent it = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
+        activity.sendBroadcast(it);
     }
 
     private void simulateNotification(Context context) {
