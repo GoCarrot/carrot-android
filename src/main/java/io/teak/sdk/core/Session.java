@@ -840,7 +840,7 @@ public class Session {
                             }
 
                             // Send reward broadcast
-                            String teakRewardId = attribution.get("teak_reward_id").toString();
+                            String teakRewardId = attribution.containsKey("teak_reward_id") ? attribution.get("teak_reward_id").toString() : null;
                             if (teakRewardId != null) {
                                 final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
                                 if (rewardFuture != null) {
@@ -861,7 +861,8 @@ public class Session {
                                         .start();
                                 }
                             }
-                        } catch (Exception ignored) {
+                        } catch (Exception e) {
+                            Teak.log.exception(e);
                         }
                     }
                 })
