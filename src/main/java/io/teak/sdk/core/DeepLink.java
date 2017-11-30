@@ -134,13 +134,17 @@ public class DeepLink {
                         parameterDict.put(name, query.get(name));
                     }
 
-                    try {
-                        value.call.call(parameterDict);
-                        return true;
-                    } catch (Exception e) {
-                        Teak.log.exception(e);
-                        return false;
-                    }
+                    executor.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                value.call.call(parameterDict);
+                            } catch (Exception e) {
+                                Teak.log.exception(e);
+                            }
+                        }
+                    });
+                    return true;
                 }
             }
         }
