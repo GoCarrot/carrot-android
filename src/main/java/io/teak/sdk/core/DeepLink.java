@@ -61,7 +61,7 @@ public class DeepLink {
                 // return "(?<splat>.*?)";
             }
             groupNames.add(matcher.group().substring(1));
-            matcher.appendReplacement(patternString, "(?<" + matcher.group().substring(1) + ">[^/?#]+)");
+            matcher.appendReplacement(patternString, "([^/?#]+)");
         }
         matcher.appendTail(patternString);
         pattern = patternString.toString();
@@ -91,10 +91,17 @@ public class DeepLink {
 
         synchronized (routes) {
             for (Map.Entry<String, DeepLink> entry : routes.entrySet()) {
-                String key = entry.getKey();
-                DeepLink value = entry.getValue();
+                final String key = entry.getKey();
+                final DeepLink value = entry.getValue();
 
-                Pattern pattern = Pattern.compile(key);
+                Pattern pattern = null;
+                try {
+                    pattern = Pattern.compile(key);
+                } catch (Exception e ) {
+                    Teak.log.exception(e);
+                }
+                if (pattern == null) continue;
+
                 Matcher matcher = pattern.matcher(uri.getPath());
                 if (matcher.matches()) {
                     final Map<String, Object> parameterDict = new HashMap<>();
