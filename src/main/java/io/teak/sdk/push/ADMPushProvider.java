@@ -32,6 +32,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,6 +45,7 @@ import io.teak.sdk.event.PushRegistrationEvent;
 
 public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvider {
     private ADM admInstance;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     public ADMPushProvider() {
         super(ADMPushProvider.class.getName());
@@ -56,12 +59,17 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
 
     @Override
     public void requestPushKey(@NonNull String ignored) {
-        if (this.admInstance.getRegistrationId() == null) {
-            this.admInstance.startRegister();
-        } else {
-            String registrationId = this.admInstance.getRegistrationId();
-            sendRegistrationEvent(registrationId);
-        }
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                if (admInstance.getRegistrationId() == null) {
+                    admInstance.startRegister();
+                } else {
+                    String registrationId = admInstance.getRegistrationId();
+                    sendRegistrationEvent(registrationId);
+                }
+            }
+        });
     }
 
     ///// Helper
