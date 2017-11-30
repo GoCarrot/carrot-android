@@ -25,7 +25,7 @@ public class DeepLink extends TeakUnitTest {
         final Teak.DeepLink callback = mock(Teak.DeepLink.class);
         Teak.registerDeepLink("/foo/:bar/:baz", "Test", "Also test", callback);
         Thread.sleep(10); // sleep to make sure the async happens
-        assertTrue(io.teak.sdk.core.DeepLink.routes.containsKey("/foo/(?<bar>[^/?#]+)/(?<baz>[^/?#]+)"));
+        assertTrue(io.teak.sdk.core.DeepLink.routes.containsKey("/foo/([^/?#]+)/([^/?#]+)"));
 
         final URI uri = new URI("/foo/1234/abcd");
         assertNotNull(uri);
@@ -44,7 +44,7 @@ public class DeepLink extends TeakUnitTest {
         final Teak.DeepLink callback = mock(Teak.DeepLink.class);
         Teak.registerDeepLink("/foo/:bar/:baz", "", "", callback);
         Thread.sleep(10);
-        assertTrue(io.teak.sdk.core.DeepLink.routes.containsKey("/foo/(?<bar>[^/?#]+)/(?<baz>[^/?#]+)"));
+        assertTrue(io.teak.sdk.core.DeepLink.routes.containsKey("/foo/([^/?#]+)/([^/?#]+)"));
 
         final URI uri = new URI("/foo/1234/abcd?foo=bar");
         assertNotNull(uri);
@@ -64,7 +64,7 @@ public class DeepLink extends TeakUnitTest {
         final Teak.DeepLink callback = mock(Teak.DeepLink.class);
         Teak.registerDeepLink("/foo/:bar/:baz", "", "", callback);
         Thread.sleep(10);
-        assertTrue(io.teak.sdk.core.DeepLink.routes.containsKey("/foo/(?<bar>[^/?#]+)/(?<baz>[^/?#]+)"));
+        assertTrue(io.teak.sdk.core.DeepLink.routes.containsKey("/foo/([^/?#]+)/([^/?#]+)"));
 
         final URI uri = new URI("/foo/1234/abcd?bar=barbar");
         assertNotNull(uri);
