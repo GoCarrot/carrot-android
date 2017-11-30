@@ -159,12 +159,14 @@ public class MainActivity extends AppCompatActivity {
         JSONObject teak_big_notif_image_text = new JSONObject();
         try {
             JSONObject button0 = new JSONObject();
-            button0.put("text", "The Button0");
+            button0.put("text", "The Google");
+            button0.put("deepLink", "https://google.com");
             teak_big_notif_image_text.put("button0", button0);
 
             JSONObject button2 = new JSONObject();
-            button0.put("text", "The Button2");
-            //teak_big_notif_image_text.put("button2", button0);
+            button2.put("text", "Store");
+            button2.put("deepLink", "teak1136371193060244:///store/com.teakio.pushtest.dollar");
+            teak_big_notif_image_text.put("button2", button2);
 
             teak_big_notif_image_text.put("text", "teak_big_notif_image_text");
             teak_big_notif_image_text.put("notification_background", "assets:///pixelgrid_2000x2000.png");

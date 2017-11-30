@@ -210,11 +210,20 @@ public class NotificationBuilder {
         final Random rng = new Random();
         final ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
         class PendingIntentHelper {
-            PendingIntent get(String action) {
+            PendingIntent forActionButton(String action, String deepLink) {
+                Bundle bundleCopy = new Bundle(bundle);
+                if (deepLink != null) {
+                    bundleCopy.putString("teakDeepLink", deepLink);
+                    bundleCopy.putBoolean("closeSystemDialogs", true);
+                }
                 Intent pushOpenedIntent = new Intent(action);
-                pushOpenedIntent.putExtras(bundle);
+                pushOpenedIntent.putExtras(bundleCopy);
                 pushOpenedIntent.setComponent(cn);
                 return PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
+            }
+
+            PendingIntent get(String action) {
+                return forActionButton(action, null);
             }
         }
         final PendingIntentHelper pendingIntent = new PendingIntentHelper();
@@ -266,12 +275,19 @@ public class NotificationBuilder {
                     //noinspection StatementWithEmptyBody
                     if (isUIType(viewElement, Button.class)) {
                         // Button must go before TextView, because Button is a TextView
-                        // TODO: Need more config options for button, image, text, deep link
+
+                        // Action button bar
                         try {
                             final int actionButtonIndex = Integer.parseInt(key.substring(6));
                             actionButtonsConfigured[actionButtonIndex] = true;
                         } catch (Exception ignored) {
                         }
+
+                        final JSONObject buttonConfig = viewConfig.getJSONObject(key);
+                        remoteViews.setTextViewText(viewElementId, buttonConfig.getString("text"));
+                        String deepLink = buttonConfig.has("deepLink") ? buttonConfig.getString("deepLink") : null;
+                        remoteViews.setOnClickPendingIntent(viewElementId, pendingIntent.forActionButton(
+                                context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX, deepLink));
                     } else if (isUIType(viewElement, TextView.class)) {
                         final String value = viewConfig.getString(key);
                         remoteViews.setTextViewText(viewElementId, Html.fromHtml(value));
