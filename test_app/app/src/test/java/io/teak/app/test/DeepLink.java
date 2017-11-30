@@ -14,6 +14,7 @@ import io.teak.sdk.Teak;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -34,7 +35,7 @@ public class DeepLink extends TeakUnitTest {
         final Map<String, Object> arg = new HashMap<>();
         arg.put("bar", "1234");
         arg.put("baz", "abcd");
-        verify(callback).call(arg);
+        verify(callback, timeout(100)).call(arg);
     }
 
     @Test
@@ -54,7 +55,7 @@ public class DeepLink extends TeakUnitTest {
         arg.put("bar", "1234");
         arg.put("baz", "abcd");
         arg.put("foo", "bar");
-        verify(callback).call(arg);
+        verify(callback, timeout(100)).call(arg);
     }
 
     @Test
@@ -73,6 +74,6 @@ public class DeepLink extends TeakUnitTest {
         final Map<String, Object> arg = new HashMap<>();
         arg.put("bar", "barbar");
         arg.put("baz", "abcd");
-        verify(callback).call(arg);
+        verify(callback, timeout(100)).call(arg);
     }
 }
