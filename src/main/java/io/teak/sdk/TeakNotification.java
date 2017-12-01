@@ -396,8 +396,8 @@ public class TeakNotification {
                             contents.put("status", response.getString("status"));
 
                             if (response.getString("status").equals("ok")) {
-                                Teak.log.i("notification.schedule", "Scheduled notification.", mm.h("notification", response.getJSONObject("event").getString("id")));
-                                contents.put("data", response.getJSONObject("event").getString("id"));
+                                Teak.log.i("notification.schedule", "Scheduled notification.", mm.h("notification", response.getJSONObject("event").get("id")));
+                                contents.put("data", response.getJSONObject("event").get("id"));
                             } else {
                                 Teak.log.e("notification.schedule.error", "Error scheduling notification.", mm.h("response", response.toString()));
                             }
@@ -484,7 +484,7 @@ public class TeakNotification {
 
                             if (response.getString("status").equals("ok")) {
                                 Teak.log.i("notification.cancel", "Canceled notification.", mm.h("notification", scheduleId));
-                                contents.put("data", response.getJSONObject("event").getString("id"));
+                                contents.put("data", response.getJSONObject("event").get("id"));
                             } else {
                                 Teak.log.e("notification.cancel.error", "Error canceling notification.", mm.h("response", response.toString()));
                             }
