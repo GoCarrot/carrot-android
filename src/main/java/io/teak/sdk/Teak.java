@@ -149,7 +149,9 @@ public class Teak extends BroadcastReceiver {
     @Deprecated
     @SuppressWarnings("unused")
     public static void onNewIntent(Intent intent) {
-        Teak.log.e("deprecation.onNewIntent", "Teak.onNewIntent is deprecated, call Activity.onNewIntent() instead.");
+        if (!Teak.sdkMap.containsKey("adobeAir")) {
+            Teak.log.e("deprecation.onNewIntent", "Teak.onNewIntent is deprecated, call Activity.onNewIntent() instead.");
+        }
     }
 
     /**
