@@ -21,7 +21,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 
-import org.json.JSONObject;
+import org.json.teak.JSONObject;
 
 import java.util.HashMap;
 import java.util.concurrent.FutureTask;

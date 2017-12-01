@@ -26,7 +26,7 @@ import android.content.Intent;
 import com.amazon.device.messaging.ADM;
 import com.amazon.device.messaging.ADMMessageHandlerBase;
 
-import org.json.JSONObject;
+import org.json.teak.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;

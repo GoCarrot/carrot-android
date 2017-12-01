@@ -33,7 +33,7 @@ import java.util.HashSet;
 import java.util.HashMap;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import org.json.JSONObject;
+import org.json.teak.JSONObject;
 
 import io.teak.sdk.Helpers.mm;
 import io.teak.sdk.Teak;
@@ -156,7 +156,7 @@ class Amazon implements IStore {
         public void onPurchaseResponse(PurchaseResponse purchaseResponse) {
             if (purchaseResponse.getRequestStatus() == PurchaseResponse.RequestStatus.SUCCESSFUL) {
                 try {
-                    JSONObject originalJson = purchaseResponse.toJSON();
+                    JSONObject originalJson = new JSONObject(purchaseResponse.toJSON().toString());
                     processPurchaseJson(originalJson);
                 } catch (Exception e) {
                     Teak.log.exception(e);

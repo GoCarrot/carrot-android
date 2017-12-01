@@ -39,7 +39,7 @@ import android.widget.ImageView;
 import android.widget.RemoteViews;
 import android.widget.TextView;
 
-import org.json.JSONObject;
+import org.json.teak.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.InputStream;
