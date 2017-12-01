@@ -83,10 +83,10 @@ public class NotificationBuilder {
                 channel.enableLights(true);
                 channel.setLightColor(Color.RED);
                 channel.enableVibration(true);
-                channel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
+                channel.setVibrationPattern(new long[] {100, 200, 300, 400, 500, 400, 300, 200, 400});
                 notificationManager.createNotificationChannel(channel);
                 notificationChannelId = id;
-            } catch (Exception ignored){
+            } catch (Exception ignored) {
             }
         }
         return notificationChannelId;
