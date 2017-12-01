@@ -1,4 +1,4 @@
-package org.json.teak;
+package io.teak.sdk.json;
 
 /*
  Copyright (c) 2002 JSON.org

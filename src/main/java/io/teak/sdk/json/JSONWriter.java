@@ -1,4 +1,4 @@
-package org.json.teak;
+package io.teak.sdk.json;
 
 import java.io.IOException;
 import java.math.BigDecimal;

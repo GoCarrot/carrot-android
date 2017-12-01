@@ -1,4 +1,4 @@
-package org.json.teak;
+package io.teak.sdk.json;
 
 import static java.lang.String.format;
 

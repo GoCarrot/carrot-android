@@ -14,7 +14,7 @@
  */
 package io.teak.sdk.wrapper.unity;
 
-import org.json.teak.JSONObject;
+import io.teak.sdk.json.JSONObject;
 
 import android.support.annotation.NonNull;
 

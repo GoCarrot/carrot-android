@@ -22,7 +22,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 
-import org.json.teak.JSONObject;
+import io.teak.sdk.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.Locale;

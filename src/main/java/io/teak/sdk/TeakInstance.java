@@ -25,7 +25,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 
-import org.json.teak.JSONObject;
+import io.teak.sdk.json.JSONObject;
 
 import java.security.InvalidParameterException;
 import java.util.Date;

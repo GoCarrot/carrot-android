@@ -23,7 +23,7 @@ import android.net.Uri;
 import android.os.IBinder;
 import android.util.Log;
 
-import org.json.teak.JSONObject;
+import io.teak.sdk.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.InputStream;

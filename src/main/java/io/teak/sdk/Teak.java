@@ -26,8 +26,8 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 
-import org.json.teak.JSONException;
-import org.json.teak.JSONObject;
+import io.teak.sdk.json.JSONException;
+import io.teak.sdk.json.JSONObject;
 
 import java.util.Collections;
 import java.util.HashMap;

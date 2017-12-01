@@ -1,4 +1,4 @@
-package org.json.teak;
+package io.teak.sdk.json;
 
 /**
  * The JSONException is thrown by the JSON.org classes when things are amiss.

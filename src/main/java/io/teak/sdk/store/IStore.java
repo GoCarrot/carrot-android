@@ -17,7 +17,7 @@ package io.teak.sdk.store;
 import android.content.Intent;
 import android.content.Context;
 
-import org.json.teak.JSONObject;
+import io.teak.sdk.json.JSONObject;
 
 public interface IStore {
     void init(Context context);

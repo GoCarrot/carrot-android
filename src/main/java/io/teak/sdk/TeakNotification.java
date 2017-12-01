@@ -41,8 +41,8 @@ import java.net.URLEncoder;
 
 import javax.net.ssl.HttpsURLConnection;
 
-import org.json.teak.JSONArray;
-import org.json.teak.JSONObject;
+import io.teak.sdk.json.JSONArray;
+import io.teak.sdk.json.JSONObject;
 
 import io.teak.sdk.Helpers.mm;
 import io.teak.sdk.core.Session;
