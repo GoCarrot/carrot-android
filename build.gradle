@@ -65,8 +65,7 @@ android.libraryVariants.all { variant ->
         description "Bundles compiled .class files into a JAR file for $variant.name."
         dependsOn variant.javaCompile
         from variant.javaCompile.destinationDir
-        exclude '**/R.class', '**/R$*.class', '**/R.html', '**/R.*.html',
-                'com/**'
+        exclude '**/R.class', '**/R$*.class', '**/R.html', '**/R.*.html', 'com/**'
         if (variant.buildType.name.equals(BuilderConstants.DEBUG)) {
             archiveName "${archivesBaseName}-${variant.name}.jar"
         } else {
@@ -115,6 +114,13 @@ android {
         versionName getVersionName()
         consumerProguardFiles 'proguard.txt'
         archivesBaseName = 'teak'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles 'proguard.txt', 'library.pro'
+        }
     }
 }
 

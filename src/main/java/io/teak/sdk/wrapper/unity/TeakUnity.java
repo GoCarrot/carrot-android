@@ -25,7 +25,7 @@ import io.teak.sdk.Teak;
 import io.teak.sdk.wrapper.ISDKWrapper;
 import io.teak.sdk.wrapper.TeakInterface;
 
-class TeakUnity {
+public class TeakUnity {
     private static Method unitySendMessage;
     private static TeakInterface teakInterface;
 
