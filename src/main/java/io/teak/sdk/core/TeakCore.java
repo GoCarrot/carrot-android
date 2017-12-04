@@ -25,7 +25,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 
-import org.json.JSONObject;
+import io.teak.sdk.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.Map;

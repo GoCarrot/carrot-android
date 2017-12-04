@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.lang.reflect.Method;
 import java.util.Map;
 
-import org.json.JSONObject;
+import io.teak.sdk.json.JSONObject;
 
 import io.teak.sdk.Helpers;
 import io.teak.sdk.Teak;

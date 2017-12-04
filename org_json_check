@@ -1,0 +1,5 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+
+[[ -z `find src -name \*.java -type f -print0 | xargs -0 perl -nle 'print $& if m{^import org.json.(.*);$}'` ]] || { echo "Use org.json.teak.* instead of the built-in due to Android < 19 issues." ; exit 1 ; }

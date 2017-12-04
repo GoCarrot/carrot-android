@@ -26,8 +26,8 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import io.teak.sdk.json.JSONException;
+import io.teak.sdk.json.JSONObject;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -149,7 +149,9 @@ public class Teak extends BroadcastReceiver {
     @Deprecated
     @SuppressWarnings("unused")
     public static void onNewIntent(Intent intent) {
-        Teak.log.e("deprecation.onNewIntent", "Teak.onNewIntent is deprecated, call Activity.onNewIntent() instead.");
+        if (!Teak.sdkMap.containsKey("adobeAir")) {
+            Teak.log.e("deprecation.onNewIntent", "Teak.onNewIntent is deprecated, call Activity.onNewIntent() instead.");
+        }
     }
 
     /**

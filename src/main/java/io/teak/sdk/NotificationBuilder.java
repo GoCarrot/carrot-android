@@ -43,7 +43,7 @@ import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.ViewFlipper;
 
-import org.json.JSONObject;
+import io.teak.sdk.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;

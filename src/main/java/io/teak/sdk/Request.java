@@ -35,8 +35,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-import org.json.JSONObject;
-import org.json.JSONArray;
+import io.teak.sdk.json.JSONObject;
+import io.teak.sdk.json.JSONArray;
 
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.Session;

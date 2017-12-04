@@ -17,7 +17,7 @@ package io.teak.sdk;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import org.json.JSONObject;
+import io.teak.sdk.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.InputStream;

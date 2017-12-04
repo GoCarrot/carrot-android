@@ -14,7 +14,7 @@
  */
 package io.teak.sdk.wrapper.unity;
 
-import org.json.JSONObject;
+import io.teak.sdk.json.JSONObject;
 
 import android.support.annotation.NonNull;
 
@@ -25,7 +25,7 @@ import io.teak.sdk.Teak;
 import io.teak.sdk.wrapper.ISDKWrapper;
 import io.teak.sdk.wrapper.TeakInterface;
 
-class TeakUnity {
+public class TeakUnity {
     private static Method unitySendMessage;
     private static TeakInterface teakInterface;
 

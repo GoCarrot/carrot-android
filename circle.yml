@@ -34,6 +34,7 @@ deployment:
 compile:
   override:
     #- ./validate-code-format
+    - ./org_json_check
     - ./gradlew assemble
     - ./check_size
 test:
