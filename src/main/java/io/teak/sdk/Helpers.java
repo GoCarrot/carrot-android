@@ -17,9 +17,9 @@ package io.teak.sdk;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 
-import org.json.JSONObject;
-import org.json.JSONArray;
-import org.json.JSONException;
+import io.teak.sdk.json.JSONObject;
+import io.teak.sdk.json.JSONArray;
+import io.teak.sdk.json.JSONException;
 
 import java.security.InvalidParameterException;
 import java.util.Map;

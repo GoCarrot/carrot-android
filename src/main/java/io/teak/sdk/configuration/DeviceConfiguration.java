@@ -16,7 +16,7 @@ package io.teak.sdk.configuration;
 
 import android.support.annotation.NonNull;
 
-import org.json.JSONObject;
+import io.teak.sdk.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.Locale;

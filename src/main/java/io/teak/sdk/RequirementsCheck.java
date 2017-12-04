@@ -41,8 +41,8 @@ class RequirementsCheck {
             // (LAUNCH_SINGLE_INSTANCE == LAUNCH_SINGLE_TASK | LAUNCH_SINGLE_TOP) but let's not
             // assume that those values will stay the same
             if ((ai.launchMode & ActivityInfo.LAUNCH_SINGLE_INSTANCE) == 0 &&
-                    (ai.launchMode & ActivityInfo.LAUNCH_SINGLE_TASK) == 0 &&
-                    (ai.launchMode & ActivityInfo.LAUNCH_SINGLE_TOP) == 0) {
+                (ai.launchMode & ActivityInfo.LAUNCH_SINGLE_TASK) == 0 &&
+                (ai.launchMode & ActivityInfo.LAUNCH_SINGLE_TOP) == 0) {
                 Teak.log.w("launch_mode", "The android:launchMode of this activity is not set to 'singleTask', 'singleTop' or 'singleInstance'. This could cause undesired behavior.");
             }
         } catch (Exception e) {
@@ -58,7 +58,7 @@ class RequirementsCheck {
                 notificationCompatBuilderClass.getMethod("setChannelId", String.class);
             } catch (Exception e) {
                 throw new RuntimeException("App is targeting SDK version " + configuration.appConfiguration.targetSdkVersion +
-                    " but support-v4 library needs to be updated to at least version 26.1.0 to support notification categories.");
+                                           " but support-v4 library needs to be updated to at least version 26.1.0 to support notification categories.");
             }
         }
     }

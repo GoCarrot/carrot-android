@@ -39,7 +39,7 @@ import android.widget.ImageView;
 import android.widget.RemoteViews;
 import android.widget.TextView;
 
-import org.json.JSONObject;
+import io.teak.sdk.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.InputStream;
@@ -83,10 +83,10 @@ public class NotificationBuilder {
                 channel.enableLights(true);
                 channel.setLightColor(Color.RED);
                 channel.enableVibration(true);
-                channel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
+                channel.setVibrationPattern(new long[] {100, 200, 300, 400, 500, 400, 300, 200, 400});
                 notificationManager.createNotificationChannel(channel);
                 notificationChannelId = id;
-            } catch (Exception ignored){
+            } catch (Exception ignored) {
             }
         }
         return notificationChannelId;
