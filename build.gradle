@@ -26,7 +26,7 @@ dexcount {
     verbose = false
     maxTreeDepth = Integer.MAX_VALUE
     runOnEachPackage = true
-    maxMethodCount = 1400 // This includes android.* etc dependencies, so I guess just do it this way for now
+    maxMethodCount = 1500 // This includes android.* etc dependencies, so I guess just do it this way for now
 }
 
 repositories {
