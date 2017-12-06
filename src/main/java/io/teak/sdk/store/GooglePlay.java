@@ -165,7 +165,16 @@ class GooglePlay implements IStore {
         mService = null;
     }
 
-    public void processPurchaseJson(JSONObject originalJson) {
+    @Override
+    public void processPurchase(String purchaseString) {
+        try {
+            this.processPurchaseJson(new JSONObject(purchaseString));
+        } catch (Exception e) {
+            Teak.log.exception(e);
+        }
+    }
+
+    private void processPurchaseJson(JSONObject originalJson) {
         try {
             Map<String, Object> payload = new HashMap<>();
             payload.put("purchase_token", originalJson.get("purchaseToken"));

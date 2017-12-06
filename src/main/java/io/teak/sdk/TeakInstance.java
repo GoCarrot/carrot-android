@@ -272,9 +272,9 @@ public class TeakInstance {
 
     private IStore appStore;
 
-    void purchaseSucceeded(JSONObject originalJson) {
+    void purchaseSucceeded(String purchaseString) {
         if (this.appStore != null) {
-            this.appStore.processPurchaseJson(originalJson);
+            this.appStore.processPurchase(purchaseString);
         } else {
             Teak.log.e("purchase.succeeded.error", "Unable to process purchaseSucceeded, no active app store.");
         }

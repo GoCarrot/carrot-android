@@ -93,7 +93,16 @@ class Amazon implements IStore {
     }
 
     @Override
-    public void processPurchaseJson(JSONObject originalJson) {
+    public void processPurchase(String purchaseDataAsString) {
+        try {
+            JSONObject originalJson = new JSONObject(purchaseDataAsString);
+            this.processPurchaseJson(originalJson);
+        } catch (Exception e) {
+            Teak.log.exception(e);
+        }
+    }
+
+    private void processPurchaseJson(JSONObject originalJson) {
         try {
             JSONObject receipt = originalJson.getJSONObject("receipt");
             JSONObject userData = originalJson.getJSONObject("userData");
@@ -156,8 +165,7 @@ class Amazon implements IStore {
         public void onPurchaseResponse(PurchaseResponse purchaseResponse) {
             if (purchaseResponse.getRequestStatus() == PurchaseResponse.RequestStatus.SUCCESSFUL) {
                 try {
-                    JSONObject originalJson = new JSONObject(purchaseResponse.toJSON().toString());
-                    processPurchaseJson(originalJson);
+                    processPurchase(purchaseResponse.toJSON().toString());
                 } catch (Exception e) {
                     Teak.log.exception(e);
                 }
