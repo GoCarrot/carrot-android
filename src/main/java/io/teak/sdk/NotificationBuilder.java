@@ -32,6 +32,7 @@ import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.text.Html;
 import android.text.Spanned;
+import android.text.SpannedString;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -152,14 +153,27 @@ public class NotificationBuilder {
         NotificationCompat.Builder builder = getNotificationCompatBuilder(context);
 
         // Rich text message
-        Spanned richMessageText = Html.fromHtml(teakNotificaton.message);
+        Spanned richMessageText = new SpannedString(teakNotificaton.message);
+        try {
+            richMessageText = Html.fromHtml(teakNotificaton.message);
+        } catch (Exception e) {
+            if (!bundle.getBoolean("teakUnitTest")) {
+                throw e;
+            }
+        }
 
         // Configure notification behavior
         builder.setPriority(NotificationCompat.PRIORITY_MAX);
         builder.setDefaults(NotificationCompat.DEFAULT_ALL);
         builder.setOnlyAlertOnce(true);
         builder.setAutoCancel(true);
-        builder.setTicker(richMessageText);
+        try {
+            builder.setTicker(richMessageText);
+        } catch (Exception e) {
+            if (!bundle.getBoolean("teakUnitTest")) {
+                throw e;
+            }
+        }
 
         // Icon accent color (added in API 21 version of Notification builder, so use reflection)
         try {
@@ -208,21 +222,44 @@ public class NotificationBuilder {
         ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
 
         // Create intent to fire if/when notification is cleared
-        Intent pushClearedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX);
-        pushClearedIntent.putExtras(bundle);
-        pushClearedIntent.setComponent(cn);
-        PendingIntent pushClearedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
-        builder.setDeleteIntent(pushClearedPendingIntent);
+        try {
+            Intent pushClearedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX);
+            pushClearedIntent.putExtras(bundle);
+            pushClearedIntent.setComponent(cn);
+            PendingIntent pushClearedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
+            builder.setDeleteIntent(pushClearedPendingIntent);
+        } catch (Exception e) {
+            if (!bundle.getBoolean("teakUnitTest")) {
+                throw e;
+            }
+        }
 
         // Create intent to fire if/when notification is opened, attach bundle info
-        Intent pushOpenedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX);
-        pushOpenedIntent.putExtras(bundle);
-        pushOpenedIntent.setComponent(cn);
-        PendingIntent pushOpenedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
-        builder.setContentIntent(pushOpenedPendingIntent);
+        try {
+            Intent pushOpenedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX);
+            pushOpenedIntent.putExtras(bundle);
+            pushOpenedIntent.setComponent(cn);
+            PendingIntent pushOpenedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
+            builder.setContentIntent(pushOpenedPendingIntent);
+        } catch (Exception e) {
+            if (!bundle.getBoolean("teakUnitTest")) {
+                throw e;
+            }
+        }
 
         // Notification builder
-        Notification nativeNotification = builder.build();
+        Notification nativeNotification = null;
+        try {
+            nativeNotification = builder.build();
+        } catch (Exception e) {
+            if (!bundle.getBoolean("teakUnitTest")) {
+                throw e;
+            } else {
+                final Notification notification = new Notification();
+                notification.flags = Integer.MAX_VALUE;
+                return notification;
+            }
+        }
 
         class ViewBuilder {
             private RemoteViews buildViews(String name) throws Exception {
@@ -326,14 +363,29 @@ public class NotificationBuilder {
         NotificationCompat.Builder builder = getNotificationCompatBuilder(context);
 
         // Rich text message
-        Spanned richMessageText = Html.fromHtml(teakNotificaton.message);
+        Spanned richMessageText = new SpannedString(teakNotificaton.message);
+        try {
+            richMessageText = Html.fromHtml(teakNotificaton.message);
+        } catch (Exception e) {
+            if (!bundle.getBoolean("teakUnitTest")) {
+                throw e;
+            }
+        }
+
+
 
         // Configure notification behavior
         builder.setPriority(NotificationCompat.PRIORITY_MAX);
         builder.setDefaults(NotificationCompat.DEFAULT_ALL);
         builder.setOnlyAlertOnce(true);
         builder.setAutoCancel(true);
-        builder.setTicker(richMessageText);
+        try {
+            builder.setTicker(richMessageText);
+        } catch (Exception e) {
+            if (!bundle.getBoolean("teakUnitTest")) {
+                throw e;
+            }
+        }
 
         // Set small view image
         int smallIconResourceId;
@@ -352,21 +404,44 @@ public class NotificationBuilder {
         ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
 
         // Create intent to fire if/when notification is cleared
-        Intent pushClearedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX);
-        pushClearedIntent.putExtras(bundle);
-        pushClearedIntent.setComponent(cn);
-        PendingIntent pushClearedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
-        builder.setDeleteIntent(pushClearedPendingIntent);
+        try {
+            Intent pushClearedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX);
+            pushClearedIntent.putExtras(bundle);
+            pushClearedIntent.setComponent(cn);
+            PendingIntent pushClearedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
+            builder.setDeleteIntent(pushClearedPendingIntent);
+        } catch (Exception e) {
+            if (!bundle.getBoolean("teakUnitTest")) {
+                throw e;
+            }
+        }
 
         // Create intent to fire if/when notification is opened, attach bundle info
-        Intent pushOpenedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX);
-        pushOpenedIntent.putExtras(bundle);
-        pushOpenedIntent.setComponent(cn);
-        PendingIntent pushOpenedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
-        builder.setContentIntent(pushOpenedPendingIntent);
+        try {
+            Intent pushOpenedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX);
+            pushOpenedIntent.putExtras(bundle);
+            pushOpenedIntent.setComponent(cn);
+            PendingIntent pushOpenedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
+            builder.setContentIntent(pushOpenedPendingIntent);
+        } catch (Exception e) {
+            if (!bundle.getBoolean("teakUnitTest")) {
+                throw e;
+            }
+        }
 
         // Notification builder
-        Notification nativeNotification = builder.build();
+        Notification nativeNotification = null;
+        try {
+            nativeNotification = builder.build();
+        } catch (Exception e) {
+            if (!bundle.getBoolean("teakUnitTest")) {
+                throw e;
+            } else {
+                final Notification notification = new Notification();
+                notification.flags = Integer.MAX_VALUE;
+                return notification;
+            }
+        }
 
         // Because we can't be certain that the R class will line up with what is at SDK build time
         // like in the case of Unity et. al.

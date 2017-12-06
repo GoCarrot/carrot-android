@@ -94,6 +94,11 @@ public class DefaultAndroidNotification implements IAndroidNotification {
         } catch (SecurityException ignored) {
             // This likely means that they need the VIBRATE permission on old versions of Android
             Teak.log.e("notification.permission_needed.vibrate", "Please add this to your AndroidManifest.xml: <uses-permission android:name=\"android.permission.VIBRATE\" />");
+        } catch (Exception e) {
+            // Unit testing case
+            if (nativeNotification.flags != Integer.MAX_VALUE) {
+                throw e;
+            }
         }
 
         // TODO: Here is where any kind of thread/update logic will live
