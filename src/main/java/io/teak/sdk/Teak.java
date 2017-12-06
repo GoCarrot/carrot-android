@@ -248,8 +248,8 @@ public class Teak extends BroadcastReceiver {
 
     ///// BroadcastReceiver
 
-    private static final String GCM_RECEIVE_INTENT_ACTION = "com.google.android.c2dm.intent.RECEIVE";
-    private static final String GCM_REGISTRATION_INTENT_ACTION = "com.google.android.c2dm.intent.REGISTRATION";
+    public static final String GCM_RECEIVE_INTENT_ACTION = "com.google.android.c2dm.intent.RECEIVE";
+    public static final String GCM_REGISTRATION_INTENT_ACTION = "com.google.android.c2dm.intent.REGISTRATION";
 
     @Override
     public void onReceive(final Context inContext, final Intent intent) {
