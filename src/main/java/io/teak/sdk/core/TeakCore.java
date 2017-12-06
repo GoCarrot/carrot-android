@@ -200,21 +200,25 @@ public class TeakCore implements ITeakCore {
                     if (intent == null) break;
 
                     final Bundle bundle = intent.getExtras();
+                    if (bundle == null) break;
+
                     final boolean autoLaunch = !Helpers.getBooleanFromBundle(bundle, "noAutolaunch");
                     Teak.log.i("notification.opened", Helpers.mm.h("teakNotifId", bundle.getString("teakNotifId"), "autoLaunch", autoLaunch));
 
                     // Launch the app
                     final Context context = ((PushNotificationEvent) event).context;
                     if (context != null && autoLaunch) {
-                        Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
-                        launchIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        launchIntent.putExtras(bundle);
-                        if (bundle.getString("teakDeepLink") != null) {
-                            Uri teakDeepLink = Uri.parse(bundle.getString("teakDeepLink"));
-                            launchIntent.setData(teakDeepLink);
+                        final Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+                        if (launchIntent != null) {
+                            launchIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+                            launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            launchIntent.putExtras(bundle);
+                            if (bundle.getString("teakDeepLink") != null) {
+                                Uri teakDeepLink = Uri.parse(bundle.getString("teakDeepLink"));
+                                launchIntent.setData(teakDeepLink);
+                            }
+                            context.startActivity(launchIntent);
                         }
-                        context.startActivity(launchIntent);
                     }
                     break;
                 }
@@ -241,7 +245,7 @@ public class TeakCore implements ITeakCore {
             Bundle bundle = intent.getExtras();
 
             // Send broadcast
-            if (this.localBroadcastManager != null) {
+            if (bundle != null && this.localBroadcastManager != null) {
                 final HashMap<String, Object> eventDataDict = new HashMap<>();
                 if (bundle.getString("teakRewardId") != null) {
                     eventDataDict.put("incentivized", true);
