@@ -125,7 +125,7 @@ public class TeakCore implements ITeakCore {
                     if (intent == null) break;
 
                     final Bundle bundle = intent.getExtras();
-                    if (!bundle.containsKey("teakNotifId")) break;
+                    if (bundle == null || !bundle.containsKey("teakNotifId")) break;
 
                     // Debug output
                     HashMap<String, Object> debugHash = new HashMap<>();
