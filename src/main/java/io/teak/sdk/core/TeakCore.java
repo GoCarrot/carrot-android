@@ -51,7 +51,15 @@ import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.event.TrackEventEvent;
 
 public class TeakCore implements ITeakCore {
-    public TeakCore(Context context) {
+    private static TeakCore Instance = null;
+    public static TeakCore get(@NonNull Context context) {
+        if (Instance == null) {
+            Instance = new TeakCore(context);
+        }
+        return Instance;
+    }
+
+    private TeakCore(@NonNull Context context) {
         this.localBroadcastManager = LocalBroadcastManager.getInstance(context);
 
         TeakEvent.addEventListener(teakEventListener);
