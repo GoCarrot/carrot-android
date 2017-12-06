@@ -25,6 +25,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 
+import io.teak.sdk.io.DefaultAndroidNotification;
 import io.teak.sdk.json.JSONObject;
 
 import java.util.HashMap;
@@ -170,26 +171,25 @@ public class TeakCore implements ITeakCore {
                             Notification nativeNotification = NotificationBuilder.createNativeNotification(context, bundle, teakNotification);
                             if (nativeNotification == null) return;
 
-                            // Send display event
-                            TeakEvent.postEvent(new NotificationDisplayEvent(teakNotification, nativeNotification));
+                            // Ensure that DefaultAndroidNotification instance exists.
+                            if (DefaultAndroidNotification.get(context) == null) return;
 
                             // Send metric
                             final String teakUserId = bundle.getString("teakUserId", null);
-                            if (teakUserId != null) {
-                                final Session session = Session.getCurrentSessionOrNull();
-                                final TeakConfiguration teakConfiguration = TeakConfiguration.get();
-                                if (session != null) {
-                                    HashMap<String, Object> payload = new HashMap<>();
-                                    payload.put("app_id", teakConfiguration.appConfiguration.appId);
-                                    payload.put("user_id", teakUserId);
-                                    payload.put("platform_id", teakNotification.teakNotifId);
-                                    if (teakNotification.teakNotifId == 0) {
-                                        payload.put("impression", false);
-                                    }
-
-                                    asyncExecutor.execute(new Request("parsnip.gocarrot.com", "/notification_received", payload, session));
+                            final String teakAppId = bundle.getString("teakAppId", null);
+                            if (teakAppId != null && teakUserId != null) {
+                                HashMap<String, Object> payload = new HashMap<>();
+                                payload.put("app_id", teakAppId);
+                                payload.put("user_id", teakUserId);
+                                payload.put("platform_id", teakNotification.teakNotifId);
+                                if (teakNotification.teakNotifId == 0) {
+                                    payload.put("impression", false);
                                 }
+                                asyncExecutor.execute(new Request("parsnip.gocarrot.com", "/notification_received", payload, Session.NullSession));
                             }
+
+                            // Send display event
+                            TeakEvent.postEvent(new NotificationDisplayEvent(teakNotification, nativeNotification));
                         }
                     });
                     break;
