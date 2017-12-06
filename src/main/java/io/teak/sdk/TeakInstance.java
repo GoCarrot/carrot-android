@@ -172,33 +172,6 @@ public class TeakInstance {
     Raven sdkRaven;
     private Raven appRaven;
 
-    ///// Broadcast Receiver
-
-    private static final String GCM_RECEIVE_INTENT_ACTION = "com.google.android.c2dm.intent.RECEIVE";
-    private static final String GCM_REGISTRATION_INTENT_ACTION = "com.google.android.c2dm.intent.REGISTRATION";
-
-    void onReceive(Context inContext, Intent intent) {
-        final Context context = inContext.getApplicationContext();
-
-        if (!this.isEnabled()) {
-            return;
-        }
-
-        String action = intent.getAction();
-        if (action == null) return;
-
-        if (GCM_RECEIVE_INTENT_ACTION.equals(action)) {
-            TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Received, context, intent));
-        } else if (GCM_REGISTRATION_INTENT_ACTION.equals(action)) {
-            final String registrationId = intent.getStringExtra("registration_id");
-            TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", registrationId));
-        } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX)) {
-            TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Interaction, context, intent));
-        } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX)) {
-            TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Cleared, context, intent));
-        }
-    }
-
     ///// State Machine
 
     private enum State {

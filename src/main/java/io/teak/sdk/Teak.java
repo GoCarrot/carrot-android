@@ -26,6 +26,9 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 
+import io.teak.sdk.core.TeakCore;
+import io.teak.sdk.event.PushNotificationEvent;
+import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.json.JSONException;
 import io.teak.sdk.json.JSONObject;
 
@@ -245,16 +248,30 @@ public class Teak extends BroadcastReceiver {
 
     ///// BroadcastReceiver
 
+    private static final String GCM_RECEIVE_INTENT_ACTION = "com.google.android.c2dm.intent.RECEIVE";
+    private static final String GCM_REGISTRATION_INTENT_ACTION = "com.google.android.c2dm.intent.REGISTRATION";
+
     @Override
-    public void onReceive(final Context context, final Intent intent) {
-        // TODO: getInstance() ?
-        if (Instance != null) {
-            asyncExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Instance.onReceive(context, intent);
-                }
-            });
+    public void onReceive(final Context inContext, final Intent intent) {
+        final Context context = inContext.getApplicationContext();
+
+        String action = intent.getAction();
+        if (action == null) return;
+
+        // If Instance is null, make sure TeakCore is around. If it's not null, make sure it's enabled.
+        if ((Instance == null && TeakCore.get(context) == null) || (Instance != null && !Instance.isEnabled())) {
+            return;
+        }
+
+        if (GCM_RECEIVE_INTENT_ACTION.equals(action)) {
+            TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Received, context, intent));
+        } else if (GCM_REGISTRATION_INTENT_ACTION.equals(action)) {
+            final String registrationId = intent.getStringExtra("registration_id");
+            TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", registrationId));
+        } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX)) {
+            TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Interaction, context, intent));
+        } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX)) {
+            TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Cleared, context, intent));
         }
     }
 
