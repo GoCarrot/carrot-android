@@ -74,7 +74,7 @@ class TeakIntegrationTest {
         final Context context = InstrumentationRegistry.getTargetContext();
         this.androidDeviceInfo  = new DefaultAndroidDeviceInfo(context);
         this.pushProvider = DefaultObjectFactory.createPushProvider(context);
-        this.androidNotification = new DefaultAndroidNotification(context);
+        this.androidNotification = DefaultAndroidNotification.get(context);
     }
 
     @Before
