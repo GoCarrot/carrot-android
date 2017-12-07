@@ -25,7 +25,9 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 
+import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.io.DefaultAndroidNotification;
+import io.teak.sdk.io.DefaultAndroidResources;
 import io.teak.sdk.json.JSONObject;
 
 import java.util.HashMap;
@@ -184,6 +186,12 @@ public class TeakCore implements ITeakCore {
                                 payload.put("platform_id", teakNotification.teakNotifId);
                                 if (teakNotification.teakNotifId == 0) {
                                     payload.put("impression", false);
+                                }
+
+                                // If the API key is null, assign that
+                                if (!Request.hasTeakApiKey()) {
+                                    AppConfiguration tempAppConfiguration = new AppConfiguration(context, new DefaultAndroidResources(context));
+                                    Request.setTeakApiKey(tempAppConfiguration.apiKey);
                                 }
                                 asyncExecutor.execute(new Request("parsnip.gocarrot.com", "/notification_received", payload, Session.NullSession));
                             }

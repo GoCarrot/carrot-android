@@ -35,10 +35,6 @@ import static org.mockito.Mockito.when;
 public class NotificationBroadcastReceivers {
     @Test
     public void GCM_RECEIVE_INTENT_ACTION() throws PackageManager.NameNotFoundException, NoSuchFieldException, IllegalAccessException {
-        final Field teakApiKeyField = Request.class.getDeclaredField("teakApiKey");
-        teakApiKeyField.setAccessible(true);
-        teakApiKeyField.set(null, "test_api_key");
-
         final Log teakLog = mock(Log.class);
         final Field teakLogField = Teak.class.getDeclaredField("log");
         teakLogField.setAccessible(true);
@@ -73,6 +69,8 @@ public class NotificationBroadcastReceivers {
         final Intent intent = mock(Intent.class);
         when(intent.getAction()).thenReturn(Teak.GCM_RECEIVE_INTENT_ACTION);
         when(intent.getExtras()).thenReturn(extras);
+
+        Request.setTeakApiKey("test_teak_api_key");
 
         teakBroadcastReceiver.onReceive(context, intent);
 
