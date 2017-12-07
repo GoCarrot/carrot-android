@@ -50,8 +50,8 @@ public class DefaultObjectFactory implements IObjectFactory {
         this.store = createStore(context);
         this.androidDeviceInfo = new DefaultAndroidDeviceInfo(this.context);
         this.pushProvider = createPushProvider(context);
-        this.androidNotification = new DefaultAndroidNotification(this.context);
-        this.teakCore = new TeakCore(this.context);
+        this.androidNotification = DefaultAndroidNotification.get(this.context);
+        this.teakCore = TeakCore.get(this.context);
     }
 
     ///// IObjectFactory

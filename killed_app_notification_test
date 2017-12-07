@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+require 'json'
+require 'shellwords'
+
+def adb_shell(*args)
+  escaped_args = args.map { |arg| Shellwords.escape(arg) }.join(' ')
+  `adb shell #{escaped_args}`
+end
+
+extras = {
+  teakNotifId: "test_teak_notif_id",
+  version: "1",
+  teakUserId: "test_teak_user_id",
+  teakAppId: "test_teak_app_id",
+  message: "Test notification",
+  display: JSON.generate({
+    contentView: "teak_notif_no_title",
+    teak_notif_no_title: {
+      text: "teak_notif_no_title",
+      left_image: "BUILTIN_APP_ICON"
+    }
+  })
+}
+
+adb_shell "pm", "clear", "com.teakio.pushtest"
+adb_shell *(["am", "broadcast", "-c", "com.teakio.pushtest", "-a", "com.google.android.c2dm.intent.RECEIVE"].concat(
+  extras.keys.inject([]) { |acc, key| acc.concat ["--es", "\"#{key}\"", "\"#{extras[key]}\""] }))

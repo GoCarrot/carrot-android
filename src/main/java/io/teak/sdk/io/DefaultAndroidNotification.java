@@ -39,27 +39,28 @@ public class DefaultAndroidNotification implements IAndroidNotification {
      */
     private static final String NOTIFICATION_TAG = "io.teak.sdk.TeakNotification";
 
-    public DefaultAndroidNotification(@NonNull Context context) {
+    private static DefaultAndroidNotification Instance = null;
+    public static DefaultAndroidNotification get(@NonNull Context context) {
+        if (Instance == null) {
+            Instance = new DefaultAndroidNotification(context);
+        }
+        return Instance;
+    }
+
+    private DefaultAndroidNotification(@NonNull Context context) {
         this.notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
         TeakEvent.addEventListener(new TeakEvent.EventListener() {
             @Override
             public void onNewEvent(@NonNull TeakEvent event) {
                 switch (event.eventType) {
-                    case PushNotificationEvent.Cleared: {
+                    case PushNotificationEvent.Cleared:
+                    case PushNotificationEvent.Interaction: {
                         final Intent intent = ((PushNotificationEvent) event).intent;
-                        if (intent != null) {
+                        if (intent != null && intent.getExtras() != null) {
                             final Bundle bundle = intent.getExtras();
                             cancelNotification(bundle.getInt("platformId"));
                         }
-                        break;
-                    }
-                    case PushNotificationEvent.Interaction: {
-                        final Intent intent = ((PushNotificationEvent) event).intent;
-                        if (intent == null) break;
-
-                        final Bundle bundle = intent.getExtras();
-                        cancelNotification(bundle.getInt("platformId"));
                         break;
                     }
                     case NotificationDisplayEvent.Type: {
@@ -93,6 +94,11 @@ public class DefaultAndroidNotification implements IAndroidNotification {
         } catch (SecurityException ignored) {
             // This likely means that they need the VIBRATE permission on old versions of Android
             Teak.log.e("notification.permission_needed.vibrate", "Please add this to your AndroidManifest.xml: <uses-permission android:name=\"android.permission.VIBRATE\" />");
+        } catch (Exception e) {
+            // Unit testing case
+            if (nativeNotification.flags != Integer.MAX_VALUE) {
+                throw e;
+            }
         }
 
         // TODO: Here is where any kind of thread/update logic will live

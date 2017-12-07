@@ -554,7 +554,8 @@ public class Session {
             if (currentSession == null) {
                 Session.pendingUserId = userId;
             } else {
-                currentSession.stateLock.lock();
+                final Session _lockedSession = currentSession;
+                _lockedSession.stateLock.lock();
                 try {
                     if (currentSession.userId != null && !currentSession.userId.equals(userId)) {
                         Session newSession = new Session(currentSession, currentSession.launchAttribution);
@@ -571,7 +572,7 @@ public class Session {
                         currentSession.identifyUser();
                     }
                 } finally {
-                    currentSession.stateLock.unlock();
+                    _lockedSession.stateLock.unlock();
                 }
             }
         } finally {
@@ -615,7 +616,8 @@ public class Session {
                     userIdReadyRunnableQueueLock.unlock();
                 }
             } else {
-                currentSession.stateLock.lock();
+                final Session _lockedSession = currentSession;
+                _lockedSession.stateLock.lock();
                 try {
                     if (currentSession.state == State.UserIdentified) {
                         currentSession.executionQueue.execute(new WhenUserIdIsReadyRun(runnable));
@@ -628,7 +630,7 @@ public class Session {
                         }
                     }
                 } finally {
-                    currentSession.stateLock.unlock();
+                    _lockedSession.stateLock.unlock();
                 }
             }
         } finally {
@@ -647,7 +649,8 @@ public class Session {
                     userIdReadyRunnableQueueLock.unlock();
                 }
             } else {
-                currentSession.stateLock.lock();
+                final Session _lockedSession = currentSession;
+                _lockedSession.stateLock.lock();
                 try {
                     if (currentSession.state == State.UserIdentified ||
                         (currentSession.state == State.Expiring && currentSession.previousState == State.UserIdentified)) {
@@ -661,7 +664,7 @@ public class Session {
                         }
                     }
                 } finally {
-                    currentSession.stateLock.unlock();
+                    _lockedSession.stateLock.unlock();
                 }
             }
         } finally {
@@ -679,13 +682,14 @@ public class Session {
             // Otherwise, out-of-app deep links can cause a back-stack loop
             if (intent.getBooleanExtra("teakSessionProcessed", false)) {
                 // Reset state on current session, if it is expiring
-                currentSession.stateLock.lock();
+                final Session _lockedSession = currentSession;
+                _lockedSession.stateLock.lock();
                 try {
                     if (currentSession.state == State.Expiring) {
                         currentSession.setState(currentSession.previousState);
                     }
                 } finally {
-                    currentSession.stateLock.unlock();
+                    _lockedSession.stateLock.unlock();
                 }
                 return;
             }
@@ -882,13 +886,14 @@ public class Session {
                 }
             } else {
                 // Reset state on current session, if it is expiring
-                currentSession.stateLock.lock();
+                final Session _lockedSession = currentSession;
+                _lockedSession.stateLock.lock();
                 try {
                     if (currentSession.state == State.Expiring) {
                         currentSession.setState(currentSession.previousState);
                     }
                 } finally {
-                    currentSession.stateLock.unlock();
+                    _lockedSession.stateLock.unlock();
                 }
             }
         } finally {
