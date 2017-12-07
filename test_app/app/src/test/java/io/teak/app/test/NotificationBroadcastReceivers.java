@@ -19,15 +19,12 @@ import io.teak.sdk.TeakEvent;
 import io.teak.sdk.event.NotificationDisplayEvent;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.json.JSONObject;
-import io.teak.sdk.wrapper.Application;
 
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
