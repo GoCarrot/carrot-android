@@ -820,14 +820,15 @@ public class Session {
 
                         try {
                             // Resolve the deepLinkAttribution future
-                            Map<String, Object> attribution = deepLinkAttribution.get(5, TimeUnit.SECONDS);
-                            URI uri = new URI((String) attribution.get("deep_link"));
+                            final Map<String, Object> attribution = deepLinkAttribution.get(5, TimeUnit.SECONDS);
+                            final String deep_link = (String) attribution.get("deep_link");
+                            final URI uri = deep_link == null ? null : new URI(deep_link);
 
                             // See if TeakLinks can do anything with the deep link
-                            if (!DeepLink.processUri(uri) && teakNotifId != null) {
+                            if (uri != null && !DeepLink.processUri(uri) && teakNotifId != null) {
                                 // If this was a deep link from a Teak Notification, then go ahead and
                                 // try to find a different app to launch.
-                                Intent uriIntent = new Intent(Intent.ACTION_VIEW, Uri.parse((String) attribution.get("deep_link")));
+                                Intent uriIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(deep_link));
                                 uriIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                                 List<ResolveInfo> resolvedActivities = teakConfiguration.appConfiguration.packageManager.queryIntentActivities(uriIntent, 0);
                                 boolean safeToRedirect = true;
