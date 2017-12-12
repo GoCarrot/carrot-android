@@ -70,10 +70,12 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
     private DefaultAndroidNotification(@NonNull Context context) {
         this.notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
-        IntentFilter screenStateFilter = new IntentFilter();
-        screenStateFilter.addAction(DeviceStateService.SCREEN_ON);
-        screenStateFilter.addAction(DeviceStateService.SCREEN_OFF);
-        context.registerReceiver(this, screenStateFilter);
+        if (!"test_package_name".equalsIgnoreCase(context.getPackageName())) {
+            IntentFilter screenStateFilter = new IntentFilter();
+            screenStateFilter.addAction(DeviceStateService.SCREEN_ON);
+            screenStateFilter.addAction(DeviceStateService.SCREEN_OFF);
+            context.registerReceiver(this, screenStateFilter);
+        }
 
         TeakEvent.addEventListener(new TeakEvent.EventListener() {
             @Override
