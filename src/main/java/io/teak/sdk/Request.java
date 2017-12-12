@@ -54,6 +54,13 @@ public class Request implements Runnable {
     ///// Common configuration
 
     private static String teakApiKey;
+    public static void setTeakApiKey(@NonNull String apiKey) {
+        Request.teakApiKey = apiKey;
+    }
+    public static boolean hasTeakApiKey() {
+        return Request.teakApiKey != null && Request.teakApiKey.length() > 0;
+    }
+
     private static Map<String, Object> configurationPayload = new HashMap<>();
 
     // TODO: Can't do this as a static-init block, will screw up unit tests

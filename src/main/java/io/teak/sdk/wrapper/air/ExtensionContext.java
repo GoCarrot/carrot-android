@@ -28,27 +28,41 @@ import io.teak.sdk.wrapper.TeakInterface;
 public class ExtensionContext extends FREContext {
     @SuppressWarnings("FieldCanBeLocal")
     private final TeakInterface teakInterface;
+    private final String initializationErrors;
 
     @SuppressWarnings("WeakerAccess")
     public ExtensionContext() {
-        this.teakInterface = new TeakInterface(new ISDKWrapper() {
-            @Override
-            public void sdkSendMessage(@NonNull EventType eventType, @NonNull String eventData) {
-                String eventName = null;
-                switch (eventType) {
-                    case NotificationLaunch: {
-                        eventName = "LAUNCHED_FROM_NOTIFICATION";
-                    } break;
-                    case RewardClaim: {
-                        eventName = "ON_REWARD";
-                    } break;
+        TeakInterface tempTeakInterface = null;
+        String tempInitializationErrors = null;
+        try {
+            tempTeakInterface = new TeakInterface(new ISDKWrapper() {
+                @Override
+                public void sdkSendMessage(@NonNull EventType eventType, @NonNull String eventData) {
+                    String eventName = null;
+                    switch (eventType) {
+                        case NotificationLaunch: {
+                            eventName = "LAUNCHED_FROM_NOTIFICATION";
+                        }
+                        break;
+                        case RewardClaim: {
+                            eventName = "ON_REWARD";
+                        }
+                        break;
+                    }
+                    Extension.context.dispatchStatusEventAsync(eventName, eventData);
                 }
-                Extension.context.dispatchStatusEventAsync(eventName, eventData);
-            }
-        });
+            });
+        } catch (IllegalStateException e) {
+            tempInitializationErrors = e.getLocalizedMessage();
+        } finally {
+            this.teakInterface = tempTeakInterface;
+            this.initializationErrors = tempInitializationErrors;
+        }
 
         // TODO: Should this be delayed?
-        this.teakInterface.readyForDeepLinks();
+        if (this.teakInterface != null) {
+            this.teakInterface.readyForDeepLinks();
+        }
     }
 
     @Override
@@ -61,6 +75,7 @@ public class ExtensionContext extends FREContext {
         functionMap.put("cancelAllNotifications", new TeakNotificationFunction(TeakNotificationFunction.CallType.CancelAll));
         functionMap.put("registerRoute", new RegisterRouteFunction());
         functionMap.put("getVersion", new GetVersionFunction());
+        functionMap.put("getInitializationErrors", new GetInitializationErrorsFunction(this.initializationErrors));
         return functionMap;
     }
 

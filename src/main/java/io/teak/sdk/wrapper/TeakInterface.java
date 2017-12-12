@@ -44,7 +44,12 @@ public class TeakInterface {
         IntentFilter filter = new IntentFilter();
         filter.addAction(Teak.REWARD_CLAIM_ATTEMPT);
         filter.addAction(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
-        Teak.Instance.objectFactory.getTeakCore().registerLocalBroadcastReceiver(broadcastReceiver, filter);
+
+        if (Teak.Instance == null) {
+            throw new IllegalStateException("Teak#onCreate was not called.");
+        } else {
+            Teak.Instance.objectFactory.getTeakCore().registerLocalBroadcastReceiver(broadcastReceiver, filter);
+        }
     }
 
     public void readyForDeepLinks() {
