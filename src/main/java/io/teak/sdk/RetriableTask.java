@@ -19,7 +19,7 @@ public class RetriableTask<T> implements Callable<T> {
         while (true) {
             try {
                 return this.wrappedTask.call();
-            } catch (final CancellationException | InterruptedException e) {
+            } catch (final ClassNotFoundException | CancellationException | InterruptedException e) {
                 throw e;
             } catch (final Exception e) {
                 triesLeft--;
