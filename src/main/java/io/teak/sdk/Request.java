@@ -83,6 +83,10 @@ public class Request implements Runnable {
                 configurationPayload.put("device_manufacturer", configuration.deviceConfiguration.deviceManufacturer);
                 configurationPayload.put("device_model", configuration.deviceConfiguration.deviceModel);
                 configurationPayload.put("device_fallback", configuration.deviceConfiguration.deviceFallback);
+
+                if (configuration.debugConfiguration.isDebug()) {
+                    configurationPayload.put("debug", true);
+                }
             }
         });
     }
