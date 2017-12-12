@@ -116,7 +116,7 @@ public class Request implements Runnable {
 
     public Request(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
         if (!endpoint.startsWith("/")) {
-            throw new InvalidParameterException("Parameter 'endpoint' must start with '/' or things will break, and you will lose an hour of your life debugging.");
+            throw new IllegalArgumentException("Parameter 'endpoint' must start with '/' or things will break, and you will lose an hour of your life debugging.");
         }
 
         this.hostname = hostname;
