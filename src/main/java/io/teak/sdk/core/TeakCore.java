@@ -227,6 +227,10 @@ public class TeakCore implements ITeakCore {
                                 launchIntent.setData(teakDeepLink);
                             }
                             context.startActivity(launchIntent);
+
+                            // Close notification tray
+                            final Intent it = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
+                            context.sendBroadcast(it);
                         }
                     }
                     break;
