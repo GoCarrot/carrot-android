@@ -110,10 +110,7 @@ class GooglePlay implements IStore {
                     // Check for v5 subscriptions support. This is needed for
                     // getBuyIntentToReplaceSku which allows for subscription update
                     response = (Integer) m.invoke(mService, 5, packageName, ITEM_TYPE_SUBS);
-                    //noinspection StatementWithEmptyBody
-                    if (response == BILLING_RESPONSE_RESULT_OK) {
-                        // Subscription v5 available
-                    } else {
+                    if (response != BILLING_RESPONSE_RESULT_OK) {
                         // Subscription v5 not available
 
                         // check for v3 subscriptions support
@@ -121,8 +118,6 @@ class GooglePlay implements IStore {
                         //noinspection StatementWithEmptyBody
                         if (response == BILLING_RESPONSE_RESULT_OK) {
                             // Subscription v3 available
-                        } else {
-                            // Subscriptsion v3 not available
                         }
                     }
                 } catch (Exception e) {

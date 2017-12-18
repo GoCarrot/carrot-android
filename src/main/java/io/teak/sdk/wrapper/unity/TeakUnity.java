@@ -67,6 +67,7 @@ public class TeakUnity {
         return TeakUnity.unitySendMessage != null;
     }
 
+    @SuppressWarnings("PMD")
     private static void UnitySendMessage(String method, String message) {
         if (TeakUnity.isAvailable()) {
             try {
