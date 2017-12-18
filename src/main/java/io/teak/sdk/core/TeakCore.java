@@ -41,7 +41,6 @@ import io.teak.sdk.Helpers;
 import io.teak.sdk.NotificationBuilder;
 import io.teak.sdk.Request;
 import io.teak.sdk.Teak;
-import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
 import io.teak.sdk.configuration.RemoteConfiguration;

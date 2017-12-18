@@ -31,14 +31,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.Callable;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-
-import java.net.URL;
-import java.net.URLEncoder;
-
 import javax.net.ssl.HttpsURLConnection;
 
 import io.teak.sdk.json.JSONArray;

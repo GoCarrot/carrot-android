@@ -25,8 +25,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 
-import io.teak.sdk.json.JSONObject;
-
 import java.security.InvalidParameterException;
 import java.util.Date;
 import java.util.HashMap;
@@ -34,9 +32,7 @@ import java.util.Map;
 
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.event.LifecycleEvent;
-import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
-import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.event.UserIdEvent;
