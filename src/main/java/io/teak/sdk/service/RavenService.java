@@ -90,8 +90,8 @@ public class RavenService extends Service {
     @Override
     public void onDestroy() {
         Log.d(LOG_TAG, "Lifecycle - onDestroy");
-        for (Map.Entry<String, AppReporter> entry : appReporterMap.entrySet()) {
-        }
+        //for (Map.Entry<String, AppReporter> entry : appReporterMap.entrySet()) {
+        //}
     }
 
     @Override
@@ -99,7 +99,7 @@ public class RavenService extends Service {
         return null;
     }
 
-    private static final String[] EXCEPTIONS_READ_COLUMNS = {"rowid", "payload", "timestamp", "retries"};
+    //private static final String[] EXCEPTIONS_READ_COLUMNS = {"rowid", "payload", "timestamp", "retries"};
 
     private class AppReporter {
         private DatabaseHelper databaseHelper;
