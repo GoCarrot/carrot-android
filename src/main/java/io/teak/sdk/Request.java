@@ -27,7 +27,6 @@ import java.lang.reflect.Array;
 import java.net.URL;
 import java.net.URLEncoder;
 
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -134,14 +133,16 @@ public class Request implements Runnable {
         this.payload.putAll(Request.configurationPayload);
     }
 
-    private static class Payload {
-        static String toSigningString(Map<String, Object> payload) throws UnsupportedEncodingException {
+    public static class Payload {
+        @SuppressWarnings("WeakerAccess")
+        public static String toSigningString(Map<String, Object> payload) throws UnsupportedEncodingException {
             final StringBuilder builder = payloadToString(payload, false);
             builder.deleteCharAt(builder.length() - 1);
             return builder.toString();
         }
 
-        static String toRequestBody(Map<String, Object> payload, String sig) throws UnsupportedEncodingException {
+        @SuppressWarnings("WeakerAccess")
+        public static String toRequestBody(Map<String, Object> payload, String sig) throws UnsupportedEncodingException {
             final StringBuilder builder = payloadToString(payload, true);
             builder.append("sig=").append(URLEncoder.encode(sig, "UTF-8"));
             return builder.toString();
@@ -173,7 +174,6 @@ public class Request implements Runnable {
         }
     }
 
-
     @Override
     public void run() {
         final SecretKeySpec keySpec = new SecretKeySpec(Request.teakApiKey.getBytes(), "HmacSHA256");
@@ -193,7 +193,7 @@ public class Request implements Runnable {
         }
 
         try {
-            Teak.log.i("request.send", this.to_h());
+            Teak.log.i("request.send", this.toMap());
             final long startTime = System.nanoTime();
             final URL url = new URL("https://" + this.hostname + this.endpoint);
             final IHttpsRequest request = new DefaultHttpsRequest(); // TODO: Do this properly with a Factory
@@ -202,7 +202,7 @@ public class Request implements Runnable {
             final int statusCode = response == null ? 0 : response.statusCode;
             final String body = response == null ? null : response.body;
 
-            final Map<String, Object> h = this.to_h();
+            final Map<String, Object> h = this.toMap();
             h.remove("payload");
             h.put("response_time", (System.nanoTime() - startTime) / 1000000.0);
 
@@ -225,7 +225,7 @@ public class Request implements Runnable {
     protected void done(int responseCode, String responseBody) {
     }
 
-    private Map<String, Object> to_h() {
+    private Map<String, Object> toMap() {
         HashMap<String, Object> map = new HashMap<>();
         map.put("request_id", this.requestId);
         map.put("hostname", this.hostname);
@@ -238,7 +238,7 @@ public class Request implements Runnable {
     @Override
     public String toString() {
         try {
-            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.to_h())));
+            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toMap())));
         } catch (Exception ignored) {
             return super.toString();
         }

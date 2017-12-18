@@ -14,7 +14,6 @@
  */
 package io.teak.sdk;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
@@ -214,7 +213,7 @@ class Raven implements Thread.UncaughtExceptionHandler {
         }
     }
 
-    private Map<String, Object> to_h() {
+    private Map<String, Object> toMap() {
         HashMap<String, Object> ret = new HashMap<>();
         ret.put("appId", this.appId);
         ret.put("applicationContext", this.applicationContext);
@@ -225,7 +224,7 @@ class Raven implements Thread.UncaughtExceptionHandler {
     @Override
     public String toString() {
         try {
-            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.to_h())));
+            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toMap())));
         } catch (Exception ignored) {
             return super.toString();
         }
@@ -282,7 +281,7 @@ class Raven implements Thread.UncaughtExceptionHandler {
             }
         }
 
-        Map<String, Object> to_h() {
+        Map<String, Object> toMap() {
             HashMap<String, Object> ret = new HashMap<>();
             ret.put("payload", this.payload);
             ret.put("timestamp", this.timestamp);
@@ -292,7 +291,7 @@ class Raven implements Thread.UncaughtExceptionHandler {
         @Override
         public String toString() {
             try {
-                return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.to_h())));
+                return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toMap())));
             } catch (Exception ignored) {
                 return super.toString();
             }

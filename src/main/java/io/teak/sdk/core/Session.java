@@ -1032,7 +1032,7 @@ public class Session {
     }
     // endregion
 
-    private Map<String, Object> to_h() {
+    private Map<String, Object> toMap() {
         HashMap<String, Object> map = new HashMap<>();
         map.put("startDate", this.startDate.getTime() / 1000);
         return map;
@@ -1041,7 +1041,7 @@ public class Session {
     @Override
     public String toString() {
         try {
-            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.to_h())));
+            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toMap())));
         } catch (Exception ignored) {
             return super.toString();
         }

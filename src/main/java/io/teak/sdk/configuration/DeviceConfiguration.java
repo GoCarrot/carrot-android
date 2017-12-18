@@ -127,7 +127,7 @@ public class DeviceConfiguration {
         }
     }
 
-    public Map<String, Object> to_h() {
+    public Map<String, Object> toMap() {
         HashMap<String, Object> ret = new HashMap<>();
         if (this.pushRegistration != null) {
             ret.put("pushRegistration", this.pushRegistration);
@@ -143,7 +143,7 @@ public class DeviceConfiguration {
     @Override
     public String toString() {
         try {
-            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.to_h())));
+            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toMap())));
         } catch (Exception ignored) {
             return super.toString();
         }

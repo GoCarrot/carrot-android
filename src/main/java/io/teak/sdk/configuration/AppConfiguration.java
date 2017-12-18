@@ -163,7 +163,7 @@ public class AppConfiguration {
         }
     }
 
-    public Map<String, Object> to_h() {
+    public Map<String, Object> toMap() {
         HashMap<String, Object> ret = new HashMap<>();
         ret.put("appId", this.appId);
         ret.put("apiKey", this.apiKey);
@@ -177,7 +177,7 @@ public class AppConfiguration {
     @Override
     public String toString() {
         try {
-            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.to_h())));
+            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toMap())));
         } catch (Exception ignored) {
             return super.toString();
         }
