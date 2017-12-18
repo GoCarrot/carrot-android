@@ -88,7 +88,7 @@ public class TeakUnity {
                             JSONObject eventData = new JSONObject();
                             eventData.put("route", route);
                             eventData.put("parameters", new JSONObject(parameters));
-                            TeakUnity.UnitySendMessage("DeepLink", eventData.toString());
+                            TeakUnity.unitySendMessage("DeepLink", eventData.toString());
                         }
                     } catch (Exception e) {
                         Teak.log.exception(e);
