@@ -113,7 +113,7 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
         Teak.log.e("amazon.adm.registration_error", "Error registering for ADM id: " + s);
 
         // If the error is INVALID_SENDER try and help the developer
-        if (s.contains("INVALID_SENDER")) {
+        if (s != null && s.contains("INVALID_SENDER")) {
 
             // First check to see if api_key.txt is available
             InputStream inputStream = null;
