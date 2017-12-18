@@ -18,6 +18,7 @@ dependencies:
     #- $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-26" "build-tools;26.0.2" "extras;google;m2repository" "extras;android;m2repository"
     - find $ANDROID_HOME -xdev | sort > fs-after.txt
     - diff -daU 0 fs-before.txt fs-after.txt | grep -vE '^(@@|\+\+\+|---)' > fs.diff
+    - curl -sL https://sentry.io/get-cli/ | bash
   cache_directories:
     # TODO: Use fs.diff to figure out what to cache
 checkout:
@@ -27,6 +28,7 @@ deployment:
   prod:
     branch: [master, /hotfix.*/]
     commands:
+      - sentry-cli upload-proguard --android-manifest build/intermediates/manifests/full/release/AndroidManifest.xml build/outputs/mapping/release/mapping.txt
       - aws s3 cp build/distributions/teak-release.zip s3://teak-build-artifacts/android/teak-$(git describe --tags --always).zip --acl public-read
       - aws s3 cp build/distributions/teak-release.zip s3://teak-build-artifacts/android/teak.zip --acl public-read
       - aws s3 cp build/outputs/aar/teak-release.aar s3://teak-build-artifacts/android/teak-$(git describe --tags --always).aar --acl public-read

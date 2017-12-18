@@ -29,6 +29,27 @@ dexcount {
     maxMethodCount = 1550 // This includes android.* etc dependencies, so I guess just do it this way for now
 }
 
+gradle.projectsEvaluated {
+    android.libraryVariants.each { variant ->
+        def variantName = variant.name.capitalize();
+        def proguardTask = project.tasks.findByName(
+                "transformClassesAndResourcesWithProguardFor${variantName}")
+        if (proguardTask) {
+            def task = project.tasks.create(
+                    name: "processSentryProguardFor${variantName}",
+                    type: Exec) {
+                workingDir project.rootDir
+                commandLine "sentry-cli", "upload-proguard", "--write-properties",
+                        "${project.rootDir.toPath()}/build/intermediates/assets" +
+                                "/${variant.dirName}/sentry-debug-meta.properties",
+                        variant.getMappingFile(),
+                        "--no-upload"
+            }
+            proguardTask.finalizedBy task
+        }
+    }
+}
+
 repositories {
     mavenCentral()
     google()

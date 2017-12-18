@@ -17,6 +17,8 @@ if [ "$(which android)" == "" ]; then
   brew cask install android-sdk
 fi
 
+if [ "$(which sentry-cli)" == "" ]; then brew install getsentry/tools/sentry-cli; fi
+
 ANDROID_HOME=/usr/local/share/android-sdk
 export ANDROID_HOME
 
