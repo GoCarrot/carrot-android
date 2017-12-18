@@ -45,7 +45,7 @@ public class DeepLink {
         Pattern escape = Pattern.compile("[^\\?\\%\\\\/\\:\\*\\w]");
         Matcher matcher = escape.matcher(route);
         while (matcher.find()) {
-            matcher.appendReplacement(patternString, java.util.regex.Pattern.quote(matcher.group()));
+            matcher.appendReplacement(patternString, Pattern.quote(matcher.group()));
         }
         matcher.appendTail(patternString);
         String pattern = patternString.toString();
