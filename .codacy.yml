@@ -1,12 +1,12 @@
 ---
 exclude_paths:
-  - example/**/*
-  - notification_visuals/**/*
-  - size_check/**/*
-  - test_app/**/*
-  - build/**/*
-  - docs/**/*
-  - .gradle/**/*
-  - infer-out/**/*
-  - .idea/**/*
-  - src/main/java/io/teak/sdk/json/**/* # Not our code, vendored JSONObject and friends
+  - example/
+  - notification_visuals/
+  - size_check/
+  - test_app/
+  - build/
+  - docs/
+  - .gradle/
+  - infer-out/
+  - .idea/
+  - src/main/java/io/teak/sdk/json/ # Not our code, vendored JSONObject and friends
