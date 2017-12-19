@@ -198,7 +198,7 @@ public class TeakInstance {
             if (nextState == State.Disabled) return true;
 
             for (State allowedTransition : allowedTransitions[this.ordinal()]) {
-                if (nextState == allowedTransition) return true;
+                if (nextState.equals(allowedTransition)) return true;
             }
             return false;
         }
