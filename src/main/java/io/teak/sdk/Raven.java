@@ -141,7 +141,7 @@ class Raven implements Thread.UncaughtExceptionHandler {
 
     static Map<String, Object> throwableToMap(Throwable t) {
         if (t instanceof InvocationTargetException && t.getCause() != null) {
-            t = t.getCause();
+            t = t.getCause(); //NOPMD -- Parameter reassignment
         }
 
         HashMap<String, Object> exception = new HashMap<>();
