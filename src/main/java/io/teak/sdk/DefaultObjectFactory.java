@@ -112,7 +112,7 @@ public class DefaultObjectFactory implements IObjectFactory {
         // Applicable store
         if (installerPackage != null) {
             Class<?> clazz = null;
-            if (installerPackage.equals("com.amazon.venezia")) {
+            if ("com.amazon.venezia".equals(installerPackage)) {
                 try {
                     clazz = Class.forName("com.amazon.device.iap.PurchasingListener");
                 } catch (Exception e) {
