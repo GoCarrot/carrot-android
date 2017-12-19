@@ -195,13 +195,14 @@ class Raven implements Thread.UncaughtExceptionHandler {
             return;
         }
 
-        if (t instanceof InvocationTargetException && t.getCause() != null) {
-            t = t.getCause();
+        Throwable throwable = t;
+        if (throwable instanceof InvocationTargetException && throwable.getCause() != null) {
+            throwable = throwable.getCause();
         }
 
         HashMap<String, Object> additions = new HashMap<>();
         ArrayList<Object> exceptions = new ArrayList<>();
-        Map<String, Object> exception = Raven.throwableToMap(t);
+        Map<String, Object> exception = Raven.throwableToMap(throwable);
 
         exceptions.add(exception);
         additions.put("exception", exceptions);
@@ -235,7 +236,8 @@ class Raven implements Thread.UncaughtExceptionHandler {
         HashMap<String, Object> payload = new HashMap<>();
         Date timestamp = new Date();
 
-        Report(String message, @NonNull Level level, HashMap<String, Object> additions) {
+        Report(String m, @NonNull Level level, HashMap<String, Object> additions) {
+            String message = m;
             if (message == null || message.length() < 1) {
                 message = "undefined";
             }
