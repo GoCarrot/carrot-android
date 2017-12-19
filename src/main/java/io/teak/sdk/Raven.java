@@ -140,20 +140,21 @@ class Raven implements Thread.UncaughtExceptionHandler {
     }
 
     static Map<String, Object> throwableToMap(Throwable t) {
-        if (t instanceof InvocationTargetException && t.getCause() != null) {
-            t = t.getCause(); //NOPMD -- Parameter reassignment
+        Throwable throwable = t;
+        if (throwable instanceof InvocationTargetException && throwable.getCause() != null) {
+            throwable = throwable.getCause();
         }
 
         HashMap<String, Object> exception = new HashMap<>();
 
-        exception.put("type", t.getClass().getSimpleName());
-        exception.put("value", t.getMessage());
-        exception.put("module", t.getClass().getPackage().getName());
+        exception.put("type", throwable.getClass().getSimpleName());
+        exception.put("value", throwable.getMessage());
+        exception.put("module", throwable.getClass().getPackage().getName());
 
         HashMap<String, Object> stacktrace = new HashMap<>();
         ArrayList<Object> stackFrames = new ArrayList<>();
 
-        StackTraceElement[] steArray = t.getStackTrace();
+        StackTraceElement[] steArray = throwable.getStackTrace();
         for (int i = steArray.length - 1; i >= 0; i--) {
             StackTraceElement ste = steArray[i];
             HashMap<String, Object> frame = new HashMap<>();
