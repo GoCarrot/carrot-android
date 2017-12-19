@@ -46,8 +46,6 @@ public class ExtensionContext extends FREContext {
                         case RewardClaim: {
                             eventName = "ON_REWARD";
                         } break;
-                        default: {
-                        } break;
                     }
                     Extension.context.dispatchStatusEventAsync(eventName, eventData);
                 }

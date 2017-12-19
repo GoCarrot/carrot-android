@@ -84,11 +84,6 @@ public class DeviceConfiguration {
                     case PushRegistrationEvent.Registered: {
                         pushRegistration = ((PushRegistrationEvent) event).registration;
                     } break;
-                    case PushRegistrationEvent.UnRegistered: {
-                        // TODO: Do we want to do something on un-register?
-                    } break;
-                    default: {
-                    } break;
                 }
             }
         });

@@ -459,8 +459,6 @@ public class Session {
                 case PushRegistrationEvent.Registered: {
                     userInfoWasUpdated();
                 } break;
-                default: {
-                } break;
             }
         }
     };
