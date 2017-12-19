@@ -176,6 +176,7 @@ class Amazon implements IStore {
 
         @Override
         public void onPurchaseUpdatesResponse(PurchaseUpdatesResponse purchaseUpdatesResponse) {
+            // None
         }
     }
 }

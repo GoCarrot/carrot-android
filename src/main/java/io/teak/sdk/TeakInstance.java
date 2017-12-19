@@ -351,14 +351,17 @@ public class TeakInstance {
 
         @Override
         public void onActivityStarted(Activity activity) {
+            // None
         }
 
         @Override
         public void onActivityStopped(Activity activity) {
+            // None
         }
 
         @Override
         public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
+            // None
         }
     };
 

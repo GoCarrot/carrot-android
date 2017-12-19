@@ -37,6 +37,7 @@ public class TeakInterface {
         this.deepLinksReadyTask = new FutureTask<>(new Runnable() {
             @Override
             public void run() {
+                // None
             }
         }, null);
         Teak.waitForDeepLink = deepLinksReadyTask;

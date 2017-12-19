@@ -42,26 +42,32 @@ public class Application extends android.app.Application {
 
                 @Override
                 public void onActivityStarted(Activity activity) {
+                    // None
                 }
 
                 @Override
                 public void onActivityResumed(Activity activity) {
+                    // None
                 }
 
                 @Override
                 public void onActivityPaused(Activity activity) {
+                    // None
                 }
 
                 @Override
                 public void onActivityStopped(Activity activity) {
+                    // None
                 }
 
                 @Override
                 public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
+                    // None
                 }
 
                 @Override
                 public void onActivityDestroyed(Activity activity) {
+                    // None
                 }
             };
             registerActivityLifecycleCallbacks(lifecycleCallbacks);
