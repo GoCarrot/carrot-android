@@ -42,8 +42,7 @@ import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.PurchaseEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
 
-@SuppressWarnings("unused")
-class Amazon implements IStore {
+public class Amazon implements IStore {
     private HashMap<RequestId, ArrayBlockingQueue<String>> skuDetailsRequestMap;
 
     public void init(Context context) {

@@ -42,8 +42,7 @@ import io.teak.sdk.TeakEvent;
 import io.teak.sdk.event.PurchaseEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
 
-@SuppressWarnings("unused")
-class GooglePlay implements IStore {
+public class GooglePlay implements IStore {
     private Object mService;
     private ServiceConnection mServiceConn;
     private Context mContext;

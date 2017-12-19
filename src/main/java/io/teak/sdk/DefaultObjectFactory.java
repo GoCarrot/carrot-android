@@ -111,7 +111,7 @@ public class DefaultObjectFactory implements IObjectFactory {
 
         // Applicable store
         if (installerPackage != null) {
-            Class<?> clazz = null;
+            Class<?> clazz = io.teak.sdk.store.GooglePlay.class;
             if ("com.amazon.venezia".equals(installerPackage)) {
                 try {
                     clazz = Class.forName("com.amazon.device.iap.PurchasingListener");
@@ -120,18 +120,7 @@ public class DefaultObjectFactory implements IObjectFactory {
                 }
 
                 if (clazz != null) {
-                    try {
-                        clazz = Class.forName("io.teak.sdk.Amazon");
-                    } catch (Exception e) {
-                        Teak.log.exception(e);
-                    }
-                }
-            } else {
-                // Default to Google Play
-                try {
-                    clazz = Class.forName("io.teak.sdk.GooglePlay");
-                } catch (Exception e) {
-                    Teak.log.exception(e);
+                    clazz = io.teak.sdk.store.Amazon.class;
                 }
             }
 
