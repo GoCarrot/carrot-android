@@ -270,8 +270,6 @@ public class Session {
 
                     // TODO: Report Session to server, once we collect that info.
                 } break;
-                default: {
-                } break;
             }
 
             // Print out any invalid values

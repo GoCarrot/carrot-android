@@ -97,7 +97,7 @@ public class DeepLink {
                 Pattern pattern = null;
                 try {
                     pattern = Pattern.compile(key);
-                } catch (Exception e ) {
+                } catch (Exception e) {
                     Teak.log.exception(e);
                 }
                 if (pattern == null) continue;
