@@ -77,16 +77,18 @@ public class DeviceConfiguration {
             @Override
             public void onNewEvent(@NonNull TeakEvent event) {
                 switch (event.eventType) {
-                    case AdvertisingInfoEvent.Type:
+                    case AdvertisingInfoEvent.Type: {
                         advertisingId = ((AdvertisingInfoEvent) event).advertisingId;
                         limitAdTracking = ((AdvertisingInfoEvent) event).limitAdTracking;
-                        break;
-                    case PushRegistrationEvent.Registered:
+                    } break;
+                    case PushRegistrationEvent.Registered: {
                         pushRegistration = ((PushRegistrationEvent) event).registration;
-                        break;
-                    case PushRegistrationEvent.UnRegistered:
+                    } break;
+                    case PushRegistrationEvent.UnRegistered: {
                         // TODO: Do we want to do something on un-register?
-                        break;
+                    } break;
+                    default: {
+                    } break;
                 }
             }
         });

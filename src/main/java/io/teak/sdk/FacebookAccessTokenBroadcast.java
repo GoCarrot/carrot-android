@@ -170,10 +170,9 @@ class FacebookAccessTokenBroadcast {
                         this.broadcastManager.registerReceiver(this.broadcastReceiver, filter);
                     }
                 } break;
-
                 default: {
                     Teak.log.e("facebook", "Don't know how to use Facebook SDK version " + versionInts[0]);
-                }
+                } break;
             }
         }
     }

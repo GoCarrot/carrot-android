@@ -229,7 +229,6 @@ public class Session {
                 case IdentifyingUser: {
                     if (this.userId == null) {
                         invalidValuesForTransition.add(new Object[] {"userId", "null"});
-                        break;
                     }
                 } break;
 
@@ -270,6 +269,8 @@ public class Session {
                     TeakEvent.removeEventListener(this.teakEventListener);
 
                     // TODO: Report Session to server, once we collect that info.
+                } break;
+                default: {
                 } break;
             }
 
@@ -451,16 +452,15 @@ public class Session {
                         Teak.log.i("session.fb_access_token", Helpers.mm.h("access_token", facebookAccessToken, "session_id", sessionId));
                         userInfoWasUpdated();
                     }
-                    break;
-                }
+                } break;
                 case AdvertisingInfoEvent.Type: {
                     userInfoWasUpdated();
-                    break;
-                }
+                } break;
                 case PushRegistrationEvent.Registered: {
                     userInfoWasUpdated();
-                    break;
-                }
+                } break;
+                default: {
+                } break;
             }
         }
     };

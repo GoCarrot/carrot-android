@@ -88,13 +88,13 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                             final Bundle bundle = intent.getExtras();
                             cancelNotification(bundle.getInt("platformId"));
                         }
-                        break;
-                    }
+                    } break;
                     case NotificationDisplayEvent.Type: {
                         NotificationDisplayEvent notificationDisplayEvent = (NotificationDisplayEvent) event;
                         displayNotification(notificationDisplayEvent.teakNotification, notificationDisplayEvent.nativeNotification);
-                        break;
-                    }
+                    } break;
+                    default: {
+                    } break;
                 }
             }
         });

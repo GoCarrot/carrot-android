@@ -42,12 +42,12 @@ public class ExtensionContext extends FREContext {
                     switch (eventType) {
                         case NotificationLaunch: {
                             eventName = "LAUNCHED_FROM_NOTIFICATION";
-                        }
-                        break;
+                        } break;
                         case RewardClaim: {
                             eventName = "ON_REWARD";
-                        }
-                        break;
+                        } break;
+                        default: {
+                        } break;
                     }
                     Extension.context.dispatchStatusEventAsync(eventName, eventData);
                 }

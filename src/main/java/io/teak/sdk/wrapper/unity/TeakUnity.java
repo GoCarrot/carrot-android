@@ -51,6 +51,8 @@ public class TeakUnity {
                     case RewardClaim: {
                         eventName = "RewardClaimAttempt";
                     } break;
+                    default: {
+                    } break;
                 }
 
                 unitySendMessage(eventName, eventData);
