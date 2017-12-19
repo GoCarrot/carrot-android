@@ -253,7 +253,8 @@ public class TeakNotification {
                                     q.offer(null); // TODO: Fix this?
                                 }
                             }
-                        }.run();
+                        }
+                            .run();
                     } catch (Exception e) {
                         Teak.log.exception(e);
                         q.offer(null); // TODO: Fix this?

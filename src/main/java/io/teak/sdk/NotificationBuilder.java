@@ -325,7 +325,7 @@ public class NotificationBuilder {
                         remoteViews.setTextViewText(viewElementId, buttonConfig.getString("text"));
                         String deepLink = buttonConfig.has("deepLink") ? buttonConfig.getString("deepLink") : null;
                         remoteViews.setOnClickPendingIntent(viewElementId, pendingIntent.forActionButton(
-                                context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX, deepLink));
+                                                                               context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX, deepLink));
                     } else if (isUIType(viewElement, TextView.class)) {
                         final String value = viewConfig.getString(key);
                         remoteViews.setTextViewText(viewElementId, Html.fromHtml(value));
@@ -481,8 +481,6 @@ public class NotificationBuilder {
                 throw e;
             }
         }
-
-
 
         // Configure notification behavior
         builder.setPriority(NotificationCompat.PRIORITY_MAX);
