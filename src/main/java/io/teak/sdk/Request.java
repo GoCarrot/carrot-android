@@ -223,6 +223,7 @@ public class Request implements Runnable {
     }
 
     protected void done(int responseCode, String responseBody) {
+        // None
     }
 
     private Map<String, Object> toMap() {

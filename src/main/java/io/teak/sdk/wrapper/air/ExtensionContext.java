@@ -81,5 +81,6 @@ public class ExtensionContext extends FREContext {
 
     @Override
     public void dispose() {
+        // None
     }
 }
