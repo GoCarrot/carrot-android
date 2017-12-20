@@ -83,7 +83,7 @@ class FacebookAccessTokenBroadcast {
         try {
             com_facebook_FacebookSdkVersion = Class.forName(FACEBOOK_SDK_VERSION_CLASS_NAME);
         } catch (ClassNotFoundException ignored) {
-            // Facebook SDK is not linked, just ignore this
+            Teak.log.e("facebook", FACEBOOK_SDK_VERSION_CLASS_NAME + " not found. Facebook SDK hooks disabled.");
         } catch (Exception e) {
             Teak.log.exception(e);
         }
