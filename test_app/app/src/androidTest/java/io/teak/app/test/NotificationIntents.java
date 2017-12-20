@@ -16,6 +16,7 @@
 package io.teak.app.test;
 
 import android.app.Instrumentation;
+import android.content.Context;
 import android.content.Intent;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
@@ -27,10 +28,10 @@ import android.support.test.uiautomator.Until;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import io.teak.sdk.TeakEvent;
 import io.teak.sdk.event.LifecycleEvent;
-import io.teak.sdk.event.NotificationReDisplayEvent;
 import io.teak.sdk.event.PushNotificationEvent;
-import io.teak.sdk.service.DeviceStateService;
+import io.teak.sdk.json.JSONObject;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
