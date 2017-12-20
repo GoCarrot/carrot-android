@@ -67,7 +67,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
         return Instance;
     }
 
-    private DefaultAndroidNotification(@NonNull Context context) {
+    public DefaultAndroidNotification(@NonNull Context context) {
         this.notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
         if (!"test_package_name".equalsIgnoreCase(context.getPackageName())) {
