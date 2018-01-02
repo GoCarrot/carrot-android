@@ -26,6 +26,7 @@ import android.support.test.InstrumentationRegistry;
 import android.support.test.filters.SdkSuppress;
 import android.support.test.rule.ActivityTestRule;
 
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Rule;
 
@@ -97,6 +98,11 @@ class TeakIntegrationTest {
         if (!this.useDefaultTeakCore) {
             TestHelpers.resetTeakEventListeners();
         }
+    }
+
+    @AfterClass
+    public static void stopEventProcessingThread() {
+        TeakEvent.postEvent(TeakEvent.StopEvent);
     }
 
     @Rule

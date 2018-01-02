@@ -23,6 +23,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class TeakEvent {
     public final String eventType;
 
+    public static final TeakEvent StopEvent = new TeakEvent(null);
+
     protected TeakEvent(String eventType) {
         this.eventType = eventType;
     }
