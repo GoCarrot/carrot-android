@@ -33,5 +33,6 @@ public class Extension implements FREExtension {
 
     @Override
     public void initialize() {
+        // None
     }
 }

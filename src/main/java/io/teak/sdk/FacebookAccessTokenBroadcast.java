@@ -82,7 +82,9 @@ class FacebookAccessTokenBroadcast {
         Class<?> com_facebook_FacebookSdkVersion = null;
         try {
             com_facebook_FacebookSdkVersion = Class.forName(FACEBOOK_SDK_VERSION_CLASS_NAME);
-        } catch (ClassNotFoundException e) {
+        } catch (ClassNotFoundException ignored) {
+            Teak.log.e("facebook", FACEBOOK_SDK_VERSION_CLASS_NAME + " not found. Facebook SDK hooks disabled.");
+        } catch (Exception e) {
             Teak.log.exception(e);
         }
 
@@ -170,10 +172,9 @@ class FacebookAccessTokenBroadcast {
                         this.broadcastManager.registerReceiver(this.broadcastReceiver, filter);
                     }
                 } break;
-
                 default: {
                     Teak.log.e("facebook", "Don't know how to use Facebook SDK version " + versionInts[0]);
-                }
+                } break;
             }
         }
     }

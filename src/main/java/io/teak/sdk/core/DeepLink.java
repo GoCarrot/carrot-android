@@ -14,18 +14,20 @@
  */
 package io.teak.sdk.core;
 
-import android.net.Uri;
-
+import java.net.URI;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.teak.sdk.Teak;
-import io.teak.sdk.regexp.Matcher;
-import io.teak.sdk.regexp.Pattern;
 
 public class DeepLink {
     /**
@@ -43,7 +45,7 @@ public class DeepLink {
         Pattern escape = Pattern.compile("[^\\?\\%\\\\/\\:\\*\\w]");
         Matcher matcher = escape.matcher(route);
         while (matcher.find()) {
-            matcher.appendReplacement(patternString, java.util.regex.Pattern.quote(matcher.group()));
+            matcher.appendReplacement(patternString, Pattern.quote(matcher.group()));
         }
         matcher.appendTail(patternString);
         String pattern = patternString.toString();
@@ -59,7 +61,7 @@ public class DeepLink {
                 // return "(?<splat>.*?)";
             }
             groupNames.add(matcher.group().substring(1));
-            matcher.appendReplacement(patternString, "(?<" + matcher.group().substring(1) + ">[^/?#]+)");
+            matcher.appendReplacement(patternString, "([^/?#]+)");
         }
         matcher.appendTail(patternString);
         pattern = patternString.toString();
@@ -71,51 +73,77 @@ public class DeepLink {
             throw new IllegalArgumentException("Duplicate variable names in TeakLink for route: " + route);
         }
 
-        final Pattern regex = Pattern.compile(pattern);
+        final String patternKey = pattern;
         final DeepLink link = new DeepLink(route, call, groupNames, name, description);
-        new Thread(new Runnable() {
+        executor.execute(new Runnable() {
             @Override
             public void run() {
                 synchronized (routes) {
-                    routes.put(regex, link);
+                    routes.put(patternKey, link);
                 }
             }
-        })
-            .start();
+        });
     }
 
-    static boolean processUri(Uri uri) {
+    public static boolean processUri(URI uri) {
         if (uri == null) return false;
         // TODO: Check uri.getAuthority(), and if it exists, make sure it matches one we care about
 
         synchronized (routes) {
-            for (Map.Entry<Pattern, DeepLink> entry : routes.entrySet()) {
-                Pattern key = entry.getKey();
-                DeepLink value = entry.getValue();
+            for (Map.Entry<String, DeepLink> entry : routes.entrySet()) {
+                final String key = entry.getKey();
+                final DeepLink value = entry.getValue();
 
-                Matcher matcher = key.matcher(uri.getPath());
+                Pattern pattern = null;
+                try {
+                    pattern = Pattern.compile(key);
+                } catch (Exception e) {
+                    Teak.log.exception(e);
+                }
+                if (pattern == null) continue;
+
+                Matcher matcher = pattern.matcher(uri.getPath());
                 if (matcher.matches()) {
                     final Map<String, Object> parameterDict = new HashMap<>();
+                    int idx = 1; // Index 0 = full match
                     for (String name : value.groupNames) {
                         try {
-                            parameterDict.put(name, matcher.group(name));
+                            parameterDict.put(name, matcher.group(idx));
+                            idx++;
                         } catch (Exception e) {
                             Teak.log.exception(e);
                             return false;
                         }
                     }
 
-                    // Add the query parameters, allow them to overwrite path parameters
-                    for (String name : uri.getQueryParameterNames()) {
-                        parameterDict.put(name, uri.getQueryParameter(name));
+                    Map<String, String> query = new HashMap<String, String>();
+                    if (uri.getQuery() != null) {
+                        String[] pairs = uri.getQuery().split("&");
+                        for (String pair : pairs) {
+                            int eqIdx = pair.indexOf("=");
+                            try {
+                                query.put(URLDecoder.decode(pair.substring(0, eqIdx), "UTF-8"),
+                                    URLDecoder.decode(pair.substring(eqIdx + 1), "UTF-8"));
+                            } catch (Exception ignored) {
+                            }
+                        }
                     }
 
-                    try {
-                        value.call.call(parameterDict);
-                    } catch (Exception e) {
-                        Teak.log.exception(e);
-                        return false;
+                    // Add the query parameters, allow them to overwrite path parameters
+                    for (String name : query.keySet()) {
+                        parameterDict.put(name, query.get(name));
                     }
+
+                    executor.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                value.call.call(parameterDict);
+                            } catch (Exception e) {
+                                Teak.log.exception(e);
+                            }
+                        }
+                    });
                     return true;
                 }
             }
@@ -126,7 +154,7 @@ public class DeepLink {
     public static List<Map<String, String>> getRouteNamesAndDescriptions() {
         List<Map<String, String>> routeNamesAndDescriptions = new ArrayList<>();
         synchronized (routes) {
-            for (Map.Entry<Pattern, DeepLink> entry : routes.entrySet()) {
+            for (Map.Entry<String, DeepLink> entry : routes.entrySet()) {
                 DeepLink link = entry.getValue();
                 if (link.name != null && !link.name.isEmpty()) {
                     Map<String, String> item = new HashMap<>();
@@ -140,7 +168,8 @@ public class DeepLink {
         return routeNamesAndDescriptions;
     }
 
-    private static final Map<Pattern, DeepLink> routes = new HashMap<>();
+    public static final Map<String, DeepLink> routes = new HashMap<>();
+    private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final String route;
     private final Teak.DeepLink call;

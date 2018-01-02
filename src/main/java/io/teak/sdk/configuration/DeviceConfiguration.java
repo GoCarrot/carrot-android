@@ -77,16 +77,13 @@ public class DeviceConfiguration {
             @Override
             public void onNewEvent(@NonNull TeakEvent event) {
                 switch (event.eventType) {
-                    case AdvertisingInfoEvent.Type:
+                    case AdvertisingInfoEvent.Type: {
                         advertisingId = ((AdvertisingInfoEvent) event).advertisingId;
                         limitAdTracking = ((AdvertisingInfoEvent) event).limitAdTracking;
-                        break;
-                    case PushRegistrationEvent.Registered:
+                    } break;
+                    case PushRegistrationEvent.Registered: {
                         pushRegistration = ((PushRegistrationEvent) event).registration;
-                        break;
-                    case PushRegistrationEvent.UnRegistered:
-                        // TODO: Do we want to do something on un-register?
-                        break;
+                    } break;
                 }
             }
         });
@@ -127,7 +124,7 @@ public class DeviceConfiguration {
         }
     }
 
-    public Map<String, Object> to_h() {
+    public Map<String, Object> toMap() {
         HashMap<String, Object> ret = new HashMap<>();
         if (this.pushRegistration != null) {
             ret.put("pushRegistration", this.pushRegistration);
@@ -143,7 +140,7 @@ public class DeviceConfiguration {
     @Override
     public String toString() {
         try {
-            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.to_h())));
+            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toMap())));
         } catch (Exception ignored) {
             return super.toString();
         }

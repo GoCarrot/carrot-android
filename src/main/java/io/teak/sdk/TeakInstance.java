@@ -25,8 +25,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 
-import io.teak.sdk.json.JSONObject;
-
 import java.security.InvalidParameterException;
 import java.util.Date;
 import java.util.HashMap;
@@ -34,9 +32,7 @@ import java.util.Map;
 
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.event.LifecycleEvent;
-import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
-import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.event.UserIdEvent;
@@ -202,7 +198,7 @@ public class TeakInstance {
             if (nextState == State.Disabled) return true;
 
             for (State allowedTransition : allowedTransitions[this.ordinal()]) {
-                if (nextState == allowedTransition) return true;
+                if (nextState.equals(allowedTransition)) return true;
             }
             return false;
         }
@@ -241,9 +237,9 @@ public class TeakInstance {
 
     private IStore appStore;
 
-    void purchaseSucceeded(JSONObject originalJson) {
+    void purchaseSucceeded(String purchaseString) {
         if (this.appStore != null) {
-            this.appStore.processPurchaseJson(originalJson);
+            this.appStore.processPurchase(purchaseString);
         } else {
             Teak.log.e("purchase.succeeded.error", "Unable to process purchaseSucceeded, no active app store.");
         }
@@ -355,14 +351,17 @@ public class TeakInstance {
 
         @Override
         public void onActivityStarted(Activity activity) {
+            // None
         }
 
         @Override
         public void onActivityStopped(Activity activity) {
+            // None
         }
 
         @Override
         public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
+            // None
         }
     };
 

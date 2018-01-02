@@ -26,6 +26,7 @@ import io.teak.sdk.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.text.DecimalFormat;
@@ -107,7 +108,7 @@ public class Session {
             if (nextState == State.Invalid) return true;
 
             for (State allowedTransition : allowedTransitions[this.ordinal()]) {
-                if (nextState == allowedTransition) return true;
+                if (nextState.equals(allowedTransition)) return true;
             }
             return false;
         }
@@ -228,7 +229,6 @@ public class Session {
                 case IdentifyingUser: {
                     if (this.userId == null) {
                         invalidValuesForTransition.add(new Object[] {"userId", "null"});
-                        break;
                     }
                 } break;
 
@@ -450,16 +450,13 @@ public class Session {
                         Teak.log.i("session.fb_access_token", Helpers.mm.h("access_token", facebookAccessToken, "session_id", sessionId));
                         userInfoWasUpdated();
                     }
-                    break;
-                }
+                } break;
                 case AdvertisingInfoEvent.Type: {
                     userInfoWasUpdated();
-                    break;
-                }
+                } break;
                 case PushRegistrationEvent.Registered: {
                     userInfoWasUpdated();
-                    break;
-                }
+                } break;
             }
         }
     };
@@ -823,14 +820,15 @@ public class Session {
 
                         try {
                             // Resolve the deepLinkAttribution future
-                            Map<String, Object> attribution = deepLinkAttribution.get(5, TimeUnit.SECONDS);
-                            Uri uri = Uri.parse((String) attribution.get("deep_link"));
+                            final Map<String, Object> attribution = deepLinkAttribution.get(5, TimeUnit.SECONDS);
+                            final String deep_link = (String) attribution.get("deep_link");
+                            final URI uri = deep_link == null ? null : new URI(deep_link);
 
                             // See if TeakLinks can do anything with the deep link
-                            if (!DeepLink.processUri(uri) && teakNotifId != null) {
+                            if (uri != null && !DeepLink.processUri(uri) && teakNotifId != null) {
                                 // If this was a deep link from a Teak Notification, then go ahead and
                                 // try to find a different app to launch.
-                                Intent uriIntent = new Intent(Intent.ACTION_VIEW, uri);
+                                Intent uriIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(deep_link));
                                 uriIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                                 List<ResolveInfo> resolvedActivities = teakConfiguration.appConfiguration.packageManager.queryIntentActivities(uriIntent, 0);
                                 boolean safeToRedirect = true;
@@ -843,7 +841,7 @@ public class Session {
                             }
 
                             // Send reward broadcast
-                            String teakRewardId = attribution.get("teak_reward_id").toString();
+                            String teakRewardId = attribution.containsKey("teak_reward_id") ? attribution.get("teak_reward_id").toString() : null;
                             if (teakRewardId != null) {
                                 final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
                                 if (rewardFuture != null) {
@@ -864,7 +862,8 @@ public class Session {
                                         .start();
                                 }
                             }
-                        } catch (Exception ignored) {
+                        } catch (Exception e) {
+                            Teak.log.exception(e);
                         }
                     }
                 })
@@ -1029,7 +1028,7 @@ public class Session {
     }
     // endregion
 
-    private Map<String, Object> to_h() {
+    private Map<String, Object> toMap() {
         HashMap<String, Object> map = new HashMap<>();
         map.put("startDate", this.startDate.getTime() / 1000);
         return map;
@@ -1038,7 +1037,7 @@ public class Session {
     @Override
     public String toString() {
         try {
-            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.to_h())));
+            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toMap())));
         } catch (Exception ignored) {
             return super.toString();
         }

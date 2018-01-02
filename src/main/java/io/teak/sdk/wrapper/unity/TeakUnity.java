@@ -53,7 +53,7 @@ public class TeakUnity {
                     } break;
                 }
 
-                UnitySendMessage(eventName, eventData);
+                unitySendMessage(eventName, eventData);
             }
         });
     }
@@ -67,7 +67,7 @@ public class TeakUnity {
         return TeakUnity.unitySendMessage != null;
     }
 
-    private static void UnitySendMessage(String method, String message) {
+    private static void unitySendMessage(String method, String message) {
         if (TeakUnity.isAvailable()) {
             try {
                 TeakUnity.unitySendMessage.invoke(null, "TeakGameObject", method, message);
@@ -88,7 +88,7 @@ public class TeakUnity {
                             JSONObject eventData = new JSONObject();
                             eventData.put("route", route);
                             eventData.put("parameters", new JSONObject(parameters));
-                            TeakUnity.UnitySendMessage("DeepLink", eventData.toString());
+                            TeakUnity.unitySendMessage("DeepLink", eventData.toString());
                         }
                     } catch (Exception e) {
                         Teak.log.exception(e);

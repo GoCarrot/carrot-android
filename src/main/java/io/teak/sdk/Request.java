@@ -21,6 +21,7 @@ import android.util.Base64;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 
 import java.net.URL;
@@ -83,6 +84,10 @@ public class Request implements Runnable {
                 configurationPayload.put("device_manufacturer", configuration.deviceConfiguration.deviceManufacturer);
                 configurationPayload.put("device_model", configuration.deviceConfiguration.deviceModel);
                 configurationPayload.put("device_fallback", configuration.deviceConfiguration.deviceFallback);
+
+                if (configuration.debugConfiguration.isDebug()) {
+                    configurationPayload.put("debug", true);
+                }
             }
         });
     }
@@ -109,6 +114,10 @@ public class Request implements Runnable {
     }
 
     public Request(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
+        if (!endpoint.startsWith("/")) {
+            throw new IllegalArgumentException("Parameter 'endpoint' must start with '/' or things will break, and you will lose an hour of your life debugging.");
+        }
+
         this.hostname = hostname;
         this.endpoint = endpoint;
         this.payload = new HashMap<>(payload);
@@ -124,18 +133,27 @@ public class Request implements Runnable {
         this.payload.putAll(Request.configurationPayload);
     }
 
-    @Override
-    public void run() {
-        SecretKeySpec keySpec = new SecretKeySpec(Request.teakApiKey.getBytes(), "HmacSHA256");
-        String requestBody;
+    public static class Payload {
+        @SuppressWarnings("WeakerAccess")
+        public static String toSigningString(Map<String, Object> payload) throws UnsupportedEncodingException {
+            final StringBuilder builder = payloadToString(payload, false);
+            builder.deleteCharAt(builder.length() - 1);
+            return builder.toString();
+        }
 
-        try {
-            ArrayList<String> payloadKeys = new ArrayList<>(this.payload.keySet());
+        @SuppressWarnings("WeakerAccess")
+        public static String toRequestBody(Map<String, Object> payload, String sig) throws UnsupportedEncodingException {
+            final StringBuilder builder = payloadToString(payload, true);
+            builder.append("sig=").append(URLEncoder.encode(sig, "UTF-8"));
+            return builder.toString();
+        }
+
+        private static StringBuilder payloadToString(Map<String, Object> payload, boolean escape) throws UnsupportedEncodingException {
+            ArrayList<String> payloadKeys = new ArrayList<>(payload.keySet());
             Collections.sort(payloadKeys);
-
             StringBuilder builder = new StringBuilder();
             for (String key : payloadKeys) {
-                Object value = this.payload.get(key);
+                Object value = payload.get(key);
                 if (value != null) {
                     String valueString;
                     if (value instanceof Map) {
@@ -147,72 +165,68 @@ public class Request implements Runnable {
                     } else {
                         valueString = value.toString();
                     }
-                    builder.append(key).append("=").append(valueString).append("&");
+                    builder.append(key).append("=").append(escape ? URLEncoder.encode(valueString, "UTF-8") : valueString).append("&");
                 } else {
                     Teak.log.e("request", "Value for key is null.", Helpers.mm.h("key", key));
                 }
             }
-            builder.deleteCharAt(builder.length() - 1);
+            return builder;
+        }
+    }
 
-            String stringToSign = "POST\n" + this.hostname + "\n" + this.endpoint + "\n" + builder.toString();
-            Mac mac = Mac.getInstance("HmacSHA256");
+    @Override
+    public void run() {
+        final SecretKeySpec keySpec = new SecretKeySpec(Request.teakApiKey.getBytes(), "HmacSHA256");
+        String requestBody;
+
+        try {
+            final String stringToSign = "POST\n" + this.hostname + "\n" + this.endpoint + "\n" + Payload.toSigningString(this.payload);
+            final Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(keySpec);
-            byte[] result = mac.doFinal(stringToSign.getBytes());
+            final byte[] result = mac.doFinal(stringToSign.getBytes());
+            final String sig = Base64.encodeToString(result, Base64.NO_WRAP);
 
-            builder = new StringBuilder();
-            for (String key : payloadKeys) {
-                Object value = this.payload.get(key);
-                String valueString;
-                if (value instanceof Map) {
-                    valueString = new JSONObject((Map) value).toString();
-                } else if (value instanceof Array) {
-                    valueString = new JSONArray(Collections.singletonList(value)).toString();
-                } else if (value instanceof Collection) {
-                    valueString = new JSONArray((Collection) value).toString();
-                } else {
-                    valueString = value.toString();
-                }
-                builder.append(key).append("=").append(URLEncoder.encode(valueString, "UTF-8")).append("&");
-            }
-            builder.append("sig=").append(URLEncoder.encode(Base64.encodeToString(result, Base64.NO_WRAP), "UTF-8"));
-
-            requestBody = builder.toString();
+            requestBody = Payload.toRequestBody(this.payload, sig);
         } catch (Exception e) {
             Teak.log.exception(e);
             return;
         }
 
         try {
-            Teak.log.i("request.send", this.to_h());
-            long startTime = System.nanoTime();
+            Teak.log.i("request.send", this.toMap());
+            final long startTime = System.nanoTime();
+            final URL url = new URL("https://" + this.hostname + this.endpoint);
+            final IHttpsRequest request = new DefaultHttpsRequest(); // TODO: Do this properly with a Factory
+            final IHttpsRequest.Response response = request.synchronousRequest(url, requestBody);
 
-            URL url = new URL("https://" + this.hostname + this.endpoint);
+            final int statusCode = response == null ? 0 : response.statusCode;
+            final String body = response == null ? null : response.body;
 
-            IHttpsRequest request = new DefaultHttpsRequest(); // TODO: Do this properly with a Factory
-            IHttpsRequest.Response response = request.synchronousRequest(url, requestBody);
+            final Map<String, Object> h = this.toMap();
+            h.remove("payload");
+            h.put("response_time", (System.nanoTime() - startTime) / 1000000.0);
 
             if (response != null) {
-                Map<String, Object> h = this.to_h();
-                h.remove("payload");
-                h.put("response_time", (System.nanoTime() - startTime) / 1000000.0);
                 try {
                     h.put("payload", Helpers.jsonToMap(new JSONObject(response.body)));
                 } catch (Exception ignored) {
                 }
-                Teak.log.i("request.reply", h);
-
-                // For extending classes
-                done(response.statusCode, response.body);
             }
+
+            Teak.log.i("request.reply", h);
+
+            // For extending classes
+            done(statusCode, body);
         } catch (Exception e) {
             Teak.log.exception(e);
         }
     }
 
     protected void done(int responseCode, String responseBody) {
+        // None
     }
 
-    private Map<String, Object> to_h() {
+    private Map<String, Object> toMap() {
         HashMap<String, Object> map = new HashMap<>();
         map.put("request_id", this.requestId);
         map.put("hostname", this.hostname);
@@ -225,7 +239,7 @@ public class Request implements Runnable {
     @Override
     public String toString() {
         try {
-            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.to_h())));
+            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toMap())));
         } catch (Exception ignored) {
             return super.toString();
         }

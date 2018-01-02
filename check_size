@@ -1,0 +1,52 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+
+(cd size_check/ ; ./gradlew clean assembleWithTeakRelease assembleWithoutTeakRelease > /dev/null 2> /dev/null)
+
+print_size () {
+  (
+    stat --printf="%s" "$1" 2>/dev/null ||
+    stat -f%z "$1" 2>/dev/null
+  ) | awk '{print $1}'
+}
+
+withTeakSize=$(print_size size_check/app/build/outputs/apk/withTeak/release/app-withTeak-release-unsigned.apk)
+withoutTeakSize=$(print_size size_check/app/build/outputs/apk/withoutTeak/release/app-withoutTeak-release-unsigned.apk)
+
+declare -a columns
+declare -a withTeak
+declare -a withoutTeak
+
+IFS=, read -r col1 col2 col3 < size_check/app/build/outputs/dexcount/withTeakRelease.csv
+columns[0]=$col1
+columns[1]=$col2
+columns[2]=$col3
+
+while IFS=, read -r col1 col2 col3
+do
+  withTeak[0]=$col1
+  withTeak[1]=$col2
+  withTeak[2]=$col3
+done < size_check/app/build/outputs/dexcount/withTeakRelease.csv
+
+while IFS=, read -r col1 col2 col3
+do
+  withoutTeak[0]=$col1
+  withoutTeak[1]=$col2
+  withoutTeak[2]=$col3
+done < size_check/app/build/outputs/dexcount/withoutTeakRelease.csv
+
+padding=12
+headerPadding=$((padding + ${#columns[0]}))
+
+printf "Teak Android SDK Size (Release)\n"
+printf "%19s %'d bytes\n" "With Teak" ${withTeakSize}
+printf "%19s %'d bytes\n" "Without Teak" ${withoutTeakSize}
+printf "\n"
+printf "%${headerPadding}s | %s | %s\n" ${columns[0]} ${columns[1]} ${columns[2]}
+printf "%${padding}s %'6d | %'6d | %'6d\n" "With Teak" ${withTeak[0]} ${withTeak[1]} ${withTeak[2]}
+printf "%${padding}s %'6d | %'6d | %'6d\n" "Without Teak" ${withoutTeak[0]} ${withoutTeak[1]} ${withoutTeak[2]}
+printf "\n"
+printf "Adds a maximum of %'dkb, %'d methods, %'d fields, %'d classes (without stripping)\n" $(((withTeakSize - withoutTeakSize) / 1024)) $((withTeak[0] - withoutTeak[0])) $((withTeak[1] - withoutTeak[1])) $((withTeak[2] - withoutTeak[2]))
+

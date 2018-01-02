@@ -17,14 +17,12 @@ package io.teak.sdk.store;
 import android.content.Intent;
 import android.content.Context;
 
-import io.teak.sdk.json.JSONObject;
-
 public interface IStore {
     void init(Context context);
 
     void dispose();
 
-    void processPurchaseJson(JSONObject originalJson);
+    void processPurchase(String purchaseDataAsString);
 
     void checkActivityResultForPurchase(int resultCode, Intent data);
 

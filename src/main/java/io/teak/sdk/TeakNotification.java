@@ -31,14 +31,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.Callable;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-
-import java.net.URL;
-import java.net.URLEncoder;
-
 import javax.net.ssl.HttpsURLConnection;
 
 import io.teak.sdk.json.JSONArray;
@@ -229,66 +221,43 @@ public class TeakNotification {
                 public void run(Session session) {
                     HttpsURLConnection connection = null;
 
-                    Teak.log.i("reward.claim", mm.h("teakRewardId", teakRewardId));
+                    Teak.log.i("reward.claim.request", mm.h("teakRewardId", teakRewardId));
 
                     try {
                         // https://rewards.gocarrot.com/<<teak_reward_id>>/clicks?clicking_user_id=<<your_user_id>>
-                        String requestBody = "clicking_user_id=" + URLEncoder.encode(session.userId(), "UTF-8");
+                        //String requestBody = "clicking_user_id=" + URLEncoder.encode(session.userId(), "UTF-8");
+                        HashMap<String, Object> payload = new HashMap<>();
+                        payload.put("clicking_user_id", session.userId());
 
-                        URL url = new URL("https://rewards.gocarrot.com/" + teakRewardId + "/clicks");
-                        connection = (HttpsURLConnection) url.openConnection();
+                        new Request("rewards.gocarrot.com", "/" + teakRewardId + "/clicks", payload, session) {
+                            @Override
+                            protected void done(int responseCode, String responseBody) {
+                                try {
+                                    JSONObject responseJson = new JSONObject(responseBody);
+                                    JSONObject rewardResponse = responseJson.optJSONObject("response");
 
-                        connection.setRequestProperty("Accept-Charset", "UTF-8");
-                        connection.setUseCaches(false);
-                        connection.setDoOutput(true);
-                        connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                        connection.setRequestProperty("Content-Length",
-                            "" + Integer.toString(requestBody.getBytes().length));
+                                    JSONObject fullParsedResponse = new JSONObject();
+                                    fullParsedResponse.put("status", rewardResponse.get("status"));
+                                    if (rewardResponse.optJSONObject("reward") != null) {
+                                        fullParsedResponse.put("reward", rewardResponse.get("reward"));
+                                    } else if (rewardResponse.opt("reward") != null) {
+                                        fullParsedResponse.put("reward", new JSONObject(rewardResponse.getString("reward")));
+                                    }
+                                    Reward reward = new Reward(fullParsedResponse);
 
-                        // Send request
-                        DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
-                        wr.writeBytes(requestBody);
-                        wr.flush();
-                        wr.close();
+                                    Teak.log.i("reward.claim.response", Helpers.jsonToMap(responseJson));
 
-                        // Get Response
-                        InputStream is;
-                        if (connection.getResponseCode() < 400) {
-                            is = connection.getInputStream();
-                        } else {
-                            is = connection.getErrorStream();
+                                    q.offer(reward);
+                                } catch (Exception e) {
+                                    Teak.log.exception(e);
+                                    q.offer(null); // TODO: Fix this?
+                                }
+                            }
                         }
-                        BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-                        String line;
-                        StringBuilder response = new StringBuilder();
-                        while ((line = rd.readLine()) != null) {
-                            response.append(line);
-                            response.append('\r');
-                        }
-                        rd.close();
-
-                        JSONObject responseJson = new JSONObject(response.toString());
-                        JSONObject rewardResponse = responseJson.optJSONObject("response");
-
-                        JSONObject fullParsedResponse = new JSONObject();
-                        fullParsedResponse.put("status", rewardResponse.get("status"));
-                        if (rewardResponse.optJSONObject("reward") != null) {
-                            fullParsedResponse.put("reward", rewardResponse.get("reward"));
-                        } else if (rewardResponse.opt("reward") != null) {
-                            fullParsedResponse.put("reward", new JSONObject(rewardResponse.getString("reward")));
-                        }
-                        Reward reward = new Reward(fullParsedResponse);
-
-                        Teak.log.i("reward.claim", Helpers.jsonToMap(responseJson));
-
-                        q.offer(reward);
+                            .run();
                     } catch (Exception e) {
                         Teak.log.exception(e);
                         q.offer(null); // TODO: Fix this?
-                    } finally {
-                        if (connection != null) {
-                            connection.disconnect();
-                        }
                     }
                 }
             });
@@ -586,7 +555,7 @@ public class TeakNotification {
     final String teakCreativeName;
 
     // v1
-    public final int platformId;
+    public int platformId;
     public final long teakNotifId;
 
     final String message;
@@ -603,6 +572,11 @@ public class TeakNotification {
     // v2+
     final JSONObject display;
 
+    // Animation
+    public boolean isAnimated;
+
+    public final Bundle bundle;
+
     public TeakNotification(Bundle bundle) {
         this.message = bundle.getString("message");
         this.longText = bundle.getString("longText");
@@ -610,6 +584,8 @@ public class TeakNotification {
         this.imageAssetA = bundle.getString("imageAssetA");
         this.teakDeepLink = bundle.getString("teakDeepLink");
         this.teakCreativeName = bundle.getString("teakCreativeName");
+        this.isAnimated = false;
+        this.bundle = bundle;
 
         JSONObject tempExtras = null;
         try {

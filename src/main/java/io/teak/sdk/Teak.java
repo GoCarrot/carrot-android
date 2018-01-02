@@ -284,7 +284,7 @@ public class Teak extends BroadcastReceiver {
             JSONObject purchase = new JSONObject(json);
             Teak.log.i("purchase.open_iab", Helpers.jsonToMap(purchase));
 
-            final JSONObject originalJson = new JSONObject(purchase.getString("originalJson"));
+            final String originalJson = purchase.getString("originalJson");
             if (Instance != null) {
                 asyncExecutor.submit(new Runnable() {
                     @Override
@@ -300,7 +300,7 @@ public class Teak extends BroadcastReceiver {
 
     // Called by Unity integration
     @SuppressWarnings("unused")
-    public static void prime31PurchaseSucceeded(String json) {
+    public static void prime31PurchaseSucceeded(final String json) {
         try {
             final JSONObject originalJson = new JSONObject(json);
             Teak.log.i("purchase.prime_31", Helpers.jsonToMap(originalJson));
@@ -309,7 +309,7 @@ public class Teak extends BroadcastReceiver {
                 asyncExecutor.submit(new Runnable() {
                     @Override
                     public void run() {
-                        Instance.purchaseSucceeded(originalJson);
+                        Instance.purchaseSucceeded(json);
                     }
                 });
             }

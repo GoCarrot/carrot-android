@@ -14,7 +14,6 @@
  */
 package io.teak.sdk;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
@@ -141,20 +140,21 @@ class Raven implements Thread.UncaughtExceptionHandler {
     }
 
     static Map<String, Object> throwableToMap(Throwable t) {
-        if (t instanceof InvocationTargetException && t.getCause() != null) {
-            t = t.getCause();
+        Throwable throwable = t;
+        if (throwable instanceof InvocationTargetException && throwable.getCause() != null) {
+            throwable = throwable.getCause();
         }
 
         HashMap<String, Object> exception = new HashMap<>();
 
-        exception.put("type", t.getClass().getSimpleName());
-        exception.put("value", t.getMessage());
-        exception.put("module", t.getClass().getPackage().getName());
+        exception.put("type", throwable.getClass().getSimpleName());
+        exception.put("value", throwable.getMessage());
+        exception.put("module", throwable.getClass().getPackage().getName());
 
         HashMap<String, Object> stacktrace = new HashMap<>();
         ArrayList<Object> stackFrames = new ArrayList<>();
 
-        StackTraceElement[] steArray = t.getStackTrace();
+        StackTraceElement[] steArray = throwable.getStackTrace();
         for (int i = steArray.length - 1; i >= 0; i--) {
             StackTraceElement ste = steArray[i];
             HashMap<String, Object> frame = new HashMap<>();
@@ -195,13 +195,14 @@ class Raven implements Thread.UncaughtExceptionHandler {
             return;
         }
 
-        if (t instanceof InvocationTargetException && t.getCause() != null) {
-            t = t.getCause();
+        Throwable throwable = t;
+        if (throwable instanceof InvocationTargetException && throwable.getCause() != null) {
+            throwable = throwable.getCause();
         }
 
         HashMap<String, Object> additions = new HashMap<>();
         ArrayList<Object> exceptions = new ArrayList<>();
-        Map<String, Object> exception = Raven.throwableToMap(t);
+        Map<String, Object> exception = Raven.throwableToMap(throwable);
 
         exceptions.add(exception);
         additions.put("exception", exceptions);
@@ -214,7 +215,7 @@ class Raven implements Thread.UncaughtExceptionHandler {
         }
     }
 
-    private Map<String, Object> to_h() {
+    private Map<String, Object> toMap() {
         HashMap<String, Object> ret = new HashMap<>();
         ret.put("appId", this.appId);
         ret.put("applicationContext", this.applicationContext);
@@ -225,7 +226,7 @@ class Raven implements Thread.UncaughtExceptionHandler {
     @Override
     public String toString() {
         try {
-            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.to_h())));
+            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toMap())));
         } catch (Exception ignored) {
             return super.toString();
         }
@@ -235,7 +236,8 @@ class Raven implements Thread.UncaughtExceptionHandler {
         HashMap<String, Object> payload = new HashMap<>();
         Date timestamp = new Date();
 
-        Report(String message, @NonNull Level level, HashMap<String, Object> additions) {
+        Report(String m, @NonNull Level level, HashMap<String, Object> additions) {
+            String message = m;
             if (message == null || message.length() < 1) {
                 message = "undefined";
             }
@@ -282,7 +284,7 @@ class Raven implements Thread.UncaughtExceptionHandler {
             }
         }
 
-        Map<String, Object> to_h() {
+        Map<String, Object> toMap() {
             HashMap<String, Object> ret = new HashMap<>();
             ret.put("payload", this.payload);
             ret.put("timestamp", this.timestamp);
@@ -292,7 +294,7 @@ class Raven implements Thread.UncaughtExceptionHandler {
         @Override
         public String toString() {
             try {
-                return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.to_h())));
+                return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toMap())));
             } catch (Exception ignored) {
                 return super.toString();
             }

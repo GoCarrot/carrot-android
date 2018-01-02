@@ -42,12 +42,10 @@ public class ExtensionContext extends FREContext {
                     switch (eventType) {
                         case NotificationLaunch: {
                             eventName = "LAUNCHED_FROM_NOTIFICATION";
-                        }
-                        break;
+                        } break;
                         case RewardClaim: {
                             eventName = "ON_REWARD";
-                        }
-                        break;
+                        } break;
                     }
                     Extension.context.dispatchStatusEventAsync(eventName, eventData);
                 }
@@ -81,5 +79,6 @@ public class ExtensionContext extends FREContext {
 
     @Override
     public void dispose() {
+        // None
     }
 }

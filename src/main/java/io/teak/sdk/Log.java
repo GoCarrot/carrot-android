@@ -165,11 +165,11 @@ public class Log {
                     log(Level.Info, "sdk_init", null);
 
                     // Log full device configuration, then add common payload after
-                    log(Level.Info, "configuration.device", configuration.deviceConfiguration.to_h());
+                    log(Level.Info, "configuration.device", configuration.deviceConfiguration.toMap());
                     commonPayload.put("device_id", configuration.deviceConfiguration.deviceId);
 
                     // Log full app configuration, then add common payload after
-                    log(Level.Info, "configuration.app", configuration.appConfiguration.to_h());
+                    log(Level.Info, "configuration.app", configuration.appConfiguration.toMap());
                     commonPayload.put("bundle_id", configuration.appConfiguration.bundleId);
                     commonPayload.put("app_id", configuration.appConfiguration.appId);
                     commonPayload.put("client_app_version", configuration.appConfiguration.appVersion);

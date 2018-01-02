@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="io.teak.app.sizecheck">
+
+    <permission android:name="io.teak.app.sizecheck" android:protectionLevel="signature"/>
+    <uses-permission android:name="io.teak.app.sizecheck.permission.C2D_MESSAGE"/>
+    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE"/>
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity android:name=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <receiver android:name="io.teak.sdk.Teak"
+            android:exported="true"
+            android:permission="com.google.android.c2dm.permission.SEND">
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+                <action android:name="com.google.android.c2dm.intent.REGISTRATION" />
+                <action android:name="io.teak.app.sizecheck.intent.TEAK_NOTIFICATION_OPENED" />
+                <action android:name="io.teak.app.sizecheck.intent.TEAK_NOTIFICATION_CLEARED" />
+                <category android:name="io.teak.app.sizecheck" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>

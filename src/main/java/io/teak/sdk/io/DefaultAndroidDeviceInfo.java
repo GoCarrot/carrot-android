@@ -81,7 +81,7 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
         if (tempDeviceId == null) {
             try {
                 String androidId = Settings.Secure.getString(this.context.getContentResolver(), Settings.Secure.ANDROID_ID);
-                if (androidId.equals("9774d56d682e549c")) {
+                if ("9774d56d682e549c".equals(androidId)) {
                     Teak.log.e("getDeviceId", "Settings.Secure.ANDROID_ID == '9774d56d682e549c', falling back to random UUID stored in preferences.");
                 } else {
                     tempDeviceId = UUID.nameUUIDFromBytes(androidId.getBytes("utf8")).toString();

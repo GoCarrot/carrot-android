@@ -20,6 +20,7 @@
 
     <application>
         <service android:name="io.teak.sdk.service.RavenService" android:process=":teak.raven" android:exported="false"/>
+        <service android:name="io.teak.sdk.service.DeviceStateService" android:process=":teak.device_state" android:exported="false"/>
 
         <service android:name="io.teak.sdk.InstanceIDListenerService" android:exported="false" >
             <intent-filter>

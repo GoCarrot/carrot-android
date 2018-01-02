@@ -26,6 +26,7 @@ import android.content.pm.ResolveInfo;
 
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.SparseArray;
 
 import java.util.HashMap;
 import java.util.List;
@@ -42,8 +43,7 @@ import io.teak.sdk.TeakEvent;
 import io.teak.sdk.event.PurchaseEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
 
-@SuppressWarnings("unused")
-class GooglePlay implements IStore {
+public class GooglePlay implements IStore {
     private Object mService;
     private ServiceConnection mServiceConn;
     private Context mContext;
@@ -53,14 +53,27 @@ class GooglePlay implements IStore {
     private static final String ITEM_TYPE_SUBS = "subs";
 
     private static final int BILLING_RESPONSE_RESULT_OK = 0;
-    //private static final int BILLING_RESPONSE_RESULT_USER_CANCELED = 1;
-    //private static final int BILLING_RESPONSE_RESULT_SERVICE_UNAVAILABLE = 2;
-    //private static final int BILLING_RESPONSE_RESULT_BILLING_UNAVAILABLE = 3;
-    //private static final int BILLING_RESPONSE_RESULT_ITEM_UNAVAILABLE = 4;
-    //public static final int BILLING_RESPONSE_RESULT_DEVELOPER_ERROR = 5;
-    //private static final int BILLING_RESPONSE_RESULT_ERROR = 6;
-    //private static final int BILLING_RESPONSE_RESULT_ITEM_ALREADY_OWNED = 7;
-    //private static final int BILLING_RESPONSE_RESULT_ITEM_NOT_OWNED = 8;
+    private static final int BILLING_RESPONSE_RESULT_USER_CANCELED = 1;
+    private static final int BILLING_RESPONSE_RESULT_SERVICE_UNAVAILABLE = 2;
+    private static final int BILLING_RESPONSE_RESULT_BILLING_UNAVAILABLE = 3;
+    private static final int BILLING_RESPONSE_RESULT_ITEM_UNAVAILABLE = 4;
+    private static final int BILLING_RESPONSE_RESULT_DEVELOPER_ERROR = 5;
+    private static final int BILLING_RESPONSE_RESULT_ERROR = 6;
+    private static final int BILLING_RESPONSE_RESULT_ITEM_ALREADY_OWNED = 7;
+    private static final int BILLING_RESPONSE_RESULT_ITEM_NOT_OWNED = 8;
+
+    private static final SparseArray<String> BILLING_RESPONSE = new SparseArray<>();
+    static {
+        BILLING_RESPONSE.put(BILLING_RESPONSE_RESULT_OK, "BILLING_RESPONSE_RESULT_OK");
+        BILLING_RESPONSE.put(BILLING_RESPONSE_RESULT_USER_CANCELED, "BILLING_RESPONSE_RESULT_USER_CANCELED");
+        BILLING_RESPONSE.put(BILLING_RESPONSE_RESULT_SERVICE_UNAVAILABLE, "BILLING_RESPONSE_RESULT_SERVICE_UNAVAILABLE");
+        BILLING_RESPONSE.put(BILLING_RESPONSE_RESULT_BILLING_UNAVAILABLE, "BILLING_RESPONSE_RESULT_BILLING_UNAVAILABLE");
+        BILLING_RESPONSE.put(BILLING_RESPONSE_RESULT_ITEM_UNAVAILABLE, "BILLING_RESPONSE_RESULT_ITEM_UNAVAILABLE");
+        BILLING_RESPONSE.put(BILLING_RESPONSE_RESULT_DEVELOPER_ERROR, "BILLING_RESPONSE_RESULT_DEVELOPER_ERROR");
+        BILLING_RESPONSE.put(BILLING_RESPONSE_RESULT_ERROR, "BILLING_RESPONSE_RESULT_ERROR");
+        BILLING_RESPONSE.put(BILLING_RESPONSE_RESULT_ITEM_ALREADY_OWNED, "BILLING_RESPONSE_RESULT_ITEM_ALREADY_OWNED");
+        BILLING_RESPONSE.put(BILLING_RESPONSE_RESULT_ITEM_NOT_OWNED, "BILLING_RESPONSE_RESULT_ITEM_NOT_OWNED");
+    }
 
     private static final String RESPONSE_CODE = "RESPONSE_CODE";
     private static final String RESPONSE_GET_SKU_DETAILS_LIST = "DETAILS_LIST";
@@ -110,10 +123,7 @@ class GooglePlay implements IStore {
                     // Check for v5 subscriptions support. This is needed for
                     // getBuyIntentToReplaceSku which allows for subscription update
                     response = (Integer) m.invoke(mService, 5, packageName, ITEM_TYPE_SUBS);
-                    //noinspection StatementWithEmptyBody
-                    if (response == BILLING_RESPONSE_RESULT_OK) {
-                        // Subscription v5 available
-                    } else {
+                    if (response != BILLING_RESPONSE_RESULT_OK) {
                         // Subscription v5 not available
 
                         // check for v3 subscriptions support
@@ -121,8 +131,6 @@ class GooglePlay implements IStore {
                         //noinspection StatementWithEmptyBody
                         if (response == BILLING_RESPONSE_RESULT_OK) {
                             // Subscription v3 available
-                        } else {
-                            // Subscriptsion v3 not available
                         }
                     }
                 } catch (Exception e) {
@@ -165,7 +173,16 @@ class GooglePlay implements IStore {
         mService = null;
     }
 
-    public void processPurchaseJson(JSONObject originalJson) {
+    @Override
+    public void processPurchase(String purchaseString) {
+        try {
+            this.processPurchaseJson(new JSONObject(purchaseString));
+        } catch (Exception e) {
+            Teak.log.exception(e);
+        }
+    }
+
+    private void processPurchaseJson(JSONObject originalJson) {
         try {
             Map<String, Object> payload = new HashMap<>();
             payload.put("purchase_token", originalJson.get("purchaseToken"));
@@ -178,10 +195,10 @@ class GooglePlay implements IStore {
             JSONObject skuDetails = querySkuDetails((String) payload.get("product_id"));
             if (skuDetails != null) {
                 if (skuDetails.has("price_amount_micros")) {
-                    payload.put("price_currency_code", skuDetails.getString("price_currency_code"));
-                    payload.put("price_amount_micros", skuDetails.getString("price_amount_micros"));
+                    payload.put("price_currency_code", skuDetails.get("price_currency_code"));
+                    payload.put("price_amount_micros", skuDetails.get("price_amount_micros"));
                 } else if (skuDetails.has("price_string")) {
-                    payload.put("price_string", skuDetails.getString("price_string"));
+                    payload.put("price_string", skuDetails.get("price_string"));
                 }
             }
 
@@ -269,26 +286,29 @@ class GooglePlay implements IStore {
     }
 
     public void checkActivityResultForPurchase(int resultCode, Intent data) {
-        String purchaseData = data.getStringExtra(RESPONSE_INAPP_PURCHASE_DATA);
-        String dataSignature = data.getStringExtra(RESPONSE_INAPP_SIGNATURE);
+        if (data == null || data.getExtras() == null) return;
 
-        Teak.log.i("google_play", "Checking activity result for purchase.");
+        Teak.log.i("google_play.check_activity.bundle", Helpers.jsonToMap(Helpers.bundleToJson(data.getExtras())));
+
+        final String purchaseData = data.getStringExtra(RESPONSE_INAPP_PURCHASE_DATA);
+        final String dataSignature = data.getStringExtra(RESPONSE_INAPP_SIGNATURE);
+        final int responseCode = getResponseCodeFromIntent(data);
+        final String responseCodeString = BILLING_RESPONSE.get(responseCode);
+
+        if(responseCodeString != null) {
+            Teak.log.i("google_play.check_activity.response_code", Helpers.mm.h("RESPONSE_CODE", responseCodeString));
+        }
 
         // Check for purchase activity result
-        if (purchaseData != null && dataSignature != null) {
-            int responseCode = getResponseCodeFromIntent(data);
-
-            if (resultCode == Activity.RESULT_OK && responseCode == BILLING_RESPONSE_RESULT_OK) {
-                try {
-                    processPurchaseJson(new JSONObject(purchaseData));
-                } catch (Exception e) {
-                    Teak.log.exception(e);
-                }
-            } else {
-                TeakEvent.postEvent(new PurchaseFailedEvent(responseCode));
+        if (purchaseData != null && dataSignature != null &&
+                resultCode == Activity.RESULT_OK && responseCode == BILLING_RESPONSE_RESULT_OK) {
+            try {
+                processPurchaseJson(new JSONObject(purchaseData));
+            } catch (Exception e) {
+                Teak.log.exception(e);
             }
-        } else {
-            Teak.log.i("google_play", "Checking activity result for purchase.");
+        } else if (responseCode > 0) {
+            TeakEvent.postEvent(new PurchaseFailedEvent(responseCode));
         }
     }
 }

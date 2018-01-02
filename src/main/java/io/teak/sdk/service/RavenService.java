@@ -15,10 +15,7 @@
 package io.teak.sdk.service;
 
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.os.IBinder;
 import android.util.Log;
@@ -29,18 +26,18 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.zip.GZIPOutputStream;
 
 import javax.net.ssl.HttpsURLConnection;
 
 public class RavenService extends Service {
     public static final String LOG_TAG = "Teak.Raven.Service";
-    public static final int DATABASE_VERSION = 1;
 
     public static final int SENTRY_VERSION = 7;
     public static final String TEAK_SENTRY_VERSION = "1.0.0";
@@ -58,11 +55,11 @@ public class RavenService extends Service {
 
             if (appId != null && !appId.isEmpty()) {
                 AppReporter appReporter;
-                if (!appReporterMap.containsKey(appId)) {
-                    appReporter = new AppReporter(this, appId);
-                    appReporterMap.put(appId, appReporter);
+                if (!this.appReporterMap.containsKey(appId)) {
+                    appReporter = new AppReporter();
+                    this.appReporterMap.put(appId, appReporter);
                 } else {
-                    appReporter = appReporterMap.get(appId);
+                    appReporter = this.appReporterMap.get(appId);
                 }
 
                 String action = intent.getAction();
@@ -90,8 +87,6 @@ public class RavenService extends Service {
     @Override
     public void onDestroy() {
         Log.d(LOG_TAG, "Lifecycle - onDestroy");
-        for (Map.Entry<String, AppReporter> entry : appReporterMap.entrySet()) {
-        }
     }
 
     @Override
@@ -99,21 +94,22 @@ public class RavenService extends Service {
         return null;
     }
 
-    private static final String[] EXCEPTIONS_READ_COLUMNS = {"rowid", "payload", "timestamp", "retries"};
-
     private class AppReporter {
-        private DatabaseHelper databaseHelper;
         private String SENTRY_KEY;
         private String SENTRY_SECRET;
         private URL endpoint;
-
-        AppReporter(Context context, String appId) {
-            databaseHelper = new DatabaseHelper(context, "raven." + appId + ".db");
-        }
+        private final ArrayList<ReportSender> queuedReports = new ArrayList<>();
+        private final ExecutorService reportExecutor = Executors.newSingleThreadExecutor();
 
         void reportException(Intent intent) {
-            Thread senderThread = new Thread(new ReportSender(intent));
-            senderThread.start();
+            ReportSender report = new ReportSender(intent);
+            synchronized (this.queuedReports) {
+                if (this.endpoint == null) {
+                    this.queuedReports.add(report);
+                } else {
+                    this.reportExecutor.execute(report);
+                }
+            }
         }
 
         void setDsn(Intent intent) {
@@ -137,19 +133,25 @@ public class RavenService extends Service {
                 SENTRY_KEY = userInfo[0];
                 SENTRY_SECRET = userInfo[1];
 
-                endpoint = new URL(String.format("%s://%s%s/api%s/store/",
+                this.endpoint = new URL(String.format("%s://%s%s/api%s/store/",
                     uri.getScheme(), uri.getHost(), port, project));
+
+                synchronized (this.queuedReports) {
+                    for (ReportSender report : this.queuedReports) {
+                        this.reportExecutor.execute(report);
+                    }
+                }
             } catch (Exception e) {
                 Log.e(LOG_TAG, "Error parsing DSN: '" + uri.toString() + "'" + Log.getStackTraceString(e));
             }
         }
 
-        class ReportSender implements Runnable {
-            long timestamp;
-            JSONObject requestBody;
+        private class ReportSender implements Runnable {
+            private long timestamp;
+            private JSONObject requestBody;
 
             ReportSender(Intent intent) {
-                timestamp = intent.getLongExtra("timestamp", new Date().getTime() / 1000L);
+                this.timestamp = intent.getLongExtra("timestamp", new Date().getTime() / 1000L);
                 try {
                     requestBody = new JSONObject(intent.getStringExtra("payload"));
                 } catch (Exception e) {
@@ -159,7 +161,7 @@ public class RavenService extends Service {
 
             @Override
             public void run() {
-                if (requestBody == null || endpoint == null) return;
+                if (this.requestBody == null || endpoint == null) return;
 
                 HttpsURLConnection connection = null;
                 BufferedReader rd = null;
@@ -174,10 +176,10 @@ public class RavenService extends Service {
                     connection.setRequestProperty("User-Agent", SENTRY_CLIENT);
                     connection.setRequestProperty("X-Sentry-Auth",
                         String.format(Locale.US, "Sentry sentry_version=%d,sentry_timestamp=%d,sentry_key=%s,sentry_secret=%s,sentry_client=%s",
-                            SENTRY_VERSION, timestamp, SENTRY_KEY, SENTRY_SECRET, SENTRY_CLIENT));
+                            SENTRY_VERSION, this.timestamp, SENTRY_KEY, SENTRY_SECRET, SENTRY_CLIENT));
 
                     GZIPOutputStream wr = new GZIPOutputStream(connection.getOutputStream());
-                    wr.write(requestBody.toString().getBytes());
+                    wr.write(this.requestBody.toString().getBytes());
                     wr.flush();
                     wr.close();
 
@@ -215,41 +217,6 @@ public class RavenService extends Service {
                         connection.disconnect();
                     }
                 }
-            }
-        }
-
-        // TODO: Pull this class out
-        class DatabaseHelper extends SQLiteOpenHelper {
-            private AtomicInteger openCounter = new AtomicInteger();
-            private SQLiteDatabase database;
-
-            DatabaseHelper(Context context, String name) {
-                super(context, name, null, DATABASE_VERSION);
-            }
-
-            public synchronized SQLiteDatabase acquire() {
-                if (openCounter.incrementAndGet() == 1) {
-                    database = getWritableDatabase();
-                }
-                return database;
-            }
-
-            public synchronized void release() {
-                if (openCounter.decrementAndGet() == 0) {
-                    database.close();
-                }
-            }
-
-            @Override
-            public void onCreate(SQLiteDatabase db) {
-                db.execSQL("CREATE TABLE IF NOT EXISTS exceptions(payload TEXT, timestamp INTEGER, retries INTEGER)");
-            }
-
-            @Override
-            public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-                Log.d(LOG_TAG, "Upgrading database " + db + " from version " + oldVersion + " to " + newVersion);
-                db.execSQL("DROP TABLE IF EXISTS exceptions");
-                onCreate(db);
             }
         }
     }

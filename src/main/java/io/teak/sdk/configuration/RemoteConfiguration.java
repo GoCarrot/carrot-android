@@ -75,7 +75,7 @@ public class RemoteConfiguration {
                                     nullInsteadOfEmpty(response.isNull("app_sentry_dsn") ? null : response.getString("app_sentry_dsn")),
                                     nullInsteadOfEmpty(response.isNull("gcm_sender_id") ? null : response.getString("gcm_sender_id")));
 
-                                Teak.log.i("configuration.remote", configuration.to_h());
+                                Teak.log.i("configuration.remote", configuration.toHash());
                                 TeakEvent.postEvent(new RemoteConfigurationEvent(configuration));
                             } catch (Exception e) {
                                 Teak.log.exception(e);
@@ -103,7 +103,7 @@ public class RemoteConfiguration {
     }
     // endregion
 
-    private Map<String, Object> to_h() {
+    private Map<String, Object> toHash() {
         HashMap<String, Object> ret = new HashMap<>();
         ret.put("hostname", this.hostname);
         ret.put("sdkSentryDsn", this.sdkSentryDsn);
@@ -114,7 +114,7 @@ public class RemoteConfiguration {
     @Override
     public String toString() {
         try {
-            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.to_h())));
+            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toHash())));
         } catch (Exception ignored) {
             return super.toString();
         }

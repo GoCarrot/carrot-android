@@ -29,6 +29,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.v4.app.NotificationCompat;
 import android.text.Html;
 import android.text.Spanned;
@@ -36,13 +38,16 @@ import android.text.SpannedString;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RemoteViews;
 import android.widget.TextView;
+import android.widget.ViewFlipper;
 
 import io.teak.sdk.json.JSONObject;
 
 import java.io.BufferedInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -52,6 +57,11 @@ import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
+
+import javax.net.ssl.SSLException;
 
 public class NotificationBuilder {
     public static Notification createNativeNotification(Context context, Bundle bundle, TeakNotification teakNotificaton) {
@@ -105,6 +115,7 @@ public class NotificationBuilder {
         NotificationCompat.Builder builder;
         if (targetSdkVersion >= Build.VERSION_CODES.O) {
             builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
+            builder.setGroup(UUID.randomUUID().toString());
         } else {
             //noinspection deprecation
             builder = new NotificationCompat.Builder(context);
@@ -112,7 +123,7 @@ public class NotificationBuilder {
         return builder;
     }
 
-    private static Notification createNativeNotificationV1Plus(final Context context, Bundle bundle, final TeakNotification teakNotificaton) throws Exception {
+    private static Notification createNativeNotificationV1Plus(final Context context, final Bundle bundle, final TeakNotification teakNotificaton) throws Exception {
         // Because we can't be certain that the R class will line up with what is at SDK build time
         // like in the case of Unity et. al.
         class IdHelper {
@@ -217,30 +228,34 @@ public class NotificationBuilder {
             builder.setLargeIcon(largeNotificationIcon);
         }
 
-        Random rng = new Random();
+        // Intent creation helper
+        final Random rng = new Random();
+        final ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
+        class PendingIntentHelper {
+            PendingIntent forActionButton(String action, String deepLink) {
+                Bundle bundleCopy = new Bundle(bundle);
+                if (deepLink != null) {
+                    bundleCopy.putString("teakDeepLink", deepLink);
+                    bundleCopy.putBoolean("closeSystemDialogs", true);
+                }
+                Intent pushOpenedIntent = new Intent(action);
+                pushOpenedIntent.putExtras(bundleCopy);
+                pushOpenedIntent.setComponent(cn);
+                return PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
+            }
 
-        ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
-
-        // Create intent to fire if/when notification is cleared
-        try {
-            Intent pushClearedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX);
-            pushClearedIntent.putExtras(bundle);
-            pushClearedIntent.setComponent(cn);
-            PendingIntent pushClearedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
-            builder.setDeleteIntent(pushClearedPendingIntent);
-        } catch (Exception e) {
-            if (!bundle.getBoolean("teakUnitTest")) {
-                throw e;
+            PendingIntent get(String action) {
+                return forActionButton(action, null);
             }
         }
+        final PendingIntentHelper pendingIntent = new PendingIntentHelper();
 
-        // Create intent to fire if/when notification is opened, attach bundle info
         try {
-            Intent pushOpenedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX);
-            pushOpenedIntent.putExtras(bundle);
-            pushOpenedIntent.setComponent(cn);
-            PendingIntent pushOpenedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
-            builder.setContentIntent(pushOpenedPendingIntent);
+            // Create intent to fire if/when notification is cleared
+            builder.setDeleteIntent(pendingIntent.get(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX));
+
+            // Create intent to fire if/when notification is opened, attach bundle info
+            builder.setContentIntent(pendingIntent.get(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX));
         } catch (Exception e) {
             if (!bundle.getBoolean("teakUnitTest")) {
                 throw e;
@@ -263,45 +278,134 @@ public class NotificationBuilder {
 
         class ViewBuilder {
             private RemoteViews buildViews(String name) throws Exception {
-                int viewLayout = R.layout(name);
-                RemoteViews remoteViews = new RemoteViews(
-                    context.getPackageName(),
-                    viewLayout);
+                final int viewLayout = R.layout(name);
+                final RemoteViews remoteViews = new RemoteViews(context.getPackageName(), viewLayout);
 
                 // To let us query for information about the view
-                LayoutInflater factory = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                final LayoutInflater factory = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                 if (factory == null) {
                     throw new Exception("Unable to get LayoutInflater service.");
                 }
-                View inflatedView = factory.inflate(viewLayout, null);
+
+                // ViewFlipper must inflate on main thread
+                FutureTask<View> viewInflaterRunnable = new FutureTask<>(new Callable<View>() {
+                    @Override
+                    public View call() throws Exception {
+                        return factory.inflate(viewLayout, null);
+                    }
+                });
+                new Handler(Looper.getMainLooper()).post(viewInflaterRunnable);
+                View inflatedView = viewInflaterRunnable.get();
 
                 // Configure view
                 JSONObject viewConfig = teakNotificaton.display.getJSONObject(name);
                 Iterator<?> keys = viewConfig.keys();
 
+                // Action buttons
+                final boolean[] actionButtonsConfigured = new boolean[3];
+
                 while (keys.hasNext()) {
                     String key = (String) keys.next();
-                    String value = viewConfig.getString(key);
 
-                    if (value == null || value.length() == 0) continue;
+                    final int viewElementId = R.id(key);
+                    final View viewElement = inflatedView.findViewById(viewElementId);
 
-                    int viewElementId = R.id(key);
-                    View viewElement = inflatedView.findViewById(viewElementId);
+                    //noinspection StatementWithEmptyBody
+                    if (isUIType(viewElement, Button.class)) {
+                        // Button must go before TextView, because Button is a TextView
 
-                    if (viewElement.getClass().equals(TextView.class)) {
+                        // Action button bar
+                        try {
+                            final int actionButtonIndex = Integer.parseInt(key.substring(6));
+                            actionButtonsConfigured[actionButtonIndex] = true;
+                        } catch (Exception ignored) {
+                        }
+
+                        final JSONObject buttonConfig = viewConfig.getJSONObject(key);
+                        remoteViews.setTextViewText(viewElementId, buttonConfig.getString("text"));
+                        String deepLink = buttonConfig.has("deepLink") ? buttonConfig.getString("deepLink") : null;
+                        remoteViews.setOnClickPendingIntent(viewElementId, pendingIntent.forActionButton(
+                                                                               context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX, deepLink));
+                    } else if (isUIType(viewElement, TextView.class)) {
+                        final String value = viewConfig.getString(key);
                         remoteViews.setTextViewText(viewElementId, Html.fromHtml(value));
-                    } else if (viewElement.getClass().equals(ImageView.class)) {
+                    } else //noinspection StatementWithEmptyBody
+                        if (isUIType(viewElement, ImageButton.class)) {
+                        // ImageButton must go before ImageView, because ImageButton is a ImageView
+                    } else if (isUIType(viewElement, ImageView.class)) {
+                        final String value = viewConfig.getString(key);
                         if (value.equalsIgnoreCase("BUILTIN_APP_ICON")) {
                             remoteViews.setImageViewResource(viewElementId, appIconResourceId);
+                        } else if (value.equalsIgnoreCase("NONE")) {
+                            remoteViews.setViewVisibility(viewElementId, View.GONE);
                         } else {
-                            Bitmap bitmap = loadBitmapFromURI(new URI(value));
-                            remoteViews.setImageViewBitmap(viewElementId, bitmap);
+                            final Bitmap bitmap = loadBitmapFromURI(new URI(value));
+                            if (bitmap != null) {
+                                remoteViews.setImageViewBitmap(viewElementId, bitmap);
+                            }
                         }
-                    } else //noinspection StatementWithEmptyBody
-                        if (viewElement.getClass().equals(Button.class)) {
-                        // TODO: Need more config options for button, image, text, deep link
-                    } else {
-                        // TODO: report error to the dashboard
+                    } else if (isUIType(viewElement, ViewFlipper.class)) {
+                        final JSONObject animationConfig = viewConfig.getJSONObject(key);
+                        try {
+                            final Bitmap bitmap = loadBitmapFromURI(new URI(animationConfig.getString("sprite_sheet")));
+                            final int numCols = animationConfig.getInt("columns");
+                            final int numRows = animationConfig.getInt("rows");
+                            final int frameWidth = animationConfig.getInt("width");
+                            final int frameHeight = animationConfig.getInt("height");
+
+                            for (int x = 0; x < numCols; x++) {
+                                for (int y = 0; y < numRows; y++) {
+                                    final int startX = x * frameWidth;
+                                    final int startY = y * frameHeight;
+                                    Bitmap frame = Bitmap.createBitmap(bitmap, startX, startY, frameWidth, frameHeight);
+
+                                    final RemoteViews frameView = new RemoteViews(context.getPackageName(), R.layout("teak_frame"));
+                                    final int frameViewId = R.id("frame");
+                                    frameView.setImageViewBitmap(frameViewId, frame);
+                                    remoteViews.addView(viewElementId, frameView);
+                                }
+                            }
+
+                            // Mark notification as containing animated element(s)
+                            teakNotificaton.isAnimated = true;
+                        } catch (Exception e) {
+                            Teak.log.exception(e);
+                        }
+                    }
+                    // TODO: Else, report error to dashboard.
+                }
+
+                // Button bar show/hide
+                if (actionButtonsConfigured[0] || actionButtonsConfigured[1] || actionButtonsConfigured[2]) {
+                    try {
+                        // Unhide action button bar
+                        final int actionButtonLayoutId = R.id("actionButtonLayout");
+                        remoteViews.setViewVisibility(actionButtonLayoutId, View.VISIBLE);
+
+                        // Hide unused buttons
+                        for (int i = 0; i < actionButtonsConfigured.length; i++) {
+                            final int actionButtonId = R.id("button" + i);
+                            remoteViews.setViewVisibility(actionButtonId, actionButtonsConfigured[i] ? View.VISIBLE : View.GONE);
+                        }
+
+                        // Hide unused dividers
+                        if (!actionButtonsConfigured[1]) {
+                            final int dividerButton1_2 = R.id("divider_button1_button2");
+                            remoteViews.setViewVisibility(dividerButton1_2, View.GONE);
+                        }
+
+                        if (!actionButtonsConfigured[0]) {
+                            final int dividerButton0_1 = R.id("divider_button0_button1");
+                            remoteViews.setViewVisibility(dividerButton0_1, View.GONE);
+                        }
+                    } catch (Exception ignored) {
+                    }
+                } else {
+                    // Hide action button bar
+                    try {
+                        final int actionButtonLayoutId = R.id("actionButtonLayout");
+                        remoteViews.setViewVisibility(actionButtonLayoutId, View.GONE);
+                    } catch (Exception ignored) {
                     }
                 }
 
@@ -309,23 +413,39 @@ public class NotificationBuilder {
             }
 
             private Bitmap loadBitmapFromURI(URI bitmapUri) throws Exception {
-                Bitmap ret;
-                URL aURL = new URL(bitmapUri.toString());
-                URLConnection conn = aURL.openConnection();
-                conn.connect();
-                InputStream is = conn.getInputStream();
-                BufferedInputStream bis = new BufferedInputStream(is);
-                ret = BitmapFactory.decodeStream(bis);
-                bis.close();
-                is.close();
+                Bitmap ret = null;
+                try {
+                    if (bitmapUri.getScheme().equals("assets")) {
+                        String assetFilePath = bitmapUri.getPath();
+                        assetFilePath = assetFilePath.startsWith("/") ? assetFilePath.substring(1) : assetFilePath;
+                        InputStream is = context.getAssets().open(assetFilePath);
+                        ret = BitmapFactory.decodeStream(is);
+                        is.close();
+                    } else {
+                        URL aURL = new URL(bitmapUri.toString());
+                        URLConnection conn = aURL.openConnection();
+                        conn.connect();
+                        InputStream is = conn.getInputStream();
+                        BufferedInputStream bis = new BufferedInputStream(is);
+                        ret = BitmapFactory.decodeStream(bis);
+                        bis.close();
+                        is.close();
+                    }
+                } catch (SSLException ignored) {
+                } catch (FileNotFoundException ignored) {
+                }
                 return ret;
+            }
+
+            private boolean isUIType(View viewElement, Class clazz) {
+                // TODO: Do more error checking to see if this is an AppCompat* class, and don't use InstanceOf
+                return clazz.isInstance(viewElement);
             }
         }
         ViewBuilder viewBuilder = new ViewBuilder();
 
         // Configure 'contentView'
-        RemoteViews contentView = viewBuilder.buildViews(teakNotificaton.display.getString("contentView"));
-        nativeNotification.contentView = contentView;
+        nativeNotification.contentView = viewBuilder.buildViews(teakNotificaton.display.getString("contentView"));
 
         // Check for Jellybean (API 16, 4.1)+ for expanded view
         RemoteViews bigContentView = null;
@@ -342,16 +462,6 @@ public class NotificationBuilder {
             try {
                 Field bigContentViewField = nativeNotification.getClass().getField("bigContentView");
                 bigContentViewField.set(nativeNotification, bigContentView);
-            } catch (Exception ignored) {
-            }
-        } else {
-            String pulldownContentView = "pulldown_layout";
-            if (teakNotificaton.display.has("pulldownContentView")) {
-                pulldownContentView = teakNotificaton.display.getString("pulldownContentView");
-            }
-
-            try {
-                contentView.setViewVisibility(R.id(pulldownContentView), View.GONE);
             } catch (Exception ignored) {
             }
         }
@@ -371,8 +481,6 @@ public class NotificationBuilder {
                 throw e;
             }
         }
-
-
 
         // Configure notification behavior
         builder.setPriority(NotificationCompat.PRIORITY_MAX);

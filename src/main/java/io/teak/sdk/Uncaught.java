@@ -24,7 +24,7 @@ class Uncaught implements Thread.UncaughtExceptionHandler {
 
     @Override
     public void uncaughtException(Thread thread, Throwable ex) {
-        if (thread != createdOnThread) {
+        if (!createdOnThread.equals(thread)) {
             Log.d(LOG_TAG, "TeakExceptionHandler created on " + createdOnThread.toString() + " getting exception from " + thread.toString());
         }
 

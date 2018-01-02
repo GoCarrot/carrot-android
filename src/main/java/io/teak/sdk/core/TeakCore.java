@@ -41,7 +41,6 @@ import io.teak.sdk.Helpers;
 import io.teak.sdk.NotificationBuilder;
 import io.teak.sdk.Request;
 import io.teak.sdk.Teak;
-import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
 import io.teak.sdk.configuration.RemoteConfiguration;
@@ -62,10 +61,10 @@ public class TeakCore implements ITeakCore {
         return Instance;
     }
 
-    private TeakCore(@NonNull Context context) {
+    public TeakCore(@NonNull Context context) {
         this.localBroadcastManager = LocalBroadcastManager.getInstance(context);
 
-        TeakEvent.addEventListener(teakEventListener);
+        TeakEvent.addEventListener(this.teakEventListener);
 
         registerStaticTeakEventListeners();
     }
@@ -217,6 +216,7 @@ public class TeakCore implements ITeakCore {
                     final Context context = ((PushNotificationEvent) event).context;
                     if (context != null && autoLaunch) {
                         final Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+
                         if (launchIntent != null) {
                             launchIntent.addCategory(Intent.CATEGORY_LAUNCHER);
                             launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -226,6 +226,10 @@ public class TeakCore implements ITeakCore {
                                 launchIntent.setData(teakDeepLink);
                             }
                             context.startActivity(launchIntent);
+
+                            // Close notification tray
+                            final Intent it = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
+                            context.sendBroadcast(it);
                         }
                     }
                     break;
@@ -249,8 +253,8 @@ public class TeakCore implements ITeakCore {
     }
 
     private void checkIntentForPushLaunchAndSendBroadcasts(Intent intent) {
-        if (intent.hasExtra("teakNotifId")) {
-            Bundle bundle = intent.getExtras();
+        if (intent.hasExtra("teakNotifId") && intent.getExtras() != null) {
+            final Bundle bundle = intent.getExtras();
 
             // Send broadcast
             if (bundle != null && this.localBroadcastManager != null) {
