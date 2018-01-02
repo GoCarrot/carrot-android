@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Set;
 
 public class Helpers {
     public static boolean getBooleanFromBundle(Bundle b, String key) {
@@ -88,5 +89,17 @@ public class Helpers {
             }
             return ret;
         }
+    }
+
+    public static JSONObject bundleToJson(Bundle bundle) {
+        JSONObject json = new JSONObject();
+        Set<String> keys = bundle.keySet();
+        for (String key : keys) {
+            try {
+                json.put(key, JSONObject.wrap(bundle.get(key)));
+            } catch (JSONException ignored) {
+            }
+        }
+        return json;
     }
 }
