@@ -36,7 +36,6 @@ import io.teak.sdk.push.IPushProvider;
 import io.teak.sdk.store.IStore;
 
 public class DefaultObjectFactory implements IObjectFactory {
-    private final Context context;
     private final IAndroidResources androidResources;
     private final IStore store;
     private final IAndroidDeviceInfo androidDeviceInfo;
@@ -45,13 +44,12 @@ public class DefaultObjectFactory implements IObjectFactory {
     private final ITeakCore teakCore;
 
     DefaultObjectFactory(@NonNull Context context) {
-        this.context = context;
-        this.androidResources = new DefaultAndroidResources(this.context);
+        this.androidResources = new DefaultAndroidResources(context);
         this.store = createStore(context);
-        this.androidDeviceInfo = new DefaultAndroidDeviceInfo(this.context);
+        this.androidDeviceInfo = new DefaultAndroidDeviceInfo(context);
         this.pushProvider = createPushProvider(context);
-        this.androidNotification = DefaultAndroidNotification.get(this.context);
-        this.teakCore = TeakCore.get(this.context);
+        this.androidNotification = DefaultAndroidNotification.get(context);
+        this.teakCore = TeakCore.get(context);
     }
 
     ///// IObjectFactory
