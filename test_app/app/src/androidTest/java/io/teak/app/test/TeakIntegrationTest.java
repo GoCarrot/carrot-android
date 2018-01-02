@@ -124,8 +124,8 @@ class TeakIntegrationTest {
 
             // Android Resources mock
             androidResources = mock(io.teak.sdk.io.IAndroidResources.class);
-            when(androidResources.getStringResource(AppConfiguration.TEAK_APP_ID)).thenReturn("1136371193060244");
-            when(androidResources.getStringResource(AppConfiguration.TEAK_API_KEY)).thenReturn("1f3850f794b9093864a0778009744d03");
+            when(androidResources.getStringResource(AppConfiguration.TEAK_APP_ID)).thenReturn("1919749661621253");
+            when(androidResources.getStringResource(AppConfiguration.TEAK_API_KEY)).thenReturn("2cd84c8899833f08c48aca2e1909b6c5");
 
             // Create and add an easily mockable TeakEvent.EventListener
             if (eventListener != null) {
