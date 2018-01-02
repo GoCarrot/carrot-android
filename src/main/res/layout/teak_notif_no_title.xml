@@ -17,6 +17,7 @@
         android:id="@+id/left_image"
         android:layout_width="48dp"
         android:layout_height="48dp"
+        android:layout_margin="8dp"
         android:layout_centerVertical="true"
         android:src="@android:drawable/sym_def_app_icon"
         android:contentDescription="@null"/>
