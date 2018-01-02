@@ -101,7 +101,7 @@ public class DefaultObjectFactory implements IObjectFactory {
             return null;
         }
 
-        final String bundleId = this.context.getPackageName();
+        final String bundleId = context.getPackageName();
         if (bundleId == null) {
             Teak.log.e("factory.istore", "Unable to get Bundle Id.");
             return null;
