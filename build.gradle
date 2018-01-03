@@ -103,7 +103,7 @@ android.libraryVariants.all { variant ->
         description "Bundles compiled .class files into a JAR file for $variant.name."
         dependsOn variant.javaCompile
         from variant.javaCompile.destinationDir
-        exclude '**/R.class', '**/R$*.class', '**/R.html', '**/R.*.html', 'com/**'
+        include 'io/teak/**'
         if (variant.buildType.name.equals(BuilderConstants.DEBUG)) {
             archiveName "${archivesBaseName}-${variant.name}.jar"
         } else {
