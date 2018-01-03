@@ -117,10 +117,15 @@ public class NotificationBuilder {
             builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
             builder.setGroup(UUID.randomUUID().toString());
         } else {
-            //noinspection deprecation
-            builder = new NotificationCompat.Builder(context);
+            @SuppressWarnings("deprecation") final NotificationCompat.Builder deprecatedBuilder = new NotificationCompat.Builder(context);;
+            builder = deprecatedBuilder;
         }
         return builder;
+    }
+
+    @SuppressWarnings("deprecation")
+    private static Spanned fromHtml(String string) {
+        return Html.fromHtml(string);
     }
 
     private static Notification createNativeNotificationV1Plus(final Context context, final Bundle bundle, final TeakNotification teakNotificaton) throws Exception {
@@ -166,7 +171,7 @@ public class NotificationBuilder {
         // Rich text message
         Spanned richMessageText = new SpannedString(teakNotificaton.message);
         try {
-            richMessageText = Html.fromHtml(teakNotificaton.message);
+            richMessageText = fromHtml(teakNotificaton.message);
         } catch (Exception e) {
             if (!bundle.getBoolean("teakUnitTest")) {
                 throw e;
@@ -335,7 +340,7 @@ public class NotificationBuilder {
                                                                                context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX, deepLink));
                     } else if (isUIType(viewElement, TextView.class)) {
                         final String value = viewConfig.getString(key);
-                        remoteViews.setTextViewText(viewElementId, Html.fromHtml(value));
+                        remoteViews.setTextViewText(viewElementId, fromHtml(value));
                     } else //noinspection StatementWithEmptyBody
                         if (isUIType(viewElement, ImageButton.class)) {
                         // ImageButton must go before ImageView, because ImageButton is a ImageView
@@ -482,7 +487,7 @@ public class NotificationBuilder {
         // Rich text message
         Spanned richMessageText = new SpannedString(teakNotificaton.message);
         try {
-            richMessageText = Html.fromHtml(teakNotificaton.message);
+            richMessageText = fromHtml(teakNotificaton.message);
         } catch (Exception e) {
             if (!bundle.getBoolean("teakUnitTest")) {
                 throw e;
@@ -600,7 +605,7 @@ public class NotificationBuilder {
                 R.layout("teak_big_notif_image_text"));
 
             // Set big view text
-            bigView.setTextViewText(R.id("text"), Html.fromHtml(teakNotificaton.longText));
+            bigView.setTextViewText(R.id("text"), fromHtml(teakNotificaton.longText));
 
             URI imageAssetA = null;
             try {
