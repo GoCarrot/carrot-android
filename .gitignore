@@ -8,5 +8,3 @@ local.properties
 infer-out/
 
 .idea/
-
-src/main/res/values/teak_uuids.xml

@@ -56,18 +56,9 @@ gradle.projectsEvaluated {
 
                 def uuid = props.getProperty("io.sentry.ProguardUuids")
                 println "> adding ${uuid} to resources."
-                file(teak_uuids_xml).newWriter().withWriter { w ->
-w << """<?xml version=\"1.0\" encoding=\"utf-8\"?>
-<resources xmlns:android=\"http://schemas.android.com/apk/res/android\">
-    <string name=\"io_teak_sentry_proguard_uuid\">${uuid}</string>
-</resources>
-"""
-                }
-            }
 
-            // Add that file to the clean task also
-            clean {
-                delete "${teak_uuids_xml}"
+                String contents = file(teak_uuids_xml).getText('UTF-8').replaceAll(/<\!ENTITY teak_proguard_uuid ".*">/, "<!ENTITY teak_proguard_uuid \"${uuid}\">")
+                file(teak_uuids_xml).write(contents, 'UTF-8')
             }
 
             // Add to task chain

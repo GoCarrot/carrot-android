@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE resources [
+    <!ENTITY teak_proguard_uuid "">
+]>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+    <string name="io_teak_sentry_proguard_uuid">&teak_proguard_uuid;</string>
+</resources>
