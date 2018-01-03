@@ -14,7 +14,6 @@
  */
 package io.teak.sdk.push;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.support.annotation.NonNull;
 

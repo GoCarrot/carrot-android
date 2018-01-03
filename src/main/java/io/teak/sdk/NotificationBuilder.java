@@ -117,7 +117,7 @@ public class NotificationBuilder {
             builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
             builder.setGroup(UUID.randomUUID().toString());
         } else {
-            @SuppressWarnings("deprecation") final NotificationCompat.Builder deprecatedBuilder = new NotificationCompat.Builder(context);;
+            @SuppressWarnings("deprecation") final NotificationCompat.Builder deprecatedBuilder = new NotificationCompat.Builder(context);
             builder = deprecatedBuilder;
         }
         return builder;
