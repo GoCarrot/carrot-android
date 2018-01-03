@@ -307,7 +307,14 @@ public class NotificationBuilder {
                 while (keys.hasNext()) {
                     String key = (String) keys.next();
 
-                    final int viewElementId = R.id(key);
+                    int tempViewElementId;
+                    try {
+                        tempViewElementId = R.id(key);
+                    } catch (Exception e) {
+                        continue;
+                    }
+
+                    final int viewElementId = tempViewElementId;
                     final View viewElement = inflatedView.findViewById(viewElementId);
 
                     //noinspection StatementWithEmptyBody
