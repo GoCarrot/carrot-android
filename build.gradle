@@ -49,7 +49,7 @@ gradle.projectsEvaluated {
             }
 
             // Add UUID into resource string
-            def teak_uuids_xml = "${project.rootDir.toPath()}/src/main/res/values/teak_uuids.xml"
+            def teak_uuids_xml = "${project.rootDir.toPath()}/build/intermediates/bundles/${variantName}/res/values/values.xml"
             sentryProguardTask.doLast {
                 def props = new Properties()
                 file(sentry_debug_meta_properties).withInputStream { props.load(it) }
@@ -57,7 +57,7 @@ gradle.projectsEvaluated {
                 def uuid = props.getProperty("io.sentry.ProguardUuids")
                 println "> adding ${uuid} to resources."
 
-                String contents = file(teak_uuids_xml).getText('UTF-8').replaceAll(/<\!ENTITY teak_proguard_uuid ".*">/, "<!ENTITY teak_proguard_uuid \"${uuid}\">")
+                String contents = file(teak_uuids_xml).getText('UTF-8').replaceAll("<string name=\"io_teak_sentry_proguard_uuid\"/>", "<string name=\"io_teak_sentry_proguard_uuid\">${uuid}</string>")
                 file(teak_uuids_xml).write(contents, 'UTF-8')
             }
 
