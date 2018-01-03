@@ -35,17 +35,43 @@ gradle.projectsEvaluated {
         def proguardTask = project.tasks.findByName(
                 "transformClassesAndResourcesWithProguardFor${variantName}")
         if (proguardTask) {
-            def task = project.tasks.create(
+            // Compute UUID
+            def sentry_debug_meta_properties = "${project.rootDir.toPath()}/build/intermediates/assets" +
+                    "/${variant.dirName}/sentry-debug-meta.properties";
+            def sentryProguardTask = project.tasks.create(
                     name: "processSentryProguardFor${variantName}",
                     type: Exec) {
                 workingDir project.rootDir
                 commandLine "sentry-cli", "upload-proguard", "--write-properties",
-                        "${project.rootDir.toPath()}/build/intermediates/assets" +
-                                "/${variant.dirName}/sentry-debug-meta.properties",
+                        sentry_debug_meta_properties,
                         variant.getMappingFile(),
                         "--no-upload"
             }
-            proguardTask.finalizedBy task
+
+            // Add UUID into resource string
+            def teak_uuids_xml = "${project.rootDir.toPath()}/src/main/res/values/teak_uuids.xml"
+            sentryProguardTask.doLast {
+                def props = new Properties()
+                file(sentry_debug_meta_properties).withInputStream { props.load(it) }
+
+                def uuid = props.getProperty("io.sentry.ProguardUuids")
+                println "> adding ${uuid} to resources."
+                file(teak_uuids_xml).newWriter().withWriter { w ->
+w << """<?xml version=\"1.0\" encoding=\"utf-8\"?>
+<resources xmlns:android=\"http://schemas.android.com/apk/res/android\">
+    <string name=\"io_teak_sentry_proguard_uuid\">${uuid}</string>
+</resources>
+"""
+                }
+            }
+
+            // Add that file to the clean task also
+            clean {
+                delete "${teak_uuids_xml}"
+            }
+
+            // Add to task chain
+            proguardTask.finalizedBy sentryProguardTask
         }
     }
 }

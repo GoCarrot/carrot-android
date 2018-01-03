@@ -37,6 +37,7 @@ import io.teak.sdk.service.RavenService;
 
 class Raven implements Thread.UncaughtExceptionHandler {
     private static final String LOG_TAG = "Teak.Raven";
+    private static final String TEAK_SENTRY_PROGUARD_UUID = "io_teak_sentry_proguard_uuid";
 
     private enum Level {
         FATAL("fatal"),
@@ -60,6 +61,7 @@ class Raven implements Thread.UncaughtExceptionHandler {
     private final HashMap<String, Object> payloadTemplate = new HashMap<>();
     private final Context applicationContext;
     private final String appId;
+    private final String proguardUuid;
     private Thread.UncaughtExceptionHandler previousUncaughtExceptionHandler;
 
     private static final SimpleDateFormat timestampFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
@@ -68,13 +70,14 @@ class Raven implements Thread.UncaughtExceptionHandler {
         timestampFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
-    Raven(@NonNull Context context, @NonNull String appId, @NonNull TeakConfiguration configuration) {
+    Raven(@NonNull Context context, @NonNull String appId, @NonNull TeakConfiguration configuration, @NonNull IObjectFactory objectFactory) {
         //noinspection deprecation - This must be a string as per Sentry API
         @SuppressWarnings("deprecation")
         final String teakSdkVersion = Teak.SDKVersion;
 
         this.applicationContext = context;
         this.appId = appId;
+        this.proguardUuid = objectFactory.getAndroidResources().getStringResource(Raven.TEAK_SENTRY_PROGUARD_UUID);
 
         // Fill in as much of the payload template as we can
         payloadTemplate.put("logger", "teak");
@@ -206,6 +209,17 @@ class Raven implements Thread.UncaughtExceptionHandler {
 
         exceptions.add(exception);
         additions.put("exception", exceptions);
+
+        if (this.proguardUuid != null) {
+            HashMap<String, Object> debug_meta = new HashMap<>();
+            ArrayList<Object> debugImages = new ArrayList<>();
+            HashMap<String, Object> proguard = new HashMap<>();
+            proguard.put("type", "proguard");
+            proguard.put("uuid", this.proguardUuid);
+            debugImages.add(proguard);
+            debug_meta.put("images", debugImages);
+            additions.put("debug_meta", debug_meta);
+        }
 
         try {
             Report report = new Report(t.getMessage(), Level.ERROR, additions);
