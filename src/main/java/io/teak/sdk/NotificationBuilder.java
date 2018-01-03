@@ -299,13 +299,13 @@ public class NotificationBuilder {
 
                 // Configure view
                 JSONObject viewConfig = teakNotificaton.display.getJSONObject(name);
-                Iterator<?> keys = viewConfig.keys();
+                Iterator<String> keys = viewConfig.keys();
 
                 // Action buttons
                 final boolean[] actionButtonsConfigured = new boolean[3];
 
                 while (keys.hasNext()) {
-                    String key = (String) keys.next();
+                    String key = keys.next();
 
                     int tempViewElementId;
                     try {
