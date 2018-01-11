@@ -101,7 +101,8 @@ public class DeviceStateService extends Service {
             return false;
         } else {
             final PowerManager powerManager = (PowerManager) context.getSystemService(POWER_SERVICE);
-            @SuppressWarnings("deprecation") final boolean isScreenOn = powerManager != null && powerManager.isScreenOn();
+            @SuppressWarnings("deprecation")
+            final boolean isScreenOn = powerManager != null && powerManager.isScreenOn();
             return isScreenOn;
         }
     }

@@ -295,13 +295,13 @@ public class GooglePlay implements IStore {
         final int responseCode = getResponseCodeFromIntent(data);
         final String responseCodeString = BILLING_RESPONSE.get(responseCode);
 
-        if(responseCodeString != null) {
+        if (responseCodeString != null) {
             Teak.log.i("google_play.check_activity.response_code", Helpers.mm.h("RESPONSE_CODE", responseCodeString));
         }
 
         // Check for purchase activity result
         if (purchaseData != null && dataSignature != null &&
-                resultCode == Activity.RESULT_OK && responseCode == BILLING_RESPONSE_RESULT_OK) {
+            resultCode == Activity.RESULT_OK && responseCode == BILLING_RESPONSE_RESULT_OK) {
             try {
                 processPurchaseJson(new JSONObject(purchaseData));
             } catch (Exception e) {
