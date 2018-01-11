@@ -19,6 +19,7 @@ import android.support.annotation.NonNull;
 
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 
+import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
@@ -62,6 +63,11 @@ public class GCMPushProvider implements IPushProvider {
         }
     }
 
+    @SuppressWarnings({"deprecation", "MissingPermission"})
+    private static String deprecatedRegister(@NonNull final GoogleCloudMessaging gcm, @NonNull final String gcmSenderId) throws IOException {
+        return gcm.register(gcmSenderId);
+    }
+
     @Override
     public void requestPushKey(@NonNull final String gcmSenderId) {
         this.gcmSenderId = gcmSenderId;
@@ -72,9 +78,7 @@ public class GCMPushProvider implements IPushProvider {
                 public String call() throws Exception {
                     GoogleCloudMessaging gcm = gcmFuture.get();
                     Teak.log.i("device_configuration", Helpers.mm.h("sender_id", gcmSenderId));
-
-                    //noinspection deprecation - Using deprecated method for backward compatibility
-                    return gcm == null ? null : gcm.register(gcmSenderId);
+                    return gcm == null ? null : deprecatedRegister(gcm, gcmSenderId);
                 }
             }));
             new Thread(gcmRegistration).start();

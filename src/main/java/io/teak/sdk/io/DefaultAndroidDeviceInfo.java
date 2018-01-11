@@ -72,7 +72,9 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
     public String getDeviceId() {
         String tempDeviceId = null;
         try {
-            tempDeviceId = UUID.nameUUIDFromBytes(android.os.Build.SERIAL.getBytes("utf8")).toString();
+            @SuppressWarnings("deprecation")
+            final byte[] buildSerial = android.os.Build.SERIAL.getBytes("utf8");
+            tempDeviceId = UUID.nameUUIDFromBytes(buildSerial).toString();
         } catch (Exception e) {
             Teak.log.e("getDeviceId", "android.os.Build.SERIAL not available, falling back to Settings.Secure.ANDROID_ID.");
             Teak.log.exception(e);
@@ -129,8 +131,9 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
             final FutureTask<AdvertisingIdClient.Info> adInfoFuture = new FutureTask<>(new RetriableTask<>(10, 7000L, new Callable<AdvertisingIdClient.Info>() {
                 @Override
                 public AdvertisingIdClient.Info call() throws Exception {
-                    //noinspection deprecation
-                    if (GooglePlayServicesUtil.isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS) {
+                    @SuppressWarnings("deprecation")
+                    final int gpsAvailable = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
+                    if (gpsAvailable == ConnectionResult.SUCCESS) {
                         return AdvertisingIdClient.getAdvertisingIdInfo(context);
                     }
                     throw new Exception("Retrying GooglePlayServicesUtil.isGooglePlayServicesAvailable()");
@@ -138,8 +141,9 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
             }));
 
             // TODO: This needs to be re-checked in case it's something like SERVICE_UPDATING or SERVICE_VERSION_UPDATE_REQUIRED
-            //noinspection deprecation
-            if (GooglePlayServicesUtil.isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS) {
+            @SuppressWarnings("deprecation")
+            final int gpsAvailable = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
+            if (gpsAvailable == ConnectionResult.SUCCESS) {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {

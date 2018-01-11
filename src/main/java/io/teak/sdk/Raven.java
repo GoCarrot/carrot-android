@@ -37,6 +37,7 @@ import io.teak.sdk.service.RavenService;
 
 class Raven implements Thread.UncaughtExceptionHandler {
     private static final String LOG_TAG = "Teak.Raven";
+    private static final String TEAK_SENTRY_PROGUARD_UUID = "io_teak_sentry_proguard_uuid";
 
     private enum Level {
         FATAL("fatal"),
@@ -68,13 +69,25 @@ class Raven implements Thread.UncaughtExceptionHandler {
         timestampFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
-    Raven(@NonNull Context context, @NonNull String appId, @NonNull TeakConfiguration configuration) {
+    Raven(@NonNull Context context, @NonNull String appId, @NonNull TeakConfiguration configuration, @NonNull IObjectFactory objectFactory) {
         //noinspection deprecation - This must be a string as per Sentry API
         @SuppressWarnings("deprecation")
         final String teakSdkVersion = Teak.SDKVersion;
 
         this.applicationContext = context;
         this.appId = appId;
+
+        final String proguardUuid = objectFactory.getAndroidResources().getStringResource(Raven.TEAK_SENTRY_PROGUARD_UUID);
+        if (proguardUuid != null && proguardUuid.length() > 0) {
+            HashMap<String, Object> debug_meta = new HashMap<>();
+            ArrayList<Object> debugImages = new ArrayList<>();
+            HashMap<String, Object> proguard = new HashMap<>();
+            proguard.put("type", "proguard");
+            proguard.put("uuid", proguardUuid);
+            debugImages.add(proguard);
+            debug_meta.put("images", debugImages);
+            payloadTemplate.put("debug_meta", debug_meta);
+        }
 
         // Fill in as much of the payload template as we can
         payloadTemplate.put("logger", "teak");
@@ -87,11 +100,19 @@ class Raven implements Thread.UncaughtExceptionHandler {
         sdkAttribute.put("version", RavenService.TEAK_SENTRY_VERSION);
         this.payloadTemplate.put("sdk", sdkAttribute);
 
-        final HashMap<String, Object> deviceAttribute = new HashMap<>();
-        deviceAttribute.put("name", configuration.deviceConfiguration.deviceFallback);
-        deviceAttribute.put("version", Build.VERSION.SDK_INT);
-        deviceAttribute.put("build", Build.VERSION.RELEASE);
-        this.payloadTemplate.put("device", deviceAttribute);
+        final HashMap<String, Object> device = new HashMap<>();
+        device.put("name", configuration.deviceConfiguration.deviceFallback);
+        device.put("family", configuration.deviceConfiguration.deviceManufacturer);
+        device.put("model", configuration.deviceConfiguration.deviceModel);
+
+        final HashMap<String, Object> os = new HashMap<>();
+        os.put("version", Build.VERSION.SDK_INT);
+        os.put("build", Build.VERSION.RELEASE);
+
+        final HashMap<String, Object> contexts = new HashMap<>();
+        contexts.put("device", device);
+        contexts.put("os", os);
+        this.payloadTemplate.put("contexts", contexts);
 
         final HashMap<String, Object> user = new HashMap<>();
         user.put("device_id", configuration.deviceConfiguration.deviceId);

@@ -44,7 +44,7 @@ public class TeakInstance {
     private static final String PREFERENCE_FIRST_RUN = "io.teak.sdk.Preferences.FirstRun";
 
     @SuppressLint("ObsoleteSdkInt")
-    TeakInstance(@NonNull Activity activity, @NonNull IObjectFactory objectFactory) {
+    TeakInstance(@NonNull Activity activity, @NonNull final IObjectFactory objectFactory) {
         //noinspection all -- Disable warning on the null check
         if (activity == null) {
             throw new InvalidParameterException("null Activity passed to Teak.onCreate");
@@ -59,8 +59,8 @@ public class TeakInstance {
         TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
             @Override
             public void onConfigurationReady(@NonNull TeakConfiguration configuration) {
-                sdkRaven = new Raven(context, "sdk", configuration);
-                appRaven = new Raven(context, configuration.appConfiguration.bundleId, configuration);
+                sdkRaven = new Raven(context, "sdk", configuration, objectFactory);
+                appRaven = new Raven(context, configuration.appConfiguration.bundleId, configuration, objectFactory);
             }
         });
 

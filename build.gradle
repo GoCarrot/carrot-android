@@ -35,17 +35,34 @@ gradle.projectsEvaluated {
         def proguardTask = project.tasks.findByName(
                 "transformClassesAndResourcesWithProguardFor${variantName}")
         if (proguardTask) {
-            def task = project.tasks.create(
+            // Compute UUID
+            def sentry_debug_meta_properties = "${project.rootDir.toPath()}/build/intermediates/assets" +
+                    "/${variant.dirName}/sentry-debug-meta.properties";
+            def sentryProguardTask = project.tasks.create(
                     name: "processSentryProguardFor${variantName}",
                     type: Exec) {
                 workingDir project.rootDir
                 commandLine "sentry-cli", "upload-proguard", "--write-properties",
-                        "${project.rootDir.toPath()}/build/intermediates/assets" +
-                                "/${variant.dirName}/sentry-debug-meta.properties",
+                        sentry_debug_meta_properties,
                         variant.getMappingFile(),
                         "--no-upload"
             }
-            proguardTask.finalizedBy task
+
+            // Add UUID into resource string
+            def teak_uuids_xml = "${project.rootDir.toPath()}/build/intermediates/bundles/${variantName.toLowerCase()}/res/values/values.xml"
+            sentryProguardTask.doLast {
+                def props = new Properties()
+                file(sentry_debug_meta_properties).withInputStream { props.load(it) }
+
+                def uuid = props.getProperty("io.sentry.ProguardUuids")
+                println "> adding ${uuid} to resources."
+
+                String contents = file(teak_uuids_xml).getText('UTF-8').replaceAll("<string name=\"io_teak_sentry_proguard_uuid\"/>", "<string name=\"io_teak_sentry_proguard_uuid\">${uuid}</string>")
+                file(teak_uuids_xml).write(contents, 'UTF-8')
+            }
+
+            // Add to task chain
+            proguardTask.finalizedBy sentryProguardTask
         }
     }
 }
@@ -86,7 +103,7 @@ android.libraryVariants.all { variant ->
         description "Bundles compiled .class files into a JAR file for $variant.name."
         dependsOn variant.javaCompile
         from variant.javaCompile.destinationDir
-        exclude '**/R.class', '**/R$*.class', '**/R.html', '**/R.*.html', 'com/**'
+        include 'io/teak/**'
         if (variant.buildType.name.equals(BuilderConstants.DEBUG)) {
             archiveName "${archivesBaseName}-${variant.name}.jar"
         } else {
