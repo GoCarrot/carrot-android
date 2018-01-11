@@ -85,6 +85,8 @@ public class AppConfiguration {
             this.appId = tempAppId;
             if (this.appId == null) {
                 throw new RuntimeException("Failed to find R.string." + TEAK_APP_ID);
+            } else if (this.appId.trim().length() < 1) {
+                throw new RuntimeException("R.string." + TEAK_APP_ID + " is empty.");
             }
         }
 
@@ -101,6 +103,8 @@ public class AppConfiguration {
             this.apiKey = tempApiKey;
             if (this.apiKey == null) {
                 throw new RuntimeException("Failed to find R.string." + TEAK_API_KEY);
+            } else if (this.apiKey.trim().length() < 1) {
+                throw new RuntimeException("R.string." + TEAK_API_KEY + " is empty.");
             }
         }
 
@@ -115,8 +119,8 @@ public class AppConfiguration {
             }
 
             this.pushSenderId = tempPushSenderId;
-            if (this.pushSenderId == null) {
-                Teak.log.e("app_configuration", "R.string." + TEAK_GCM_SENDER_ID + " not present, push notifications disabled.");
+            if (this.pushSenderId == null || this.pushSenderId.trim().length() < 1) {
+                Teak.log.e("app_configuration", "R.string." + TEAK_GCM_SENDER_ID + " not present or empty, push notifications disabled.");
             }
         }
 
