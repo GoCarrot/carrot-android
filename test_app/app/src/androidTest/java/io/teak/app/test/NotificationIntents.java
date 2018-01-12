@@ -73,10 +73,9 @@ public class NotificationIntents extends TeakIntegrationTest {
         clearAll.click();
 
         // Clear Notification Event should have occurred
-        verify(eventListener, timeout(2000).times(1)).eventRecieved(PushNotificationEvent.class, PushNotificationEvent.Cleared);
+        verify(eventListener, timeout(5000).times(1)).eventRecieved(PushNotificationEvent.class, PushNotificationEvent.Cleared);
 
         // Make sure the notification got cleared
-        device.wait(Until.hasObject(By.text("teak_notif_no_title")), 2000);
         final UiObject2 titleAgain = device.findObject(By.text("teak_notif_no_title"));
         assertNull(titleAgain);
     }
