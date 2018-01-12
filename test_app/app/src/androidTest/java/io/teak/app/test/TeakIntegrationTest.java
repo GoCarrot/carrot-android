@@ -233,15 +233,15 @@ class TeakIntegrationTest {
 
     ///// TestRule helpers
 
-    Activity getActivity() {
+    MainActivity getActivity() {
         return testRule.getActivity();
     }
 
-    Activity launchActivity() {
+    MainActivity launchActivity() {
         return testRule.launchActivity(null);
     }
 
-    Activity launchActivity(@Nullable Intent intent) {
+    MainActivity launchActivity(@Nullable Intent intent) {
         return testRule.launchActivity(intent);
     }
 
@@ -263,6 +263,30 @@ class TeakIntegrationTest {
     }
 
     ///// BroadcastReceiver test helpers
+
+    @SdkSuppress(minSdkVersion = 21)
+    String adbShell(@NonNull String adbString) {
+        String output = null;
+        ParcelFileDescriptor pfd = InstrumentationRegistry.getInstrumentation().getUiAutomation().executeShellCommand(adbString);
+        FileDescriptor fd = pfd.getFileDescriptor();
+        InputStream is = new BufferedInputStream(new FileInputStream(fd));
+        byte[] buf = new byte[1024];
+        try {
+            //noinspection ResultOfMethodCallIgnored
+            is.read(buf, 0, buf.length);
+            output = new String(buf);
+            android.util.Log.v("Teak:IntegrationTest", output);
+        } catch (Exception e) {
+            fail(android.util.Log.getStackTraceString(e));
+        } finally {
+            try {
+                is.close();
+            } catch (Exception ignored){
+            }
+        }
+
+        return output;
+    }
 
     @SdkSuppress(minSdkVersion = 21)
     String sendBroadcast(@NonNull String event) {
@@ -287,26 +311,6 @@ class TeakIntegrationTest {
                 }
             }
         }
-
-        String output = null;
-        ParcelFileDescriptor pfd = InstrumentationRegistry.getInstrumentation().getUiAutomation().executeShellCommand(adbString.toString());
-        FileDescriptor fd = pfd.getFileDescriptor();
-        InputStream is = new BufferedInputStream(new FileInputStream(fd));
-        byte[] buf = new byte[1024];
-        try {
-            //noinspection ResultOfMethodCallIgnored
-            is.read(buf, 0, buf.length);
-            output = new String(buf);
-            android.util.Log.v("Teak:IntegrationTest", output);
-        } catch (Exception e) {
-            fail(android.util.Log.getStackTraceString(e));
-        } finally {
-            try {
-                is.close();
-            } catch (Exception ignored){
-            }
-        }
-
-        return output;
+        return adbShell(adbString.toString());
     }
 }
