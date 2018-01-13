@@ -18,7 +18,7 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
-public class DeepLink extends TeakUnitTest {
+public class DeepLinkRoutes extends TeakUnitTest {
     @Test
     public void simple() throws Exception {
         io.teak.sdk.core.DeepLink.routes.clear();
