@@ -17,11 +17,16 @@ public class MainActivity extends AppCompatActivity {
         textView.setText("");
 
         int result = Activity.RESULT_CANCELED;
-        if (intent.hasCategory("io.teak.sdk.test")) {
+        if (intent.hasCategory("io.teak.sdk.test") && !intent.getBooleanExtra("teak-echo-handled", false)) {
+            intent.putExtra("teak-echo-handled", true);
             try {
                 final String teaklaunchUrl = intent.getStringExtra("teak-launch-url");
-                final Uri teakLaunchUri = Uri.parse(teaklaunchUrl);
-                textView.setText(teaklaunchUrl);
+                final String teakPackageName = intent.getStringExtra("teak-package-name");
+                final long teakEchoDelayMs = intent.getLongExtra("teak-echo-delay-ms", 1000L);
+                final Intent uriIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(teaklaunchUrl));
+                uriIntent.setPackage(teakPackageName);
+
+                textView.setText(teakPackageName + "\n" + teaklaunchUrl);
                 result = Activity.RESULT_OK;
 
                 // Delay, for visual debugging
@@ -29,10 +34,9 @@ public class MainActivity extends AppCompatActivity {
                 handler.postDelayed(new Runnable(){
                     @Override
                     public void run(){
-                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, teakLaunchUri);
-                        startActivity(browserIntent);
+                        startActivity(uriIntent);
                     }
-                }, 1000);
+                }, teakEchoDelayMs);
             } catch (Exception e) {
                 textView.setText(Log.getStackTraceString(e));
                 Log.e("Teak-Echo", Log.getStackTraceString(e));
