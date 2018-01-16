@@ -16,6 +16,7 @@
 package io.teak.app.test;
 
 import android.app.Activity;
+import android.app.Instrumentation;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -25,6 +26,7 @@ import android.support.annotation.Nullable;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.filters.SdkSuppress;
 import android.support.test.rule.ActivityTestRule;
+import android.support.test.uiautomator.UiDevice;
 
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -33,7 +35,9 @@ import org.junit.Rule;
 import java.io.BufferedInputStream;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.Map;
 
@@ -312,5 +316,28 @@ class TeakIntegrationTest {
             }
         }
         return adbShell(adbString.toString());
+    }
+
+    String dumpWindowHierarchyToString() {
+        final Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
+        final UiDevice device = UiDevice.getInstance(instrumentation);
+
+        OutputStream output = new OutputStream()
+        {
+            private StringBuilder string = new StringBuilder();
+            @Override
+            public void write(int b) throws IOException {
+                this.string.append((char) b );
+            }
+
+            public String toString() {
+                return this.string.toString();
+            }
+        };
+        try {
+            device.dumpWindowHierarchy(output);
+        } catch (Exception ignored) {
+        }
+        return output.toString();
     }
 }
