@@ -197,6 +197,39 @@ public class Teak extends BroadcastReceiver {
     }
 
     /**
+     * Has the user disabled notifications for this app.
+     *
+     * This will always return 'false' for any device below API 19.
+     *
+     * @return 'true' if the device is above API 19 and the user has disabled notifications, 'false' otherwise.
+     */
+    @SuppressWarnings("unused")
+    public static boolean userHasDisabledNotifications() {
+        if (Instance == null) {
+            Teak.log.e("error.userHasDisabledNotifications", "userHasDisabledNotifications() should not be called before onCreate()");
+            return false;
+        }
+        return !Instance.areNotificationsEnabled();
+    }
+
+    /**
+     * Open the settings app to the settings for this app.
+     *
+     * Be sure to prompt the user to re-enable notifications for your app before calling this function.
+     *
+     * @return 'true' if Teak was (probably) able to open the settings, 'false' if Teak was (probably) not able to open the settings.
+     */
+    @SuppressWarnings("unused")
+    public static boolean openSettingsAppToThisAppsSettings() {
+        if (Instance == null) {
+            Teak.log.e("error.openSettingsAppToThisAppsSettings", "openSettingsAppToThisAppsSettings() should not be called before onCreate()");
+            return false;
+        } else {
+            return Instance.openSettingsAppToThisAppsSettings();
+        }
+    }
+
+    /**
      * Interface for running code when a deep link is received
      */
     public static abstract class DeepLink {

@@ -83,7 +83,7 @@ public class NotificationBuilder {
     }
 
     private static String notificationChannelId;
-    private static String getNotificationChannelId(Context context) {
+    static String getNotificationChannelId(Context context) {
         // Notification channel, required for targeting API 26+
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (notificationChannelId == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {

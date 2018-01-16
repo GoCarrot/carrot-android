@@ -18,12 +18,16 @@ package io.teak.sdk;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.v4.app.NotificationManagerCompat;
 
 import java.security.InvalidParameterException;
 import java.util.Date;
@@ -40,6 +44,7 @@ import io.teak.sdk.store.IStore;
 
 public class TeakInstance {
     public final IObjectFactory objectFactory;
+    private final Context context;
 
     private static final String PREFERENCE_FIRST_RUN = "io.teak.sdk.Preferences.FirstRun";
 
@@ -50,10 +55,10 @@ public class TeakInstance {
             throw new InvalidParameterException("null Activity passed to Teak.onCreate");
         }
 
+        this.context = activity.getApplicationContext();
         this.activityHashCode = activity.hashCode();
         this.objectFactory = objectFactory;
-
-        final Context context = activity.getApplicationContext();
+        this.notificationManagerCompat = NotificationManagerCompat.from(activity);
 
         // Ravens
         TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
@@ -161,6 +166,50 @@ public class TeakInstance {
             payload.put("object_instance_id", objectInstanceId);
             TeakEvent.postEvent(new TrackEventEvent(payload));
         }
+    }
+
+    ///// Notifications and Settings
+
+    private final NotificationManagerCompat notificationManagerCompat;
+
+    boolean areNotificationsEnabled() {
+        boolean ret = true;
+        if (notificationManagerCompat != null) {
+            try {
+                ret = notificationManagerCompat.areNotificationsEnabled();
+            } catch (Exception e) {
+                Teak.log.exception(e);
+            }
+        }
+        return ret;
+    }
+
+    boolean openSettingsAppToThisAppsSettings() {
+        boolean ret = false;
+        try {
+            final Intent intent = new Intent();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                intent.setAction(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS);
+                intent.putExtra(Settings.EXTRA_CHANNEL_ID, NotificationBuilder.getNotificationChannelId(context));
+                intent.putExtra(Settings.EXTRA_APP_PACKAGE, context.getPackageName());
+            } else if (Build.VERSION.SDK_INT > Build.VERSION_CODES.N_MR1) {
+                intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
+                intent.putExtra(Settings.EXTRA_APP_PACKAGE, context.getPackageName());
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
+                intent.putExtra("app_package", this.context.getPackageName());
+                intent.putExtra("app_uid", this.context.getApplicationInfo().uid);
+            } else if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT) {
+                intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                intent.addCategory(Intent.CATEGORY_DEFAULT);
+                intent.setData(Uri.parse("package:" + this.context.getPackageName()));
+            }
+            this.context.startActivity(intent);
+            ret = true;
+        } catch (Exception e) {
+            Teak.log.exception(e);
+        }
+        return ret;
     }
 
     ///// Exception Handling
