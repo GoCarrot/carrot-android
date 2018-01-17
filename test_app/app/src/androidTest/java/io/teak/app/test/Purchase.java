@@ -13,6 +13,7 @@ import android.os.RemoteException;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.test.InstrumentationRegistry;
+import android.support.test.filters.SdkSuppress;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.rule.ServiceTestRule;
 import android.support.test.runner.AndroidJUnit4;
@@ -65,6 +66,7 @@ import static org.mockito.Mockito.when;
 @RunWith(AndroidJUnit4.class)
 public class Purchase {
     @Test
+    @SdkSuppress(minSdkVersion = 16)
     public void failPurchase() throws IntentSender.SendIntentException, RemoteException, InterruptedException, TimeoutException {
         // Launch the activity
         testRule.launchActivity(null);
@@ -98,6 +100,7 @@ public class Purchase {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = 16)
     public void succeedPurchase() throws IntentSender.SendIntentException, RemoteException, InterruptedException, TimeoutException {
         // Launch the activity
         testRule.launchActivity(null);
