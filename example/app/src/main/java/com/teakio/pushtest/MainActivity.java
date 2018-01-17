@@ -89,6 +89,9 @@ public class MainActivity extends AppCompatActivity {
         Intent serviceIntent = new Intent("com.android.vending.billing.InAppBillingService.BIND");
         serviceIntent.setPackage("com.android.vending");
         bindService(serviceIntent, mServiceConn, Context.BIND_AUTO_CREATE);
+
+        // Set badge count
+        Teak.setApplicationBadgeNumber(42);
     }
 
     @Override

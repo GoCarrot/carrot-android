@@ -40,6 +40,7 @@ import io.teak.sdk.event.PurchaseFailedEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.event.UserIdEvent;
+import io.teak.sdk.shortcutbadger.ShortcutBadger;
 import io.teak.sdk.store.IStore;
 
 public class TeakInstance {
@@ -211,6 +212,18 @@ public class TeakInstance {
             Teak.log.exception(e);
         }
         return ret;
+    }
+
+    ///// Application icon badge
+
+    boolean setApplicationBadgeNumber(int count) {
+        try {
+            ShortcutBadger.applyCountOrThrow(this.context, count);
+            return true;
+        } catch (Exception e) {
+            Teak.log.exception(e);
+            return false;
+        }
     }
 
     ///// Exception Handling

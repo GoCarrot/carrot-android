@@ -142,4 +142,10 @@ public class PublicAPI extends TeakIntegrationTest {
         // Test here (so notifications are re-enabled for certain)
         assertTrue(shouldBeTrue);
     }
+
+    @Test
+    public void setApplicationBadgeNumber() {
+        launchActivity();
+        assertTrue(Teak.setApplicationBadgeNumber(42));
+    }
 }
