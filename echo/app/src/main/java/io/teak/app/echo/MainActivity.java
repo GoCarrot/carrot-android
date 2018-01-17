@@ -25,8 +25,9 @@ public class MainActivity extends AppCompatActivity {
                 final long teakEchoDelayMs = intent.getLongExtra("teak-echo-delay-ms", 1000L);
                 final Intent uriIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(teaklaunchUrl));
                 uriIntent.setPackage(teakPackageName);
+                uriIntent.setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
 
-                textView.setText(teakPackageName + "\n" + teaklaunchUrl);
+                textView.setText(teaklaunchUrl);
                 result = Activity.RESULT_OK;
 
                 // Delay, for visual debugging
