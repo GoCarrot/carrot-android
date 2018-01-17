@@ -19,6 +19,7 @@ import android.app.Instrumentation;
 import android.content.Context;
 import android.content.Intent;
 import android.support.test.InstrumentationRegistry;
+import android.support.test.filters.SdkSuppress;
 import android.support.test.runner.AndroidJUnit4;
 import android.support.test.uiautomator.By;
 import android.support.test.uiautomator.UiDevice;
@@ -45,6 +46,7 @@ public class NotificationIntents extends TeakIntegrationTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = 16)
     public void clearIntent() {
         launchActivity();
 
@@ -67,8 +69,22 @@ public class NotificationIntents extends TeakIntegrationTest {
         assertNotNull(title);
 
         // Clear all notifications
-        device.wait(Until.hasObject(By.text("CLEAR ALL")), 5000); // TODO: Make sure text is consistent on versions
-        UiObject2 clearAll = device.findObject(By.text("CLEAR ALL"));
+        String[] clearAllResourceIds = new String[] {
+                "com.android.systemui:id/dismiss_text",
+                "com.android.systemui:id/clear_all",
+                "com.android.systemui:id/clear_button"
+        };
+
+        UiObject2 clearAll = null;
+        for (String resourceId : clearAllResourceIds) {
+            clearAll = device.findObject(By.res(resourceId));
+            if (clearAll != null) break;
+        }
+
+        if (clearAll == null) {
+            final String foo = dumpWindowHierarchyToString();
+            android.util.Log.d("wtf", foo);
+        }
         assertNotNull(clearAll);
         clearAll.click();
 
