@@ -204,6 +204,7 @@ public class TeakInstance {
                 intent.addCategory(Intent.CATEGORY_DEFAULT);
                 intent.setData(Uri.parse("package:" + this.context.getPackageName()));
             }
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             this.context.startActivity(intent);
             ret = true;
         } catch (Exception e) {

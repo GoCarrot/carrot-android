@@ -217,6 +217,8 @@ public class Teak extends BroadcastReceiver {
      *
      * Be sure to prompt the user to re-enable notifications for your app before calling this function.
      *
+     * This will always return 'false' for any device below API 19.
+     *
      * @return 'true' if Teak was (probably) able to open the settings, 'false' if Teak was (probably) not able to open the settings.
      */
     @SuppressWarnings("unused")

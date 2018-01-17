@@ -67,6 +67,7 @@ public class PublicAPI extends TeakIntegrationTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = 19)
     public void openSettingsAppToThisAppsSettings() {
         final Activity activity = launchActivity();
 
