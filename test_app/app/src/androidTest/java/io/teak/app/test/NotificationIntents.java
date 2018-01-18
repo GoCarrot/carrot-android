@@ -34,8 +34,11 @@ import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.json.JSONObject;
 
+import static org.hamcrest.Matchers.hasItemInArray;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assume.assumeThat;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
@@ -52,6 +55,14 @@ public class NotificationIntents extends TeakIntegrationTest {
 
         final Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
         final UiDevice device = UiDevice.getInstance(instrumentation);
+
+        // Some devices just don't have a clear all button, so skip those
+        final String[] skipDeviceModels = new String[]{
+                "BLU Advance 5.0"   // BLU BLU Advance 5.0  Android 5.1     (API 22)
+        };
+        final String thisDeviceModel = android.os.Build.MODEL;
+        assumeThat(thisDeviceModel + " does not have a 'CLEAR' or 'CLEAR ALL' button in the notification tray",
+                skipDeviceModels, not(hasItemInArray(thisDeviceModel)));
 
         // Background the app, it should now be paused
         backgroundApp();
