@@ -11,13 +11,13 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.filters.SdkSuppress;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.rule.ServiceTestRule;
 import android.support.test.runner.AndroidJUnit4;
 import android.support.test.uiautomator.By;
+import android.support.test.uiautomator.BySelector;
 import android.support.test.uiautomator.UiDevice;
 import android.support.test.uiautomator.UiObject2;
 import android.support.test.uiautomator.Until;
@@ -26,9 +26,9 @@ import android.util.Log;
 import com.android.vending.billing.IInAppBillingService;
 
 import org.json.JSONObject;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -89,8 +89,9 @@ public class Purchase {
         testRule.getActivity().startIntentSenderForResult(pendingIntent.getIntentSender(), 1001, new Intent(), 0, 0, 0);
 
         // Click 'Ok'
-        device.wait(Until.hasObject(By.text("OK")), 10000);
-        UiObject2 okButton = device.findObject(By.text("OK"));
+        final BySelector continueButtonSelector = By.res("com.android.vending:id/continue_button");
+        device.wait(Until.hasObject(continueButtonSelector), 10000);
+        UiObject2 okButton = device.findObject(continueButtonSelector);
         Assert.assertNotNull(okButton);
         okButton.click();
 
@@ -122,8 +123,9 @@ public class Purchase {
         testRule.getActivity().startIntentSenderForResult(pendingIntent.getIntentSender(), 1001, new Intent(), 0, 0, 0);
 
         // Click 'BUY'
-        device.wait(Until.hasObject(By.text("BUY")), 10000);
-        UiObject2 buyButton = device.findObject(By.text("BUY"));
+        final BySelector continueButtonSelector = By.res("com.android.vending:id/continue_button");
+        device.wait(Until.hasObject(continueButtonSelector), 10000);
+        final UiObject2 buyButton = device.findObject(continueButtonSelector);
         assertNotNull(buyButton);
         buyButton.click();
 
@@ -149,40 +151,44 @@ public class Purchase {
             inAppBillingService = IInAppBillingService.Stub.asInterface(service);
 
             // Clear inventory
-            try {
-                Bundle ownedItems = inAppBillingService.getPurchases(3, testRule.getActivity().getPackageName(), "inapp", null);
-                int response = ownedItems.getInt("RESPONSE_CODE");
-                if (response == 0) {
-                    ArrayList<String> purchaseDataList = ownedItems.getStringArrayList("INAPP_PURCHASE_DATA_LIST");
-                    if (purchaseDataList != null) {
-                        for (int i = 0; i < purchaseDataList.size(); ++i) {
-                            String purchaseData = purchaseDataList.get(i);
-                            Log.d("PurchaseTesting", purchaseData);
-                            try {
-                                JSONObject purchase = new JSONObject(purchaseData);
-                                inAppBillingService.consumePurchase(3, testRule.getActivity().getPackageName(), purchase.getString("purchaseToken"));
-                            } catch (Exception e) {
-                                Log.e("PurchaseTesting", Log.getStackTraceString(e));
-                            }
-
-                            // do something with this purchase information
-                            // e.g. display the updated list of products owned by user
-                            //response =
-                        }
-                    }
-
-                    // if continuationToken != null, call getPurchases again
-                    // and pass in the token to retrieve more items
-                }
-
-            } catch (Exception e) {
-                Log.e("PurchaseTesting", Log.getStackTraceString(e));
-            }
+            consumeAllPurchasedItems();
 
             // Ready
             serviceConnectedLatch.countDown();
         }
     };
+
+    @After
+    public void consumeAllPurchasedItems() {
+        try {
+            Bundle ownedItems = inAppBillingService.getPurchases(3, testRule.getActivity().getPackageName(), "inapp", null);
+            int response = ownedItems.getInt("RESPONSE_CODE");
+            if (response == 0) {
+                ArrayList<String> purchaseDataList = ownedItems.getStringArrayList("INAPP_PURCHASE_DATA_LIST");
+                if (purchaseDataList != null) {
+                    for (int i = 0; i < purchaseDataList.size(); ++i) {
+                        String purchaseData = purchaseDataList.get(i);
+                        Log.d("PurchaseTesting", purchaseData);
+                        try {
+                            JSONObject purchase = new JSONObject(purchaseData);
+                            inAppBillingService.consumePurchase(3, testRule.getActivity().getPackageName(), purchase.getString("purchaseToken"));
+                        } catch (Exception e) {
+                            Log.e("PurchaseTesting", Log.getStackTraceString(e));
+                        }
+
+                        // do something with this purchase information
+                        // e.g. display the updated list of products owned by user
+                        //response =
+                    }
+                }
+
+                // if continuationToken != null, call getPurchases again
+                // and pass in the token to retrieve more items
+            }
+        } catch (Exception e) {
+            Log.e("PurchaseTesting", Log.getStackTraceString(e));
+        }
+    }
 
     @AfterClass
     public static void stopEventProcessingThread() {
