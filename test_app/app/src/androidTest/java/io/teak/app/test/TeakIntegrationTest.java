@@ -318,7 +318,7 @@ class TeakIntegrationTest {
         return adbShell(adbString.toString());
     }
 
-    String dumpWindowHierarchyToString() {
+    static String dumpWindowHierarchyToString() {
         final Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
         final UiDevice device = UiDevice.getInstance(instrumentation);
 
