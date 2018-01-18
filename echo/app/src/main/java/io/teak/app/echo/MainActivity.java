@@ -12,10 +12,13 @@ import android.util.Log;
 import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String LOG_TAG = "Teak-Echo";
+
     private void processIntent(@NonNull Intent intent) {
         TextView textView = findViewById(R.id.mainTextView);
         textView.setText("");
 
+        Log.d(LOG_TAG, "Received intent: " + intent.toString());
         int result = Activity.RESULT_CANCELED;
         if (intent.hasCategory("io.teak.sdk.test") && !intent.getBooleanExtra("teak-echo-handled", false)) {
             intent.putExtra("teak-echo-handled", true);
@@ -23,24 +26,33 @@ public class MainActivity extends AppCompatActivity {
                 final String teaklaunchUrl = intent.getStringExtra("teak-launch-url");
                 final String teakPackageName = intent.getStringExtra("teak-package-name");
                 final long teakEchoDelayMs = intent.getLongExtra("teak-echo-delay-ms", 1000L);
-                final Intent uriIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(teaklaunchUrl));
+
+                Log.d(LOG_TAG, "teak-launch-url = " + teaklaunchUrl);
+                Log.d(LOG_TAG, "teak-package-name = " + teakPackageName);
+                Log.d(LOG_TAG, "teak-echo-delay-ms = " + teakEchoDelayMs);
+
+                final Intent uriIntent = new Intent(Intent.ACTION_VIEW);
+                uriIntent.setData(Uri.parse(teaklaunchUrl));
                 uriIntent.setPackage(teakPackageName);
-                uriIntent.setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
 
                 textView.setText(teaklaunchUrl);
-                result = Activity.RESULT_OK;
 
-                // Delay, for visual debugging
-                final Handler handler = new Handler();
-                handler.postDelayed(new Runnable(){
-                    @Override
-                    public void run(){
-                        startActivity(uriIntent);
-                    }
-                }, teakEchoDelayMs);
+                if (uriIntent.resolveActivity(this.getPackageManager()) != null) {
+                    final Handler handler = new Handler();
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.d(LOG_TAG, "Starting activity: " + uriIntent.toString());
+                            startActivity(uriIntent);
+                        }
+                    }, teakEchoDelayMs);
+                    result = Activity.RESULT_OK;
+                } else {
+                    Log.e(LOG_TAG, "resolveActivity() failed for: " + uriIntent.toString());
+                }
             } catch (Exception e) {
                 textView.setText(Log.getStackTraceString(e));
-                Log.e("Teak-Echo", Log.getStackTraceString(e));
+                Log.e(LOG_TAG, Log.getStackTraceString(e));
             }
         }
         setResult(result);
