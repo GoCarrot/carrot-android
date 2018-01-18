@@ -135,6 +135,7 @@ public class DefaultObjectFactory implements IObjectFactory {
         return null;
     }
 
+    @SuppressWarnings("WeakerAccess") // Integration tests call this
     public static IPushProvider createPushProvider(@NonNull Context context) {
         IPushProvider ret = null;
         try {

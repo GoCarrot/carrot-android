@@ -34,7 +34,7 @@ public class GCMPushProvider implements IPushProvider {
     private final FutureTask<GoogleCloudMessaging> gcmFuture;
     private String gcmSenderId;
 
-    public GCMPushProvider(@NonNull final Context context) {
+    public GCMPushProvider(@NonNull final Context context) throws ClassNotFoundException {
         this.gcmFuture = new FutureTask<>(new RetriableTask<>(100, 2000L, new Callable<GoogleCloudMessaging>() {
             @Override
             public GoogleCloudMessaging call() throws Exception {
@@ -58,8 +58,9 @@ public class GCMPushProvider implements IPushProvider {
                     }
                 });
             }
-        } catch (Exception ignored) {
-            // This means that com.google.android.gms.iid.InstanceIDListenerService doesn't exist, which is fine
+        } catch (ClassNotFoundException e) {
+            Teak.log.e("google.gcm.InstanceIDListenerService", "com.google.android.gms.iid.InstanceIDListenerService not found.");
+            throw e;
         }
     }
 
