@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Instrumentation;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
+import android.os.Build;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.filters.SdkSuppress;
 import android.support.test.runner.AndroidJUnit4;
@@ -23,7 +24,12 @@ import io.teak.sdk.event.UserIdEvent;
 
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
+import static org.hamcrest.Matchers.hasItemInArray;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeThat;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
@@ -118,33 +124,71 @@ public class PublicAPI extends TeakIntegrationTest {
         final UiObject2 title = device.findObject(By.text(appName));
         assertNotNull(title);
 
-        // Get the 'Allow notifications' label
-        final UiObject2 allowNotificationsText = device.findObject(By.text("Allow notifications"));
-        assertNotNull(allowNotificationsText);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            // Get the 'Allow notifications' label
+            final UiObject2 allowNotificationsText = device.findObject(By.text("Allow notifications"));
+            assertNotNull(allowNotificationsText);
 
-        // Get the check box
-        final UiObject2 allowNotificationsCheckbox = allowNotificationsText.getParent().getParent().findObject(By.checkable(true));
-        assertNotNull(allowNotificationsCheckbox);
-        assertTrue(allowNotificationsCheckbox.isChecked());
+            // Get the check box
+            final UiObject2 allowNotificationsCheckbox = allowNotificationsText.getParent().getParent().findObject(By.checkable(true));
+            assertNotNull(allowNotificationsCheckbox);
+            assumeTrue(android.os.Build.MODEL + " has invalid starting settings, notifications for " + activity.getPackageName() + " are not allowed.", allowNotificationsCheckbox.isChecked());
 
-        // Disable notifications
-        allowNotificationsCheckbox.click();
+            // Disable notifications
+            allowNotificationsCheckbox.click();
+            allowNotificationsCheckbox.wait(Until.checked(false), 500L);
+            assertFalse(allowNotificationsCheckbox.isChecked());
 
-        assertFalse(allowNotificationsCheckbox.isChecked());
+            // Notifications should be disabled
+            final boolean shouldBeTrue = Teak.userHasDisabledNotifications();
 
-        // Notifications should be disabled
-        final boolean shouldBeTrue = Teak.userHasDisabledNotifications();
+            // Re-enable notifications
+            allowNotificationsCheckbox.click();
+            allowNotificationsCheckbox.wait(Until.checked(true), 500L);
+            assertTrue(allowNotificationsCheckbox.isChecked());
 
-        // Re-enable notifications
-        allowNotificationsCheckbox.click();
-        assertTrue(allowNotificationsCheckbox.isChecked());
+            // Test here (so notifications are re-enabled for certain)
+            assertTrue(shouldBeTrue);
+        } else {
+            // Get the 'Block' label
+            final UiObject2 blockText = device.findObject(By.text("Block"));
+            assertNotNull(blockText);
 
-        // Test here (so notifications are re-enabled for certain)
-        assertTrue(shouldBeTrue);
+            // Get the check box
+            final UiObject2 blockCheckbox = blockText.getParent().getParent().findObject(By.checkable(true));
+            assertNotNull(blockCheckbox);
+            assumeFalse(android.os.Build.MODEL + " has invalid starting settings, notifications for " + activity.getPackageName() + " are blocked.", blockCheckbox.isChecked());
+
+            // Block notifications
+            blockCheckbox.click();
+            blockCheckbox.wait(Until.checked(true), 500L);
+            assertTrue(blockCheckbox.isChecked());
+
+            // Notifications should be disabled
+            final boolean shouldBeTrue = Teak.userHasDisabledNotifications();
+
+            // Un-block notifications
+            blockCheckbox.click();
+            blockCheckbox.wait(Until.checked(false), 500L);
+            assertFalse(blockCheckbox.isChecked());
+
+            // Test here (so notifications are re-enabled for certain)
+            assertTrue(shouldBeTrue);
+        }
+
     }
 
     @Test
     public void setApplicationBadgeNumber() {
+        // ShortcutBadger doesn't support all devices, skip those
+        final String[] skipDeviceModels = new String[]{
+                "C5170",            // Kyocera C5170        Android 4.0.4 (API 15)
+                "BLU Advance 5.0"   // BLU BLU Advance 5.0  Android 5.1    (API 22)
+        };
+        final String thisDeviceModel = android.os.Build.MODEL;
+        assumeThat("Teak.setApplicationBadgeNumber() does not support " + thisDeviceModel,
+                skipDeviceModels, not(hasItemInArray(thisDeviceModel)));
+
         launchActivity();
         assertTrue(Teak.setApplicationBadgeNumber(42));
     }
