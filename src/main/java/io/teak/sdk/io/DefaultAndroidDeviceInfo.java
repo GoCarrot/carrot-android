@@ -42,7 +42,8 @@ import io.teak.sdk.event.AdvertisingInfoEvent;
 public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
     private final Context context;
 
-    public DefaultAndroidDeviceInfo(@NonNull Context context) {
+    public DefaultAndroidDeviceInfo(@NonNull Context context) throws ClassNotFoundException {
+        Class.forName("com.google.android.gms.common.GooglePlayServicesUtil");
         this.context = context;
     }
 

@@ -18,7 +18,6 @@ package io.teak.sdk;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
-import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -50,7 +49,11 @@ public class TeakInstance {
     private static final String PREFERENCE_FIRST_RUN = "io.teak.sdk.Preferences.FirstRun";
 
     @SuppressLint("ObsoleteSdkInt")
-    TeakInstance(@NonNull Activity activity, @NonNull final IObjectFactory objectFactory) {
+    TeakInstance(@NonNull Activity activity, @NonNull final IObjectFactory objectFactory) throws ClassNotFoundException {
+        // These will throw ClassNotFoundException which will get caught and then thrown to the user
+        // in a consistent way.
+        Class.forName("android.support.v4.app.NotificationManagerCompat");
+
         //noinspection all -- Disable warning on the null check
         if (activity == null) {
             throw new InvalidParameterException("null Activity passed to Teak.onCreate");

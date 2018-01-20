@@ -35,6 +35,11 @@ public class GCMPushProvider implements IPushProvider {
     private String gcmSenderId;
 
     public GCMPushProvider(@NonNull final Context context) throws ClassNotFoundException {
+        // These will throw ClassNotFoundException which will get caught and then thrown to the user
+        // in a consistent way.
+        Class.forName("com.google.android.gms.gcm.GoogleCloudMessaging");
+        Class.forName("com.google.android.gms.iid.InstanceIDListenerService");
+
         this.gcmFuture = new FutureTask<>(new RetriableTask<>(100, 2000L, new Callable<GoogleCloudMessaging>() {
             @Override
             public GoogleCloudMessaging call() throws Exception {
@@ -44,24 +49,16 @@ public class GCMPushProvider implements IPushProvider {
         new Thread(this.gcmFuture).start();
 
         // Listen for events coming in from InstanceIDListenerService
-        try {
-            Class<?> clazz = Class.forName("com.google.android.gms.iid.InstanceIDListenerService");
-            if (clazz != null) {
-                InstanceIDListenerService.addEventListener(new InstanceIDListenerService.EventListener() {
-                    @Override
-                    public void onTokenRefresh() {
-                        if (gcmSenderId == null) {
-                            Teak.log.e("google.gcm.sender_id", "InstanceIDListenerService requested a token refresh, but gcmSenderId is null.");
-                        } else {
-                            requestPushKey(gcmSenderId);
-                        }
-                    }
-                });
+        InstanceIDListenerService.addEventListener(new InstanceIDListenerService.EventListener() {
+            @Override
+            public void onTokenRefresh() {
+                if (gcmSenderId == null) {
+                    Teak.log.e("google.gcm.sender_id", "InstanceIDListenerService requested a token refresh, but gcmSenderId is null.");
+                } else {
+                    requestPushKey(gcmSenderId);
+                }
             }
-        } catch (ClassNotFoundException e) {
-            Teak.log.e("google.gcm.InstanceIDListenerService", "com.google.android.gms.iid.InstanceIDListenerService not found.");
-            throw e;
-        }
+        });
     }
 
     @SuppressWarnings({"deprecation", "MissingPermission"})

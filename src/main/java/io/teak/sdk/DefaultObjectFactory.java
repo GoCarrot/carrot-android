@@ -43,7 +43,7 @@ public class DefaultObjectFactory implements IObjectFactory {
     private final IAndroidNotification androidNotification;
     private final ITeakCore teakCore;
 
-    DefaultObjectFactory(@NonNull Context context) {
+    DefaultObjectFactory(@NonNull Context context) throws ClassNotFoundException {
         this.androidResources = new DefaultAndroidResources(context);
         this.store = createStore(context);
         this.androidDeviceInfo = new DefaultAndroidDeviceInfo(context);
@@ -136,8 +136,9 @@ public class DefaultObjectFactory implements IObjectFactory {
     }
 
     @SuppressWarnings("WeakerAccess") // Integration tests call this
-    public static IPushProvider createPushProvider(@NonNull Context context) {
+    public static IPushProvider createPushProvider(@NonNull Context context) throws ClassNotFoundException {
         IPushProvider ret = null;
+        ClassNotFoundException pushCreationException = null;
         try {
             Class.forName("com.amazon.device.messaging.ADM");
             if (new ADM(context).isSupported()) {
@@ -152,14 +153,21 @@ public class DefaultObjectFactory implements IObjectFactory {
         if (ret == null) {
             try {
                 Class.forName("com.google.android.gms.common.GooglePlayServicesUtil");
-                ret = new GCMPushProvider(context);
-                Teak.log.i("factory.pushProvider", Helpers.mm.h("type", "gcm"));
+                try {
+                    ret = new GCMPushProvider(context);
+                    Teak.log.i("factory.pushProvider", Helpers.mm.h("type", "gcm"));
+                } catch (ClassNotFoundException e) {
+                    pushCreationException = e;
+                }
             } catch (Exception ignored) {
             }
         }
 
         if (ret == null) {
             Teak.log.e("factory.pushProvider", Helpers.mm.h("type", "none"));
+            if (pushCreationException != null) {
+                throw pushCreationException;
+            }
         }
         return ret;
     }

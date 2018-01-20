@@ -108,7 +108,12 @@ public class Teak extends BroadcastReceiver {
     public static void onCreate(@NonNull Activity activity, @Nullable IObjectFactory objectFactory) {
         // Unless something gave us an object factory, use the default one
         if (objectFactory == null) {
-            objectFactory = new DefaultObjectFactory(activity.getApplicationContext());
+            try {
+                objectFactory = new DefaultObjectFactory(activity.getApplicationContext());
+            } catch (Exception e) {
+                Teak.log.exception(e);
+                throw new RuntimeException(e);
+            }
         }
 
         // Add version info for Unity/Air
@@ -124,7 +129,12 @@ public class Teak extends BroadcastReceiver {
 
         // Create Instance
         if (Instance == null) {
-            Instance = new TeakInstance(activity, objectFactory);
+            try {
+                Instance = new TeakInstance(activity, objectFactory);
+            } catch (Exception e) {
+                Teak.log.exception(e);
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -311,7 +321,7 @@ public class Teak extends BroadcastReceiver {
         if (action == null) return;
 
         // If Instance is null, make sure TeakCore is around. If it's not null, make sure it's enabled.
-        if ((Instance == null && TeakCore.get(context) == null) || (Instance != null && !Instance.isEnabled())) {
+        if ((Instance == null && TeakCore.getWithoutThrow(context) == null) || (Instance != null && !Instance.isEnabled())) {
             return;
         }
 

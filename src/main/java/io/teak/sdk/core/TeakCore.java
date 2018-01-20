@@ -54,14 +54,26 @@ import io.teak.sdk.event.TrackEventEvent;
 
 public class TeakCore implements ITeakCore {
     private static TeakCore Instance = null;
-    public static TeakCore get(@NonNull Context context) {
+    public static TeakCore get(@NonNull Context context) throws ClassNotFoundException {
         if (Instance == null) {
             Instance = new TeakCore(context);
         }
         return Instance;
     }
 
-    public TeakCore(@NonNull Context context) {
+    public static TeakCore getWithoutThrow(@NonNull Context context) {
+        try {
+            return TeakCore.get(context);
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    public TeakCore(@NonNull Context context) throws ClassNotFoundException {
+        // This exists to throw a ClassNotFoundException if LocalBroadcastManager is not found,
+        // otherwise it will throw a NoClassDefFoundError, which is not catch-able
+        Class.forName("android.support.v4.content.LocalBroadcastManager");
+
         this.localBroadcastManager = LocalBroadcastManager.getInstance(context);
 
         TeakEvent.addEventListener(this.teakEventListener);
