@@ -15,11 +15,15 @@
 package io.teak.sdk.push;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.ServiceInfo;
 import android.support.annotation.NonNull;
 
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 
 import java.io.IOException;
+import java.util.ServiceConfigurationError;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
@@ -40,6 +44,23 @@ public class GCMPushProvider implements IPushProvider {
         Class.forName("com.google.android.gms.gcm.GoogleCloudMessaging");
         Class.forName("com.google.android.gms.iid.InstanceIDListenerService");
 
+        // Check to make sure that InstanceIDListenerService is in the manifest
+        boolean foundInstanceIdListenerService = false;
+        try {
+            PackageInfo packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.GET_SERVICES);
+            for (ServiceInfo serviceInfo : packageInfo.services) {
+                if ("io.teak.sdk.InstanceIDListenerService".equals(serviceInfo.name)) {
+                    foundInstanceIdListenerService = true;
+                    break;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        if (!foundInstanceIdListenerService) {
+            throw new ServiceConfigurationError("io.teak.sdk.InstanceIDListenerService not found in AndroidManifest");
+        }
+
+        // Get GCM instance on a background thread
         this.gcmFuture = new FutureTask<>(new RetriableTask<>(100, 2000L, new Callable<GoogleCloudMessaging>() {
             @Override
             public GoogleCloudMessaging call() throws Exception {
