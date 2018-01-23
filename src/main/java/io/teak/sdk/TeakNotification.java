@@ -237,6 +237,7 @@ public class TeakNotification {
                                     JSONObject rewardResponse = responseJson.optJSONObject("response");
 
                                     JSONObject fullParsedResponse = new JSONObject();
+                                    fullParsedResponse.put("teakRewardId", teakRewardId);
                                     fullParsedResponse.put("status", rewardResponse.get("status"));
                                     if (rewardResponse.optJSONObject("reward") != null) {
                                         fullParsedResponse.put("reward", rewardResponse.get("reward"));

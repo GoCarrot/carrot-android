@@ -271,6 +271,8 @@ public class TeakCore implements ITeakCore {
             // Send broadcast
             if (bundle != null && this.localBroadcastManager != null) {
                 final HashMap<String, Object> eventDataDict = new HashMap<>();
+                eventDataDict.put("teakNotifId", bundle.getString("teakNotifId"));
+
                 if (bundle.getString("teakRewardId") != null) {
                     eventDataDict.put("incentivized", true);
                     eventDataDict.put("teakRewardId", bundle.getString("teakRewardId"));
@@ -282,12 +284,7 @@ public class TeakCore implements ITeakCore {
                 if (bundle.getString("teakCreativeName") != null)
                     eventDataDict.put("teakCreativeName", bundle.getString("teakCreativeName"));
 
-                final Intent broadcastEvent = new Intent(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
-                broadcastEvent.putExtras(bundle);
-                broadcastEvent.putExtra("eventData", eventDataDict);
-                sendLocalBroadcast(broadcastEvent);
-
-                String teakRewardId = bundle.getString("teakRewardId");
+                final String teakRewardId = bundle.getString("teakRewardId");
                 if (teakRewardId != null) {
                     final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
                     if (rewardFuture != null) {
@@ -297,18 +294,28 @@ public class TeakCore implements ITeakCore {
                                 try {
                                     TeakNotification.Reward reward = rewardFuture.get();
                                     HashMap<String, Object> rewardMap = Helpers.jsonToMap(reward.json);
-                                    rewardMap.putAll(eventDataDict);
+                                    eventDataDict.putAll(rewardMap);
 
                                     // Broadcast reward only if everything goes well
                                     final Intent rewardIntent = new Intent(Teak.REWARD_CLAIM_ATTEMPT);
-                                    rewardIntent.putExtra("reward", rewardMap);
+                                    rewardIntent.putExtra("reward", eventDataDict);
                                     sendLocalBroadcast(rewardIntent);
                                 } catch (Exception e) {
                                     Teak.log.exception(e);
+                                } finally {
+                                    final Intent broadcastEvent = new Intent(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
+                                    broadcastEvent.putExtras(bundle);
+                                    broadcastEvent.putExtra("eventData", eventDataDict);
+                                    sendLocalBroadcast(broadcastEvent);
                                 }
                             }
                         });
                     }
+                } else {
+                    final Intent broadcastEvent = new Intent(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
+                    broadcastEvent.putExtras(bundle);
+                    broadcastEvent.putExtra("eventData", eventDataDict);
+                    sendLocalBroadcast(broadcastEvent);
                 }
             }
         }
