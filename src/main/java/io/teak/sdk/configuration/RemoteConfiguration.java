@@ -96,7 +96,7 @@ public class RemoteConfiguration {
 
     // region Helpers
     private static String nullInsteadOfEmpty(String input) {
-        if (input != null && !input.isEmpty()) {
+        if (input != null && !input.trim().isEmpty()) {
             return input;
         }
         return null;
