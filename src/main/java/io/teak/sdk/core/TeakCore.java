@@ -25,6 +25,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 
+import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.io.DefaultAndroidNotification;
 import io.teak.sdk.io.DefaultAndroidResources;
@@ -54,7 +55,7 @@ import io.teak.sdk.event.TrackEventEvent;
 
 public class TeakCore implements ITeakCore {
     private static TeakCore Instance = null;
-    public static TeakCore get(@NonNull Context context) throws ClassNotFoundException {
+    public static TeakCore get(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
         if (Instance == null) {
             Instance = new TeakCore(context);
         }
@@ -69,10 +70,8 @@ public class TeakCore implements ITeakCore {
         return null;
     }
 
-    public TeakCore(@NonNull Context context) throws ClassNotFoundException {
-        // This exists to throw a ClassNotFoundException if LocalBroadcastManager is not found,
-        // otherwise it will throw a NoClassDefFoundError, which is not catch-able
-        Class.forName("android.support.v4.content.LocalBroadcastManager");
+    public TeakCore(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
+        IntegrationChecker.requireDependency("android.support.v4.content.LocalBroadcastManager");
 
         this.localBroadcastManager = LocalBroadcastManager.getInstance(context);
 

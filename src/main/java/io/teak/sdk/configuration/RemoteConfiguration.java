@@ -42,13 +42,18 @@ public class RemoteConfiguration {
     public final String appSentryDsn;
     @SuppressWarnings("WeakerAccess")
     public final String gcmSenderId;
+    @SuppressWarnings("WeakerAccess")
+    public final boolean enhancedIntegrationChecks;
 
-    private RemoteConfiguration(@NonNull AppConfiguration appConfiguration, @NonNull String hostname, String sdkSentryDsn, String appSentryDsn, String gcmSenderId) {
+    private RemoteConfiguration(@NonNull AppConfiguration appConfiguration, @NonNull String hostname,
+                                String sdkSentryDsn, String appSentryDsn, String gcmSenderId,
+                                boolean enhancedIntegrationChecks) {
         this.appConfiguration = appConfiguration;
         this.hostname = hostname;
         this.appSentryDsn = appSentryDsn;
         this.sdkSentryDsn = sdkSentryDsn;
         this.gcmSenderId = gcmSenderId;
+        this.enhancedIntegrationChecks = enhancedIntegrationChecks;
     }
 
     public static void registerStaticEventListeners() {
@@ -73,7 +78,8 @@ public class RemoteConfiguration {
                                     response.isNull("auth") ? "gocarrot.com" : response.getString("auth"),
                                     nullInsteadOfEmpty(response.isNull("sdk_sentry_dsn") ? null : response.getString("sdk_sentry_dsn")),
                                     nullInsteadOfEmpty(response.isNull("app_sentry_dsn") ? null : response.getString("app_sentry_dsn")),
-                                    nullInsteadOfEmpty(response.isNull("gcm_sender_id") ? null : response.getString("gcm_sender_id")));
+                                    nullInsteadOfEmpty(response.isNull("gcm_sender_id") ? null : response.getString("gcm_sender_id")),
+                                    response.optBoolean("enhanced_integration_checks", false));
 
                                 Teak.log.i("configuration.remote", configuration.toHash());
                                 TeakEvent.postEvent(new RemoteConfigurationEvent(configuration));

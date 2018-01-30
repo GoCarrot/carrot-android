@@ -43,7 +43,7 @@ public class DefaultObjectFactory implements IObjectFactory {
     private final IAndroidNotification androidNotification;
     private final ITeakCore teakCore;
 
-    DefaultObjectFactory(@NonNull Context context) throws ClassNotFoundException {
+    DefaultObjectFactory(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
         this.androidResources = new DefaultAndroidResources(context);
         this.store = createStore(context);
         this.androidDeviceInfo = new DefaultAndroidDeviceInfo(context);
@@ -136,9 +136,9 @@ public class DefaultObjectFactory implements IObjectFactory {
     }
 
     @SuppressWarnings("WeakerAccess") // Integration tests call this
-    public static IPushProvider createPushProvider(@NonNull Context context) throws ClassNotFoundException {
+    public static IPushProvider createPushProvider(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
         IPushProvider ret = null;
-        ClassNotFoundException pushCreationException = null;
+        IntegrationChecker.MissingDependencyException pushCreationException = null;
         try {
             Class.forName("com.amazon.device.messaging.ADM");
             if (new ADM(context).isSupported()) {
@@ -156,7 +156,7 @@ public class DefaultObjectFactory implements IObjectFactory {
                 try {
                     ret = new GCMPushProvider(context);
                     Teak.log.i("factory.pushProvider", Helpers.mm.h("type", "gcm"));
-                } catch (ClassNotFoundException e) {
+                } catch (IntegrationChecker.MissingDependencyException e) {
                     pushCreationException = e;
                 }
             } catch (Exception ignored) {

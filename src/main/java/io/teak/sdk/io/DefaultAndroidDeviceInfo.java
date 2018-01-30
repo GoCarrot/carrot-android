@@ -34,6 +34,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
+import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.RetriableTask;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
@@ -42,8 +43,9 @@ import io.teak.sdk.event.AdvertisingInfoEvent;
 public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
     private final Context context;
 
-    public DefaultAndroidDeviceInfo(@NonNull Context context) throws ClassNotFoundException {
-        Class.forName("com.google.android.gms.common.GooglePlayServicesUtil");
+    public DefaultAndroidDeviceInfo(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
+        IntegrationChecker.requireDependency("com.google.android.gms.common.GooglePlayServicesUtil");
+
         this.context = context;
     }
 

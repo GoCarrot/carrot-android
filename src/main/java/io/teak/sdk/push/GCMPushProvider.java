@@ -29,6 +29,7 @@ import java.util.concurrent.FutureTask;
 
 import io.teak.sdk.Helpers;
 import io.teak.sdk.InstanceIDListenerService;
+import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.RetriableTask;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
@@ -38,27 +39,11 @@ public class GCMPushProvider implements IPushProvider {
     private final FutureTask<GoogleCloudMessaging> gcmFuture;
     private String gcmSenderId;
 
-    public GCMPushProvider(@NonNull final Context context) throws ClassNotFoundException {
-        // These will throw ClassNotFoundException which will get caught and then thrown to the user
-        // in a consistent way.
-        Class.forName("com.google.android.gms.gcm.GoogleCloudMessaging");
-        Class.forName("com.google.android.gms.iid.InstanceIDListenerService");
+    public GCMPushProvider(@NonNull final Context context) throws IntegrationChecker.MissingDependencyException {
+        IntegrationChecker.requireDependency("com.google.android.gms.gcm.GoogleCloudMessaging");
+        IntegrationChecker.requireDependency("com.google.android.gms.iid.InstanceIDListenerService");
 
-        // Check to make sure that InstanceIDListenerService is in the manifest
-        boolean foundInstanceIdListenerService = false;
-        try {
-            PackageInfo packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.GET_SERVICES);
-            for (ServiceInfo serviceInfo : packageInfo.services) {
-                if ("io.teak.sdk.InstanceIDListenerService".equals(serviceInfo.name)) {
-                    foundInstanceIdListenerService = true;
-                    break;
-                }
-            }
-        } catch (Exception ignored) {
-        }
-        if (!foundInstanceIdListenerService) {
-            throw new ServiceConfigurationError("io.teak.sdk.InstanceIDListenerService not found in AndroidManifest");
-        }
+        IntegrationChecker.requireManifestDefinition("service", "io.teak.sdk.InstanceIDListenerService");
 
         // Get GCM instance on a background thread
         this.gcmFuture = new FutureTask<>(new RetriableTask<>(100, 2000L, new Callable<GoogleCloudMessaging>() {

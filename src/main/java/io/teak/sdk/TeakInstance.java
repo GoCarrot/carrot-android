@@ -49,10 +49,8 @@ public class TeakInstance {
     private static final String PREFERENCE_FIRST_RUN = "io.teak.sdk.Preferences.FirstRun";
 
     @SuppressLint("ObsoleteSdkInt")
-    TeakInstance(@NonNull Activity activity, @NonNull final IObjectFactory objectFactory) throws ClassNotFoundException {
-        // These will throw ClassNotFoundException which will get caught and then thrown to the user
-        // in a consistent way.
-        Class.forName("android.support.v4.app.NotificationManagerCompat");
+    TeakInstance(@NonNull Activity activity, @NonNull final IObjectFactory objectFactory) throws IntegrationChecker.MissingDependencyException {
+        IntegrationChecker.requireDependency("android.support.v4.app.NotificationManagerCompat");
 
         //noinspection all -- Disable warning on the null check
         if (activity == null) {
@@ -93,17 +91,11 @@ public class TeakInstance {
             }
         });
 
-        // Create requirements checker, hooks into TeakConfiguration
-        RequirementsCheck requirementsCheck = new RequirementsCheck();
-
         // Get Teak Configuration ready
         if (!TeakConfiguration.initialize(context, this.objectFactory)) {
             this.setState(State.Disabled);
             return;
         }
-
-        // Check Activity
-        requirementsCheck.checkActivity(activity);
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
             Teak.log.e("api_level", "Teak requires API level 14 to operate. Teak is disabled.");

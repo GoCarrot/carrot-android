@@ -106,13 +106,18 @@ public class Teak extends BroadcastReceiver {
      * @param objectFactory Teak Object Factory to use, or null for default.
      */
     public static void onCreate(@NonNull Activity activity, @Nullable IObjectFactory objectFactory) {
+        // Init integration checks, we decide later if they report or not
+        if (!IntegrationChecker.init(activity)) {
+            return;
+        }
+
         // Unless something gave us an object factory, use the default one
         if (objectFactory == null) {
             try {
                 objectFactory = new DefaultObjectFactory(activity.getApplicationContext());
             } catch (Exception e) {
                 Teak.log.exception(e);
-                throw new RuntimeException(e);
+                return;
             }
         }
 
@@ -127,13 +132,13 @@ public class Teak extends BroadcastReceiver {
             }
         }
 
-        // Create Instance
+        // Create Instance last
         if (Instance == null) {
             try {
                 Instance = new TeakInstance(activity, objectFactory);
             } catch (Exception e) {
                 Teak.log.exception(e);
-                throw new RuntimeException(e);
+                return;
             }
         }
     }
