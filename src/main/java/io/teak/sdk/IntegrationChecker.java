@@ -204,16 +204,50 @@ public class IntegrationChecker {
             }
 
             // Check for receivers pointing to classes that don't exist
-            final List<ManifestParser.XmlTag> receivers = applications.get(0).find("receiver.intent-filter.action",
+            final List<ManifestParser.XmlTag> gcmReceivers = applications.get(0).find("receiver.intent-filter.action",
                     new HashMap.SimpleEntry<>("name", "com.google.android.c2dm.intent.RECEIVE"));
-            for (ManifestParser.XmlTag tag : receivers) {
+            ManifestParser.XmlTag teakGcmReceiver = null;
+            for (ManifestParser.XmlTag tag : gcmReceivers) {
                 final String checkReceiverClass = tag.attributes.get("name");
                 try {
                     Class.forName(checkReceiverClass);
                 } catch (Exception ignored) {
                     errorsToReport.put(checkReceiverClass, "\"" + checkReceiverClass + "\" is in your AndroidManifest.xml, but the corresponding SDK has been removed.\n\nRemove the <receiver> for \"" + checkReceiverClass + "\"");
                 }
+
+                // Check to make sure Teak GCM receiver is present
+                if ("io.teak.sdk.Teak".equals(checkReceiverClass)) {
+                    teakGcmReceiver = tag;
+                }
             }
+
+            // Error if no Teak GCM receiver
+            if (teakGcmReceiver == null) {
+                errorsToReport.put("io.teak.sdk.Teak", "There is no \"io.teak.sdk.Teak\" <receiver> in your AndroidManifest.xml. This will prevent push notifications from working.\n\nAdd the Teak <receiver>");
+            }
+
+            // Check to make sure the Teak InstanceIDListenerService is present
+            final List<ManifestParser.XmlTag> teakInstanceIdListenerService = applications.get(0).find("service.intent-filter.action",
+                    new HashMap.SimpleEntry<>("name", "com.google.android.gms.iid.InstanceID"));
+            if (teakInstanceIdListenerService.size() < 1 ||
+                    !"io.teak.sdk.InstanceIDListenerService".equals(teakInstanceIdListenerService.get(0).attributes.get("name"))) {
+                errorsToReport.put("io.teak.sdk.InstanceIDListenerService", "There is no \"io.teak.sdk.InstanceIDListenerService\" <service> in your AndroidManifest.xml. This will prevent push notifications from working.\n\nAdd the \"io.teak.sdk.InstanceIDListenerService\" <service>");
+            }
+
+            // Check to make sure the Teak Raven service is present
+            final List<ManifestParser.XmlTag> teakRavenService = applications.get(0).find("service",
+                    new HashMap.SimpleEntry<>("name", "io.teak.sdk.service.RavenService"));
+            if (teakRavenService.size() < 1) {
+                errorsToReport.put("io.teak.sdk.service.RavenService", "There is no \"io.teak.sdk.service.RavenService\" <service> in your AndroidManifest.xml. This will prevent remote error reporting.\n\nAdd the \"io.teak.sdk.service.RavenService\" <service>");
+            }
+
+            // Check to make sure the Teak Device State service is present
+            final List<ManifestParser.XmlTag> teakDeviceStateService = applications.get(0).find("service",
+                    new HashMap.SimpleEntry<>("name", "io.teak.sdk.service.DeviceStateService"));
+            if (teakDeviceStateService.size() < 1) {
+                errorsToReport.put("io.teak.sdk.service.DeviceStateService", "There is no \"io.teak.sdk.service.DeviceStateService\" <service> in your AndroidManifest.xml. This will prevent animated notifications.\n\nAdd the \"io.teak.sdk.service.DeviceStateService\" <service>");
+            }
+            //
 
             // Check to make sure that their android.intent.action.MAIN has the Teak intent filters
             final List<ManifestParser.XmlTag> mainActivity = applications.get(0).find("activity.intent\\-filter.action",
