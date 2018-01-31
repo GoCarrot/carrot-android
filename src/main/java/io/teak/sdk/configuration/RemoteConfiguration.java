@@ -46,8 +46,8 @@ public class RemoteConfiguration {
     public final boolean enhancedIntegrationChecks;
 
     private RemoteConfiguration(@NonNull AppConfiguration appConfiguration, @NonNull String hostname,
-                                String sdkSentryDsn, String appSentryDsn, String gcmSenderId,
-                                boolean enhancedIntegrationChecks) {
+        String sdkSentryDsn, String appSentryDsn, String gcmSenderId,
+        boolean enhancedIntegrationChecks) {
         this.appConfiguration = appConfiguration;
         this.hostname = hostname;
         this.appSentryDsn = appSentryDsn;

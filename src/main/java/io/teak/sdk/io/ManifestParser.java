@@ -40,7 +40,7 @@ public class ManifestParser {
             this.type = xmlResourceParser.getName();
 
             // Attributes
-            for (int i = 0; i < xmlResourceParser.getAttributeCount(); i ++) {
+            for (int i = 0; i < xmlResourceParser.getAttributeCount(); i++) {
                 final String name = xmlResourceParser.getAttributeName(i);
                 final String value = xmlResourceParser.getAttributeValue(i);
                 this.attributes.put(name, value);
@@ -102,7 +102,7 @@ public class ManifestParser {
                 // Advance to next token
                 xmlEventType = xmlResourceParser.nextToken();
             }
-        } catch (Exception e){
+        } catch (Exception e) {
             Teak.log.exception(e);
         } finally {
             xmlResourceParser.close();
