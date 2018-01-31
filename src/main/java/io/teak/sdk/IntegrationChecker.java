@@ -305,8 +305,10 @@ public class IntegrationChecker {
             final int targetSdkVersion = appInfo.targetSdkVersion;
             if (targetSdkVersion >= Build.VERSION_CODES.O) {
                 try {
-                    Class<?> notificationCompatBuilderClass = NotificationCompat.Builder.class;
+                    Class<?> notificationCompatBuilderClass = Class.forName("android.support.v4.app.NotificationCompat$Builder");
                     notificationCompatBuilderClass.getMethod("setChannelId", String.class);
+                } catch (ClassNotFoundException ignored) {
+                    // This is fine, it will get caught by the
                 } catch (Exception ignored) {
                     errorsToReport.put("support-v4.less-than.26.1", "App is targeting SDK version " + targetSdkVersion +
                                                                         " but support-v4 library needs to be updated to at least version 26.1.0 to support notification categories.");
