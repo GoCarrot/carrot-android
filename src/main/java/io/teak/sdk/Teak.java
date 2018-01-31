@@ -189,7 +189,6 @@ public class Teak extends BroadcastReceiver {
                 }
             });
         }
-        // TODO: Else throw exception for integration help?
     }
 
     /**
