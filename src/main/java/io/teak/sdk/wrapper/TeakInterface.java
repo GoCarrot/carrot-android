@@ -46,9 +46,7 @@ public class TeakInterface {
         filter.addAction(Teak.REWARD_CLAIM_ATTEMPT);
         filter.addAction(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
 
-        if (Teak.Instance == null) {
-            throw new IllegalStateException("Teak#onCreate was not called.");
-        } else {
+        if (Teak.Instance != null) {
             Teak.Instance.objectFactory.getTeakCore().registerLocalBroadcastReceiver(broadcastReceiver, filter);
         }
     }
