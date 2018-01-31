@@ -841,7 +841,7 @@ public class Session {
                             }
 
                             // Send reward broadcast
-                            String teakRewardId = attribution.containsKey("teak_reward_id") ? attribution.get("teak_reward_id").toString() : null;
+                            final String teakRewardId = attribution.containsKey("teak_reward_id") ? attribution.get("teak_reward_id").toString() : null;
                             if (teakRewardId != null) {
                                 final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
                                 if (rewardFuture != null) {
@@ -849,8 +849,16 @@ public class Session {
                                         @Override
                                         public void run() {
                                             try {
-                                                TeakNotification.Reward reward = rewardFuture.get();
-                                                HashMap<String, Object> rewardMap = Helpers.jsonToMap(reward.json);
+                                                final TeakNotification.Reward reward = rewardFuture.get();
+                                                final HashMap<String, Object> rewardMap = Helpers.jsonToMap(reward.json);
+
+                                                // This is to make sure the payloads match from a notification claim
+                                                rewardMap.put("teakNotifId", teakNotifId);
+                                                rewardMap.put("incentivized", true);
+                                                rewardMap.put("teakRewardId", teakRewardId);
+                                                rewardMap.put("teakScheduleName", null);
+                                                rewardMap.put("teakCreativeName", null);
+
                                                 final Intent rewardIntent = new Intent(Teak.REWARD_CLAIM_ATTEMPT);
                                                 rewardIntent.putExtra("reward", rewardMap);
                                                 TeakEvent.postEvent(new ExternalBroadcastEvent(rewardIntent));

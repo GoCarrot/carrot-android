@@ -269,21 +269,15 @@ public class TeakCore implements ITeakCore {
 
             // Send broadcast
             if (bundle != null && this.localBroadcastManager != null) {
+                final String teakRewardId = bundle.getString("teakRewardId");
+
                 final HashMap<String, Object> eventDataDict = new HashMap<>();
                 eventDataDict.put("teakNotifId", bundle.getString("teakNotifId"));
+                eventDataDict.put("teakRewardId", teakRewardId);
+                eventDataDict.put("incentivized", teakRewardId != null);
+                eventDataDict.put("teakScheduleName", bundle.getString("teakScheduleName"));
+                eventDataDict.put("teakCreativeName", bundle.getString("teakCreativeName"));
 
-                if (bundle.getString("teakRewardId") != null) {
-                    eventDataDict.put("incentivized", true);
-                    eventDataDict.put("teakRewardId", bundle.getString("teakRewardId"));
-                } else {
-                    eventDataDict.put("incentivized", false);
-                }
-                if (bundle.getString("teakScheduleName") != null)
-                    eventDataDict.put("teakScheduleName", bundle.getString("teakScheduleName"));
-                if (bundle.getString("teakCreativeName") != null)
-                    eventDataDict.put("teakCreativeName", bundle.getString("teakCreativeName"));
-
-                final String teakRewardId = bundle.getString("teakRewardId");
                 if (teakRewardId != null) {
                     final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
                     if (rewardFuture != null) {
