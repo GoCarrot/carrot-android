@@ -159,7 +159,7 @@ public class IntegrationChecker {
         });
     }
 
-    void checkActivityLaunchMode() {
+    private void checkActivityLaunchMode() {
         // Check the launch mode of the activity for debugging purposes
         try {
             ComponentName cn = new ComponentName(this.activity, this.activity.getClass());
