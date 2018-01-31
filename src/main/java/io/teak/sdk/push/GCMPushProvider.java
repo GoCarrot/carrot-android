@@ -43,8 +43,6 @@ public class GCMPushProvider implements IPushProvider {
         IntegrationChecker.requireDependency("com.google.android.gms.gcm.GoogleCloudMessaging");
         IntegrationChecker.requireDependency("com.google.android.gms.iid.InstanceIDListenerService");
 
-        IntegrationChecker.requireManifestDefinition("service", "io.teak.sdk.InstanceIDListenerService");
-
         // Get GCM instance on a background thread
         this.gcmFuture = new FutureTask<>(new RetriableTask<>(100, 2000L, new Callable<GoogleCloudMessaging>() {
             @Override

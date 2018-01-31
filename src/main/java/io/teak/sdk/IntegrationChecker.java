@@ -77,24 +77,6 @@ public class IntegrationChecker {
         }
     }
 
-    public static void requireManifestDefinition(@NonNull String type, @NonNull String fullyQualifiedClass) {
-        /*// Check to make sure that InstanceIDListenerService is in the manifest
-        boolean foundInstanceIdListenerService = false;
-        try {
-            PackageInfo packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.GET_SERVICES);
-            for (ServiceInfo serviceInfo : packageInfo.services) {
-                if ("io.teak.sdk.InstanceIDListenerService".equals(serviceInfo.name)) {
-                    foundInstanceIdListenerService = true;
-                    break;
-                }
-            }
-        } catch (Exception ignored) {
-        }
-        if (!foundInstanceIdListenerService) {
-            throw new ServiceConfigurationError("io.teak.sdk.InstanceIDListenerService not found in AndroidManifest");
-        }*/
-    }
-
     public static class MissingDependencyException extends ClassNotFoundException {
         public final String[] missingDependency;
         public MissingDependencyException(@NonNull ClassNotFoundException e) {
