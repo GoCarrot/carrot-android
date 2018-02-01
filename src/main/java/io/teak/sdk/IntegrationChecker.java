@@ -19,21 +19,15 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ComponentName;
-import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
-import android.support.v4.app.NotificationCompat;
 import android.text.TextUtils;
 
-import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -66,7 +60,7 @@ public class IntegrationChecker {
                 }
             }
             if (!foundInDependencies) {
-                throw new RuntimeException("Missing '" + fullyQualifiedClassName + "' in dependencies list.");
+                throw new NoClassDefFoundError("Missing '" + fullyQualifiedClassName + "' in dependencies list.");
             }
         }
 
@@ -81,12 +75,11 @@ public class IntegrationChecker {
         public final String[] missingDependency;
         public MissingDependencyException(@NonNull ClassNotFoundException e) {
             super();
-            initCause(e);
 
             // See what the missing dependency is
             String[] foundMissingDependencies = null;
             for (String[] dependency : dependencies) {
-                if (dependency[0].equals(e.getMessage())) {
+                if (e.getMessage().contains(dependency[0])) {
                     foundMissingDependencies = dependency;
                     break;
                 }
@@ -95,7 +88,7 @@ public class IntegrationChecker {
 
             // Add to list that will get reported during debug
             if (this.missingDependency != null) {
-                errorsToReport.put(this.missingDependency[0],
+                addErrorToReport(this.missingDependency[0],
                     "Missing dependencies: " + TextUtils.join(", ",
                                                    Arrays.copyOfRange(this.missingDependency, 1, this.missingDependency.length)));
             }
@@ -110,6 +103,7 @@ public class IntegrationChecker {
                 integrationChecker = new IntegrationChecker(activity);
                 return true;
             } catch (Exception e) {
+                android.util.Log.e("Teak", android.util.Log.getStackTraceString(e));
                 Teak.log.exception(e);
             }
         }
@@ -169,7 +163,7 @@ public class IntegrationChecker {
             if ((ai.launchMode & ActivityInfo.LAUNCH_SINGLE_INSTANCE) == 0 &&
                 (ai.launchMode & ActivityInfo.LAUNCH_SINGLE_TASK) == 0 &&
                 (ai.launchMode & ActivityInfo.LAUNCH_SINGLE_TOP) == 0) {
-                errorsToReport.put("activity.launchMode", "The android:launchMode of this <activity> is not set to 'singleTask', 'singleTop' or 'singleInstance'. This could cause undesired behavior.");
+                addErrorToReport("activity.launchMode", "The android:launchMode of this <activity> is not set to 'singleTask', 'singleTop' or 'singleInstance'. This could cause undesired behavior.");
             }
         } catch (Exception ignored) {
         }
@@ -182,7 +176,7 @@ public class IntegrationChecker {
             // Check to make sure there is only one <application>
             final List<ManifestParser.XmlTag> applications = manifestParser.tags.find("$.application");
             if (applications.size() > 1) {
-                errorsToReport.put("application.count", "There is more than one <application> defined in your AndroidManifest.xml, only one is allowed by Android.");
+                addErrorToReport("application.count", "There is more than one <application> defined in your AndroidManifest.xml, only one is allowed by Android.");
             }
 
             // Check for receivers pointing to classes that don't exist
@@ -194,7 +188,7 @@ public class IntegrationChecker {
                 try {
                     Class.forName(checkReceiverClass);
                 } catch (Exception ignored) {
-                    errorsToReport.put(checkReceiverClass, "\"" + checkReceiverClass + "\" is in your AndroidManifest.xml, but the corresponding SDK has been removed.\n\nRemove the <receiver> for \"" + checkReceiverClass + "\"");
+                    addErrorToReport(checkReceiverClass, "\"" + checkReceiverClass + "\" is in your AndroidManifest.xml, but the corresponding SDK has been removed.\n\nRemove the <receiver> for \"" + checkReceiverClass + "\"");
                 }
 
                 // Check to make sure Teak GCM receiver is present
@@ -205,7 +199,7 @@ public class IntegrationChecker {
 
             // Error if no Teak GCM receiver
             if (teakGcmReceiver == null) {
-                errorsToReport.put("io.teak.sdk.Teak", "There is no \"io.teak.sdk.Teak\" <receiver> in your AndroidManifest.xml. This will prevent push notifications from working.\n\nAdd the Teak <receiver>");
+                addErrorToReport("io.teak.sdk.Teak", "There is no \"io.teak.sdk.Teak\" <receiver> in your AndroidManifest.xml. This will prevent push notifications from working.\n\nAdd the Teak <receiver>");
             }
 
             // Check to make sure the Teak InstanceIDListenerService is present
@@ -213,21 +207,21 @@ public class IntegrationChecker {
                 new HashMap.SimpleEntry<>("name", "com.google.android.gms.iid.InstanceID"));
             if (teakInstanceIdListenerService.size() < 1 ||
                 !"io.teak.sdk.InstanceIDListenerService".equals(teakInstanceIdListenerService.get(0).attributes.get("name"))) {
-                errorsToReport.put("io.teak.sdk.InstanceIDListenerService", "There is no \"io.teak.sdk.InstanceIDListenerService\" <service> in your AndroidManifest.xml. This will prevent push notifications from working.\n\nAdd the \"io.teak.sdk.InstanceIDListenerService\" <service>");
+                addErrorToReport("io.teak.sdk.InstanceIDListenerService", "There is no \"io.teak.sdk.InstanceIDListenerService\" <service> in your AndroidManifest.xml. This will prevent push notifications from working.\n\nAdd the \"io.teak.sdk.InstanceIDListenerService\" <service>");
             }
 
             // Check to make sure the Teak Raven service is present
             final List<ManifestParser.XmlTag> teakRavenService = applications.get(0).find("service",
                 new HashMap.SimpleEntry<>("name", "io.teak.sdk.service.RavenService"));
             if (teakRavenService.size() < 1) {
-                errorsToReport.put("io.teak.sdk.service.RavenService", "There is no \"io.teak.sdk.service.RavenService\" <service> in your AndroidManifest.xml. This will prevent remote error reporting.\n\nAdd the \"io.teak.sdk.service.RavenService\" <service>");
+                addErrorToReport("io.teak.sdk.service.RavenService", "There is no \"io.teak.sdk.service.RavenService\" <service> in your AndroidManifest.xml. This will prevent remote error reporting.\n\nAdd the \"io.teak.sdk.service.RavenService\" <service>");
             }
 
             // Check to make sure the Teak Device State service is present
             final List<ManifestParser.XmlTag> teakDeviceStateService = applications.get(0).find("service",
                 new HashMap.SimpleEntry<>("name", "io.teak.sdk.service.DeviceStateService"));
             if (teakDeviceStateService.size() < 1) {
-                errorsToReport.put("io.teak.sdk.service.DeviceStateService", "There is no \"io.teak.sdk.service.DeviceStateService\" <service> in your AndroidManifest.xml. This will prevent animated notifications.\n\nAdd the \"io.teak.sdk.service.DeviceStateService\" <service>");
+                addErrorToReport("io.teak.sdk.service.DeviceStateService", "There is no \"io.teak.sdk.service.DeviceStateService\" <service> in your AndroidManifest.xml. This will prevent animated notifications.\n\nAdd the \"io.teak.sdk.service.DeviceStateService\" <service>");
             }
             //
 
@@ -235,26 +229,26 @@ public class IntegrationChecker {
             final List<ManifestParser.XmlTag> mainActivity = applications.get(0).find("activity.intent\\-filter.action",
                 new HashMap.SimpleEntry<>("name", "android.intent.action.MAIN"));
             if (mainActivity.size() < 1) {
-                errorsToReport.put("android.intent.action.MAIN", "None of the <activity> in AndroidManifest.xml has the \"android.intent.action.MAIN\" <action>.");
+                addErrorToReport("android.intent.action.MAIN", "None of the <activity> in AndroidManifest.xml has the \"android.intent.action.MAIN\" <action>.");
             } else {
                 // Find the teakXXXX:// scheme
                 final List<ManifestParser.XmlTag> teakScheme = mainActivity.get(0).find("intent\\-filter.data",
                     new HashMap.SimpleEntry<>("scheme", "teak\\d+"));
                 if (teakScheme.size() < 1) {
-                    errorsToReport.put("activity.intent-filter.data.scheme", "None of the <intent-filter> in your main <activity> has the \"teak\" data scheme.");
+                    addErrorToReport("activity.intent-filter.data.scheme", "None of the <intent-filter> in your main <activity> has the \"teak\" data scheme.");
                 } else {
                     // Make sure the <intent-filter> for the teakXXXX:// scheme has <action android:name="android.intent.action.VIEW" />
                     final List<ManifestParser.XmlTag> teakSchemeAction = teakScheme.get(0).find("action",
                         new HashMap.SimpleEntry<>("name", "android.intent.action.VIEW"));
                     if (teakSchemeAction.size() < 1) {
-                        errorsToReport.put("activity.intent-filter.data.scheme", "the <intent-filter> with the \"teak\" data scheme should have <action android:name=\"android.intent.action.VIEW\" />");
+                        addErrorToReport("activity.intent-filter.data.scheme", "the <intent-filter> with the \"teak\" data scheme should have <action android:name=\"android.intent.action.VIEW\" />");
                     }
 
                     // Make sure the <intent-filter> for the teakXXXX:// scheme has <category android:name="android.intent.category.DEFAULT" /> and <category android:name="android.intent.category.BROWSABLE" />
                     final List<ManifestParser.XmlTag> teakSchemeCategories = teakScheme.get(0).find("category",
                         new HashMap.SimpleEntry<>("name", "android.intent.category.(DEFAULT|BROWSABLE)"));
                     if (teakSchemeCategories.size() < 2) {
-                        errorsToReport.put("activity.intent-filter.data.scheme", "the <intent-filter> with the \"teak\" data scheme should have <category android:name=\"android.intent.category.DEFAULT\" /> and <category android:name=\"android.intent.category.BROWSABLE\" />");
+                        addErrorToReport("activity.intent-filter.data.scheme", "the <intent-filter> with the \"teak\" data scheme should have <category android:name=\"android.intent.category.DEFAULT\" /> and <category android:name=\"android.intent.category.BROWSABLE\" />");
                     }
                 }
             }
@@ -281,6 +275,11 @@ public class IntegrationChecker {
         }
     }
 
+    private static void addErrorToReport(@NonNull String key, @NonNull String description) {
+        errorsToReport.put(key, description);
+        android.util.Log.e("Teak", description);
+    }
+
     private void checkSupportv4Version() {
         try {
             final ApplicationInfo appInfo = this.activity.getPackageManager().getApplicationInfo(this.activity.getPackageName(), PackageManager.GET_META_DATA);
@@ -292,7 +291,7 @@ public class IntegrationChecker {
                 } catch (ClassNotFoundException ignored) {
                     // This is fine, it will get caught by the
                 } catch (Exception ignored) {
-                    errorsToReport.put("support-v4.less-than.26.1", "App is targeting SDK version " + targetSdkVersion +
+                    addErrorToReport("support-v4.less-than.26.1", "App is targeting SDK version " + targetSdkVersion +
                                                                         " but support-v4 library needs to be updated to at least version 26.1.0 to support notification categories.");
                 }
             }
