@@ -151,11 +151,13 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
                     @Override
                     public void run() {
                         try {
-                            AdvertisingIdClient.Info adInfo = adInfoFuture.get();
-                            String advertisingId = adInfo.getId();
-                            boolean limitAdTracking = adInfo.isLimitAdTrackingEnabled();
+                            final AdvertisingIdClient.Info adInfo = adInfoFuture.get();
+                            if (adInfo != null) {
+                                final String advertisingId = adInfo.getId();
+                                final boolean limitAdTracking = adInfo.isLimitAdTrackingEnabled();
 
-                            TeakEvent.postEvent(new AdvertisingInfoEvent(advertisingId, limitAdTracking));
+                                TeakEvent.postEvent(new AdvertisingInfoEvent(advertisingId, limitAdTracking));
+                            }
                         } catch (Exception e) {
                             Teak.log.exception(e);
                         }
