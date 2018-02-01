@@ -116,7 +116,6 @@ public class Teak extends BroadcastReceiver {
             try {
                 objectFactory = new DefaultObjectFactory(activity.getApplicationContext());
             } catch (Exception e) {
-                Teak.log.exception(e);
                 return;
             }
         }
@@ -137,7 +136,6 @@ public class Teak extends BroadcastReceiver {
             try {
                 Instance = new TeakInstance(activity, objectFactory);
             } catch (Exception e) {
-                Teak.log.exception(e);
                 return;
             }
         }
