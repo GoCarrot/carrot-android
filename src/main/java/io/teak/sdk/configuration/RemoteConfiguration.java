@@ -72,9 +72,9 @@ public class RemoteConfiguration {
                         @Override
                         protected void done(int responseCode, String responseBody) {
                             try {
-                                JSONObject response = new JSONObject(responseBody);
+                                final JSONObject response = new JSONObject((responseBody == null || responseBody.trim().isEmpty()) ? "{}" : responseBody);
 
-                                RemoteConfiguration configuration = new RemoteConfiguration(teakConfiguration.appConfiguration,
+                                final RemoteConfiguration configuration = new RemoteConfiguration(teakConfiguration.appConfiguration,
                                     response.isNull("auth") ? "gocarrot.com" : response.getString("auth"),
                                     nullInsteadOfEmpty(response.isNull("sdk_sentry_dsn") ? null : response.getString("sdk_sentry_dsn")),
                                     nullInsteadOfEmpty(response.isNull("app_sentry_dsn") ? null : response.getString("app_sentry_dsn")),
