@@ -28,15 +28,19 @@ import io.teak.sdk.event.RemoteConfigurationEvent;
 
 public class TeakConfiguration {
     public static boolean initialize(@NonNull Context context, @NonNull IObjectFactory objectFactory) {
-        TeakConfiguration teakConfiguration = new TeakConfiguration(context.getApplicationContext(), objectFactory);
+        try {
+            TeakConfiguration teakConfiguration = new TeakConfiguration(context.getApplicationContext(), objectFactory);
 
-        if (teakConfiguration.deviceConfiguration.deviceId != null) {
-            Instance = teakConfiguration;
-            synchronized (eventListenersMutex) {
-                for (EventListener e : eventListeners) {
-                    e.onConfigurationReady(teakConfiguration);
+            if (teakConfiguration.deviceConfiguration.deviceId != null) {
+                Instance = teakConfiguration;
+                synchronized (eventListenersMutex) {
+                    for (EventListener e : eventListeners) {
+                        e.onConfigurationReady(teakConfiguration);
+                    }
                 }
             }
+        } catch (IntegrationChecker.InvalidConfigurationException e) {
+            android.util.Log.e(IntegrationChecker.LOG_TAG, e.getMessage());
         }
 
         return Instance != null;
@@ -47,7 +51,7 @@ public class TeakConfiguration {
     public final DeviceConfiguration deviceConfiguration;
     public RemoteConfiguration remoteConfiguration;
 
-    private TeakConfiguration(@NonNull Context context, @NonNull IObjectFactory objectFactory) {
+    private TeakConfiguration(@NonNull Context context, @NonNull IObjectFactory objectFactory) throws IntegrationChecker.InvalidConfigurationException {
         this.debugConfiguration = new DebugConfiguration(context);
         this.appConfiguration = new AppConfiguration(context, objectFactory.getAndroidResources());
         this.deviceConfiguration = new DeviceConfiguration(objectFactory);

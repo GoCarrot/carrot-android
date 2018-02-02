@@ -199,11 +199,14 @@ public class TeakCore implements ITeakCore {
                                 }
 
                                 // If the API key is null, assign that
-                                if (!Request.hasTeakApiKey()) {
-                                    AppConfiguration tempAppConfiguration = new AppConfiguration(context, new DefaultAndroidResources(context));
-                                    Request.setTeakApiKey(tempAppConfiguration.apiKey);
+                                try {
+                                    if (!Request.hasTeakApiKey()) {
+                                        AppConfiguration tempAppConfiguration = new AppConfiguration(context, new DefaultAndroidResources(context));
+                                        Request.setTeakApiKey(tempAppConfiguration.apiKey);
+                                    }
+                                    asyncExecutor.execute(new Request("parsnip.gocarrot.com", "/notification_received", payload, Session.NullSession));
+                                } catch (IntegrationChecker.InvalidConfigurationException ignored) {
                                 }
-                                asyncExecutor.execute(new Request("parsnip.gocarrot.com", "/notification_received", payload, Session.NullSession));
                             }
 
                             // Send display event

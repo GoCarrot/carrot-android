@@ -33,11 +33,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.io.ManifestParser;
 
 public class IntegrationChecker {
+    public static final String LOG_TAG = "Teak.Integration";
+
     private final Activity activity;
 
     private static final Map<String, String> errorsToReport = new HashMap<>();
@@ -48,6 +51,11 @@ public class IntegrationChecker {
         new String[] {"com.google.android.gms.common.GooglePlayServicesUtil", "com.google.android.gms:play-services-base:10+", "com.google.android.gms:play-services-basement:10+"},
         new String[] {"com.google.android.gms.gcm.GoogleCloudMessaging", "com.google.android.gms:play-services-gcm:10+"},
         new String[] {"com.google.android.gms.iid.InstanceIDListenerService", "com.google.android.gms:play-services-iid:10+"}};
+
+    public static final String[] configurationStrings = new String[] {
+            AppConfiguration.TEAK_API_KEY,
+            AppConfiguration.TEAK_APP_ID
+    };
 
     public static void requireDependency(@NonNull String fullyQualifiedClassName) throws MissingDependencyException {
         // Protect against future-Pat adding/removing a dependency and forgetting to update the array
@@ -68,6 +76,12 @@ public class IntegrationChecker {
             Class.forName(fullyQualifiedClassName);
         } catch (ClassNotFoundException e) {
             throw new MissingDependencyException(e);
+        }
+    }
+
+    public static class InvalidConfigurationException extends Exception {
+        public InvalidConfigurationException(@NonNull String message) {
+            super(message);
         }
     }
 
@@ -103,7 +117,7 @@ public class IntegrationChecker {
                 integrationChecker = new IntegrationChecker(activity);
                 return true;
             } catch (Exception e) {
-                android.util.Log.e("Teak", android.util.Log.getStackTraceString(e));
+                android.util.Log.e(LOG_TAG, android.util.Log.getStackTraceString(e));
                 Teak.log.exception(e);
             }
         }
@@ -112,6 +126,19 @@ public class IntegrationChecker {
 
     private IntegrationChecker(@NonNull Activity activity) {
         this.activity = activity;
+
+        // Check for configuration strings
+        {
+            final String packageName = this.activity.getPackageName();
+            for (String configString : configurationStrings) {
+                try {
+                    int resId = this.activity.getResources().getIdentifier(configString, "string", packageName);
+                    this.activity.getString(resId);
+                } catch (Exception ignored) {
+                    addErrorToReport("R.string." + configString, "Failed to find R.string." + configString);
+                }
+            }
+        }
 
         // Check all dependencies, they'll add themselves to the missing list
         for (String[] dependency : dependencies) {
@@ -277,7 +304,7 @@ public class IntegrationChecker {
 
     private static void addErrorToReport(@NonNull String key, @NonNull String description) {
         errorsToReport.put(key, description);
-        android.util.Log.e("Teak", description);
+        android.util.Log.e(LOG_TAG, description);
     }
 
     private void checkSupportv4Version() {
