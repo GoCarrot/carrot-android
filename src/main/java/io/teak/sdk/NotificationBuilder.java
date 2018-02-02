@@ -51,6 +51,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.ConnectException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
@@ -444,6 +445,7 @@ public class NotificationBuilder {
                         bis.close();
                         is.close();
                     }
+                } catch (ConnectException ignored) {
                 } catch (SSLException ignored) {
                 } catch (FileNotFoundException ignored) {
                 }
