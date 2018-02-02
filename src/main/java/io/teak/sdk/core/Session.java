@@ -820,7 +820,7 @@ public class Session {
 
                         try {
                             // Resolve the deepLinkAttribution future
-                            final Map<String, Object> attribution = deepLinkAttribution.get(5, TimeUnit.SECONDS);
+                            final Map<String, Object> attribution = deepLinkAttribution.get(15, TimeUnit.SECONDS);
                             final String deep_link = (String) attribution.get("deep_link");
                             final URI uri = deep_link == null ? null : new URI(deep_link);
 
