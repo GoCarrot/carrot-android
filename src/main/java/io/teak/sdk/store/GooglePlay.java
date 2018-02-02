@@ -25,6 +25,7 @@ import android.content.ServiceConnection;
 import android.content.pm.ResolveInfo;
 
 import android.os.Bundle;
+import android.os.DeadObjectException;
 import android.os.IBinder;
 import android.util.SparseArray;
 
@@ -135,7 +136,12 @@ public class GooglePlay implements IStore {
                         }
                     }
                 } catch (Exception e) {
-                    Teak.log.exception(e);
+                    //noinspection ConstantConditions,StatementWithEmptyBody
+                    if (e instanceof DeadObjectException) {
+                        // ignored, Sentry bug TEAK-SDK-7T
+                    } else {
+                        Teak.log.exception(e);
+                    }
                 }
             }
         };
