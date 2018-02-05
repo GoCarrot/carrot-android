@@ -25,6 +25,7 @@ import com.google.android.gms.gcm.GoogleCloudMessaging;
 import java.io.IOException;
 import java.util.ServiceConfigurationError;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
 import io.teak.sdk.Helpers;
@@ -98,6 +99,8 @@ public class GCMPushProvider implements IPushProvider {
                                 TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", registrationId));
                             }
                         }
+                    } catch (ExecutionException ignored) {
+                        // TEAK-SDK-2R, TEAK-SDK-30
                     } catch (Exception e) {
                         Teak.log.exception(e);
                     }
