@@ -270,13 +270,22 @@ public class IntegrationChecker {
             //
 
             // Check to make sure that their android.intent.action.MAIN has the Teak intent filters
-            final List<ManifestParser.XmlTag> mainActivity = applications.get(0).find("activity.intent\\-filter.action",
+            final boolean isAdobeAir = Teak.Version.containsKey("adobeAir");
+            final List<ManifestParser.XmlTag> mainActivity = isAdobeAir ?
+                    applications.get(0).find("activity",
+                    new HashMap.SimpleEntry<>("name", ".*AppEntry$")) :
+                    applications.get(0).find("activity.intent\\-filter.action",
                 new HashMap.SimpleEntry<>("name", "android.intent.action.MAIN"));
+
             if (mainActivity.size() < 1) {
-                addErrorToReport("android.intent.action.MAIN", "None of the <activity> in AndroidManifest.xml has the \"android.intent.action.MAIN\" <action>.");
+                if (isAdobeAir) {
+                    addErrorToReport("*.AppEntry", "Couldn't find the <activity> in AndroidManifest.xml for the Adobe AIR AppEntry class.");
+                } else {
+                    addErrorToReport("android.intent.action.MAIN", "None of the <activity> in AndroidManifest.xml has the \"android.intent.action.MAIN\" <action>.");
+                }
             } else {
                 // Find the teakXXXX:// scheme
-                final List<ManifestParser.XmlTag> teakScheme = mainActivity.get(0).find("intent\\-filter.data",
+                final List<ManifestParser.XmlTag> teakScheme = mainActivity.get(mainActivity.size() - 1).find("intent\\-filter.data",
                     new HashMap.SimpleEntry<>("scheme", "teak\\d+"));
                 if (teakScheme.size() < 1) {
                     addErrorToReport("activity.intent-filter.data.scheme", "None of the <intent-filter> in your main <activity> has the \"teak\" data scheme.");
