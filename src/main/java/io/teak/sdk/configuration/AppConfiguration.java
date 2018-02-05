@@ -22,6 +22,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 
+import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.json.JSONObject;
 
 import java.util.HashMap;
@@ -59,7 +60,7 @@ public class AppConfiguration {
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_GCM_SENDER_ID = "io_teak_gcm_sender_id";
 
-    public AppConfiguration(@NonNull Context context, @NonNull IAndroidResources androidResources) {
+    public AppConfiguration(@NonNull Context context, @NonNull IAndroidResources androidResources) throws IntegrationChecker.InvalidConfigurationException {
         this.applicationContext = context.getApplicationContext();
 
         Bundle metaData = null;
@@ -84,7 +85,9 @@ public class AppConfiguration {
 
             this.appId = tempAppId;
             if (this.appId == null) {
-                throw new RuntimeException("Failed to find R.string." + TEAK_APP_ID);
+                throw new IntegrationChecker.InvalidConfigurationException("Failed to find R.string." + TEAK_APP_ID);
+            } else if (this.appId.trim().length() < 1) {
+                throw new IntegrationChecker.InvalidConfigurationException("R.string." + TEAK_APP_ID + " is empty.");
             }
         }
 
@@ -100,7 +103,9 @@ public class AppConfiguration {
 
             this.apiKey = tempApiKey;
             if (this.apiKey == null) {
-                throw new RuntimeException("Failed to find R.string." + TEAK_API_KEY);
+                throw new IntegrationChecker.InvalidConfigurationException("Failed to find R.string." + TEAK_API_KEY);
+            } else if (this.apiKey.trim().length() < 1) {
+                throw new IntegrationChecker.InvalidConfigurationException("R.string." + TEAK_API_KEY + " is empty.");
             }
         }
 
@@ -115,8 +120,8 @@ public class AppConfiguration {
             }
 
             this.pushSenderId = tempPushSenderId;
-            if (this.pushSenderId == null) {
-                Teak.log.e("app_configuration", "R.string." + TEAK_GCM_SENDER_ID + " not present, push notifications disabled.");
+            if (this.pushSenderId == null || this.pushSenderId.trim().length() < 1) {
+                android.util.Log.e(IntegrationChecker.LOG_TAG, "R.string." + TEAK_GCM_SENDER_ID + " not present or empty, push notifications disabled");
             }
         }
 
@@ -154,12 +159,8 @@ public class AppConfiguration {
         try {
             Intent intent = new Intent(context, RavenService.class);
             intent.putExtra("appId", this.appId);
-            ComponentName componentName = context.startService(intent);
-            if (componentName == null) {
-                Teak.log.w("app_configuration", "Unable to communicate with exception reporting service. Please add:\n\t<service android:name=\"io.teak.sdk.service.RavenService\" android:process=\":teak.raven\" android:exported=\"false\"/>\nTo the <application> section of your AndroidManifest.xml");
-            }
-        } catch (Exception e) {
-            Teak.log.exception(e);
+            context.startService(intent);
+        } catch (Exception ignored) {
         }
     }
 

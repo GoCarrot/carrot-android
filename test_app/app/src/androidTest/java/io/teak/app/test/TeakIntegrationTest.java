@@ -16,6 +16,7 @@
 package io.teak.app.test;
 
 import android.app.Activity;
+import android.app.Instrumentation;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -25,6 +26,7 @@ import android.support.annotation.Nullable;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.filters.SdkSuppress;
 import android.support.test.rule.ActivityTestRule;
+import android.support.test.uiautomator.UiDevice;
 
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -33,7 +35,9 @@ import org.junit.Rule;
 import java.io.BufferedInputStream;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.Map;
 
@@ -233,15 +237,15 @@ class TeakIntegrationTest {
 
     ///// TestRule helpers
 
-    Activity getActivity() {
+    MainActivity getActivity() {
         return testRule.getActivity();
     }
 
-    Activity launchActivity() {
+    MainActivity launchActivity() {
         return testRule.launchActivity(null);
     }
 
-    Activity launchActivity(@Nullable Intent intent) {
+    MainActivity launchActivity(@Nullable Intent intent) {
         return testRule.launchActivity(intent);
     }
 
@@ -263,6 +267,30 @@ class TeakIntegrationTest {
     }
 
     ///// BroadcastReceiver test helpers
+
+    @SdkSuppress(minSdkVersion = 21)
+    String adbShell(@NonNull String adbString) {
+        String output = null;
+        ParcelFileDescriptor pfd = InstrumentationRegistry.getInstrumentation().getUiAutomation().executeShellCommand(adbString);
+        FileDescriptor fd = pfd.getFileDescriptor();
+        InputStream is = new BufferedInputStream(new FileInputStream(fd));
+        byte[] buf = new byte[1024];
+        try {
+            //noinspection ResultOfMethodCallIgnored
+            is.read(buf, 0, buf.length);
+            output = new String(buf);
+            android.util.Log.v("Teak:IntegrationTest", output);
+        } catch (Exception e) {
+            fail(android.util.Log.getStackTraceString(e));
+        } finally {
+            try {
+                is.close();
+            } catch (Exception ignored){
+            }
+        }
+
+        return output;
+    }
 
     @SdkSuppress(minSdkVersion = 21)
     String sendBroadcast(@NonNull String event) {
@@ -287,26 +315,29 @@ class TeakIntegrationTest {
                 }
             }
         }
+        return adbShell(adbString.toString());
+    }
 
-        String output = null;
-        ParcelFileDescriptor pfd = InstrumentationRegistry.getInstrumentation().getUiAutomation().executeShellCommand(adbString.toString());
-        FileDescriptor fd = pfd.getFileDescriptor();
-        InputStream is = new BufferedInputStream(new FileInputStream(fd));
-        byte[] buf = new byte[1024];
-        try {
-            //noinspection ResultOfMethodCallIgnored
-            is.read(buf, 0, buf.length);
-            output = new String(buf);
-            android.util.Log.v("Teak:IntegrationTest", output);
-        } catch (Exception e) {
-            fail(android.util.Log.getStackTraceString(e));
-        } finally {
-            try {
-                is.close();
-            } catch (Exception ignored){
+    static String dumpWindowHierarchyToString() {
+        final Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
+        final UiDevice device = UiDevice.getInstance(instrumentation);
+
+        OutputStream output = new OutputStream()
+        {
+            private StringBuilder string = new StringBuilder();
+            @Override
+            public void write(int b) throws IOException {
+                this.string.append((char) b );
             }
-        }
 
-        return output;
+            public String toString() {
+                return this.string.toString();
+            }
+        };
+        try {
+            device.dumpWindowHierarchy(output);
+        } catch (Exception ignored) {
+        }
+        return output.toString();
     }
 }

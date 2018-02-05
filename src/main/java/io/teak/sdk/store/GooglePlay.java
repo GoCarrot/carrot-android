@@ -25,9 +25,11 @@ import android.content.ServiceConnection;
 import android.content.pm.ResolveInfo;
 
 import android.os.Bundle;
+import android.os.DeadObjectException;
 import android.os.IBinder;
 import android.util.SparseArray;
 
+import java.io.InvalidObjectException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
@@ -134,7 +136,12 @@ public class GooglePlay implements IStore {
                         }
                     }
                 } catch (Exception e) {
-                    Teak.log.exception(e);
+                    //noinspection ConstantConditions,StatementWithEmptyBody
+                    if (e instanceof DeadObjectException) {
+                        // ignored, Sentry bug TEAK-SDK-7T
+                    } else {
+                        Teak.log.exception(e);
+                    }
                 }
             }
         };
@@ -231,12 +238,16 @@ public class GooglePlay implements IStore {
             Bundle skuDetails = (Bundle) m.invoke(mService, 3, mContext.getPackageName(), itemType, querySkus);
 
             if (!skuDetails.containsKey(RESPONSE_GET_SKU_DETAILS_LIST)) {
-                int response = getResponseCodeFromBundle(skuDetails);
-                if (response != BILLING_RESPONSE_RESULT_OK) {
-                    Teak.log.e("google_play", "getSkuDetails() failed: " + response);
-                    return null;
-                } else {
-                    Teak.log.e("google_play", "getSkuDetails() returned a bundle with neither an error nor a detail list.");
+                try {
+                    final int response = getResponseCodeFromBundle(skuDetails);
+                    if (response != BILLING_RESPONSE_RESULT_OK) {
+                        Teak.log.e("google_play", "getSkuDetails() failed: " + response);
+                        return null;
+                    } else {
+                        Teak.log.e("google_play", "getSkuDetails() returned a bundle with neither an error nor a detail list.");
+                        return null;
+                    }
+                } catch (Exception ignored) {
                     return null;
                 }
             }
@@ -257,7 +268,7 @@ public class GooglePlay implements IStore {
         return null;
     }
 
-    private int getResponseCodeFromBundle(Bundle b) {
+    private int getResponseCodeFromBundle(Bundle b) throws InvalidObjectException {
         Object o = b.get(RESPONSE_CODE);
         if (o == null) {
             return BILLING_RESPONSE_RESULT_OK;
@@ -267,11 +278,11 @@ public class GooglePlay implements IStore {
             return (int) ((Long) o).longValue();
         else {
             Teak.log.e("google_play", "Unexpected type for bundle response code.", Helpers.mm.h("class", o.getClass().getName()));
-            throw new RuntimeException("Unexpected type for bundle response code: " + o.getClass().getName());
+            throw new InvalidObjectException("Unexpected type for bundle response code: " + o.getClass().getName());
         }
     }
 
-    private int getResponseCodeFromIntent(Intent i) {
+    private int getResponseCodeFromIntent(Intent i) throws InvalidObjectException {
         Object o = i.getExtras().get(RESPONSE_CODE);
         if (o == null) {
             return BILLING_RESPONSE_RESULT_OK;
@@ -281,27 +292,34 @@ public class GooglePlay implements IStore {
             return (int) ((Long) o).longValue();
         else {
             Teak.log.e("google_play", "Unexpected type for bundle response code.", Helpers.mm.h("class", o.getClass().getName()));
-            throw new RuntimeException("Unexpected type for intent response code: " + o.getClass().getName());
+            throw new InvalidObjectException("Unexpected type for intent response code: " + o.getClass().getName());
         }
     }
 
     public void checkActivityResultForPurchase(int resultCode, Intent data) {
         if (data == null || data.getExtras() == null) return;
 
+        int tempResponseCode;
+        try {
+            tempResponseCode = getResponseCodeFromIntent(data);
+        } catch (Exception ignored) {
+            return;
+        }
+        final int responseCode = tempResponseCode;
+
         Teak.log.i("google_play.check_activity.bundle", Helpers.jsonToMap(Helpers.bundleToJson(data.getExtras())));
 
         final String purchaseData = data.getStringExtra(RESPONSE_INAPP_PURCHASE_DATA);
         final String dataSignature = data.getStringExtra(RESPONSE_INAPP_SIGNATURE);
-        final int responseCode = getResponseCodeFromIntent(data);
         final String responseCodeString = BILLING_RESPONSE.get(responseCode);
 
-        if(responseCodeString != null) {
+        if (responseCodeString != null) {
             Teak.log.i("google_play.check_activity.response_code", Helpers.mm.h("RESPONSE_CODE", responseCodeString));
         }
 
         // Check for purchase activity result
         if (purchaseData != null && dataSignature != null &&
-                resultCode == Activity.RESULT_OK && responseCode == BILLING_RESPONSE_RESULT_OK) {
+            resultCode == Activity.RESULT_OK && responseCode == BILLING_RESPONSE_RESULT_OK) {
             try {
                 processPurchaseJson(new JSONObject(purchaseData));
             } catch (Exception e) {

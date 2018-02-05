@@ -25,6 +25,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 
+import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.io.DefaultAndroidNotification;
 import io.teak.sdk.io.DefaultAndroidResources;
@@ -54,14 +55,24 @@ import io.teak.sdk.event.TrackEventEvent;
 
 public class TeakCore implements ITeakCore {
     private static TeakCore Instance = null;
-    public static TeakCore get(@NonNull Context context) {
+    public static TeakCore get(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
         if (Instance == null) {
             Instance = new TeakCore(context);
         }
         return Instance;
     }
 
-    public TeakCore(@NonNull Context context) {
+    public static TeakCore getWithoutThrow(@NonNull Context context) {
+        try {
+            return TeakCore.get(context);
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    public TeakCore(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
+        IntegrationChecker.requireDependency("android.support.v4.content.LocalBroadcastManager");
+
         this.localBroadcastManager = LocalBroadcastManager.getInstance(context);
 
         TeakEvent.addEventListener(this.teakEventListener);
@@ -188,11 +199,14 @@ public class TeakCore implements ITeakCore {
                                 }
 
                                 // If the API key is null, assign that
-                                if (!Request.hasTeakApiKey()) {
-                                    AppConfiguration tempAppConfiguration = new AppConfiguration(context, new DefaultAndroidResources(context));
-                                    Request.setTeakApiKey(tempAppConfiguration.apiKey);
+                                try {
+                                    if (!Request.hasTeakApiKey()) {
+                                        AppConfiguration tempAppConfiguration = new AppConfiguration(context, new DefaultAndroidResources(context));
+                                        Request.setTeakApiKey(tempAppConfiguration.apiKey);
+                                    }
+                                    asyncExecutor.execute(new Request("parsnip.gocarrot.com", "/notification_received", payload, Session.NullSession));
+                                } catch (IntegrationChecker.InvalidConfigurationException ignored) {
                                 }
-                                asyncExecutor.execute(new Request("parsnip.gocarrot.com", "/notification_received", payload, Session.NullSession));
                             }
 
                             // Send display event
@@ -258,24 +272,15 @@ public class TeakCore implements ITeakCore {
 
             // Send broadcast
             if (bundle != null && this.localBroadcastManager != null) {
+                final String teakRewardId = bundle.getString("teakRewardId");
+
                 final HashMap<String, Object> eventDataDict = new HashMap<>();
-                if (bundle.getString("teakRewardId") != null) {
-                    eventDataDict.put("incentivized", true);
-                    eventDataDict.put("teakRewardId", bundle.getString("teakRewardId"));
-                } else {
-                    eventDataDict.put("incentivized", false);
-                }
-                if (bundle.getString("teakScheduleName") != null)
-                    eventDataDict.put("teakScheduleName", bundle.getString("teakScheduleName"));
-                if (bundle.getString("teakCreativeName") != null)
-                    eventDataDict.put("teakCreativeName", bundle.getString("teakCreativeName"));
+                eventDataDict.put("teakNotifId", bundle.getString("teakNotifId"));
+                eventDataDict.put("teakRewardId", teakRewardId);
+                eventDataDict.put("incentivized", teakRewardId != null);
+                eventDataDict.put("teakScheduleName", bundle.getString("teakScheduleName"));
+                eventDataDict.put("teakCreativeName", bundle.getString("teakCreativeName"));
 
-                final Intent broadcastEvent = new Intent(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
-                broadcastEvent.putExtras(bundle);
-                broadcastEvent.putExtra("eventData", eventDataDict);
-                sendLocalBroadcast(broadcastEvent);
-
-                String teakRewardId = bundle.getString("teakRewardId");
                 if (teakRewardId != null) {
                     final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
                     if (rewardFuture != null) {
@@ -285,18 +290,28 @@ public class TeakCore implements ITeakCore {
                                 try {
                                     TeakNotification.Reward reward = rewardFuture.get();
                                     HashMap<String, Object> rewardMap = Helpers.jsonToMap(reward.json);
-                                    rewardMap.putAll(eventDataDict);
+                                    eventDataDict.putAll(rewardMap);
 
                                     // Broadcast reward only if everything goes well
                                     final Intent rewardIntent = new Intent(Teak.REWARD_CLAIM_ATTEMPT);
-                                    rewardIntent.putExtra("reward", rewardMap);
+                                    rewardIntent.putExtra("reward", eventDataDict);
                                     sendLocalBroadcast(rewardIntent);
                                 } catch (Exception e) {
                                     Teak.log.exception(e);
+                                } finally {
+                                    final Intent broadcastEvent = new Intent(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
+                                    broadcastEvent.putExtras(bundle);
+                                    broadcastEvent.putExtra("eventData", eventDataDict);
+                                    sendLocalBroadcast(broadcastEvent);
                                 }
                             }
                         });
                     }
+                } else {
+                    final Intent broadcastEvent = new Intent(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
+                    broadcastEvent.putExtras(bundle);
+                    broadcastEvent.putExtra("eventData", eventDataDict);
+                    sendLocalBroadcast(broadcastEvent);
                 }
             }
         }

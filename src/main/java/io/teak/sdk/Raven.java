@@ -100,7 +100,6 @@ class Raven implements Thread.UncaughtExceptionHandler {
         sdkAttribute.put("version", RavenService.TEAK_SENTRY_VERSION);
         this.payloadTemplate.put("sdk", sdkAttribute);
 
-
         final HashMap<String, Object> device = new HashMap<>();
         device.put("name", configuration.deviceConfiguration.deviceFallback);
         device.put("family", configuration.deviceConfiguration.deviceManufacturer);

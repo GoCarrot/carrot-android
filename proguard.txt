@@ -8,5 +8,9 @@
 -keep public class * implements com.android.vending.billing.IInAppBillingService { public static *; }
 -dontwarn com.android.vending.billing.IInAppBillingService.**
 
+-keep public class com.google.android.gms.iid.InstanceIDListenerService { public *; }
+-keep public class * implements com.google.android.gms.iid.InstanceIDListenerService { public static *; }
+-dontwarn com.google.android.gms.iid.InstanceIDListenerService.**
+
 -keep class com.facebook.** { *; }
 -dontwarn com.facebook.**

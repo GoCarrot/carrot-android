@@ -106,9 +106,18 @@ public class Teak extends BroadcastReceiver {
      * @param objectFactory Teak Object Factory to use, or null for default.
      */
     public static void onCreate(@NonNull Activity activity, @Nullable IObjectFactory objectFactory) {
+        // Init integration checks, we decide later if they report or not
+        if (!IntegrationChecker.init(activity)) {
+            return;
+        }
+
         // Unless something gave us an object factory, use the default one
         if (objectFactory == null) {
-            objectFactory = new DefaultObjectFactory(activity.getApplicationContext());
+            try {
+                objectFactory = new DefaultObjectFactory(activity.getApplicationContext());
+            } catch (Exception e) {
+                return;
+            }
         }
 
         // Add version info for Unity/Air
@@ -122,9 +131,13 @@ public class Teak extends BroadcastReceiver {
             }
         }
 
-        // Create Instance
+        // Create Instance last
         if (Instance == null) {
-            Instance = new TeakInstance(activity, objectFactory);
+            try {
+                Instance = new TeakInstance(activity, objectFactory);
+            } catch (Exception e) {
+                return;
+            }
         }
     }
 
@@ -174,7 +187,6 @@ public class Teak extends BroadcastReceiver {
                 }
             });
         }
-        // TODO: Else throw exception for integration help?
     }
 
     /**
@@ -193,6 +205,58 @@ public class Teak extends BroadcastReceiver {
                     Instance.trackEvent(actionId, objectTypeId, objectInstanceId);
                 }
             });
+        }
+    }
+
+    /**
+     * Has the user disabled notifications for this app.
+     *
+     * This will always return 'false' for any device below API 19.
+     *
+     * @return 'true' if the device is above API 19 and the user has disabled notifications, 'false' otherwise.
+     */
+    @SuppressWarnings("unused")
+    public static boolean userHasDisabledNotifications() {
+        if (Instance == null) {
+            Teak.log.e("error.userHasDisabledNotifications", "userHasDisabledNotifications() should not be called before onCreate()");
+            return false;
+        }
+        return !Instance.areNotificationsEnabled();
+    }
+
+    /**
+     * Open the settings app to the settings for this app.
+     *
+     * Be sure to prompt the user to re-enable notifications for your app before calling this function.
+     *
+     * This will always return 'false' for any device below API 19.
+     *
+     * @return 'true' if Teak was (probably) able to open the settings, 'false' if Teak was (probably) not able to open the settings.
+     */
+    @SuppressWarnings("unused")
+    public static boolean openSettingsAppToThisAppsSettings() {
+        if (Instance == null) {
+            Teak.log.e("error.openSettingsAppToThisAppsSettings", "openSettingsAppToThisAppsSettings() should not be called before onCreate()");
+            return false;
+        } else {
+            return Instance.openSettingsAppToThisAppsSettings();
+        }
+    }
+
+    /**
+     * Set the badge number on the icon of the application.
+     *
+     * Set the count to 0 to remove the badge.
+     *
+     * @return 'true' if Teak was able to set the badge number, 'false' otherwise.
+     */
+    @SuppressWarnings("unused")
+    public static boolean setApplicationBadgeNumber(int count) {
+        if (Instance == null) {
+            Teak.log.e("error.setApplicationBadgeNumber", "setApplicationBadgeNumber() should not be called before onCreate()");
+            return false;
+        } else {
+            return Instance.setApplicationBadgeNumber(count);
         }
     }
 
@@ -259,7 +323,7 @@ public class Teak extends BroadcastReceiver {
         if (action == null) return;
 
         // If Instance is null, make sure TeakCore is around. If it's not null, make sure it's enabled.
-        if ((Instance == null && TeakCore.get(context) == null) || (Instance != null && !Instance.isEnabled())) {
+        if ((Instance == null && TeakCore.getWithoutThrow(context) == null) || (Instance != null && !Instance.isEnabled())) {
             return;
         }
 

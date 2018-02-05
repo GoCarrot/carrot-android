@@ -34,6 +34,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
+import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.RetriableTask;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
@@ -42,7 +43,9 @@ import io.teak.sdk.event.AdvertisingInfoEvent;
 public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
     private final Context context;
 
-    public DefaultAndroidDeviceInfo(@NonNull Context context) {
+    public DefaultAndroidDeviceInfo(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
+        IntegrationChecker.requireDependency("com.google.android.gms.common.GooglePlayServicesUtil");
+
         this.context = context;
     }
 
@@ -72,7 +75,8 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
     public String getDeviceId() {
         String tempDeviceId = null;
         try {
-            @SuppressWarnings("deprecation") final byte[] buildSerial = android.os.Build.SERIAL.getBytes("utf8");
+            @SuppressWarnings("deprecation")
+            final byte[] buildSerial = android.os.Build.SERIAL.getBytes("utf8");
             tempDeviceId = UUID.nameUUIDFromBytes(buildSerial).toString();
         } catch (Exception e) {
             Teak.log.e("getDeviceId", "android.os.Build.SERIAL not available, falling back to Settings.Secure.ANDROID_ID.");
@@ -130,7 +134,8 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
             final FutureTask<AdvertisingIdClient.Info> adInfoFuture = new FutureTask<>(new RetriableTask<>(10, 7000L, new Callable<AdvertisingIdClient.Info>() {
                 @Override
                 public AdvertisingIdClient.Info call() throws Exception {
-                    @SuppressWarnings("deprecation") final int gpsAvailable = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
+                    @SuppressWarnings("deprecation")
+                    final int gpsAvailable = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
                     if (gpsAvailable == ConnectionResult.SUCCESS) {
                         return AdvertisingIdClient.getAdvertisingIdInfo(context);
                     }
@@ -139,17 +144,20 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
             }));
 
             // TODO: This needs to be re-checked in case it's something like SERVICE_UPDATING or SERVICE_VERSION_UPDATE_REQUIRED
-            @SuppressWarnings("deprecation") final int gpsAvailable = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
+            @SuppressWarnings("deprecation")
+            final int gpsAvailable = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
             if (gpsAvailable == ConnectionResult.SUCCESS) {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
                         try {
-                            AdvertisingIdClient.Info adInfo = adInfoFuture.get();
-                            String advertisingId = adInfo.getId();
-                            boolean limitAdTracking = adInfo.isLimitAdTrackingEnabled();
+                            final AdvertisingIdClient.Info adInfo = adInfoFuture.get();
+                            if (adInfo != null) {
+                                final String advertisingId = adInfo.getId();
+                                final boolean limitAdTracking = adInfo.isLimitAdTrackingEnabled();
 
-                            TeakEvent.postEvent(new AdvertisingInfoEvent(advertisingId, limitAdTracking));
+                                TeakEvent.postEvent(new AdvertisingInfoEvent(advertisingId, limitAdTracking));
+                            }
                         } catch (Exception e) {
                             Teak.log.exception(e);
                         }

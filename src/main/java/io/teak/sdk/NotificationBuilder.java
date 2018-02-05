@@ -51,6 +51,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.SocketException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
@@ -83,7 +84,7 @@ public class NotificationBuilder {
     }
 
     private static String notificationChannelId;
-    private static String getNotificationChannelId(Context context) {
+    static String getNotificationChannelId(Context context) {
         // Notification channel, required for targeting API 26+
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (notificationChannelId == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
@@ -117,7 +118,8 @@ public class NotificationBuilder {
             builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
             builder.setGroup(UUID.randomUUID().toString());
         } else {
-            @SuppressWarnings("deprecation") final NotificationCompat.Builder deprecatedBuilder = new NotificationCompat.Builder(context);
+            @SuppressWarnings("deprecation")
+            final NotificationCompat.Builder deprecatedBuilder = new NotificationCompat.Builder(context);
             builder = deprecatedBuilder;
         }
         return builder;
@@ -443,6 +445,7 @@ public class NotificationBuilder {
                         bis.close();
                         is.close();
                     }
+                } catch (SocketException ignored) {
                 } catch (SSLException ignored) {
                 } catch (FileNotFoundException ignored) {
                 }

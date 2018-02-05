@@ -30,6 +30,19 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" android:host="teakangrybots.jckpt.me" />
+                <data android:scheme="https" android:host="teakangrybots.jckpt.me" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="teak1136371193060244" android:host="*" />
+            </intent-filter>
         </activity>
         <receiver android:name="io.teak.sdk.Teak"
             android:exported="true"> <!-- android:permission="com.google.android.c2dm.permission.SEND"-->
