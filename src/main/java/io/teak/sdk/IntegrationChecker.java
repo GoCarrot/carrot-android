@@ -23,6 +23,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
@@ -128,16 +129,32 @@ public class IntegrationChecker {
         this.activity = activity;
 
         // Check for configuration strings
-        {
+        try {
             final String packageName = this.activity.getPackageName();
+            final ApplicationInfo appInfo = this.activity.getPackageManager().getApplicationInfo(this.activity.getPackageName(), PackageManager.GET_META_DATA);
+            final Bundle metaData = appInfo.metaData;
+
             for (String configString : configurationStrings) {
                 try {
-                    int resId = this.activity.getResources().getIdentifier(configString, "string", packageName);
-                    this.activity.getString(resId);
+                    // First try AndroidManifest meta data
+                    boolean foundConfigString = false;
+                    if (metaData != null) {
+                        final String appIdFromMetaData = metaData.getString(configString);
+                        if (appIdFromMetaData != null && appIdFromMetaData.startsWith("teak")) {
+                            foundConfigString = true;
+                        }
+                    }
+
+                    // Default to resource id
+                    if (!foundConfigString) {
+                        int resId = this.activity.getResources().getIdentifier(configString, "string", packageName);
+                        this.activity.getString(resId);
+                    }
                 } catch (Exception ignored) {
                     addErrorToReport("R.string." + configString, "Failed to find R.string." + configString);
                 }
             }
+        } catch (Exception ignored) {
         }
 
         // Check all dependencies, they'll add themselves to the missing list
