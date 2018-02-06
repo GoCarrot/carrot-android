@@ -10,13 +10,11 @@ import android.support.annotation.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 
 import java.io.IOException;
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
-import java.util.regex.Pattern;
 
 import io.teak.sdk.Teak;
 
@@ -45,6 +43,32 @@ public class ManifestParser {
                 final String value = xmlResourceParser.getAttributeValue(i);
                 this.attributes.put(name, value);
             }
+        }
+
+        public String toString(@NonNull String prefix) {
+            final StringBuilder builder = new StringBuilder(prefix);
+            builder.append("<");
+            builder.append(this.type);
+            builder.append(" ");
+            boolean firstEntry = true;
+            for (Map.Entry<String, String> entry : attributes.entrySet()) {
+                if (firstEntry) firstEntry = false;
+                else builder.append(", ");
+
+                builder.append(entry.getKey());
+                builder.append("=");
+                builder.append(entry.getValue());
+            }
+            builder.append(">");
+            for (XmlTag tag : this.tags) {
+                builder.append(tag.toString(prefix + "\n\t"));
+            }
+            return builder.toString();
+        }
+
+        @Override
+        public String toString() {
+            return this.toString("");
         }
 
         public List<XmlTag> find(@NonNull String path) {
