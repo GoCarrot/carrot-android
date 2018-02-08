@@ -14,6 +14,7 @@
  */
 package io.teak.sdk;
 
+import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -27,6 +28,7 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -131,6 +133,10 @@ public class NotificationBuilder {
     }
 
     private static Notification createNativeNotificationV1Plus(final Context context, final Bundle bundle, final TeakNotification teakNotificaton) throws Exception {
+        // Get the memory class here, don't rely on TeakConfiguration
+        final ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        final int deviceMemoryClass = am == null ? 0 : am.getMemoryClass();
+
         // Because we can't be certain that the R class will line up with what is at SDK build time
         // like in the case of Unity et. al.
         class IdHelper {
@@ -353,7 +359,7 @@ public class NotificationBuilder {
                         } else if (value.equalsIgnoreCase("NONE")) {
                             remoteViews.setViewVisibility(viewElementId, View.GONE);
                         } else {
-                            final Bitmap bitmap = loadBitmapFromURI(new URI(value));
+                            final Bitmap bitmap = loadBitmapFromUriString(value);
                             if (bitmap != null) {
                                 remoteViews.setImageViewBitmap(viewElementId, bitmap);
                             }
@@ -361,7 +367,7 @@ public class NotificationBuilder {
                     } else if (isUIType(viewElement, ViewFlipper.class)) {
                         final JSONObject animationConfig = viewConfig.getJSONObject(key);
                         try {
-                            final Bitmap bitmap = loadBitmapFromURI(new URI(animationConfig.getString("sprite_sheet")));
+                            final Bitmap bitmap = loadBitmapFromUriString(animationConfig.getString("sprite_sheet"));
                             final int numCols = animationConfig.getInt("columns");
                             final int numRows = animationConfig.getInt("rows");
                             final int frameWidth = animationConfig.getInt("width");
@@ -426,7 +432,8 @@ public class NotificationBuilder {
                 return remoteViews;
             }
 
-            private Bitmap loadBitmapFromURI(URI bitmapUri) throws Exception {
+            private Bitmap loadBitmapFromUriString(String bitmapUriString) throws Exception {
+                final Uri bitmapUri = Uri.parse(bitmapUriString);
                 Bitmap ret = null;
                 try {
                     if (bitmapUri.getScheme().equals("assets")) {
@@ -436,7 +443,11 @@ public class NotificationBuilder {
                         ret = BitmapFactory.decodeStream(is);
                         is.close();
                     } else {
-                        URL aURL = new URL(bitmapUri.toString());
+                        // Add the "well behaved heap size" as a query param
+                        final Uri.Builder uriBuilder = Uri.parse(bitmapUriString).buildUpon();
+                        uriBuilder.appendQueryParameter("device_memory_class", String.valueOf(deviceMemoryClass));
+
+                        URL aURL = new URL(uriBuilder.toString());
                         URLConnection conn = aURL.openConnection();
                         conn.connect();
                         InputStream is = conn.getInputStream();
