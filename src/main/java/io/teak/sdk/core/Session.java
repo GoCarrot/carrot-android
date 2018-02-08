@@ -17,6 +17,7 @@ package io.teak.sdk.core;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -359,6 +360,9 @@ public class Session {
                     if (_this.state == State.UserIdentified) {
                         payload.put("do_not_track_event", Boolean.TRUE);
                     }
+
+                    // "true", "false" or "unknown" (if API < 19)
+                    payload.put("notifications_enabled", Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ? String.valueOf(!Teak.userHasDisabledNotifications()) : "unknown");
 
                     TimeZone tz = TimeZone.getDefault();
                     long rawTz = tz.getRawOffset();
