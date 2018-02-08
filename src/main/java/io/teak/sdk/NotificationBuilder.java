@@ -372,6 +372,7 @@ public class NotificationBuilder {
                             final int numRows = animationConfig.getInt("rows");
                             final int frameWidth = animationConfig.getInt("width");
                             final int frameHeight = animationConfig.getInt("height");
+                            final int msPerFrame = animationConfig.optInt("display_ms", 500);
 
                             for (int x = 0; x < numCols; x++) {
                                 for (int y = 0; y < numRows; y++) {
@@ -385,6 +386,9 @@ public class NotificationBuilder {
                                     remoteViews.addView(viewElementId, frameView);
                                 }
                             }
+
+                            // Set frame rate
+                            remoteViews.setInt(viewElementId, "setFlipInterval", msPerFrame);
 
                             // Mark notification as containing animated element(s)
                             teakNotificaton.isAnimated = true;
