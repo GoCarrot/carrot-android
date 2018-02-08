@@ -23,6 +23,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
@@ -128,16 +129,32 @@ public class IntegrationChecker {
         this.activity = activity;
 
         // Check for configuration strings
-        {
+        try {
             final String packageName = this.activity.getPackageName();
+            final ApplicationInfo appInfo = this.activity.getPackageManager().getApplicationInfo(this.activity.getPackageName(), PackageManager.GET_META_DATA);
+            final Bundle metaData = appInfo.metaData;
+
             for (String configString : configurationStrings) {
                 try {
-                    int resId = this.activity.getResources().getIdentifier(configString, "string", packageName);
-                    this.activity.getString(resId);
+                    // First try AndroidManifest meta data
+                    boolean foundConfigString = false;
+                    if (metaData != null) {
+                        final String appIdFromMetaData = metaData.getString(configString);
+                        if (appIdFromMetaData != null && appIdFromMetaData.startsWith("teak")) {
+                            foundConfigString = true;
+                        }
+                    }
+
+                    // Default to resource id
+                    if (!foundConfigString) {
+                        int resId = this.activity.getResources().getIdentifier(configString, "string", packageName);
+                        this.activity.getString(resId);
+                    }
                 } catch (Exception ignored) {
                     addErrorToReport("R.string." + configString, "Failed to find R.string." + configString);
                 }
             }
+        } catch (Exception ignored) {
         }
 
         // Check all dependencies, they'll add themselves to the missing list
@@ -250,33 +267,25 @@ public class IntegrationChecker {
             if (teakDeviceStateService.size() < 1) {
                 addErrorToReport("io.teak.sdk.service.DeviceStateService", "There is no \"io.teak.sdk.service.DeviceStateService\" <service> in your AndroidManifest.xml. This will prevent animated notifications.\n\nAdd the \"io.teak.sdk.service.DeviceStateService\" <service>");
             }
-            //
 
-            // Check to make sure that their android.intent.action.MAIN has the Teak intent filters
-            final List<ManifestParser.XmlTag> mainActivity = applications.get(0).find("activity.intent\\-filter.action",
-                new HashMap.SimpleEntry<>("name", "android.intent.action.MAIN"));
-            if (mainActivity.size() < 1) {
-                addErrorToReport("android.intent.action.MAIN", "None of the <activity> in AndroidManifest.xml has the \"android.intent.action.MAIN\" <action>.");
+            // Find the teakXXXX:// scheme
+            final List<ManifestParser.XmlTag> teakScheme = applications.get(0).find("activity.intent\\-filter.data",
+                new HashMap.SimpleEntry<>("scheme", "teak\\d+"));
+            if (teakScheme.size() < 1) {
+                addErrorToReport("activity.intent-filter.data.scheme", "No <intent-filter> in any <activity> has the \"teak\" data scheme.");
             } else {
-                // Find the teakXXXX:// scheme
-                final List<ManifestParser.XmlTag> teakScheme = mainActivity.get(0).find("intent\\-filter.data",
-                    new HashMap.SimpleEntry<>("scheme", "teak\\d+"));
-                if (teakScheme.size() < 1) {
-                    addErrorToReport("activity.intent-filter.data.scheme", "None of the <intent-filter> in your main <activity> has the \"teak\" data scheme.");
-                } else {
-                    // Make sure the <intent-filter> for the teakXXXX:// scheme has <action android:name="android.intent.action.VIEW" />
-                    final List<ManifestParser.XmlTag> teakSchemeAction = teakScheme.get(0).find("action",
-                        new HashMap.SimpleEntry<>("name", "android.intent.action.VIEW"));
-                    if (teakSchemeAction.size() < 1) {
-                        addErrorToReport("activity.intent-filter.data.scheme", "the <intent-filter> with the \"teak\" data scheme should have <action android:name=\"android.intent.action.VIEW\" />");
-                    }
+                // Make sure the <intent-filter> for the teakXXXX:// scheme has <action android:name="android.intent.action.VIEW" />
+                final List<ManifestParser.XmlTag> teakSchemeAction = teakScheme.get(0).find("intent\\-filter.action",
+                    new HashMap.SimpleEntry<>("name", "android.intent.action.VIEW"));
+                if (teakSchemeAction.size() < 1) {
+                    addErrorToReport("activity.intent-filter.data.scheme", "the <intent-filter> with the \"teak\" data scheme should have <action android:name=\"android.intent.action.VIEW\" />");
+                }
 
-                    // Make sure the <intent-filter> for the teakXXXX:// scheme has <category android:name="android.intent.category.DEFAULT" /> and <category android:name="android.intent.category.BROWSABLE" />
-                    final List<ManifestParser.XmlTag> teakSchemeCategories = teakScheme.get(0).find("category",
-                        new HashMap.SimpleEntry<>("name", "android.intent.category.(DEFAULT|BROWSABLE)"));
-                    if (teakSchemeCategories.size() < 2) {
-                        addErrorToReport("activity.intent-filter.data.scheme", "the <intent-filter> with the \"teak\" data scheme should have <category android:name=\"android.intent.category.DEFAULT\" /> and <category android:name=\"android.intent.category.BROWSABLE\" />");
-                    }
+                // Make sure the <intent-filter> for the teakXXXX:// scheme has <category android:name="android.intent.category.DEFAULT" /> and <category android:name="android.intent.category.BROWSABLE" />
+                final List<ManifestParser.XmlTag> teakSchemeCategories = teakScheme.get(0).find("intent\\-filter.category",
+                    new HashMap.SimpleEntry<>("name", "android.intent.category.(DEFAULT|BROWSABLE)"));
+                if (teakSchemeCategories.size() < 2) {
+                    addErrorToReport("activity.intent-filter.data.scheme", "the <intent-filter> with the \"teak\" data scheme should have <category android:name=\"android.intent.category.DEFAULT\" /> and <category android:name=\"android.intent.category.BROWSABLE\" />");
                 }
             }
         } catch (Exception ignored) {
