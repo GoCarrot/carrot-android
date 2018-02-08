@@ -14,6 +14,8 @@
  */
 package io.teak.sdk.configuration;
 
+import android.app.ActivityManager;
+import android.content.Context;
 import android.support.annotation.NonNull;
 
 import io.teak.sdk.json.JSONObject;
@@ -40,6 +42,7 @@ public class DeviceConfiguration {
     public final String deviceModel;
     public final String deviceFallback;
     public final String platformString;
+    public final int memoryClass;
 
     public String advertisingId;
     public boolean limitAdTracking;
@@ -47,7 +50,7 @@ public class DeviceConfiguration {
     private final IPushProvider pushProvider;
     private String pushSenderId;
 
-    public DeviceConfiguration(@NonNull IObjectFactory objectFactory) {
+    public DeviceConfiguration(@NonNull Context context, @NonNull IObjectFactory objectFactory) {
         this.pushProvider = objectFactory.getPushProvider();
 
         final IAndroidDeviceInfo androidDeviceInfo = objectFactory.getAndroidDeviceInfo();
@@ -56,6 +59,12 @@ public class DeviceConfiguration {
             this.platformString = "android_unknown";
         } else {
             this.platformString = "android_" + android.os.Build.VERSION.RELEASE;
+        }
+
+        // Heap size (kind of)
+        {
+            ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+            this.memoryClass = am == null ? 0 : am.getMemoryClass();
         }
 
         // Device model/manufacturer
