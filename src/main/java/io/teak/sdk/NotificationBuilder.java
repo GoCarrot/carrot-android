@@ -368,10 +368,10 @@ public class NotificationBuilder {
                         final JSONObject animationConfig = viewConfig.getJSONObject(key);
                         try {
                             final Bitmap bitmap = loadBitmapFromUriString(animationConfig.getString("sprite_sheet"));
-                            final int numCols = animationConfig.getInt("columns");
-                            final int numRows = animationConfig.getInt("rows");
                             final int frameWidth = animationConfig.getInt("width");
                             final int frameHeight = animationConfig.getInt("height");
+                            final int numCols = bitmap.getWidth() / frameWidth;
+                            final int numRows = bitmap.getHeight() / frameHeight;
                             final int msPerFrame = animationConfig.optInt("display_ms", 500);
 
                             for (int x = 0; x < numCols; x++) {
