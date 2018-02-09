@@ -1,5 +1,6 @@
 package com.teakio.pushtest;
 
+import android.app.ActivityManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -7,11 +8,17 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
 
 import io.teak.sdk.Teak;
@@ -20,15 +27,28 @@ import io.teak.sdk.TeakNotification;
 import io.teak.sdk.event.PushNotificationEvent;
 
 import android.view.View;
+import android.view.WindowManager;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.vending.billing.IInAppBillingService;
 
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.net.SocketException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+
+import javax.net.ssl.SSLException;
 
 public class MainActivity extends AppCompatActivity {
     public static final String LOG_TAG = "Teak.Example";
@@ -66,7 +86,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         Teak.onCreate(this);
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+
+        // Set up view
+        setupViewThings();
 
         // Register the BroadcastReceiver defined above to listen for notification launches
         IntentFilter filter = new IntentFilter();
@@ -146,14 +168,17 @@ public class MainActivity extends AppCompatActivity {
         JSONObject teak_notif_animated = new JSONObject();
         try {
             JSONObject animated = new JSONObject();
-            animated.put("sprite_sheet", "assets:///777-animated-phone-it-in-snow.png");
-            animated.put("rows", 4);
-            animated.put("columns", 2);
+            /*animated.put("sprite_sheet", "assets:///777-animated-phone-it-in-snow.png");
             animated.put("width", 512);
-            animated.put("height", 256);
+            animated.put("height", 256);*/
 
-            teak_notif_animated.put("text", "");
-            //teak_notif_animated.put("view_animator", animated);
+            animated.put("sprite_sheet", "https://assets.teakcdn.com/creative_translations-media/53532/original-base64Default.txt?1518130762");//"assets:///teak-slots-banner-sprite.jpg");
+            animated.put("display_ms", 200);
+            animated.put("width", 1920);
+            animated.put("height", 225);
+
+            //teak_notif_animated.put("text", "This is the text that doesn't end. Yes it goes on and on my friend. Some people started translating not knowing what it was, and they'll blow their translation budget just because...");
+            teak_notif_animated.put("view_animator", animated);
             //teak_notif_animated.put("left_image", "BUILTIN_APP_ICON");
             teak_notif_animated.put("left_image", "NONE");
         } catch (Exception ignored) {
@@ -180,9 +205,9 @@ public class MainActivity extends AppCompatActivity {
         JSONObject display = new JSONObject();
         try {
             display.put("contentView", "teak_notif_animated");
-            display.put("bigContentView", "teak_big_notif_image_text");
+            //display.put("bigContentView", "teak_big_notif_image_text");
             display.put("teak_notif_animated", teak_notif_animated);
-            display.put("teak_big_notif_image_text", teak_big_notif_image_text);
+            //display.put("teak_big_notif_image_text", teak_big_notif_image_text);
         } catch (Exception ignored) {
         }
 
@@ -257,6 +282,95 @@ public class MainActivity extends AppCompatActivity {
 
     public void scheduleTestNotification(String id, String defaultText, String delay) {
         TeakNotification.scheduleNotification(id, defaultText, Integer.parseInt(delay));
+    }
+
+    private Bitmap loadBitmapFromUriString(String bitmapUriString) throws Exception {
+        final ActivityManager am = (ActivityManager) this.getSystemService(Context.ACTIVITY_SERVICE);
+        final int deviceMemoryClass = am == null ? 0 : am.getMemoryClass();
+
+        final DisplayMetrics displayMetrics = new DisplayMetrics();
+        final WindowManager wm = ((WindowManager) this.getSystemService(Context.WINDOW_SERVICE));
+        if (wm != null) {
+            wm.getDefaultDisplay().getMetrics(displayMetrics);
+        }
+
+        final Uri bitmapUri = Uri.parse(bitmapUriString);
+        Bitmap ret = null;
+        try {
+            if (bitmapUri.getScheme().equals("assets")) {
+                String assetFilePath = bitmapUri.getPath();
+                assetFilePath = assetFilePath.startsWith("/") ? assetFilePath.substring(1) : assetFilePath;
+                InputStream is = this.getAssets().open(assetFilePath);
+                ret = BitmapFactory.decodeStream(is);
+                is.close();
+            } else {
+                // Add the "well behaved heap size" as a query param
+                final Uri.Builder uriBuilder = Uri.parse(bitmapUriString).buildUpon();
+                uriBuilder.appendQueryParameter("device_memory_class", String.valueOf(deviceMemoryClass));
+                uriBuilder.appendQueryParameter("xdpi", String.valueOf(displayMetrics.xdpi));
+                uriBuilder.appendQueryParameter("ydpi", String.valueOf(displayMetrics.ydpi));
+                uriBuilder.appendQueryParameter("width", String.valueOf(displayMetrics.widthPixels));
+                uriBuilder.appendQueryParameter("height", String.valueOf(displayMetrics.heightPixels));
+                uriBuilder.appendQueryParameter("density", String.valueOf(displayMetrics.density));
+                uriBuilder.appendQueryParameter("density_dpi", String.valueOf(displayMetrics.densityDpi));
+                uriBuilder.appendQueryParameter("scaled_density", String.valueOf(displayMetrics.scaledDensity));
+
+                URL aURL = new URL(uriBuilder.toString());
+                URLConnection conn = aURL.openConnection();
+                conn.connect();
+                InputStream is = conn.getInputStream();
+                BufferedInputStream bis = new BufferedInputStream(is);
+                ret = BitmapFactory.decodeStream(bis);
+                bis.close();
+                is.close();
+            }
+        } catch (OutOfMemoryError ignored) {
+            // Request lower-res version?
+        } catch (SocketException ignored) {
+        } catch (SSLException ignored) {
+        } catch (FileNotFoundException ignored) {
+        }
+        return ret;
+    }
+
+    private void setupViewThings() {
+        setContentView(R.layout.activity_main);
+        final TextView deviceMetricsView = findViewById(R.id.device_metrics);
+        final ImageView imageView = findViewById(R.id.notification_background);
+
+        // Relevant Metrics
+        final ActivityManager am = (ActivityManager) this.getSystemService(Context.ACTIVITY_SERVICE);
+        final int deviceMemoryClass = am == null ? 0 : am.getMemoryClass();
+
+        final DisplayMetrics displayMetrics = new DisplayMetrics();
+        final WindowManager wm = ((WindowManager) this.getSystemService(Context.WINDOW_SERVICE));
+        if (wm != null) {
+            wm.getDefaultDisplay().getMetrics(displayMetrics);
+        }
+        deviceMetricsView.setText(String.format(Locale.US, "device_memory_class: %d\nxdpi: %f\nydpi: %f\nwidth: %d\nheight: %d\ndensity: %f\ndensity_dpi: %d\nscaled_density: %f",
+                deviceMemoryClass,
+                displayMetrics.xdpi, displayMetrics.ydpi,
+                displayMetrics.widthPixels, displayMetrics.heightPixels,
+                displayMetrics.density, displayMetrics.densityDpi, displayMetrics.scaledDensity));
+
+        // Notification image preview
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    final Bitmap bitmap = loadBitmapFromUriString("https://assets.teakcdn.com/creative_translations-media/45334/original-base64Default.txt?1503079808");
+                    new Handler(Looper.getMainLooper()).post(new Runnable() {
+                        @Override
+                        public void run() {
+                            imageView.setImageBitmap(bitmap);
+                            imageView.invalidate();
+                        }
+                    });
+                } catch (Exception e) {
+                    android.util.Log.e("Teak-Example", android.util.Log.getStackTraceString(e));
+                }
+            }
+        }).start();
     }
 
     static IInAppBillingService mService;
