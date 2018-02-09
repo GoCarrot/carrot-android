@@ -5,8 +5,8 @@
 
     <include layout="@layout/teak_image"
         android:layout_width="match_parent"
-        android:layout_height="0.5in"
-        android:layout_gravity="center" />
+        android:layout_height="wrap_content"
+        android:layout_gravity="center|clip_horizontal" />
 
     <include layout="@layout/teak_small_view_content"
         android:layout_width="match_parent"
