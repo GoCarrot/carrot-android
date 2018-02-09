@@ -392,6 +392,8 @@ public class NotificationBuilder {
 
                             // Mark notification as containing animated element(s)
                             teakNotificaton.isAnimated = true;
+                        } catch (OutOfMemoryError ignored) {
+                            // Request lower-res version?
                         } catch (Exception e) {
                             Teak.log.exception(e);
                         }
@@ -460,6 +462,8 @@ public class NotificationBuilder {
                         bis.close();
                         is.close();
                     }
+                } catch (OutOfMemoryError ignored) {
+                    // Request lower-res version?
                 } catch (SocketException ignored) {
                 } catch (SSLException ignored) {
                 } catch (FileNotFoundException ignored) {
