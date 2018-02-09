@@ -122,27 +122,32 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
     }
 
     @Override
-    public void displayNotification(@NonNull TeakNotification teakNotification, @NonNull Notification nativeNotification) {
+    public void displayNotification(@NonNull final TeakNotification teakNotification, @NonNull final Notification nativeNotification) {
         // Send it out
         Teak.log.i("notification.display", Helpers.mm.h("teakNotifId", teakNotification.teakNotifId, "platformId", teakNotification.platformId));
 
-        try {
-            this.notificationManager.notify(NOTIFICATION_TAG, teakNotification.platformId, nativeNotification);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    notificationManager.notify(NOTIFICATION_TAG, teakNotification.platformId, nativeNotification);
 
-            if (teakNotification.isAnimated) {
-                synchronized (this.animatedNotifications) {
-                    this.animatedNotifications.add(new AnimationEntry(nativeNotification, teakNotification));
+                    if (teakNotification.isAnimated) {
+                        synchronized (animatedNotifications) {
+                            animatedNotifications.add(new AnimationEntry(nativeNotification, teakNotification));
+                        }
+                    }
+                } catch (SecurityException ignored) {
+                    // This likely means that they need the VIBRATE permission on old versions of Android
+                    Teak.log.e("notification.permission_needed.vibrate", "Please add this to your AndroidManifest.xml: <uses-permission android:name=\"android.permission.VIBRATE\" />");
+                } catch (Exception e) {
+                    // Unit testing case
+                    if (nativeNotification.flags != Integer.MAX_VALUE) {
+                        throw e;
+                    }
                 }
             }
-        } catch (SecurityException ignored) {
-            // This likely means that they need the VIBRATE permission on old versions of Android
-            Teak.log.e("notification.permission_needed.vibrate", "Please add this to your AndroidManifest.xml: <uses-permission android:name=\"android.permission.VIBRATE\" />");
-        } catch (Exception e) {
-            // Unit testing case
-            if (nativeNotification.flags != Integer.MAX_VALUE) {
-                throw e;
-            }
-        }
+        }).start();
     }
 
     @Override
