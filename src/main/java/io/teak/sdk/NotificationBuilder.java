@@ -389,7 +389,7 @@ public class NotificationBuilder {
                                     Bitmap frame = Bitmap.createBitmap(bitmap, startX, startY, frameWidth, frameHeight);
 
                                     final RemoteViews frameView = new RemoteViews(context.getPackageName(), R.layout("teak_frame"));
-                                    final int frameViewId = R.id("frame");
+                                    final int frameViewId = R.id("notification_background");
                                     frameView.setImageViewBitmap(frameViewId, frame);
                                     remoteViews.addView(viewElementId, frameView);
                                 }
