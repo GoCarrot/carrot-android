@@ -336,7 +336,7 @@ public class MainActivity extends AppCompatActivity {
     private void setupViewThings() {
         setContentView(R.layout.activity_main);
         final TextView deviceMetricsView = findViewById(R.id.device_metrics);
-        final ImageView imageView = findViewById(R.id.notification_background);
+        final TextView noncompatDeviceMetricsView = findViewById(R.id.noncompat_device_metrics);
 
         // Relevant Metrics
         final ActivityManager am = (ActivityManager) this.getSystemService(Context.ACTIVITY_SERVICE);
@@ -353,24 +353,12 @@ public class MainActivity extends AppCompatActivity {
                 displayMetrics.widthPixels, displayMetrics.heightPixels,
                 displayMetrics.density, displayMetrics.densityDpi, displayMetrics.scaledDensity));
 
-        // Notification image preview
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    final Bitmap bitmap = loadBitmapFromUriString("https://assets.teakcdn.com/creative_translations-media/45334/original-base64Default.txt?1503079808");
-                    new Handler(Looper.getMainLooper()).post(new Runnable() {
-                        @Override
-                        public void run() {
-                            imageView.setImageBitmap(bitmap);
-                            imageView.invalidate();
-                        }
-                    });
-                } catch (Exception e) {
-                    android.util.Log.e("Teak-Example", android.util.Log.getStackTraceString(e));
-                }
-            }
-        }).start();
+        // Really special
+        final Configuration configuration = getResources().getConfiguration();
+        try {
+            noncompatDeviceMetricsView.setText(String.format(Locale.US, "screen_width_dp: %d\nscreen_height_dp: %d", configuration.screenWidthDp, configuration.screenHeightDp));
+        } catch (Exception ignored) {
+        }
     }
 
     static IInAppBillingService mService;

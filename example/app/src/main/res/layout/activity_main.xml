@@ -7,17 +7,6 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.teakio.pushtest.MainActivity">
 
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/device_metrics"
-        android:background="@drawable/border">
-        <include layout="@layout/teak_frame"
-            android:layout_width="match_parent"
-            android:layout_height="0.5in"
-            android:layout_gravity="center" />
-    </FrameLayout>
-
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -26,6 +15,16 @@
         android:paddingRight="5dp"
         android:paddingLeft="5dp"
         android:id="@+id/device_metrics"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/device_metrics"
+        android:paddingBottom="5dp"
+        android:paddingTop="5dp"
+        android:paddingRight="5dp"
+        android:paddingLeft="5dp"
+        android:id="@+id/noncompat_device_metrics"/>
 
     <Button
         android:layout_width="wrap_content"
