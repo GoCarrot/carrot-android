@@ -298,7 +298,7 @@ public class NotificationBuilder {
         }
 
         class ViewBuilder {
-            private RemoteViews buildViews(String name) throws Exception {
+            private RemoteViews buildViews(String name, boolean isLargeView) throws Exception {
                 final int viewLayout = R.layout(name);
                 final RemoteViews remoteViews = new RemoteViews(context.getPackageName(), viewLayout);
 
@@ -388,7 +388,8 @@ public class NotificationBuilder {
                                     final int startY = y * frameHeight;
                                     Bitmap frame = Bitmap.createBitmap(bitmap, startX, startY, frameWidth, frameHeight);
 
-                                    final RemoteViews frameView = new RemoteViews(context.getPackageName(), R.layout("teak_frame"));
+                                    final RemoteViews frameView = new RemoteViews(context.getPackageName(),
+                                            isLargeView ? R.layout("teak_big_frame") : R.layout("teak_frame"));
                                     final int frameViewId = R.id("notification_background");
                                     frameView.setImageViewBitmap(frameViewId, frame);
                                     remoteViews.addView(viewElementId, frameView);
@@ -490,6 +491,14 @@ public class NotificationBuilder {
                 // TODO: Do more error checking to see if this is an AppCompat* class, and don't use InstanceOf
                 return clazz.isInstance(viewElement);
             }
+
+            private RemoteViews buildViews(String name) throws Exception {
+                return this.buildViews(name, false);
+            }
+
+            private RemoteViews buildLargeViews(String name) throws Exception {
+                return this.buildViews(name, true);
+            }
         }
         ViewBuilder viewBuilder = new ViewBuilder();
 
@@ -500,16 +509,24 @@ public class NotificationBuilder {
         RemoteViews bigContentView = null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && teakNotificaton.display.has("bigContentView")) {
             try {
-                bigContentView = viewBuilder.buildViews(teakNotificaton.display.getString("bigContentView"));
+                bigContentView = viewBuilder.buildLargeViews(teakNotificaton.display.getString("bigContentView"));
+
+                // Assign small content view to display above big content view, if that's what the notification wants
+                if (teakNotificaton.display.optBoolean("displayContentViewAboveBigContentView", false)) {
+                    final RemoteViews frameView = viewBuilder.buildViews(teakNotificaton.display.getString("contentView"));
+                    bigContentView.addView(R.id("small_view_container"), frameView);
+                } else {
+                    bigContentView.setViewVisibility(R.id("small_view_container"), View.GONE);
+                }
             } catch (Exception ignored) {
             }
         }
 
-        // Assign expanded view if it's there, otherwise hide the pulldown view (if it exists)
+        // Assign expanded view if it's there
         if (bigContentView != null) {
-            // Use reflection to avoid compile-time issues
             try {
-                Field bigContentViewField = nativeNotification.getClass().getField("bigContentView");
+                // Use reflection to avoid compile-time issues
+                final Field bigContentViewField = nativeNotification.getClass().getField("bigContentView");
                 bigContentViewField.set(nativeNotification, bigContentView);
             } catch (Exception ignored) {
             }

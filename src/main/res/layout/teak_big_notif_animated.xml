@@ -10,15 +10,21 @@
         android:layout_width="match_parent"
         android:layout_height="72dp"/>
 
-    <!-- Image + Text -->
+    <!-- Animation + Text -->
     <RelativeLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content">
 
-        <include layout="@layout/teak_big_frame"
+        <ViewFlipper android:id="@+id/view_animator"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center" />
+            android:scaleType="centerInside"
+            android:adjustViewBounds="true"
+            android:layout_gravity="center"
+            android:measureAllChildren="false"
+            android:autoStart="true"
+            android:flipInterval="500">
+        </ViewFlipper>
 
         <TextView
             android:id="@+id/text"
