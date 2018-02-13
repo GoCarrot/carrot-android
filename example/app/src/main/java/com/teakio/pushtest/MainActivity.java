@@ -58,16 +58,10 @@ public class MainActivity extends AppCompatActivity {
     BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
+            final String action = intent.getAction();
+            final Bundle bundle = intent.getExtras();
             if (Teak.LAUNCHED_FROM_NOTIFICATION_INTENT.equals(action)) {
-                Bundle bundle = intent.getExtras();
                 try {
-
-                    HashMap<String, Object> teakReward = (HashMap<String, Object>) bundle.getSerializable("teakReward");
-                    if (teakReward != null) {
-                        Log.d(LOG_TAG, teakReward.toString());
-                    }
-
                     if (bundle.getString("teakDeepLinkPath") != null) {
                         Log.d(LOG_TAG, bundle.getString("teakDeepLinkPath"));
                         HashMap<String, Object> teakDeepLinkQueryParameters = (HashMap<String, Object>) bundle.getSerializable("teakDeepLinkQueryParameters");
@@ -77,6 +71,11 @@ public class MainActivity extends AppCompatActivity {
                     }
                 } catch (Exception e) {
                     Log.e(LOG_TAG, Log.getStackTraceString(e));
+                }
+            } else if (Teak.REWARD_CLAIM_ATTEMPT.equals(action)) {
+                HashMap<String, Object> reward = (HashMap<String, Object>) bundle.getSerializable("reward");
+                if (reward != null) {
+                    Log.d(LOG_TAG, reward.toString());
                 }
             }
         }
@@ -93,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
         // Register the BroadcastReceiver defined above to listen for notification launches
         IntentFilter filter = new IntentFilter();
         filter.addAction(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
+        filter.addAction(Teak.REWARD_CLAIM_ATTEMPT);
         LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, filter);
 
         Teak.identifyUser("demo-app-thingy-3");
