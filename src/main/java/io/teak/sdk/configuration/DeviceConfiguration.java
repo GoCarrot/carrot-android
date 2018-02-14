@@ -17,7 +17,9 @@ package io.teak.sdk.configuration;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.text.TextUtils;
 
+import io.teak.sdk.Helpers;
 import io.teak.sdk.json.JSONObject;
 
 import java.util.HashMap;
@@ -43,6 +45,7 @@ public class DeviceConfiguration {
     public final String deviceFallback;
     public final String platformString;
     public final int memoryClass;
+    public final String miuiVersion;
 
     public String advertisingId;
     public boolean limitAdTracking;
@@ -59,6 +62,12 @@ public class DeviceConfiguration {
             this.platformString = "android_unknown";
         } else {
             this.platformString = "android_" + android.os.Build.VERSION.RELEASE;
+        }
+
+        // MIUI version (if applicable)
+        {
+            this.miuiVersion = TextUtils.isEmpty(Helpers.getSystemProperty("ro.miui.ui.version.name")) ? null :
+                    Helpers.getSystemProperty("ro.build.version.incremental");
         }
 
         // Heap size (kind of)
