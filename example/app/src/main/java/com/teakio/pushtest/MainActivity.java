@@ -1,6 +1,7 @@
 package com.teakio.pushtest;
 
 import android.app.ActivityManager;
+import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -12,6 +13,7 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -73,9 +75,33 @@ public class MainActivity extends AppCompatActivity {
                     Log.e(LOG_TAG, Log.getStackTraceString(e));
                 }
             } else if (Teak.REWARD_CLAIM_ATTEMPT.equals(action)) {
-                HashMap<String, Object> reward = (HashMap<String, Object>) bundle.getSerializable("reward");
+                HashMap<String, Object> reward = (HashMap<String, Object>) ((HashMap<String, Object>) bundle.getSerializable("reward")).get("reward");
                 if (reward != null) {
-                    Log.d(LOG_TAG, reward.toString());
+                    final StringBuilder rewardString = new StringBuilder("You got ");
+                    boolean isFirstEntry = true;
+                    for (Map.Entry<String, Object> entry : reward.entrySet()) {
+                        if (isFirstEntry) {
+                            isFirstEntry = false;
+                        } else {
+                            rewardString.append(", ");
+                        }
+                        rewardString.append(String.valueOf(entry.getValue()));
+                        rewardString.append(" ");
+                        rewardString.append(entry.getKey());
+                    }
+                    rewardString.append(".");
+
+                    AlertDialog.Builder builder;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        builder = new AlertDialog.Builder(MainActivity.this, android.R.style.Theme_Material_Dialog_Alert);
+                    } else {
+                        builder = new AlertDialog.Builder(MainActivity.this);
+                    }
+                    builder.setTitle("Reward!")
+                            .setMessage(rewardString.toString())
+                            .setPositiveButton(android.R.string.yes, null)
+                            .setIcon(android.R.drawable.ic_dialog_alert)
+                            .show();
                 }
             }
         }
@@ -178,9 +204,10 @@ public class MainActivity extends AppCompatActivity {
             animated.put("height", 225);
 
             //teak_notif_animated.put("text", "This is the text that doesn't end. Yes it goes on and on my friend. Some people started translating not knowing what it was, and they'll blow their translation budget just because...");
-            teak_notif_animated.put("view_animator", animated);
-            //teak_notif_animated.put("left_image", "BUILTIN_APP_ICON");
-            teak_notif_animated.put("left_image", "NONE");
+            //teak_notif_animated.put("view_animator", animated);
+            teak_notif_animated.put("left_image", "BUILTIN_APP_ICON");
+            //teak_notif_animated.put("left_image", "NONE");
+            teak_notif_animated.put("notification_background", "assets:///AndroidPushGrid.png");
         } catch (Exception ignored) {
         }
 
@@ -197,17 +224,31 @@ public class MainActivity extends AppCompatActivity {
             teak_big_notif_image_text.put("button2", button2);
 
             teak_big_notif_image_text.put("text", "teak_big_notif_image_text");
-            teak_big_notif_image_text.put("notification_background", "assets:///pixelgrid_2000x2000.png");
+            teak_big_notif_image_text.put("notification_background", "assets:///1700x550.png");
+
+            JSONObject animated = new JSONObject();
+            animated.put("sprite_sheet", "assets:///1700x550.png");
+            animated.put("display_ms", 200);
+            animated.put("width", 1700);
+            animated.put("height", 550);
+
+            //teak_big_notif_image_text.put("text", "This is the text that doesn't end. Yes it goes on and on my friend. Some people started translating not knowing what it was, and they'll blow their translation budget just because...");
+            teak_big_notif_image_text.put("view_animator", animated);
         } catch (Exception ignored) {
         }
 
         // Display
         JSONObject display = new JSONObject();
         try {
-            display.put("contentView", "teak_notif_animated");
+            //display.put("contentView", "teak_notif_animated");
+            //display.put("teak_notif_animated", teak_notif_animated);
+            display.put("contentView", "teak_notif_no_title");
+            display.put("teak_notif_no_title", teak_notif_animated);
+
             //display.put("bigContentView", "teak_big_notif_image_text");
-            display.put("teak_notif_animated", teak_notif_animated);
             //display.put("teak_big_notif_image_text", teak_big_notif_image_text);
+            display.put("bigContentView", "teak_big_notif_animated");
+            display.put("teak_big_notif_animated", teak_big_notif_image_text);
         } catch (Exception ignored) {
         }
 
