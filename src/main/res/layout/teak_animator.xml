@@ -5,7 +5,6 @@
     android:layout_height="match_parent">
 
     <ViewFlipper android:id="@+id/view_animator"
-        android:tag="aspect_ratio: 1111x2222&#10;description: Background animation for the notification."
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
