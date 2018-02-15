@@ -227,10 +227,10 @@ public class MainActivity extends AppCompatActivity {
             teak_big_notif_image_text.put("notification_background", "assets:///1700x550.png");
 
             JSONObject animated = new JSONObject();
-            animated.put("sprite_sheet", "assets:///1700x550.png");
+            animated.put("sprite_sheet", "assets:///pixelgrid_2000x2000.png");
             animated.put("display_ms", 200);
-            animated.put("width", 1700);
-            animated.put("height", 550);
+            animated.put("width", 2000);
+            animated.put("height", 2000);
 
             //teak_big_notif_image_text.put("text", "This is the text that doesn't end. Yes it goes on and on my friend. Some people started translating not knowing what it was, and they'll blow their translation budget just because...");
             teak_big_notif_image_text.put("view_animator", animated);
