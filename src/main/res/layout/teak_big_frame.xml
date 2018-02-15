@@ -1,15 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ImageView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
-
-    <!-- Max height is 256dp (max height of expanded view) minus 72dp for the small top view -->
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:maxHeight="184dp"
-        android:scaleType="centerCrop"
-        android:adjustViewBounds="true"
-        android:id="@+id/notification_background"
-        android:contentDescription="@null"/>
-</RelativeLayout>
+    android:layout_height="wrap_content"
+    android:scaleType="fitStart"
+    android:adjustViewBounds="true"
+    android:id="@+id/notification_background"
+    android:contentDescription="@null" />
