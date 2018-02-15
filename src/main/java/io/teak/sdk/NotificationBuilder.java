@@ -145,6 +145,9 @@ public class NotificationBuilder {
             wm.getDefaultDisplay().getMetrics(displayMetrics);
         }
 
+        // Should this notification display both the small view and the big view when expanded?
+        final boolean displayContentViewAboveBigContentView = teakNotificaton.display.optBoolean("displayContentViewAboveBigContentView", false);
+
         // Because we can't be certain that the R class will line up with what is at SDK build time
         // like in the case of Unity et. al.
         class IdHelper {
@@ -512,7 +515,7 @@ public class NotificationBuilder {
                 bigContentView = viewBuilder.buildLargeViews(teakNotificaton.display.getString("bigContentView"));
 
                 // Assign small content view to display above big content view, if that's what the notification wants
-                if (teakNotificaton.display.optBoolean("displayContentViewAboveBigContentView", false)) {
+                if (displayContentViewAboveBigContentView) {
                     final RemoteViews frameView = viewBuilder.buildViews(teakNotificaton.display.getString("contentView"));
                     bigContentView.addView(R.id("small_view_container"), frameView);
                 } else {
