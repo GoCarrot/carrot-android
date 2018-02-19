@@ -101,13 +101,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
         try {
             Intent intent = new Intent(context, DeviceStateService.class);
 
-            ComponentName componentName;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                componentName = context.startForegroundService(intent);
-            } else {
-                componentName = context.startService(intent);
-            }
-
+            ComponentName componentName = context.startService(intent);
             if (componentName == null) {
                 Teak.log.w("notification.animation", "Unable to communicate with notification animation service. Please add:\n\t<service android:name=\"io.teak.sdk.service.DeviceStateService\" android:process=\":teak.animation\" android:exported=\"false\"/>\nTo the <application> section of your AndroidManifest.xml");
             }
