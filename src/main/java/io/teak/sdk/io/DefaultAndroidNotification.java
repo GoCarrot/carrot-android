@@ -22,6 +22,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
@@ -97,10 +98,23 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
             }
         });
 
-        Intent intent = new Intent(context, DeviceStateService.class);
-        ComponentName componentName = context.startService(intent);
-        if (componentName == null) {
-            Teak.log.w("notification.animation", "Unable to communicate with notification animation service. Please add:\n\t<service android:name=\"io.teak.sdk.service.DeviceStateService\" android:process=\":teak.animation\" android:exported=\"false\"/>\nTo the <application> section of your AndroidManifest.xml");
+        try {
+            Intent intent = new Intent(context, DeviceStateService.class);
+
+            ComponentName componentName;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                componentName = context.startForegroundService(intent);
+            } else {
+                componentName = context.startService(intent);
+            }
+
+            if (componentName == null) {
+                Teak.log.w("notification.animation", "Unable to communicate with notification animation service. Please add:\n\t<service android:name=\"io.teak.sdk.service.DeviceStateService\" android:process=\":teak.animation\" android:exported=\"false\"/>\nTo the <application> section of your AndroidManifest.xml");
+            }
+        } catch (Exception ignored) {
+            // Android-O has issues with background services
+            // https://developer.android.com/about/versions/oreo/background.html
+            // Since Android O doesn't have an install base worth mentioning, this can be fixed later
         }
     }
 
