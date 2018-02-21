@@ -38,6 +38,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.teak.sdk.core.Session;
 import io.teak.sdk.event.DeepLinksReadyEvent;
@@ -64,11 +66,27 @@ public class Teak extends BroadcastReceiver {
      */
     public static final Map<String, Object> Version;
 
+    /**
+     * Version of the Teak SDK, as an array [major, minor, revision]
+     */
+    public static final int[] MajorMinorRevision;
+
     private static final Map<String, Object> sdkMap = new HashMap<>();
 
     static {
         sdkMap.put("android", io.teak.sdk.BuildConfig.VERSION_NAME);
         Version = Collections.unmodifiableMap(sdkMap);
+
+        Matcher m = Pattern.compile("(\\d+)\\.(\\d+)\\.(\\d+).*").matcher(io.teak.sdk.BuildConfig.VERSION_NAME);
+        if (m.matches()) {
+            MajorMinorRevision = new int[]{
+                    Integer.parseInt(m.group(1)), // major
+                    Integer.parseInt(m.group(2)), // minor
+                    Integer.parseInt(m.group(3))  // revision
+            };
+        } else {
+            MajorMinorRevision = new int[] {0, 0, 0};
+        }
     }
 
     /**
