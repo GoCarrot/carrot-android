@@ -613,7 +613,7 @@ public class TeakNotification {
                     if (!(content instanceof JSONObject)) continue;
                     final JSONObject jsonContent = (JSONObject) content;
 
-                    final String contentVersionString = jsonContent.getString("");
+                    final String contentVersionString = jsonContent.getString("version");
                     if (contentVersionString == null) continue;
 
                     Matcher m = Pattern.compile("(\\d+)\\.(\\d+)\\.(\\d+).*").matcher(contentVersionString);
