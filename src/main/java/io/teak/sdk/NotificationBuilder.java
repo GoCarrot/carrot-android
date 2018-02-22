@@ -467,13 +467,13 @@ public class NotificationBuilder {
             private Bitmap loadBitmapFromUriString(String bitmapUriString) throws Exception {
                 final Uri bitmapUri = Uri.parse(bitmapUriString);
                 Bitmap ret = null;
+                InputStream inputStream = null;
                 try {
                     if (bitmapUri.getScheme().equals("assets")) {
                         String assetFilePath = bitmapUri.getPath();
                         assetFilePath = assetFilePath.startsWith("/") ? assetFilePath.substring(1) : assetFilePath;
-                        InputStream is = context.getAssets().open(assetFilePath);
-                        ret = BitmapFactory.decodeStream(is);
-                        is.close();
+                        inputStream = context.getAssets().open(assetFilePath);
+                        ret = BitmapFactory.decodeStream(inputStream);
                     } else {
                         // Add the "well behaved heap size" as a query param
                         final Uri.Builder uriBuilder = Uri.parse(bitmapUriString).buildUpon();
@@ -489,17 +489,18 @@ public class NotificationBuilder {
                         URL aURL = new URL(uriBuilder.toString());
                         URLConnection conn = aURL.openConnection();
                         conn.connect();
-                        InputStream is = conn.getInputStream();
-                        BufferedInputStream bis = new BufferedInputStream(is);
-                        ret = BitmapFactory.decodeStream(bis);
-                        bis.close();
-                        is.close();
+                        inputStream = conn.getInputStream();
+                        ret = BitmapFactory.decodeStream(inputStream);
                     }
                 } catch (OutOfMemoryError ignored) {
                     // Request lower-res version?
                 } catch (SocketException ignored) {
                 } catch (SSLException ignored) {
                 } catch (FileNotFoundException ignored) {
+                } finally {
+                    if (inputStream != null) {
+                        inputStream.close();
+                    }
                 }
                 return ret;
             }
