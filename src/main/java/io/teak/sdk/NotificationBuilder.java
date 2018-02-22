@@ -376,7 +376,7 @@ public class NotificationBuilder {
                                 if ("left_image".equals(key)) {
                                     remoteViews.setViewVisibility(viewElementId, View.GONE);
                                 } else {
-                                    throw new NullPointerException("Bitmap is null (" + value + ")");
+                                    throw new IllegalArgumentException("Bitmap is null (" + value + ")");
                                 }
                             } else {
                                 remoteViews.setImageViewBitmap(viewElementId, bitmap);
@@ -387,7 +387,7 @@ public class NotificationBuilder {
                         try {
                             final Bitmap bitmap = loadBitmapFromUriString(animationConfig.getString("sprite_sheet"));
                             if (bitmap == null) {
-                                throw new NullPointerException("Bitmap is null (" + animationConfig.getString("sprite_sheet") + ")");
+                                throw new IllegalArgumentException("Bitmap is null (" + animationConfig.getString("sprite_sheet") + ")");
                             }
                             final int frameWidth = animationConfig.getInt("width");
                             final int frameHeight = animationConfig.getInt("height");
@@ -402,7 +402,7 @@ public class NotificationBuilder {
                                     Bitmap frame = Bitmap.createBitmap(bitmap, startX, startY, frameWidth, frameHeight);
 
                                     if (frame == null) {
-                                        throw new NullPointerException("Frame [" + x + ", " + y + "] is null (" + animationConfig.getString("sprite_sheet") + ")");
+                                        throw new IllegalArgumentException("Frame [" + x + ", " + y + "] is null (" + animationConfig.getString("sprite_sheet") + ")");
                                     }
 
                                     final RemoteViews frameView = new RemoteViews(context.getPackageName(),
