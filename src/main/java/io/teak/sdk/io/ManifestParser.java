@@ -52,8 +52,10 @@ public class ManifestParser {
             builder.append(" ");
             boolean firstEntry = true;
             for (Map.Entry<String, String> entry : attributes.entrySet()) {
-                if (firstEntry) firstEntry = false;
-                else builder.append(", ");
+                if (firstEntry)
+                    firstEntry = false;
+                else
+                    builder.append(", ");
 
                 builder.append(entry.getKey());
                 builder.append("=");

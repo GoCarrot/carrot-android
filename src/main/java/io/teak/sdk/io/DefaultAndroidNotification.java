@@ -151,7 +151,8 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                     }
                 }
             }
-        }).start();
+        })
+            .start();
     }
 
     @Override

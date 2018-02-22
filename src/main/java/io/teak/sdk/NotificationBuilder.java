@@ -406,7 +406,7 @@ public class NotificationBuilder {
                                     }
 
                                     final RemoteViews frameView = new RemoteViews(context.getPackageName(),
-                                            isLargeView ? R.layout("teak_big_frame") : R.layout("teak_frame"));
+                                        isLargeView ? R.layout("teak_big_frame") : R.layout("teak_frame"));
                                     final int frameViewId = R.id("notification_background");
                                     frameView.setImageViewBitmap(frameViewId, frame);
                                     remoteViews.addView(viewElementId, frameView);

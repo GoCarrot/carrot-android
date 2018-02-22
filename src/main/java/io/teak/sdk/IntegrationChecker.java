@@ -54,9 +54,8 @@ public class IntegrationChecker {
         new String[] {"com.google.android.gms.iid.InstanceIDListenerService", "com.google.android.gms:play-services-iid:10+"}};
 
     public static final String[] configurationStrings = new String[] {
-            AppConfiguration.TEAK_API_KEY,
-            AppConfiguration.TEAK_APP_ID
-    };
+        AppConfiguration.TEAK_API_KEY,
+        AppConfiguration.TEAK_APP_ID};
 
     public static void requireDependency(@NonNull String fullyQualifiedClassName) throws MissingDependencyException {
         // Protect against future-Pat adding/removing a dependency and forgetting to update the array
@@ -328,7 +327,7 @@ public class IntegrationChecker {
                     // This is fine, it will get caught by the
                 } catch (Exception ignored) {
                     addErrorToReport("support-v4.less-than.26.1", "App is targeting SDK version " + targetSdkVersion +
-                                                                        " but support-v4 library needs to be updated to at least version 26.1.0 to support notification categories.");
+                                                                      " but support-v4 library needs to be updated to at least version 26.1.0 to support notification categories.");
                 }
             }
         } catch (Exception ignored) {

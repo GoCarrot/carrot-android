@@ -64,8 +64,7 @@ public class DeviceConfiguration {
 
         // MIUI version (if applicable)
         {
-            this.miuiVersion = androidDeviceInfo.getSystemProperty("ro.miui.ui.version.name") == null ? null :
-                    androidDeviceInfo.getSystemProperty("ro.build.version.incremental");
+            this.miuiVersion = androidDeviceInfo.getSystemProperty("ro.miui.ui.version.name") == null ? null : androidDeviceInfo.getSystemProperty("ro.build.version.incremental");
         }
 
         // Heap size (kind of)

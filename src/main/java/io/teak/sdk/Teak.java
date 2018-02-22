@@ -79,10 +79,10 @@ public class Teak extends BroadcastReceiver {
 
         Matcher m = Pattern.compile("(\\d+)\\.(\\d+)\\.(\\d+).*").matcher(io.teak.sdk.BuildConfig.VERSION_NAME);
         if (m.matches()) {
-            MajorMinorRevision = new int[]{
-                    Integer.parseInt(m.group(1)), // major
-                    Integer.parseInt(m.group(2)), // minor
-                    Integer.parseInt(m.group(3))  // revision
+            MajorMinorRevision = new int[] {
+                Integer.parseInt(m.group(1)), // major
+                Integer.parseInt(m.group(2)), // minor
+                Integer.parseInt(m.group(3)) // revision
             };
         } else {
             MajorMinorRevision = new int[] {0, 0, 0};

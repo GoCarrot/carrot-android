@@ -618,10 +618,10 @@ public class TeakNotification {
 
                     Matcher m = Pattern.compile("(\\d+)\\.(\\d+)\\.(\\d+).*").matcher(contentVersionString);
                     if (m.matches()) {
-                        int[] contentMajorMinorRevision = new int[]{
-                                Integer.parseInt(m.group(1)), // major
-                                Integer.parseInt(m.group(2)), // minor
-                                Integer.parseInt(m.group(3))  // revision
+                        int[] contentMajorMinorRevision = new int[] {
+                            Integer.parseInt(m.group(1)), // major
+                            Integer.parseInt(m.group(2)), // minor
+                            Integer.parseInt(m.group(3)) // revision
                         };
 
                         if (compareMajorMinorRevision(Teak.MajorMinorRevision, contentMajorMinorRevision) >= 0) {
@@ -658,15 +658,15 @@ public class TeakNotification {
     }
 
     private int compareMajorMinorRevision(int[] version, int[] otherVersion) {
-        if(version[0] != otherVersion[0]) {
+        if (version[0] != otherVersion[0]) {
             return version[0] - otherVersion[0];
         }
 
-        if(version[1] != otherVersion[1]) {
+        if (version[1] != otherVersion[1]) {
             return version[1] - otherVersion[1];
         }
 
-        if(version[2] != otherVersion[2]) {
+        if (version[2] != otherVersion[2]) {
             return version[2] - otherVersion[2];
         }
 
