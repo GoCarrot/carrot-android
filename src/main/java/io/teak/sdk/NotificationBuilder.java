@@ -373,7 +373,11 @@ public class NotificationBuilder {
                         } else {
                             final Bitmap bitmap = loadBitmapFromUriString(value);
                             if (bitmap == null) {
-                                throw new NullPointerException("Bitmap is null (" + value + ")");
+                                if ("left_image".equals(key)) {
+                                    remoteViews.setViewVisibility(viewElementId, View.GONE);
+                                } else {
+                                    throw new NullPointerException("Bitmap is null (" + value + ")");
+                                }
                             } else {
                                 remoteViews.setImageViewBitmap(viewElementId, bitmap);
                             }
