@@ -47,11 +47,12 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
 
     private class AnimationEntry {
         final Notification notification;
-        final TeakNotification teakNotification;
+        final Bundle bundle;
 
         AnimationEntry(Notification notification, TeakNotification teakNotification) {
             this.notification = notification;
-            this.teakNotification = teakNotification;
+            this.bundle = teakNotification.bundle;
+            this.bundle.putInt("platformId", teakNotification.platformId);
         }
     }
 
@@ -117,7 +118,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
         synchronized (this.animatedNotifications) {
             ArrayList<AnimationEntry> removeList = new ArrayList<>();
             for (int i = 0; i < this.animatedNotifications.size(); i++) {
-                if (this.animatedNotifications.get(i).teakNotification.platformId == platformId) {
+                if (this.animatedNotifications.get(i).bundle.getInt("platformId") == platformId) {
                     removeList.add(this.animatedNotifications.get(i));
                 }
             }
@@ -169,29 +170,28 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                         Random rng = new Random();
                         for (AnimationEntry entry : animatedNotifications) {
                             try {
-                                notificationManager.cancel(NOTIFICATION_TAG, entry.teakNotification.platformId);
+                                notificationManager.cancel(NOTIFICATION_TAG, entry.bundle.getInt("platformId"));
 
                                 entry.notification.defaults = 0; // Disable sound/vibrate etc
-                                entry.teakNotification.platformId = rng.nextInt();
-                                entry.teakNotification.bundle.putInt("platformId", entry.teakNotification.platformId);
+                                entry.bundle.putInt("platformId", rng.nextInt());
 
                                 // Now it needs new intents
                                 ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
 
                                 // Create intent to fire if/when notification is cleared
                                 Intent pushClearedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX);
-                                pushClearedIntent.putExtras(entry.teakNotification.bundle);
+                                pushClearedIntent.putExtras(entry.bundle);
                                 pushClearedIntent.setComponent(cn);
                                 entry.notification.deleteIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
 
                                 // Create intent to fire if/when notification is opened, attach bundle info
                                 Intent pushOpenedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX);
-                                pushOpenedIntent.putExtras(entry.teakNotification.bundle);
+                                pushOpenedIntent.putExtras(entry.bundle);
                                 pushOpenedIntent.setComponent(cn);
                                 entry.notification.contentIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
 
-                                notificationManager.notify(NOTIFICATION_TAG, entry.teakNotification.platformId, entry.notification);
-                                TeakEvent.postEvent(new NotificationReDisplayEvent(entry.teakNotification, entry.notification));
+                                notificationManager.notify(NOTIFICATION_TAG, entry.bundle.getInt("platformId"), entry.notification);
+                                TeakEvent.postEvent(new NotificationReDisplayEvent(entry.bundle, entry.notification));
                             } catch (Exception e) {
                                 Teak.log.exception(e);
                             }
