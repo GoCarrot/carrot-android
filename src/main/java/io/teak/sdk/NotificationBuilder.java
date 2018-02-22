@@ -82,6 +82,7 @@ public class NotificationBuilder {
                 extras.put("teakCreativeName", teakNotificaton.teakCreativeName);
             }
             Teak.log.exception(e, extras);
+
             // TODO: Report to the 'callback' URL on the push when/if we implement that
             return null;
         }
@@ -371,7 +372,9 @@ public class NotificationBuilder {
                             remoteViews.setViewVisibility(viewElementId, View.GONE);
                         } else {
                             final Bitmap bitmap = loadBitmapFromUriString(value);
-                            if (bitmap != null) {
+                            if (bitmap == null) {
+                                throw new NullPointerException("Bitmap is null (" + value + ")");
+                            } else {
                                 remoteViews.setImageViewBitmap(viewElementId, bitmap);
                             }
                         }
@@ -379,6 +382,9 @@ public class NotificationBuilder {
                         final JSONObject animationConfig = viewConfig.getJSONObject(key);
                         try {
                             final Bitmap bitmap = loadBitmapFromUriString(animationConfig.getString("sprite_sheet"));
+                            if (bitmap == null) {
+                                throw new NullPointerException("Bitmap is null (" + animationConfig.getString("sprite_sheet") + ")");
+                            }
                             final int frameWidth = animationConfig.getInt("width");
                             final int frameHeight = animationConfig.getInt("height");
                             final int numCols = bitmap.getWidth() / frameWidth;
@@ -390,6 +396,10 @@ public class NotificationBuilder {
                                     final int startX = x * frameWidth;
                                     final int startY = y * frameHeight;
                                     Bitmap frame = Bitmap.createBitmap(bitmap, startX, startY, frameWidth, frameHeight);
+
+                                    if (frame == null) {
+                                        throw new NullPointerException("Frame [" + x + ", " + y + "] is null (" + animationConfig.getString("sprite_sheet") + ")");
+                                    }
 
                                     final RemoteViews frameView = new RemoteViews(context.getPackageName(),
                                             isLargeView ? R.layout("teak_big_frame") : R.layout("teak_frame"));
@@ -521,7 +531,12 @@ public class NotificationBuilder {
                 } else {
                     bigContentView.setViewVisibility(R.id("small_view_container"), View.GONE);
                 }
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                HashMap<String, Object> extras = new HashMap<>();
+                if (teakNotificaton.teakCreativeName != null) {
+                    extras.put("teakCreativeName", teakNotificaton.teakCreativeName);
+                }
+                Teak.log.exception(e, extras);
             }
         }
 
