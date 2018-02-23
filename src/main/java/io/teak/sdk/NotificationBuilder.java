@@ -94,18 +94,40 @@ public class NotificationBuilder {
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (notificationChannelId == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
             try {
-                int importance = NotificationManager.IMPORTANCE_HIGH;
-                String id = "teak";
-                NotificationChannel channel = new NotificationChannel(id, "Notifications", importance);
+                final String channelId = "teak";
+                final int importance = NotificationManager.IMPORTANCE_HIGH;
+                final NotificationChannel channel = new NotificationChannel(channelId, "Notifications", importance);
                 channel.enableLights(true);
                 channel.setLightColor(Color.RED);
-                channel.enableVibration(false);
+                channel.enableVibration(true);
+                channel.setVibrationPattern(new long[]{100L, 300L, 0L, 0L, 100L, 300L});
                 notificationManager.createNotificationChannel(channel);
-                notificationChannelId = id;
+                notificationChannelId = channelId;
             } catch (Exception ignored) {
             }
         }
         return notificationChannelId;
+    }
+
+    private static String quietNotificationChannelId;
+    public static String getQuietNotificationChannelId(Context context) {
+        // Notification channel, required for targeting API 26+
+        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (quietNotificationChannelId == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
+            try {
+                final String channelId = "teak-quiet";
+                final int importance = NotificationManager.IMPORTANCE_DEFAULT;
+                final NotificationChannel channel = new NotificationChannel(channelId, "Notifications", importance);
+                channel.enableLights(true);
+                channel.setLightColor(Color.RED);
+                channel.enableVibration(false);
+                channel.setVibrationPattern(new long[]{0L});
+                notificationManager.createNotificationChannel(channel);
+                quietNotificationChannelId = channelId;
+            } catch (Exception ignored) {
+            }
+        }
+        return quietNotificationChannelId;
     }
 
     private static NotificationCompat.Builder getNotificationCompatBuilder(Context context) {

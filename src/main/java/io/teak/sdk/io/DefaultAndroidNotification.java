@@ -24,15 +24,18 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import io.teak.sdk.Helpers;
+import io.teak.sdk.NotificationBuilder;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
@@ -44,6 +47,7 @@ import io.teak.sdk.service.DeviceStateService;
 public class DefaultAndroidNotification extends BroadcastReceiver implements IAndroidNotification {
     private final NotificationManager notificationManager;
     private final ArrayList<AnimationEntry> animatedNotifications = new ArrayList<>();
+    private final Handler handler = new Handler();
 
     private class AnimationEntry {
         final Notification notification;
@@ -131,7 +135,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
             // Since Android O doesn't have an install base worth mentioning, this can be fixed later
         }
 
-        new Thread(new Runnable() {
+        this.handler.post(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -152,8 +156,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                     }
                 }
             }
-        })
-            .start();
+        });
     }
 
     @Override
@@ -163,7 +166,24 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
         } else if (DeviceStateService.SCREEN_OFF.equals(intent.getAction())) {
             Teak.log.i("notification.animation", Helpers.mm.h("animating", false));
 
-            new Timer().schedule(new TimerTask() {
+            // Start service again (just in case)
+            try {
+                Intent serviceIntent = new Intent(context, DeviceStateService.class);
+                context.startService(serviceIntent);
+            } catch (Exception ignored) {
+                // Android-O has issues with background services
+                // https://developer.android.com/about/versions/oreo/background.html
+                // Since Android O doesn't have an install base worth mentioning, this can be fixed later
+            }
+
+            // Double, double, toil and trouble...
+            String tempNotificationChannelId = null;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                tempNotificationChannelId = NotificationBuilder.getQuietNotificationChannelId(context);
+            }
+            final String notificationChannelId = tempNotificationChannelId;
+
+            final Runnable updateNotificationsRunnable = new Runnable() {
                 @Override
                 public void run() {
                     synchronized (animatedNotifications) {
@@ -173,7 +193,19 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                                 notificationManager.cancel(NOTIFICATION_TAG, entry.bundle.getInt("platformId"));
 
                                 entry.notification.defaults = 0; // Disable sound/vibrate etc
+                                entry.notification.vibrate = new long[]{0L};
+                                entry.notification.sound = null;
                                 entry.bundle.putInt("platformId", rng.nextInt());
+
+                                // Fire burn, and cauldron bubble...
+                                if (notificationChannelId != null) {
+                                    try {
+                                        final Field mChannelIdField = Notification.class.getDeclaredField("mChannelId");
+                                        mChannelIdField.setAccessible(true);
+                                        mChannelIdField.set(entry.notification, notificationChannelId);
+                                    } catch (Exception ignored) {
+                                    }
+                                }
 
                                 // Now it needs new intents
                                 ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
@@ -197,6 +229,13 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                             }
                         }
                     }
+                }
+            };
+
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    DefaultAndroidNotification.this.handler.post(updateNotificationsRunnable);
                 }
             }, 1);
         }
