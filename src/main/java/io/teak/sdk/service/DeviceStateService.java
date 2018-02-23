@@ -77,13 +77,13 @@ public class DeviceStateService extends Service {
     private void setState(State newState) {
         synchronized (this.stateMutex) {
             if (this.state.canTransitionTo(newState)) {
-                android.util.Log.i("Teak.Animation", this.state.toString() + " -> " + newState.toString());
+                android.util.Log.i("Teak.Animation", String.format("State %s -> %s", this.state, newState));
                 this.state = newState;
 
                 Intent intent = this.state == State.ScreenOn ? new Intent(DeviceStateService.SCREEN_ON) : new Intent(DeviceStateService.SCREEN_OFF);
                 this.sendBroadcast(intent);
             } else {
-                android.util.Log.e("Teak.Animation", this.state.toString() + " xx " + newState.toString());
+                android.util.Log.e("Teak.Animation", String.format("Invalid State transition (%s -> %s). Ignoring.", this.state, newState));
             }
         }
     }
@@ -109,7 +109,10 @@ public class DeviceStateService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        android.util.Log.i("Teak.Animation", "Service started.");
+        if (intent.getAction() != null) {
+            android.util.Log.i("Teak.Animation", "Start: " + intent.getAction());
+        }
+
         return START_STICKY;
     }
 
@@ -121,6 +124,8 @@ public class DeviceStateService extends Service {
         screenStateFilter.addAction(Intent.ACTION_SCREEN_ON);
         screenStateFilter.addAction(Intent.ACTION_SCREEN_OFF);
         registerReceiver(screenStateReceiver, screenStateFilter);
+
+        android.util.Log.i("Teak.Animation", "Service created");
 
         if (isScreenOn(this)) {
             setState(State.ScreenOn);
@@ -134,7 +139,7 @@ public class DeviceStateService extends Service {
         this.sendBroadcast(new Intent(DeviceStateService.SCREEN_OFF));
         unregisterReceiver(screenStateReceiver);
 
-        android.util.Log.i("Teak.Animation", "Service stopped.");
+        android.util.Log.i("Teak.Animation", "Service stopped");
         super.onDestroy();
     }
 
