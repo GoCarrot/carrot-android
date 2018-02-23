@@ -69,7 +69,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
         return Instance;
     }
 
-    public DefaultAndroidNotification(@NonNull Context context) {
+    public DefaultAndroidNotification(@NonNull final Context context) {
         this.notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
         if (!"test_package_name".equalsIgnoreCase(context.getPackageName())) {
@@ -93,20 +93,11 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                     } break;
                     case NotificationDisplayEvent.Type: {
                         NotificationDisplayEvent notificationDisplayEvent = (NotificationDisplayEvent) event;
-                        displayNotification(notificationDisplayEvent.teakNotification, notificationDisplayEvent.nativeNotification);
+                        displayNotification(context, notificationDisplayEvent.teakNotification, notificationDisplayEvent.nativeNotification);
                     } break;
                 }
             }
         });
-
-        try {
-            Intent intent = new Intent(context, DeviceStateService.class);
-            context.startService(intent);
-        } catch (Exception ignored) {
-            // Android-O has issues with background services
-            // https://developer.android.com/about/versions/oreo/background.html
-            // Since Android O doesn't have an install base worth mentioning, this can be fixed later
-        }
     }
 
     @Override
@@ -127,9 +118,18 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
     }
 
     @Override
-    public void displayNotification(@NonNull final TeakNotification teakNotification, @NonNull final Notification nativeNotification) {
+    public void displayNotification(@NonNull final Context context, @NonNull final TeakNotification teakNotification, @NonNull final Notification nativeNotification) {
         // Send it out
         Teak.log.i("notification.display", Helpers.mm.h("teakNotifId", teakNotification.teakNotifId, "platformId", teakNotification.platformId));
+
+        try {
+            Intent intent = new Intent(context, DeviceStateService.class);
+            context.startService(intent);
+        } catch (Exception ignored) {
+            // Android-O has issues with background services
+            // https://developer.android.com/about/versions/oreo/background.html
+            // Since Android O doesn't have an install base worth mentioning, this can be fixed later
+        }
 
         new Thread(new Runnable() {
             @Override
