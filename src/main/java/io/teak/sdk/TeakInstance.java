@@ -215,8 +215,7 @@ public class TeakInstance {
         try {
             ShortcutBadger.applyCountOrThrow(this.context, count);
             return true;
-        } catch (Exception e) {
-            Teak.log.exception(e);
+        } catch (Exception ignored) {
             return false;
         }
     }
