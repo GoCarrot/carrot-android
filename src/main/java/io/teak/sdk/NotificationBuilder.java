@@ -309,7 +309,7 @@ public class NotificationBuilder {
         }
 
         // Notification builder
-        Notification nativeNotification = null;
+        Notification nativeNotification;
         try {
             nativeNotification = builder.build();
         } catch (Exception e) {
@@ -648,7 +648,7 @@ public class NotificationBuilder {
         }
 
         // Notification builder
-        Notification nativeNotification = null;
+        Notification nativeNotification;
         try {
             nativeNotification = builder.build();
         } catch (Exception e) {
