@@ -183,7 +183,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
             }
             final String notificationChannelId = tempNotificationChannelId;
 
-            final Runnable updateNotificationsRunnable = new Runnable() {
+            this.handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     synchronized (animatedNotifications) {
@@ -230,14 +230,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                         }
                     }
                 }
-            };
-
-            new Timer().schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    DefaultAndroidNotification.this.handler.post(updateNotificationsRunnable);
-                }
-            }, 1);
+            }, 1000);
         }
     }
 }
