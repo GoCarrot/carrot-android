@@ -697,11 +697,41 @@ public class Session {
             intent.putExtra("teakSessionProcessed", true);
 
             final TeakConfiguration teakConfiguration = TeakConfiguration.get();
-
-            // If this is the first launch, see if the InstallReferrerReceiver has anything for us
-            boolean isFirstLaunch = intent.getBooleanExtra("teakIsFirstLaunch", false);
+            final boolean isFirstLaunch = intent.getBooleanExtra("teakIsFirstLaunch", false);
             Future<String> deepLinkURL = null;
-            if (isFirstLaunch) {
+
+            // See if there's a deep link in the intent
+            final String intentDataString = intent.getDataString();
+            if (intentDataString != null && !intentDataString.isEmpty()) {
+                Teak.log.i("session.attribution", Helpers.mm.h("deep_link", intentDataString));
+                deepLinkURL = new Future<String>() {
+                    @Override
+                    public boolean cancel(boolean b) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isCancelled() {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isDone() {
+                        return true;
+                    }
+
+                    @Override
+                    public String get() throws InterruptedException, ExecutionException {
+                        return intentDataString;
+                    }
+
+                    @Override
+                    public String get(long l, @NonNull TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
+                        return get();
+                    }
+                };
+            } else if (isFirstLaunch) {
+                // Otherwise, if this is the first launch, see if the InstallReferrerReceiver has anything for us
                 FutureTask<String> referrerPollTask = new FutureTask<>(new Callable<String>() {
                     @Override
                     public String call() throws Exception {
@@ -713,43 +743,14 @@ public class Session {
                             long elapsedTime = System.nanoTime() - startTime;
                             if (elapsedTime / 1000000000 > 10) break;
                         }
+                        if (referralString != null) {
+                            Teak.log.i("session.attribution", Helpers.mm.h("install_referrer", referralString));
+                        }
                         return referralString;
                     }
                 });
                 new Thread(referrerPollTask).start();
                 deepLinkURL = referrerPollTask;
-            } else {
-                // Otherwise see if there's a deep link in the intent
-                final String intentDataString = intent.getDataString();
-                if (intentDataString != null && !intentDataString.isEmpty()) {
-                    Teak.log.i("session.attribution", Helpers.mm.h("deep_link", intentDataString));
-                    deepLinkURL = new Future<String>() {
-                        @Override
-                        public boolean cancel(boolean b) {
-                            return false;
-                        }
-
-                        @Override
-                        public boolean isCancelled() {
-                            return false;
-                        }
-
-                        @Override
-                        public boolean isDone() {
-                            return true;
-                        }
-
-                        @Override
-                        public String get() throws InterruptedException, ExecutionException {
-                            return intentDataString;
-                        }
-
-                        @Override
-                        public String get(long l, @NonNull TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
-                            return get();
-                        }
-                    };
-                }
             }
 
             //
