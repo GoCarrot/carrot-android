@@ -188,13 +188,21 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                 public void run() {
                     synchronized (animatedNotifications) {
                         Random rng = new Random();
-                        for (AnimationEntry entry : animatedNotifications) {
+                        for (final AnimationEntry entry : animatedNotifications) {
                             try {
                                 notificationManager.cancel(NOTIFICATION_TAG, entry.bundle.getInt("platformId"));
 
-                                entry.notification.defaults = 0; // Disable sound/vibrate etc
-                                entry.notification.vibrate = new long[]{0L};
-                                entry.notification.sound = null;
+                                class Deprecated {
+                                    @SuppressWarnings("deprecation")
+                                    private void assignDeprecated() {
+                                        entry.notification.defaults = 0; // Disable sound/vibrate etc
+                                        entry.notification.vibrate = new long[]{0L};
+                                        entry.notification.sound = null;
+                                    }
+                                }
+                                final Deprecated deprecated = new Deprecated();
+                                deprecated.assignDeprecated();
+
                                 entry.bundle.putInt("platformId", rng.nextInt());
 
                                 // Fire burn, and cauldron bubble...

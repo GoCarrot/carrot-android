@@ -309,9 +309,9 @@ public class NotificationBuilder {
         }
 
         // Notification builder
-        Notification nativeNotification;
+        Notification tempNotification;
         try {
-            nativeNotification = builder.build();
+            tempNotification = builder.build();
         } catch (Exception e) {
             if (!bundle.getBoolean("teakUnitTest")) {
                 throw e;
@@ -321,6 +321,7 @@ public class NotificationBuilder {
                 return notification;
             }
         }
+        final Notification nativeNotification = tempNotification;
 
         class ViewBuilder {
             private RemoteViews buildViews(String name, boolean isLargeView) throws Exception {
@@ -542,7 +543,14 @@ public class NotificationBuilder {
         ViewBuilder viewBuilder = new ViewBuilder();
 
         // Configure 'contentView'
-        nativeNotification.contentView = viewBuilder.buildViews(teakNotificaton.display.getString("contentView"));
+        class Deprecated {
+            @SuppressWarnings("deprecation")
+            private void assignDeprecated(RemoteViews remoteViews) {
+                nativeNotification.contentView = remoteViews;
+            }
+        }
+        final Deprecated deprecated = new Deprecated();
+        deprecated.assignDeprecated(viewBuilder.buildViews(teakNotificaton.display.getString("contentView")));
 
         // Check for Jellybean (API 16, 4.1)+ for expanded view
         RemoteViews bigContentView = null;
@@ -648,9 +656,9 @@ public class NotificationBuilder {
         }
 
         // Notification builder
-        Notification nativeNotification;
+        Notification tempNotification;
         try {
-            nativeNotification = builder.build();
+            tempNotification = builder.build();
         } catch (Exception e) {
             if (!bundle.getBoolean("teakUnitTest")) {
                 throw e;
@@ -660,6 +668,7 @@ public class NotificationBuilder {
                 return notification;
             }
         }
+        final Notification nativeNotification = tempNotification;
 
         // Because we can't be certain that the R class will line up with what is at SDK build time
         // like in the case of Unity et. al.
@@ -692,7 +701,16 @@ public class NotificationBuilder {
 
         // Set small view text
         smallView.setTextViewText(R.id("text"), richMessageText);
-        nativeNotification.contentView = smallView;
+
+        // Assign content view
+        class Deprecated {
+            @SuppressWarnings("deprecation")
+            private void assignDeprecated(RemoteViews remoteViews) {
+                nativeNotification.contentView = remoteViews;
+            }
+        }
+        final Deprecated deprecated = new Deprecated();
+        deprecated.assignDeprecated(smallView);
 
         // Check for Jellybean (API 16, 4.1)+ for expanded view
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN &&
