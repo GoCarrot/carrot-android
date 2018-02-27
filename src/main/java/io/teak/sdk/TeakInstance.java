@@ -158,8 +158,12 @@ public class TeakInstance {
         if (this.isEnabled()) {
             Map<String, Object> payload = new HashMap<>();
             payload.put("action_type", actionId);
-            payload.put("object_type", objectTypeId);
-            payload.put("object_instance_id", objectInstanceId);
+            if (objectTypeId != null && objectTypeId.trim().length() > 0) {
+                payload.put("object_type", objectTypeId);
+            }
+            if (objectInstanceId != null && objectInstanceId.trim().length() > 0) {
+                payload.put("object_instance_id", objectInstanceId);
+            }
             TeakEvent.postEvent(new TrackEventEvent(payload));
         }
     }
