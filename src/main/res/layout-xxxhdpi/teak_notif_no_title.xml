@@ -5,7 +5,7 @@
 
     <include layout="@layout/teak_frame"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="72dp"
         android:layout_gravity="center" />
 
     <include layout="@layout/teak_small_view_content"

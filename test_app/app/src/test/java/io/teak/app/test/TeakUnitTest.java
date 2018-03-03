@@ -66,6 +66,7 @@ public class TeakUnitTest {
         // Android Device Info mock
         final IAndroidDeviceInfo androidDeviceInfo = mock(IAndroidDeviceInfo.class);
         when(androidDeviceInfo.getDeviceId()).thenReturn("unit_test_mock_device");
+        when(androidDeviceInfo.getSystemProperty("ro.miui.ui.version.name")).thenReturn(null);
 
         // Android Notification mock
         androidNotification = mock(IAndroidNotification.class);

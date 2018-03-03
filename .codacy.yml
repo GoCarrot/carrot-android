@@ -1,5 +1,7 @@
 ---
 exclude_paths:
+  - echo/*
+  - echo/**/*
   - example/*
   - example/**/*
   - notification_visuals/*
@@ -20,3 +22,5 @@ exclude_paths:
   - .idea/**/*
   - src/main/java/io/teak/sdk/json/* # Not our code, vendored JSONObject and friends
   - src/main/java/io/teak/sdk/json/**/*
+  - src/main/java/io/teak/sdk/shortcutbadger/* # Not our code, vendored ShortcutBadger
+  - src/main/java/io/teak/sdk/shortcutbadger/**/*

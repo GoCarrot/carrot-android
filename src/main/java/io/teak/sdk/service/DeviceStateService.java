@@ -27,6 +27,8 @@ import android.support.annotation.NonNull;
 import android.view.Display;
 
 public class DeviceStateService extends Service {
+    public static final String SCREEN_STATE = "DeviceStateService.SCREEN_STATE";
+
     public static final String SCREEN_ON = "DeviceStateService.SCREEN_ON";
     public static final String SCREEN_OFF = "DeviceStateService.SCREEN_OFF";
 
@@ -34,11 +36,15 @@ public class DeviceStateService extends Service {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
-                setState(State.ScreenOn);
+                final Intent stateIntent = new Intent(context, DeviceStateService.class);
+                stateIntent.setAction(SCREEN_STATE);
+                stateIntent.putExtra("state", State.ScreenOn.toString());
+                context.startService(stateIntent);
             } else if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
-                setState(State.ScreenOff);
-            } else {
-                android.util.Log.i("Teak.Animation", intent.getAction());
+                final Intent stateIntent = new Intent(context, DeviceStateService.class);
+                stateIntent.setAction(SCREEN_STATE);
+                stateIntent.putExtra("state", State.ScreenOff.toString());
+                context.startService(stateIntent);
             }
         }
     };
@@ -77,13 +83,13 @@ public class DeviceStateService extends Service {
     private void setState(State newState) {
         synchronized (this.stateMutex) {
             if (this.state.canTransitionTo(newState)) {
-                android.util.Log.i("Teak.Animation", this.state.toString() + " -> " + newState.toString());
+                android.util.Log.i("Teak.Animation", String.format("State %s -> %s", this.state, newState));
                 this.state = newState;
 
                 Intent intent = this.state == State.ScreenOn ? new Intent(DeviceStateService.SCREEN_ON) : new Intent(DeviceStateService.SCREEN_OFF);
                 this.sendBroadcast(intent);
             } else {
-                android.util.Log.e("Teak.Animation", this.state.toString() + " xx " + newState.toString());
+                android.util.Log.e("Teak.Animation", String.format("Invalid State transition (%s -> %s). Ignoring.", this.state, newState));
             }
         }
     }
@@ -109,7 +115,17 @@ public class DeviceStateService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        android.util.Log.i("Teak.Animation", "Service started.");
+        if (intent.getAction() != null) {
+            android.util.Log.i("Teak.Animation", "Start: " + intent.getAction());
+        }
+
+        if (SCREEN_STATE.equals(intent.getAction())) {
+            if (State.ScreenOn.toString().equals(intent.getStringExtra("state"))) {
+                setState(State.ScreenOn);
+            } else if (State.ScreenOff.toString().equals(intent.getStringExtra("state"))) {
+                setState(State.ScreenOff);
+            }
+        }
         return START_STICKY;
     }
 
@@ -122,6 +138,8 @@ public class DeviceStateService extends Service {
         screenStateFilter.addAction(Intent.ACTION_SCREEN_OFF);
         registerReceiver(screenStateReceiver, screenStateFilter);
 
+        android.util.Log.i("Teak.Animation", "Service created");
+
         if (isScreenOn(this)) {
             setState(State.ScreenOn);
         } else {
@@ -131,10 +149,10 @@ public class DeviceStateService extends Service {
 
     @Override
     public void onDestroy() {
-        this.sendBroadcast(new Intent(DeviceStateService.SCREEN_OFF));
+        setState(State.ScreenOff);
         unregisterReceiver(screenStateReceiver);
 
-        android.util.Log.i("Teak.Animation", "Service stopped.");
+        android.util.Log.i("Teak.Animation", "Service stopped");
         super.onDestroy();
     }
 

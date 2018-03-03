@@ -14,6 +14,7 @@
  */
 package io.teak.sdk;
 
+import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -27,6 +28,7 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -35,8 +37,10 @@ import android.support.v4.app.NotificationCompat;
 import android.text.Html;
 import android.text.Spanned;
 import android.text.SpannedString;
+import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -78,6 +82,7 @@ public class NotificationBuilder {
                 extras.put("teakCreativeName", teakNotificaton.teakCreativeName);
             }
             Teak.log.exception(e, extras);
+
             // TODO: Report to the 'callback' URL on the push when/if we implement that
             return null;
         }
@@ -89,19 +94,40 @@ public class NotificationBuilder {
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (notificationChannelId == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
             try {
-                int importance = NotificationManager.IMPORTANCE_HIGH;
-                String id = "teak";
-                NotificationChannel channel = new NotificationChannel(id, "Notifications", importance);
+                final String channelId = "teak";
+                final int importance = NotificationManager.IMPORTANCE_HIGH;
+                final NotificationChannel channel = new NotificationChannel(channelId, "Notifications", importance);
                 channel.enableLights(true);
                 channel.setLightColor(Color.RED);
                 channel.enableVibration(true);
-                channel.setVibrationPattern(new long[] {100, 200, 300, 400, 500, 400, 300, 200, 400});
+                channel.setVibrationPattern(new long[]{100L, 300L, 0L, 0L, 100L, 300L});
                 notificationManager.createNotificationChannel(channel);
-                notificationChannelId = id;
+                notificationChannelId = channelId;
             } catch (Exception ignored) {
             }
         }
         return notificationChannelId;
+    }
+
+    private static String quietNotificationChannelId;
+    public static String getQuietNotificationChannelId(Context context) {
+        // Notification channel, required for targeting API 26+
+        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (quietNotificationChannelId == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
+            try {
+                final String channelId = "teak-quiet";
+                final int importance = NotificationManager.IMPORTANCE_DEFAULT;
+                final NotificationChannel channel = new NotificationChannel(channelId, "Notifications", importance);
+                channel.enableLights(true);
+                channel.setLightColor(Color.RED);
+                channel.enableVibration(false);
+                channel.setVibrationPattern(new long[]{0L});
+                notificationManager.createNotificationChannel(channel);
+                quietNotificationChannelId = channelId;
+            } catch (Exception ignored) {
+            }
+        }
+        return quietNotificationChannelId;
     }
 
     private static NotificationCompat.Builder getNotificationCompatBuilder(Context context) {
@@ -131,6 +157,19 @@ public class NotificationBuilder {
     }
 
     private static Notification createNativeNotificationV1Plus(final Context context, final Bundle bundle, final TeakNotification teakNotificaton) throws Exception {
+        // Get the memory class here, don't rely on TeakConfiguration
+        final ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        final int deviceMemoryClass = am == null ? 0 : am.getMemoryClass();
+
+        final DisplayMetrics displayMetrics = new DisplayMetrics();
+        final WindowManager wm = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE));
+        if (wm != null) {
+            wm.getDefaultDisplay().getMetrics(displayMetrics);
+        }
+
+        // Should this notification display both the small view and the big view when expanded?
+        final boolean displayContentViewAboveBigContentView = teakNotificaton.display.optBoolean("displayContentViewAboveBigContentView", false);
+
         // Because we can't be certain that the R class will line up with what is at SDK build time
         // like in the case of Unity et. al.
         class IdHelper {
@@ -270,9 +309,9 @@ public class NotificationBuilder {
         }
 
         // Notification builder
-        Notification nativeNotification = null;
+        Notification tempNotification;
         try {
-            nativeNotification = builder.build();
+            tempNotification = builder.build();
         } catch (Exception e) {
             if (!bundle.getBoolean("teakUnitTest")) {
                 throw e;
@@ -282,9 +321,10 @@ public class NotificationBuilder {
                 return notification;
             }
         }
+        final Notification nativeNotification = tempNotification;
 
         class ViewBuilder {
-            private RemoteViews buildViews(String name) throws Exception {
+            private RemoteViews buildViews(String name, boolean isLargeView) throws Exception {
                 final int viewLayout = R.layout(name);
                 final RemoteViews remoteViews = new RemoteViews(context.getPackageName(), viewLayout);
 
@@ -353,19 +393,29 @@ public class NotificationBuilder {
                         } else if (value.equalsIgnoreCase("NONE")) {
                             remoteViews.setViewVisibility(viewElementId, View.GONE);
                         } else {
-                            final Bitmap bitmap = loadBitmapFromURI(new URI(value));
-                            if (bitmap != null) {
+                            final Bitmap bitmap = loadBitmapFromUriString(value);
+                            if (bitmap == null) {
+                                if ("left_image".equals(key)) {
+                                    remoteViews.setViewVisibility(viewElementId, View.GONE);
+                                } else {
+                                    throw new IllegalArgumentException("Bitmap is null (" + value + ")");
+                                }
+                            } else {
                                 remoteViews.setImageViewBitmap(viewElementId, bitmap);
                             }
                         }
                     } else if (isUIType(viewElement, ViewFlipper.class)) {
                         final JSONObject animationConfig = viewConfig.getJSONObject(key);
                         try {
-                            final Bitmap bitmap = loadBitmapFromURI(new URI(animationConfig.getString("sprite_sheet")));
-                            final int numCols = animationConfig.getInt("columns");
-                            final int numRows = animationConfig.getInt("rows");
+                            final Bitmap bitmap = loadBitmapFromUriString(animationConfig.getString("sprite_sheet"));
+                            if (bitmap == null) {
+                                throw new IllegalArgumentException("Bitmap is null (" + animationConfig.getString("sprite_sheet") + ")");
+                            }
                             final int frameWidth = animationConfig.getInt("width");
                             final int frameHeight = animationConfig.getInt("height");
+                            final int numCols = bitmap.getWidth() / frameWidth;
+                            final int numRows = bitmap.getHeight() / frameHeight;
+                            final int msPerFrame = animationConfig.optInt("display_ms", 500);
 
                             for (int x = 0; x < numCols; x++) {
                                 for (int y = 0; y < numRows; y++) {
@@ -373,15 +423,25 @@ public class NotificationBuilder {
                                     final int startY = y * frameHeight;
                                     Bitmap frame = Bitmap.createBitmap(bitmap, startX, startY, frameWidth, frameHeight);
 
-                                    final RemoteViews frameView = new RemoteViews(context.getPackageName(), R.layout("teak_frame"));
-                                    final int frameViewId = R.id("frame");
+                                    if (frame == null) {
+                                        throw new IllegalArgumentException("Frame [" + x + ", " + y + "] is null (" + animationConfig.getString("sprite_sheet") + ")");
+                                    }
+
+                                    final RemoteViews frameView = new RemoteViews(context.getPackageName(),
+                                        isLargeView ? R.layout("teak_big_frame") : R.layout("teak_frame"));
+                                    final int frameViewId = R.id("notification_background");
                                     frameView.setImageViewBitmap(frameViewId, frame);
                                     remoteViews.addView(viewElementId, frameView);
                                 }
                             }
 
+                            // Set frame rate
+                            remoteViews.setInt(viewElementId, "setFlipInterval", msPerFrame);
+
                             // Mark notification as containing animated element(s)
                             teakNotificaton.isAnimated = true;
+                        } catch (OutOfMemoryError ignored) {
+                            // Request lower-res version?
                         } catch (Exception e) {
                             Teak.log.exception(e);
                         }
@@ -426,28 +486,43 @@ public class NotificationBuilder {
                 return remoteViews;
             }
 
-            private Bitmap loadBitmapFromURI(URI bitmapUri) throws Exception {
+            private Bitmap loadBitmapFromUriString(String bitmapUriString) throws Exception {
+                final Uri bitmapUri = Uri.parse(bitmapUriString);
                 Bitmap ret = null;
+                InputStream inputStream = null;
                 try {
                     if (bitmapUri.getScheme().equals("assets")) {
                         String assetFilePath = bitmapUri.getPath();
                         assetFilePath = assetFilePath.startsWith("/") ? assetFilePath.substring(1) : assetFilePath;
-                        InputStream is = context.getAssets().open(assetFilePath);
-                        ret = BitmapFactory.decodeStream(is);
-                        is.close();
+                        inputStream = context.getAssets().open(assetFilePath);
+                        ret = BitmapFactory.decodeStream(inputStream);
                     } else {
-                        URL aURL = new URL(bitmapUri.toString());
+                        // Add the "well behaved heap size" as a query param
+                        final Uri.Builder uriBuilder = Uri.parse(bitmapUriString).buildUpon();
+                        uriBuilder.appendQueryParameter("device_memory_class", String.valueOf(deviceMemoryClass));
+                        uriBuilder.appendQueryParameter("xdpi", String.valueOf(displayMetrics.xdpi));
+                        uriBuilder.appendQueryParameter("ydpi", String.valueOf(displayMetrics.ydpi));
+                        uriBuilder.appendQueryParameter("width", String.valueOf(displayMetrics.widthPixels));
+                        uriBuilder.appendQueryParameter("height", String.valueOf(displayMetrics.heightPixels));
+                        uriBuilder.appendQueryParameter("density", String.valueOf(displayMetrics.density));
+                        uriBuilder.appendQueryParameter("density_dpi", String.valueOf(displayMetrics.densityDpi));
+                        uriBuilder.appendQueryParameter("scaled_density", String.valueOf(displayMetrics.scaledDensity));
+
+                        URL aURL = new URL(uriBuilder.toString());
                         URLConnection conn = aURL.openConnection();
                         conn.connect();
-                        InputStream is = conn.getInputStream();
-                        BufferedInputStream bis = new BufferedInputStream(is);
-                        ret = BitmapFactory.decodeStream(bis);
-                        bis.close();
-                        is.close();
+                        inputStream = conn.getInputStream();
+                        ret = BitmapFactory.decodeStream(inputStream);
                     }
+                } catch (OutOfMemoryError ignored) {
+                    // Request lower-res version?
                 } catch (SocketException ignored) {
                 } catch (SSLException ignored) {
                 } catch (FileNotFoundException ignored) {
+                } finally {
+                    if (inputStream != null) {
+                        inputStream.close();
+                    }
                 }
                 return ret;
             }
@@ -456,26 +531,54 @@ public class NotificationBuilder {
                 // TODO: Do more error checking to see if this is an AppCompat* class, and don't use InstanceOf
                 return clazz.isInstance(viewElement);
             }
+
+            private RemoteViews buildViews(String name) throws Exception {
+                return this.buildViews(name, false);
+            }
+
+            private RemoteViews buildLargeViews(String name) throws Exception {
+                return this.buildViews(name, true);
+            }
         }
         ViewBuilder viewBuilder = new ViewBuilder();
 
         // Configure 'contentView'
-        nativeNotification.contentView = viewBuilder.buildViews(teakNotificaton.display.getString("contentView"));
+        class Deprecated {
+            @SuppressWarnings("deprecation")
+            private void assignDeprecated(RemoteViews remoteViews) {
+                nativeNotification.contentView = remoteViews;
+            }
+        }
+        final Deprecated deprecated = new Deprecated();
+        deprecated.assignDeprecated(viewBuilder.buildViews(teakNotificaton.display.getString("contentView")));
 
         // Check for Jellybean (API 16, 4.1)+ for expanded view
         RemoteViews bigContentView = null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && teakNotificaton.display.has("bigContentView")) {
             try {
-                bigContentView = viewBuilder.buildViews(teakNotificaton.display.getString("bigContentView"));
-            } catch (Exception ignored) {
+                bigContentView = viewBuilder.buildLargeViews(teakNotificaton.display.getString("bigContentView"));
+
+                // Assign small content view to display above big content view, if that's what the notification wants
+                if (displayContentViewAboveBigContentView) {
+                    final RemoteViews frameView = viewBuilder.buildViews(teakNotificaton.display.getString("contentView"));
+                    bigContentView.addView(R.id("small_view_container"), frameView);
+                } else {
+                    bigContentView.setViewVisibility(R.id("small_view_container"), View.GONE);
+                }
+            } catch (Exception e) {
+                HashMap<String, Object> extras = new HashMap<>();
+                if (teakNotificaton.teakCreativeName != null) {
+                    extras.put("teakCreativeName", teakNotificaton.teakCreativeName);
+                }
+                Teak.log.exception(e, extras);
             }
         }
 
-        // Assign expanded view if it's there, otherwise hide the pulldown view (if it exists)
+        // Assign expanded view if it's there
         if (bigContentView != null) {
-            // Use reflection to avoid compile-time issues
             try {
-                Field bigContentViewField = nativeNotification.getClass().getField("bigContentView");
+                // Use reflection to avoid compile-time issues
+                final Field bigContentViewField = nativeNotification.getClass().getField("bigContentView");
                 bigContentViewField.set(nativeNotification, bigContentView);
             } catch (Exception ignored) {
             }
@@ -553,9 +656,9 @@ public class NotificationBuilder {
         }
 
         // Notification builder
-        Notification nativeNotification = null;
+        Notification tempNotification;
         try {
-            nativeNotification = builder.build();
+            tempNotification = builder.build();
         } catch (Exception e) {
             if (!bundle.getBoolean("teakUnitTest")) {
                 throw e;
@@ -565,6 +668,7 @@ public class NotificationBuilder {
                 return notification;
             }
         }
+        final Notification nativeNotification = tempNotification;
 
         // Because we can't be certain that the R class will line up with what is at SDK build time
         // like in the case of Unity et. al.
@@ -597,7 +701,16 @@ public class NotificationBuilder {
 
         // Set small view text
         smallView.setTextViewText(R.id("text"), richMessageText);
-        nativeNotification.contentView = smallView;
+
+        // Assign content view
+        class Deprecated {
+            @SuppressWarnings("deprecation")
+            private void assignDeprecated(RemoteViews remoteViews) {
+                nativeNotification.contentView = remoteViews;
+            }
+        }
+        final Deprecated deprecated = new Deprecated();
+        deprecated.assignDeprecated(smallView);
 
         // Check for Jellybean (API 16, 4.1)+ for expanded view
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN &&

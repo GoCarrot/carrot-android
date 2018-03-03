@@ -30,6 +30,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -602,7 +604,40 @@ public class TeakNotification {
         }
 
         JSONObject tempDisplay = null;
-        if (bundle.getString("display") != null) {
+
+        // Check for content specified by SDK version
+        if (bundle.getString("versioned_content") != null) {
+            try {
+                final JSONArray versionedContent = new JSONArray(bundle.getString("versioned_content"));
+                for (Object content : versionedContent) {
+                    if (!(content instanceof JSONObject)) continue;
+                    final JSONObject jsonContent = (JSONObject) content;
+
+                    final String contentVersionString = jsonContent.getString("version");
+                    if (contentVersionString == null) continue;
+
+                    Matcher m = Pattern.compile("(\\d+)\\.(\\d+)\\.(\\d+).*").matcher(contentVersionString);
+                    if (m.matches()) {
+                        int[] contentMajorMinorRevision = new int[] {
+                            Integer.parseInt(m.group(1)), // major
+                            Integer.parseInt(m.group(2)), // minor
+                            Integer.parseInt(m.group(3)) // revision
+                        };
+
+                        if (compareMajorMinorRevision(Teak.MajorMinorRevision, contentMajorMinorRevision) >= 0) {
+                            tempDisplay = jsonContent;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                Teak.log.exception(e);
+            }
+        }
+
+        // Fall back to display
+        if (tempDisplay == null && bundle.getString("display") != null) {
             try {
                 tempDisplay = new JSONObject(bundle.getString("display"));
             } catch (Exception e) {
@@ -620,5 +655,21 @@ public class TeakNotification {
         this.teakNotifId = tempTeakNotifId;
 
         this.platformId = new Random().nextInt();
+    }
+
+    private int compareMajorMinorRevision(int[] version, int[] otherVersion) {
+        if (version[0] != otherVersion[0]) {
+            return version[0] - otherVersion[0];
+        }
+
+        if (version[1] != otherVersion[1]) {
+            return version[1] - otherVersion[1];
+        }
+
+        if (version[2] != otherVersion[2]) {
+            return version[2] - otherVersion[2];
+        }
+
+        return 0;
     }
 }

@@ -109,7 +109,7 @@ public class TeakEvent {
                 });
                 thread.start();
                 try {
-                    thread.join(1000);
+                    thread.join(2000);
                 } catch (Exception ignored) {
                 }
 

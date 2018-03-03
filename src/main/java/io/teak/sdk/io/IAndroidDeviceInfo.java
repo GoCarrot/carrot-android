@@ -26,5 +26,8 @@ public interface IAndroidDeviceInfo {
     @Nullable
     String getDeviceId();
 
+    @Nullable
+    String getSystemProperty(String propName);
+
     void requestAdvertisingId();
 }

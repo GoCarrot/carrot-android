@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="center_vertical">
+
+    <include layout="@layout/teak_small_view_icon"
+        android:layout_width="@dimen/teak_notification_large_icon_width"
+        android:layout_height="@dimen/teak_notification_large_icon_height"
+        android:layout_gravity="center_vertical" />
+
+    <TextView
+        android:id="@+id/text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_marginLeft="@dimen/teak_notification_large_icon_width"
+        android:layout_marginStart="@dimen/teak_notification_large_icon_width"
+        android:paddingLeft="8dp"
+        android:paddingStart="8dp"
+        android:paddingRight="8dp"
+        android:paddingEnd="8dp"
+        android:maxLines="3"
+        android:textAppearance="@style/Teak.Notification.MessageText" />
+</FrameLayout>
