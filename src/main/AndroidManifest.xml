@@ -66,6 +66,9 @@
         <!-- Device state background service for minimizing power consumption -->
         <service android:name="io.teak.sdk.service.DeviceStateService" android:process=":teak.device_state" android:exported="false"/>
 
+        <!-- Job service, API 21+ -->
+        <service android:name="io.teak.sdk.service.JobService" android:permission="android.permission.BIND_JOB_SERVICE" />
+
         <!-- GCM id listener service -->
         <service android:name="io.teak.sdk.InstanceIDListenerService" android:exported="false" >
             <intent-filter>

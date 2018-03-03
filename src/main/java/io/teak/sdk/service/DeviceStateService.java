@@ -15,7 +15,10 @@
 package io.teak.sdk.service;
 
 import android.app.Service;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -126,6 +129,21 @@ public class DeviceStateService extends Service {
                 } else if (State.ScreenOff.toString().equals(intent.getStringExtra("state"))) {
                     setState(State.ScreenOff);
                 }
+            }
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                JobScheduler jobScheduler = (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
+                if (jobScheduler != null) {
+                    JobInfo job = new JobInfo.Builder(42, new ComponentName(this, JobService.class))
+                            .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                            .setRequiresCharging(false)
+                            .setPeriodic(5000)
+                            .build();
+                    jobScheduler.schedule(job);
+                }
+            } catch (Exception ignored) {
             }
         }
         return START_STICKY;
