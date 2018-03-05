@@ -174,7 +174,15 @@ public class TeakInstance {
 
     boolean areNotificationsEnabled() {
         boolean ret = true;
-        if (this.notificationManagerCompat != null) {
+        boolean notificationManagerCompatHas_areNotificationsEnabled = false;
+        try {
+            if (NotificationManagerCompat.class.getMethod("areNotificationsEnabled") != null) {
+                notificationManagerCompatHas_areNotificationsEnabled = true;
+            }
+        } catch (Exception ignored) {
+        }
+
+        if (notificationManagerCompatHas_areNotificationsEnabled && this.notificationManagerCompat != null) {
             try {
                 ret = this.notificationManagerCompat.areNotificationsEnabled();
             } catch (Exception e) {
