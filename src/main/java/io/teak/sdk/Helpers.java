@@ -102,4 +102,40 @@ public class Helpers {
         }
         return json;
     }
+
+    public static Bundle jsonToGCMBundle(JSONObject jsonObject) {
+        Bundle bundle = new Bundle();
+
+        for (Iterator<String> it = jsonObject.keys(); it.hasNext();) {
+            String key = it.next();
+            Object obj = jsonObject.get(key);
+
+            if (obj instanceof Integer || obj instanceof Long) {
+                if (key.startsWith("google.")) {
+                    long value = ((Number) obj).longValue();
+                    bundle.putLong(key, value);
+                } else {
+                    bundle.putString(key, String.valueOf(obj));
+                }
+            } else if (obj instanceof Boolean) {
+                boolean value = (Boolean) obj;
+                bundle.putBoolean(key, value);
+            } else if (obj instanceof Float || obj instanceof Double) {
+                if (key.startsWith("google.")) {
+                    double value = ((Number) obj).doubleValue();
+                    bundle.putDouble(key, value);
+                } else {
+                    bundle.putString(key, String.valueOf(obj));
+                }
+            } else if (obj instanceof JSONObject || obj instanceof JSONArray) {
+                String value = obj.toString();
+                bundle.putString(key, value);
+            } else if (obj instanceof String) {
+                String value = jsonObject.getString(key);
+                bundle.putString(key, value);
+            }
+        }
+
+        return bundle;
+    }
 }

@@ -101,7 +101,11 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
     @Override
     protected void onMessage(Intent intent) {
         if (Teak.isEnabled()) {
-            TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Received, getApplicationContext(), intent));
+            if (intent.hasExtra("teakAdm")) {
+                JSONObject teakAdm = new JSONObject(intent.getStringExtra("teakAdm"));
+                intent.putExtras(Helpers.jsonToGCMBundle(teakAdm));
+                TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Received, getApplicationContext(), intent));
+            }
         }
     }
 
