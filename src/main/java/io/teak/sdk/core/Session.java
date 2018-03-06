@@ -400,42 +400,41 @@ public class Session {
 
                     Teak.log.i("session.identify_user", Helpers.mm.h("userId", _this.userId, "timezone", tzOffset, "locale", locale, "session_id", _this.sessionId));
 
-                    executionQueue.execute(new Request("/games/" + teakConfiguration.appConfiguration.appId + "/users.json", payload, _this) {
-                        @Override
-                        protected void done(int responseCode, String responseBody) {
-                            _this.stateLock.lock();
-                            try {
-                                JSONObject response = new JSONObject(responseBody);
+                    executionQueue.execute(new Request("/games/" + teakConfiguration.appConfiguration.appId + "/users.json", payload, _this,
+                        new Request.Callback() {
+                            @Override
+                            public void onRequestCompleted(int responseCode, String responseBody) {
+                                _this.stateLock.lock();
+                                try {
+                                    JSONObject response = new JSONObject(responseBody);
 
-                                // TODO: Grab 'id' and 'game_id' from response and store for Parsnip
+                                    // TODO: Grab 'id' and 'game_id' from response and store for Parsnip
 
-                                // Enable verbose logging if flagged
-                                boolean enableVerboseLogging = response.optBoolean("verbose_logging");
-                                teakConfiguration.debugConfiguration.setPreferenceForceDebug(enableVerboseLogging);
+                                    // Enable verbose logging if flagged
+                                    boolean enableVerboseLogging = response.optBoolean("verbose_logging");
+                                    teakConfiguration.debugConfiguration.setPreferenceForceDebug(enableVerboseLogging);
 
-                                // Server requesting new push key.
-                                if (response.optBoolean("reset_push_key", false)) {
-                                    teakConfiguration.deviceConfiguration.requestNewPushToken();
+                                    // Server requesting new push key.
+                                    if (response.optBoolean("reset_push_key", false)) {
+                                        teakConfiguration.deviceConfiguration.requestNewPushToken();
+                                    }
+
+                                    if (response.has("country_code")) {
+                                        _this.countryCode = response.getString("country_code");
+                                    }
+
+                                    // Prevent warning for 'do_not_track_event'
+                                    if (_this.state == State.Expiring) {
+                                        _this.previousState = State.UserIdentified;
+                                    } else if (_this.state != State.UserIdentified) {
+                                        _this.setState(State.UserIdentified);
+                                    }
+                                } catch (Exception ignored) {
+                                } finally {
+                                    _this.stateLock.unlock();
                                 }
-
-                                if (response.has("country_code")) {
-                                    _this.countryCode = response.getString("country_code");
-                                }
-
-                                // Prevent warning for 'do_not_track_event'
-                                if (_this.state == State.Expiring) {
-                                    _this.previousState = State.UserIdentified;
-                                } else if (_this.state != State.UserIdentified) {
-                                    _this.setState(State.UserIdentified);
-                                }
-                            } catch (Exception ignored) {
-                            } finally {
-                                _this.stateLock.unlock();
                             }
-
-                            super.done(responseCode, responseBody);
-                        }
-                    });
+                        }));
                 } finally {
                     _this.stateLock.unlock();
                 }

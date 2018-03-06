@@ -51,6 +51,13 @@ public class Request implements Runnable {
     protected final Map<String, Object> payload;
     private final Session session;
     private final String requestId;
+    private final Callback callback;
+
+    ///// Callback
+
+    public interface Callback {
+        public void onRequestCompleted(int responseCode, String responseBody);
+    }
 
     ///// Common configuration
 
@@ -112,10 +119,18 @@ public class Request implements Runnable {
     /////
 
     public Request(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
-        this(Request.remoteConfiguration.getHostnameForEndpoint(endpoint), endpoint, payload, session);
+        this(endpoint, payload, session, null);
+    }
+
+    public Request(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback) {
+        this(Request.remoteConfiguration.getHostnameForEndpoint(endpoint), endpoint, payload, session, callback);
     }
 
     public Request(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
+        this(hostname, endpoint, payload, session, null);
+    }
+
+    public Request(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback) {
         if (!endpoint.startsWith("/")) {
             throw new IllegalArgumentException("Parameter 'endpoint' must start with '/' or things will break, and you will lose an hour of your life debugging.");
         }
@@ -125,6 +140,7 @@ public class Request implements Runnable {
         this.payload = new HashMap<>(payload);
         this.session = session;
         this.requestId = UUID.randomUUID().toString().replace("-", "");
+        this.callback = callback;
 
         if (session.userId() != null) {
             this.payload.put("api_key", session.userId());
@@ -217,15 +233,12 @@ public class Request implements Runnable {
 
             Teak.log.i("request.reply", h);
 
-            // For extending classes
-            done(statusCode, body);
+            if (this.callback != null) {
+                this.callback.onRequestCompleted(statusCode, body);
+            }
         } catch (Exception e) {
             Teak.log.exception(e);
         }
-    }
-
-    protected void done(int responseCode, String responseBody) {
-        // None
     }
 
     private Map<String, Object> toMap() {
