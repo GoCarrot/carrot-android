@@ -50,13 +50,11 @@ import android.widget.ViewFlipper;
 
 import io.teak.sdk.json.JSONObject;
 
-import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.SocketException;
-import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
@@ -71,7 +69,7 @@ import javax.net.ssl.SSLException;
 public class NotificationBuilder {
     public static Notification createNativeNotification(Context context, Bundle bundle, TeakNotification teakNotificaton) {
         if (teakNotificaton.notificationVersion == TeakNotification.TEAK_NOTIFICATION_V0) {
-            return createNativeNotificationV0(context, bundle, teakNotificaton);
+            return null;
         }
 
         try {
@@ -582,196 +580,6 @@ public class NotificationBuilder {
                 bigContentViewField.set(nativeNotification, bigContentView);
             } catch (Exception ignored) {
             }
-        }
-
-        return nativeNotification;
-    }
-
-    private static Notification createNativeNotificationV0(final Context context, Bundle bundle, TeakNotification teakNotificaton) {
-        NotificationCompat.Builder builder = getNotificationCompatBuilder(context);
-
-        // Rich text message
-        Spanned richMessageText = new SpannedString(teakNotificaton.message);
-        try {
-            richMessageText = fromHtml(teakNotificaton.message);
-        } catch (Exception e) {
-            if (!bundle.getBoolean("teakUnitTest")) {
-                throw e;
-            }
-        }
-
-        // Configure notification behavior
-        builder.setPriority(NotificationCompat.PRIORITY_MAX);
-        builder.setDefaults(NotificationCompat.DEFAULT_ALL);
-        builder.setOnlyAlertOnce(true);
-        builder.setAutoCancel(true);
-        try {
-            builder.setTicker(richMessageText);
-        } catch (Exception e) {
-            if (!bundle.getBoolean("teakUnitTest")) {
-                throw e;
-            }
-        }
-
-        // Set small view image
-        int smallIconResourceId;
-        try {
-            PackageManager pm = context.getPackageManager();
-            ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
-            smallIconResourceId = ai.icon;
-            builder.setSmallIcon(smallIconResourceId);
-        } catch (Exception e) {
-            Teak.log.e("notification_builder", "Unable to load icon resource for Notification.");
-            return null;
-        }
-
-        Random rng = new Random();
-
-        ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
-
-        // Create intent to fire if/when notification is cleared
-        try {
-            Intent pushClearedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX);
-            pushClearedIntent.putExtras(bundle);
-            pushClearedIntent.setComponent(cn);
-            PendingIntent pushClearedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
-            builder.setDeleteIntent(pushClearedPendingIntent);
-        } catch (Exception e) {
-            if (!bundle.getBoolean("teakUnitTest")) {
-                throw e;
-            }
-        }
-
-        // Create intent to fire if/when notification is opened, attach bundle info
-        try {
-            Intent pushOpenedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX);
-            pushOpenedIntent.putExtras(bundle);
-            pushOpenedIntent.setComponent(cn);
-            PendingIntent pushOpenedPendingIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
-            builder.setContentIntent(pushOpenedPendingIntent);
-        } catch (Exception e) {
-            if (!bundle.getBoolean("teakUnitTest")) {
-                throw e;
-            }
-        }
-
-        // Notification builder
-        Notification tempNotification;
-        try {
-            tempNotification = builder.build();
-        } catch (Exception e) {
-            if (!bundle.getBoolean("teakUnitTest")) {
-                throw e;
-            } else {
-                final Notification notification = new Notification();
-                notification.flags = Integer.MAX_VALUE;
-                return notification;
-            }
-        }
-        final Notification nativeNotification = tempNotification;
-
-        // Because we can't be certain that the R class will line up with what is at SDK build time
-        // like in the case of Unity et. al.
-        class IdHelper {
-            public int id(String identifier) {
-                int ret = context.getResources().getIdentifier(identifier, "id", context.getPackageName());
-                if (ret == 0) {
-                    throw new Resources.NotFoundException("Could not find R.id." + identifier);
-                }
-                return ret;
-            }
-
-            public int layout(String identifier) {
-                int ret = context.getResources().getIdentifier(identifier, "layout", context.getPackageName());
-                if (ret == 0) {
-                    throw new Resources.NotFoundException("Could not find R.layout." + identifier);
-                }
-                return ret;
-            }
-        }
-        IdHelper R = new IdHelper(); // Declaring local as 'R' ensures we don't accidentally use the other R
-
-        // Configure notification small view
-        RemoteViews smallView = new RemoteViews(
-            context.getPackageName(),
-            R.layout("teak_notif_no_title"));
-
-        // Set small view image
-        smallView.setImageViewResource(R.id("left_image"), smallIconResourceId);
-
-        // Set small view text
-        smallView.setTextViewText(R.id("text"), richMessageText);
-
-        // Assign content view
-        class Deprecated {
-            @SuppressWarnings("deprecation")
-            private void assignDeprecated(RemoteViews remoteViews) {
-                nativeNotification.contentView = remoteViews;
-            }
-        }
-        final Deprecated deprecated = new Deprecated();
-        deprecated.assignDeprecated(smallView);
-
-        // Check for Jellybean (API 16, 4.1)+ for expanded view
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN &&
-            teakNotificaton.longText != null &&
-            !teakNotificaton.longText.isEmpty()) {
-            RemoteViews bigView = new RemoteViews(
-                context.getPackageName(),
-                R.layout("teak_big_notif_image_text"));
-
-            // Set big view text
-            bigView.setTextViewText(R.id("text"), fromHtml(teakNotificaton.longText));
-
-            URI imageAssetA = null;
-            try {
-                if (teakNotificaton.imageAssetA != null) {
-                    imageAssetA = new URI(teakNotificaton.imageAssetA);
-                }
-            } catch (Exception ignored) {
-            }
-
-            Bitmap topImageBitmap = null;
-            if (imageAssetA != null) {
-                try {
-                    URL aURL = new URL(imageAssetA.toString());
-                    URLConnection conn = aURL.openConnection();
-                    conn.connect();
-                    InputStream is = conn.getInputStream();
-                    BufferedInputStream bis = new BufferedInputStream(is);
-                    topImageBitmap = BitmapFactory.decodeStream(bis);
-                    bis.close();
-                    is.close();
-                } catch (Exception ignored) {
-                }
-            }
-
-            if (topImageBitmap == null) {
-                try {
-                    InputStream istr = context.getAssets().open("teak_notif_large_image_default.png");
-                    topImageBitmap = BitmapFactory.decodeStream(istr);
-                } catch (Exception ignored) {
-                }
-            }
-
-            if (topImageBitmap != null) {
-                // Set large bitmap
-                bigView.setImageViewBitmap(R.id("top_image"), topImageBitmap);
-
-                // Use reflection to avoid compile-time issues, we check minimum API version above
-                try {
-                    Field bigContentViewField = nativeNotification.getClass().getField("bigContentView");
-                    bigContentViewField.set(nativeNotification, bigView);
-                } catch (Exception ignored) {
-                }
-            } else {
-                Teak.log.e("notification_builder", "Unable to load image asset for Notification.");
-                // Hide pulldown
-                smallView.setViewVisibility(R.id("pulldown_layout"), View.INVISIBLE);
-            }
-        } else {
-            // Hide pulldown
-            smallView.setViewVisibility(R.id("pulldown_layout"), View.INVISIBLE);
         }
 
         return nativeNotification;
