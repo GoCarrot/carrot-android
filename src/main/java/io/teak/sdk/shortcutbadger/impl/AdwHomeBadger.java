@@ -38,8 +38,7 @@ public class AdwHomeBadger implements Badger {
     @Override
     public List<String> getSupportLaunchers() {
         return Arrays.asList(
-                "org.adw.launcher",
-                "org.adwfreak.launcher"
-        );
+            "org.adw.launcher",
+            "org.adwfreak.launcher");
     }
 }

@@ -38,7 +38,7 @@ public class OPPOHomeBader implements Badger {
             return;
         }
         mCurrentTotalCount = badgeCount;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             executeBadgeByContentProvider(context, badgeCount);
         } else {
             executeBadgeByBroadcast(context, componentName, badgeCount);
@@ -51,7 +51,7 @@ public class OPPOHomeBader implements Badger {
     }
 
     private void executeBadgeByBroadcast(Context context, ComponentName componentName,
-                                         int badgeCount) throws ShortcutBadgeException {
+        int badgeCount) throws ShortcutBadgeException {
         if (badgeCount == 0) {
             badgeCount = -1;
         }

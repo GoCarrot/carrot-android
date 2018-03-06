@@ -28,7 +28,6 @@ public class HuaweiHomeBadger implements Badger {
     @Override
     public List<String> getSupportLaunchers() {
         return Arrays.asList(
-                "com.huawei.android.launcher"
-        );
+            "com.huawei.android.launcher");
     }
 }
