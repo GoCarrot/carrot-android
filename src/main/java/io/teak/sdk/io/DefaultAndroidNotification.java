@@ -196,7 +196,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                                     @SuppressWarnings("deprecation")
                                     private void assignDeprecated() {
                                         entry.notification.defaults = 0; // Disable sound/vibrate etc
-                                        entry.notification.vibrate = new long[]{0L};
+                                        entry.notification.vibrate = new long[] {0L};
                                         entry.notification.sound = null;
                                     }
                                 }
