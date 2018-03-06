@@ -25,6 +25,8 @@ import android.content.Intent;
 
 import com.amazon.device.messaging.ADM;
 import com.amazon.device.messaging.ADMMessageHandlerBase;
+import com.amazon.device.messaging.ADMMessageReceiver;
+import com.amazon.device.messaging.development.ADMManifest;
 
 import io.teak.sdk.json.JSONObject;
 
@@ -53,6 +55,19 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
 
     public void initialize(@NonNull Context context) {
         this.admInstance = new ADM(context);
+
+        try {
+            ADMManifest.checkManifestAuthoredProperly(context);
+        } catch (NoClassDefFoundError ignored) {
+            android.util.Log.e("Teak", "Add this to your <application> in AndroidManifest.xml in order to use ADM: <amazon:enable-feature android:name=\"com.amazon.device.messaging\" android:required=\"false\" />");
+        }
+    }
+
+    ///// ADMMessageReceiver
+    public static class MessageAlertReceiver extends ADMMessageReceiver {
+        public MessageAlertReceiver() {
+            super(ADMPushProvider.class);
+        }
     }
 
     ///// IPushProvider

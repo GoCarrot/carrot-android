@@ -57,10 +57,10 @@
         <amazon:enable-feature
             android:name="com.amazon.device.messaging"
             android:required="false"/>
-        <service android:name="io.teak.sdk.ADMMessageHandler"
+        <service android:name="io.teak.sdk.push.ADMPushProvider"
             android:exported="false" />
         <receiver
-            android:name="io.teak.sdk.ADMMessageHandler$MessageAlertReceiver"
+            android:name="io.teak.sdk.push.ADMPushProvider$MessageAlertReceiver"
             android:permission="com.amazon.device.messaging.permission.SEND" >
             <intent-filter>
                 <action android:name="com.amazon.device.messaging.intent.REGISTRATION" />
