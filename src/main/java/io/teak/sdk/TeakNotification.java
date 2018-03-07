@@ -231,7 +231,7 @@ public class TeakNotification {
                         HashMap<String, Object> payload = new HashMap<>();
                         payload.put("clicking_user_id", session.userId());
 
-                        new Request("rewards.gocarrot.com", "/" + teakRewardId + "/clicks", payload, session,
+                        Request.submit("rewards.gocarrot.com", "/" + teakRewardId + "/clicks", payload, session,
                             new Request.Callback() {
                                 @Override
                                 public void onRequestCompleted(int responseCode, String responseBody) {
@@ -359,7 +359,7 @@ public class TeakNotification {
                 payload.put("message", defaultMessage);
                 payload.put("offset", delayInSeconds);
 
-                asyncExecutor.execute(new Request("/me/local_notify.json", payload, session,
+                asyncExecutor.execute(Request.submit("/me/local_notify.json", payload, session,
                     new Request.Callback() {
                         @Override
                         public void onRequestCompleted(int responseCode, String responseBody) {
@@ -447,7 +447,7 @@ public class TeakNotification {
                 HashMap<String, Object> payload = new HashMap<>();
                 payload.put("id", scheduleId);
 
-                asyncExecutor.execute(new Request("/me/cancel_local_notify.json", payload, session,
+                asyncExecutor.execute(Request.submit("/me/cancel_local_notify.json", payload, session,
                     new Request.Callback() {
                         @Override
                         public void onRequestCompleted(int responseCode, String responseBody) {
@@ -512,7 +512,7 @@ public class TeakNotification {
             public void run(Session session) {
                 HashMap<String, Object> payload = new HashMap<>();
 
-                asyncExecutor.execute(new Request("/me/cancel_all_local_notifications.json", payload, session,
+                asyncExecutor.execute(Request.submit("/me/cancel_all_local_notifications.json", payload, session,
                     new Request.Callback() {
                         @Override
                         public void onRequestCompleted(int responseCode, String responseBody) {

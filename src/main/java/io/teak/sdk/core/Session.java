@@ -400,7 +400,7 @@ public class Session {
 
                     Teak.log.i("session.identify_user", Helpers.mm.h("userId", _this.userId, "timezone", tzOffset, "locale", locale, "session_id", _this.sessionId));
 
-                    executionQueue.execute(new Request("/games/" + teakConfiguration.appConfiguration.appId + "/users.json", payload, _this,
+                    executionQueue.execute(Request.submit("/games/" + teakConfiguration.appConfiguration.appId + "/users.json", payload, _this,
                         new Request.Callback() {
                             @Override
                             public void onRequestCompleted(int responseCode, String responseBody) {

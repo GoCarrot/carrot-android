@@ -111,7 +111,7 @@ public class TeakCore implements ITeakCore {
                     Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
                         @Override
                         public void run(Session session) {
-                            asyncExecutor.execute(new Request("/me/events", payload, session));
+                            asyncExecutor.execute(Request.submit("/me/events", payload, session));
                         }
                     });
                     break;
@@ -123,7 +123,7 @@ public class TeakCore implements ITeakCore {
                     Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
                         @Override
                         public void run(Session session) {
-                            asyncExecutor.execute(new Request("/me/purchase", payload, session));
+                            asyncExecutor.execute(Request.submit("/me/purchase", payload, session));
                         }
                     });
                     break;
@@ -136,7 +136,7 @@ public class TeakCore implements ITeakCore {
                     Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
                         @Override
                         public void run(Session session) {
-                            asyncExecutor.execute(new Request("/me/purchase", payload, session));
+                            asyncExecutor.execute(Request.submit("/me/purchase", payload, session));
                         }
                     });
                     break;
@@ -204,7 +204,7 @@ public class TeakCore implements ITeakCore {
                                         AppConfiguration tempAppConfiguration = new AppConfiguration(context, new DefaultAndroidResources(context));
                                         Request.setTeakApiKey(tempAppConfiguration.apiKey);
                                     }
-                                    asyncExecutor.execute(new Request("parsnip.gocarrot.com", "/notification_received", payload, Session.NullSession));
+                                    asyncExecutor.execute(Request.submit("parsnip.gocarrot.com", "/notification_received", payload, Session.NullSession));
                                 } catch (IntegrationChecker.InvalidConfigurationException ignored) {
                                 }
                             }

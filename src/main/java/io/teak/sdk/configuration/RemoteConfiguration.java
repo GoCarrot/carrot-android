@@ -68,7 +68,7 @@ public class RemoteConfiguration {
                     payload.put("id", teakConfiguration.appConfiguration.appId);
                     payload.put("deep_link_routes", DeepLink.getRouteNamesAndDescriptions());
 
-                    new Thread(new Request("gocarrot.com", "/games/" + teakConfiguration.appConfiguration.appId + "/settings.json", payload, Session.NullSession,
+                    new Thread(Request.submit("gocarrot.com", "/games/" + teakConfiguration.appConfiguration.appId + "/settings.json", payload, Session.NullSession,
                                    new Request.Callback() {
                                        @Override
                                        public void onRequestCompleted(int responseCode, String responseBody) {

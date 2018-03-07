@@ -118,19 +118,23 @@ public class Request implements Runnable {
 
     /////
 
-    public Request(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
-        this(endpoint, payload, session, null);
+    public static Request submit(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
+        return submit(endpoint, payload, session, null);
     }
 
-    public Request(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback) {
-        this(Request.remoteConfiguration.getHostnameForEndpoint(endpoint), endpoint, payload, session, callback);
+    public static Request submit(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback) {
+        return submit(Request.remoteConfiguration.getHostnameForEndpoint(endpoint), endpoint, payload, session, callback);
     }
 
-    public Request(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
-        this(hostname, endpoint, payload, session, null);
+    public static Request submit(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
+        return submit(hostname, endpoint, payload, session, null);
     }
 
-    public Request(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback) {
+    public static Request submit(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback) {
+        return new Request(hostname, endpoint, payload, session, callback);
+    }
+
+    private Request(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback) {
         if (!endpoint.startsWith("/")) {
             throw new IllegalArgumentException("Parameter 'endpoint' must start with '/' or things will break, and you will lose an hour of your life debugging.");
         }
