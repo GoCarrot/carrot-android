@@ -156,7 +156,17 @@ public class Request implements Runnable {
     }
 
     private static class BatchedParsnipRequest extends BatchedRequest {
-        static final Object mutex = new Object();
+        private static final Object mutex = new Object();
+        private static BatchedParsnipRequest currentBatch;
+
+        static BatchedParsnipRequest getCurrentBatch(@Nullable String hostname, @NonNull Session session) {
+            synchronized (mutex) {
+                if (currentBatch == null) {
+                    currentBatch = new BatchedParsnipRequest(hostname, session);
+                }
+                return currentBatch;
+            }
+        }
 
         BatchedParsnipRequest(@Nullable String hostname, @NonNull Session session) {
             super(hostname, "/batch", session, false);
@@ -186,9 +196,19 @@ public class Request implements Runnable {
     }
 
     private static class BatchedTrackEventRequest extends BatchedRequest {
-        static final Object mutex = new Object();
+        private static final Object mutex = new Object();
+        private static BatchedTrackEventRequest currentBatch;
 
-        BatchedTrackEventRequest(@Nullable String hostname, @NonNull Session session) {
+        static BatchedTrackEventRequest getCurrentBatch(@Nullable String hostname, @NonNull Session session) {
+            synchronized (mutex) {
+                if (currentBatch == null) {
+                    currentBatch = new BatchedTrackEventRequest(hostname, session);
+                }
+                return currentBatch;
+            }
+        }
+
+        private BatchedTrackEventRequest(@Nullable String hostname, @NonNull Session session) {
             super(hostname, "/me/events", session, true);
         }
 
@@ -210,9 +230,6 @@ public class Request implements Runnable {
         }
     }
 
-    private static BatchedParsnipRequest parsnipBatch;
-    private static BatchedTrackEventRequest batchedTrackEventRequest;
-
     ///// SDK interface
 
     static ScheduledExecutorService requestExecutor = Executors.newSingleThreadScheduledExecutor();
@@ -232,19 +249,9 @@ public class Request implements Runnable {
     public static void submit(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback) {
         BatchedRequest batch = null;
         if ("parsnip.gocarrot.com".equals(hostname)) {
-            synchronized (BatchedParsnipRequest.mutex) {
-                if (parsnipBatch == null) {
-                    parsnipBatch = new BatchedParsnipRequest(hostname, session);
-                }
-            }
-            batch = parsnipBatch;
+            batch = BatchedParsnipRequest.getCurrentBatch(hostname, session);
         } else if ("/me/events".equals(endpoint)) {
-            synchronized (BatchedTrackEventRequest.mutex) {
-                if (batchedTrackEventRequest == null) {
-                    batchedTrackEventRequest = new BatchedTrackEventRequest(hostname, session);
-                }
-                batch = batchedTrackEventRequest;
-            }
+            batch = BatchedTrackEventRequest.getCurrentBatch(hostname, session);
         }
 
         if(batch != null) {
