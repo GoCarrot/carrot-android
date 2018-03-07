@@ -48,7 +48,7 @@ import io.teak.sdk.service.DeviceStateService;
 public class DefaultAndroidNotification extends BroadcastReceiver implements IAndroidNotification {
     private final NotificationManager notificationManager;
     private final ArrayList<AnimationEntry> animatedNotifications = new ArrayList<>();
-    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Handler handler;
 
     private class AnimationEntry {
         final Notification notification;
@@ -82,6 +82,10 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
             screenStateFilter.addAction(DeviceStateService.SCREEN_ON);
             screenStateFilter.addAction(DeviceStateService.SCREEN_OFF);
             context.registerReceiver(this, screenStateFilter);
+
+             this.handler = new Handler(Looper.getMainLooper());
+        } else {
+            this.handler = new Handler();
         }
 
         TeakEvent.addEventListener(new TeakEvent.EventListener() {
