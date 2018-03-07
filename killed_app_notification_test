@@ -13,6 +13,8 @@ extras = {
   teakUserId: "test_teak_user_id",
   teakAppId: "test_teak_app_id",
   message: "Test notification",
+  teakScheduleName: "debug",
+  teakCreativeName: "debug_notif",
   display: JSON.generate({
     contentView: "teak_notif_no_title",
     teak_notif_no_title: {
@@ -22,6 +24,8 @@ extras = {
   })
 }
 
-adb_shell "pm", "clear", "com.teakio.pushtest"
-adb_shell *(["am", "broadcast", "-c", "com.teakio.pushtest", "-a", "com.google.android.c2dm.intent.RECEIVE"].concat(
+app_id = "io.teak.sdk.sd"
+
+adb_shell "pm", "clear", app_id
+adb_shell *(["am", "broadcast", "-c", app_id, "-a", "com.google.android.c2dm.intent.RECEIVE"].concat(
   extras.keys.inject([]) { |acc, key| acc.concat ["--es", "\"#{key}\"", "\"#{extras[key]}\""] }))
