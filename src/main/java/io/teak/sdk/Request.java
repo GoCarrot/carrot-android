@@ -35,6 +35,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.json.JSONArray;
@@ -116,23 +118,27 @@ public class Request implements Runnable {
         });
     }
 
+    ///// SDK interface
+
+    private static ExecutorService requestExecutor = Executors.newSingleThreadExecutor();
+
+    public static void submit(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
+        submit(endpoint, payload, session, null);
+    }
+
+    public static void submit(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback) {
+        submit(Request.remoteConfiguration.getHostnameForEndpoint(endpoint), endpoint, payload, session, callback);
+    }
+
+    public static void submit(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
+        submit(hostname, endpoint, payload, session, null);
+    }
+
+    public static void submit(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback) {
+        requestExecutor.execute(new Request(hostname, endpoint, payload, session, callback));
+    }
+
     /////
-
-    public static Request submit(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
-        return submit(endpoint, payload, session, null);
-    }
-
-    public static Request submit(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback) {
-        return submit(Request.remoteConfiguration.getHostnameForEndpoint(endpoint), endpoint, payload, session, callback);
-    }
-
-    public static Request submit(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
-        return submit(hostname, endpoint, payload, session, null);
-    }
-
-    public static Request submit(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback) {
-        return new Request(hostname, endpoint, payload, session, callback);
-    }
 
     private Request(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback) {
         if (!endpoint.startsWith("/")) {

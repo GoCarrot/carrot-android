@@ -257,8 +257,7 @@ public class TeakNotification {
                                         q.offer(null); // TODO: Fix this?
                                     }
                                 }
-                            })
-                            .run();
+                            });
                     } catch (Exception e) {
                         Teak.log.exception(e);
                         q.offer(null); // TODO: Fix this?
@@ -359,7 +358,7 @@ public class TeakNotification {
                 payload.put("message", defaultMessage);
                 payload.put("offset", delayInSeconds);
 
-                asyncExecutor.execute(Request.submit("/me/local_notify.json", payload, session,
+                Request.submit("/me/local_notify.json", payload, session,
                     new Request.Callback() {
                         @Override
                         public void onRequestCompleted(int responseCode, String responseBody) {
@@ -387,7 +386,7 @@ public class TeakNotification {
 
                             ret.run();
                         }
-                    }));
+                    });
             }
         });
         return ret;
@@ -447,7 +446,7 @@ public class TeakNotification {
                 HashMap<String, Object> payload = new HashMap<>();
                 payload.put("id", scheduleId);
 
-                asyncExecutor.execute(Request.submit("/me/cancel_local_notify.json", payload, session,
+                Request.submit("/me/cancel_local_notify.json", payload, session,
                     new Request.Callback() {
                         @Override
                         public void onRequestCompleted(int responseCode, String responseBody) {
@@ -472,7 +471,7 @@ public class TeakNotification {
                             }
                             ret.run();
                         }
-                    }));
+                    });
             }
         });
 
@@ -512,7 +511,7 @@ public class TeakNotification {
             public void run(Session session) {
                 HashMap<String, Object> payload = new HashMap<>();
 
-                asyncExecutor.execute(Request.submit("/me/cancel_all_local_notifications.json", payload, session,
+                Request.submit("/me/cancel_all_local_notifications.json", payload, session,
                     new Request.Callback() {
                         @Override
                         public void onRequestCompleted(int responseCode, String responseBody) {
@@ -544,14 +543,12 @@ public class TeakNotification {
                             }
                             ret.run();
                         }
-                    }));
+                    });
             }
         });
 
         return ret;
     }
-
-    private static final ExecutorService asyncExecutor = Executors.newCachedThreadPool();
 
     /**************************************************************************/
 
