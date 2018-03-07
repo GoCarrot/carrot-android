@@ -32,11 +32,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.json.JSONArray;
@@ -118,9 +122,95 @@ public class Request implements Runnable {
         });
     }
 
+    ///// Batching
+
+    private static abstract class BatchedRequest extends Request {
+        private ScheduledFuture<?> scheduledFuture;
+        private final List<Callback> callbacks = new LinkedList<>();
+        final List<Object> batch = new LinkedList<>();
+
+        BatchedRequest(@Nullable String hostname, @NonNull String endpoint, @NonNull Session session, boolean addStandardAttributes) {
+            super(hostname, endpoint, new HashMap<String, Object>(), session, null, addStandardAttributes);
+        }
+
+        synchronized boolean add(@NonNull String endpoint, @NonNull Map<String, Object> payload, @Nullable Callback callback) {
+            if (this.scheduledFuture != null && !this.scheduledFuture.cancel(false)) {
+                return false;
+            }
+
+            if (callback != null) {
+                this.callbacks.add(callback);
+            }
+            this.batch.add(payload);
+            this.scheduledFuture = Request.requestExecutor.schedule(this, 5L, TimeUnit.SECONDS);
+            return true;
+        }
+
+        @Override
+        protected void onRequestCompleted(int responseCode, String responseBody) {
+            super.onRequestCompleted(responseCode, responseBody);
+            for (Callback callback : this.callbacks) {
+                callback.onRequestCompleted(responseCode, responseBody);
+            }
+        }
+    }
+
+    private static class BatchedParsnipRequest extends BatchedRequest {
+        BatchedParsnipRequest(@Nullable String hostname, @NonNull Session session) {
+            super(hostname, "/batch", session, false);
+        }
+
+        @Override
+        synchronized boolean add(@NonNull String endpoint, @NonNull Map<String, Object> payload, @Nullable Callback callback) {
+            final Map<String, Object> batchPayload = new HashMap<>(payload);
+
+            // Parsnip needs the standard attributes in every event
+            batchPayload.putAll(Request.configurationPayload);
+
+            // Parsnip event name
+            batchPayload.put("name", endpoint.startsWith("/") ? endpoint.substring(1) : endpoint);
+
+            return super.add(endpoint, batchPayload, callback);
+        }
+
+        @Override
+        public void run() {
+            // Add batch elements
+            this.payload.put("events", this.batch);
+            super.run();
+        }
+    }
+
+    private static class BatchedTrackEventRequest extends BatchedRequest {
+        BatchedTrackEventRequest(@Nullable String hostname, @NonNull Session session) {
+            super(hostname, "/me/events", session, true);
+        }
+
+        @Override
+        synchronized boolean add(@NonNull String endpoint, @NonNull Map<String, Object> payload, @Nullable Callback callback) {
+            return super.add(endpoint, payload, callback);
+        }
+
+        @Override
+        public void run() {
+            // Update the request date
+            this.payload.put("request_date", new Date().getTime() / 1000);
+
+            // Add batch elements
+            this.payload.put("batch", this.batch);
+            super.run();
+        }
+    }
+
+    private static BatchedParsnipRequest parsnipBatch;
+    private static final Object parsnipBatchMutex = new Object();
+
+    private static BatchedTrackEventRequest batchedTrackEventRequest;
+    private static final Object trackEventBatchMutex = new Object();
+
     ///// SDK interface
 
-    private static ExecutorService requestExecutor = Executors.newSingleThreadExecutor();
+    static ScheduledExecutorService requestExecutor = Executors.newSingleThreadScheduledExecutor();
 
     public static void submit(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
         submit(endpoint, payload, session, null);
@@ -135,12 +225,35 @@ public class Request implements Runnable {
     }
 
     public static void submit(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback) {
-        requestExecutor.execute(new Request(hostname, endpoint, payload, session, callback));
+        BatchedRequest batch = null;
+        if ("parsnip.gocarrot.com".equals(hostname)) {
+            synchronized (parsnipBatchMutex) {
+                if (parsnipBatch == null) {
+                    parsnipBatch = new BatchedParsnipRequest(hostname, session);
+                }
+            }
+            batch = parsnipBatch;
+        } else if ("/me/events".equals(endpoint)) {
+            synchronized (trackEventBatchMutex) {
+                if (batchedTrackEventRequest == null) {
+                    batchedTrackEventRequest = new BatchedTrackEventRequest(hostname, session);
+                }
+                batch = batchedTrackEventRequest;
+            }
+        }
+
+        if(batch != null) {
+            if (!batch.add(endpoint, payload, callback)) {
+                // Retry
+            }
+        } else {
+            requestExecutor.execute(new Request(hostname, endpoint, payload, session, callback, true));
+        }
     }
 
     /////
 
-    private Request(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback) {
+    private Request(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback, boolean addStandardAttributes) {
         if (!endpoint.startsWith("/")) {
             throw new IllegalArgumentException("Parameter 'endpoint' must start with '/' or things will break, and you will lose an hour of your life debugging.");
         }
@@ -152,13 +265,15 @@ public class Request implements Runnable {
         this.requestId = UUID.randomUUID().toString().replace("-", "");
         this.callback = callback;
 
-        if (session.userId() != null) {
-            this.payload.put("api_key", session.userId());
+        if (addStandardAttributes) {
+            if (session.userId() != null) {
+                this.payload.put("api_key", session.userId());
+            }
+
+            this.payload.put("request_date", new Date().getTime() / 1000); // Milliseconds -> Seconds
+
+            this.payload.putAll(Request.configurationPayload);
         }
-
-        this.payload.put("request_date", new Date().getTime() / 1000); // Milliseconds -> Seconds
-
-        this.payload.putAll(Request.configurationPayload);
     }
 
     public static class Payload {
@@ -243,11 +358,15 @@ public class Request implements Runnable {
 
             Teak.log.i("request.reply", h);
 
-            if (this.callback != null) {
-                this.callback.onRequestCompleted(statusCode, body);
-            }
+            this.onRequestCompleted(statusCode, body);
         } catch (Exception e) {
             Teak.log.exception(e);
+        }
+    }
+
+    protected void onRequestCompleted(int responseCode, String responseBody) {
+        if (this.callback != null) {
+            this.callback.onRequestCompleted(responseCode, responseBody);
         }
     }
 
