@@ -156,6 +156,8 @@ public class Request implements Runnable {
     }
 
     private static class BatchedParsnipRequest extends BatchedRequest {
+        static final Object mutex = new Object();
+
         BatchedParsnipRequest(@Nullable String hostname, @NonNull Session session) {
             super(hostname, "/batch", session, false);
         }
@@ -175,13 +177,17 @@ public class Request implements Runnable {
 
         @Override
         public void run() {
-            // Add batch elements
-            this.payload.put("events", this.batch);
-            super.run();
+            synchronized (mutex) {
+                // Add batch elements
+                this.payload.put("events", this.batch);
+                super.run();
+            }
         }
     }
 
     private static class BatchedTrackEventRequest extends BatchedRequest {
+        static final Object mutex = new Object();
+
         BatchedTrackEventRequest(@Nullable String hostname, @NonNull Session session) {
             super(hostname, "/me/events", session, true);
         }
@@ -193,20 +199,19 @@ public class Request implements Runnable {
 
         @Override
         public void run() {
-            // Update the request date
-            this.payload.put("request_date", new Date().getTime() / 1000);
+            synchronized (mutex) {
+                // Update the request date
+                this.payload.put("request_date", new Date().getTime() / 1000);
 
-            // Add batch elements
-            this.payload.put("batch", this.batch);
-            super.run();
+                // Add batch elements
+                this.payload.put("batch", this.batch);
+                super.run();
+            }
         }
     }
 
     private static BatchedParsnipRequest parsnipBatch;
-    private static final Object parsnipBatchMutex = new Object();
-
     private static BatchedTrackEventRequest batchedTrackEventRequest;
-    private static final Object trackEventBatchMutex = new Object();
 
     ///// SDK interface
 
@@ -227,14 +232,14 @@ public class Request implements Runnable {
     public static void submit(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback) {
         BatchedRequest batch = null;
         if ("parsnip.gocarrot.com".equals(hostname)) {
-            synchronized (parsnipBatchMutex) {
+            synchronized (BatchedParsnipRequest.mutex) {
                 if (parsnipBatch == null) {
                     parsnipBatch = new BatchedParsnipRequest(hostname, session);
                 }
             }
             batch = parsnipBatch;
         } else if ("/me/events".equals(endpoint)) {
-            synchronized (trackEventBatchMutex) {
+            synchronized (BatchedTrackEventRequest.mutex) {
                 if (batchedTrackEventRequest == null) {
                     batchedTrackEventRequest = new BatchedTrackEventRequest(hostname, session);
                 }
