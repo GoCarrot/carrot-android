@@ -83,7 +83,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
             screenStateFilter.addAction(DeviceStateService.SCREEN_OFF);
             context.registerReceiver(this, screenStateFilter);
 
-             this.handler = new Handler(Looper.getMainLooper());
+            this.handler = new Handler(Looper.getMainLooper());
         } else {
             this.handler = new Handler();
         }

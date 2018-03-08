@@ -82,7 +82,7 @@ public class Teak extends BroadcastReceiver {
             MajorMinorRevision = new int[] {
                 Integer.parseInt(m.group(1)), // major
                 Integer.parseInt(m.group(2)), // minor
-                Integer.parseInt(m.group(3)) // revision
+                Integer.parseInt(m.group(3))  // revision
             };
         } else {
             MajorMinorRevision = new int[] {0, 0, 0};

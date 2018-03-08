@@ -622,7 +622,7 @@ public class TeakNotification {
                         int[] contentMajorMinorRevision = new int[] {
                             Integer.parseInt(m.group(1)), // major
                             Integer.parseInt(m.group(2)), // minor
-                            Integer.parseInt(m.group(3)) // revision
+                            Integer.parseInt(m.group(3))  // revision
                         };
 
                         if (compareMajorMinorRevision(Teak.MajorMinorRevision, contentMajorMinorRevision) >= 0) {

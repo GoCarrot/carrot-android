@@ -254,7 +254,7 @@ public class Request implements Runnable {
             batch = BatchedTrackEventRequest.getCurrentBatch(hostname, session);
         }
 
-        if(batch != null) {
+        if (batch != null) {
             if (!batch.add(endpoint, payload, callback)) {
                 // Retry
             }
