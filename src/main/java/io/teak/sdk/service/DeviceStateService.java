@@ -115,15 +115,17 @@ public class DeviceStateService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent.getAction() != null) {
-            android.util.Log.i("Teak.Animation", "Start: " + intent.getAction());
-        }
+        if (intent != null) {
+            if (intent.getAction() != null) {
+                android.util.Log.i("Teak.Animation", "Start: " + intent.getAction());
+            }
 
-        if (SCREEN_STATE.equals(intent.getAction())) {
-            if (State.ScreenOn.toString().equals(intent.getStringExtra("state"))) {
-                setState(State.ScreenOn);
-            } else if (State.ScreenOff.toString().equals(intent.getStringExtra("state"))) {
-                setState(State.ScreenOff);
+            if (SCREEN_STATE.equals(intent.getAction())) {
+                if (State.ScreenOn.toString().equals(intent.getStringExtra("state"))) {
+                    setState(State.ScreenOn);
+                } else if (State.ScreenOff.toString().equals(intent.getStringExtra("state"))) {
+                    setState(State.ScreenOff);
+                }
             }
         }
         return START_STICKY;
