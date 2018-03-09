@@ -24,8 +24,8 @@ extras = {
   })
 }
 
-app_id = "io.teak.sdk.sd"
+app_id = "com.teakio.pushtest"#"io.teak.sdk.sd"
 
 adb_shell "pm", "clear", app_id
-adb_shell *(["am", "broadcast", "-c", app_id, "-a", "com.google.android.c2dm.intent.RECEIVE"].concat(
-  extras.keys.inject([]) { |acc, key| acc.concat ["--es", "\"#{key}\"", "\"#{extras[key]}\""] }))
+#adb_shell *(["am", "broadcast", "-c", app_id, "-a", "com.google.android.c2dm.intent.RECEIVE"].concat(
+#  extras.keys.inject([]) { |acc, key| acc.concat ["--es", "\"#{key}\"", "\"#{extras[key]}\""] }))
