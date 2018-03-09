@@ -22,11 +22,13 @@ import android.support.annotation.NonNull;
 import io.teak.sdk.Teak;
 
 public class DebugConfiguration {
-    private static final String PREFERENCE_FORCE_DEBUG = "io.teak.sdk.Preferences.ForceDebug";
+    private static final String PREFERENCE_LOG_LOCAL = "io.teak.sdk.Preferences.LogLocal";
+    private static final String PREFERENCE_LOG_REMOTE = "io.teak.sdk.Preferences.LogRemote";
 
     private final SharedPreferences preferences;
 
-    private boolean forceDebug;
+    private boolean logLocal;
+    private boolean logRemote;
     private final boolean isDevelopmentBuild;
 
     public DebugConfiguration(@NonNull Context context) {
@@ -40,9 +42,10 @@ public class DebugConfiguration {
         }
 
         if (this.preferences == null) {
-            this.forceDebug = Teak.forceDebug;
+            this.logLocal = this.logRemote = Teak.forceDebug;
         } else {
-            this.forceDebug = Teak.forceDebug || this.preferences.getBoolean(PREFERENCE_FORCE_DEBUG, false);
+            this.logLocal = Teak.forceDebug || this.preferences.getBoolean(PREFERENCE_LOG_LOCAL, false);
+            this.logRemote = Teak.forceDebug || this.preferences.getBoolean(PREFERENCE_LOG_REMOTE, false);
         }
 
         boolean tempDevelopmentBuild = false;
@@ -56,26 +59,28 @@ public class DebugConfiguration {
         // TODO: This should be listener based
 
         // Set up Logs
-        Teak.log.setLoggingEnabled(this.forceDebug || this.isDevelopmentBuild);
+        Teak.log.setLoggingEnabled(this.logLocal || this.isDevelopmentBuild, this.logLocal || this.isDevelopmentBuild);
         Teak.log.useRapidIngestionEndpoint(this.isDevelopmentBuild);
     }
 
-    public void setPreferenceForceDebug(boolean forceDebug) {
-        if (forceDebug != this.forceDebug) {
+    public void setLogPreferences(boolean logLocal, boolean logRemote) {
+        if (logLocal != this.logLocal) {
             try {
                 SharedPreferences.Editor editor = this.preferences.edit();
-                editor.putBoolean(PREFERENCE_FORCE_DEBUG, forceDebug);
+                editor.putBoolean(PREFERENCE_LOG_LOCAL, logLocal);
+                editor.putBoolean(PREFERENCE_LOG_REMOTE, logRemote);
                 editor.apply();
             } catch (Exception e) {
                 Teak.log.exception(e);
             }
         }
-        this.forceDebug = forceDebug;
+        this.logLocal = logLocal;
+        this.logRemote = logRemote;
 
-        Teak.log.setLoggingEnabled(this.forceDebug || this.isDevelopmentBuild);
+        Teak.log.setLoggingEnabled(this.logLocal || this.isDevelopmentBuild, this.logRemote || this.isDevelopmentBuild);
     }
 
     public boolean isDebug() {
-        return this.forceDebug || this.isDevelopmentBuild;
+        return this.isDevelopmentBuild;
     }
 }

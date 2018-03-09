@@ -189,8 +189,9 @@ public class Log {
         this.sendToRapidIngestion = useRapidIngestionEndpoint;
     }
 
-    public void setLoggingEnabled(boolean enableLogs) {
-        this.logLocally = this.logRemotely = enableLogs;
+    public void setLoggingEnabled(boolean logLocally, boolean logRemotely) {
+        this.logLocally = logLocally;
+        this.logRemotely = logRemotely;
     }
 
     protected class LogEvent {
