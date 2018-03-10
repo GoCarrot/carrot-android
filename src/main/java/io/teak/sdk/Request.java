@@ -220,9 +220,6 @@ public class Request implements Runnable {
         @Override
         public void run() {
             synchronized (mutex) {
-                // Update the request date
-                this.payload.put("request_date", new Date().getTime() / 1000);
-
                 // Add batch elements
                 this.payload.put("batch", this.batch);
                 super.run();
@@ -283,8 +280,6 @@ public class Request implements Runnable {
             if (session.userId() != null) {
                 this.payload.put("api_key", session.userId());
             }
-
-            this.payload.put("request_date", new Date().getTime() / 1000); // Milliseconds -> Seconds
 
             this.payload.putAll(Request.configurationPayload);
         }
