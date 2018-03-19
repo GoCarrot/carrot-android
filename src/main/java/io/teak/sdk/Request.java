@@ -127,7 +127,7 @@ public class Request implements Runnable {
     private static abstract class BatchedRequest extends Request {
         private ScheduledFuture<?> scheduledFuture;
         private final List<Callback> callbacks = new LinkedList<>();
-        final List<Object> batch = new LinkedList<>();
+        final List<Object> batchContents = new LinkedList<>();
 
         BatchedRequest(@Nullable String hostname, @NonNull String endpoint, @NonNull Session session, boolean addStandardAttributes) {
             super(hostname, endpoint, new HashMap<String, Object>(), session, null, addStandardAttributes);
@@ -141,7 +141,7 @@ public class Request implements Runnable {
             if (callback != null) {
                 this.callbacks.add(callback);
             }
-            this.batch.add(payload);
+            this.batchContents.add(payload);
             this.scheduledFuture = Request.requestExecutor.schedule(this, 5L, TimeUnit.SECONDS);
             return true;
         }
@@ -189,7 +189,7 @@ public class Request implements Runnable {
         public void run() {
             synchronized (mutex) {
                 // Add batch elements
-                this.payload.put("events", this.batch);
+                this.payload.put("events", this.batchContents);
                 super.run();
             }
         }
@@ -221,7 +221,7 @@ public class Request implements Runnable {
         public void run() {
             synchronized (mutex) {
                 // Add batch elements
-                this.payload.put("batch", this.batch);
+                this.payload.put("batch", this.batchContents);
                 super.run();
             }
         }
