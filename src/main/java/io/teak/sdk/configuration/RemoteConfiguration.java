@@ -16,6 +16,7 @@ package io.teak.sdk.configuration;
 
 import android.support.annotation.NonNull;
 
+import io.teak.sdk.Helpers;
 import io.teak.sdk.json.JSONObject;
 
 import java.util.HashMap;
@@ -44,16 +45,19 @@ public class RemoteConfiguration {
     public final String gcmSenderId;
     @SuppressWarnings("WeakerAccess")
     public final boolean enhancedIntegrationChecks;
+    @SuppressWarnings("WeakerAccess")
+    public final Map<String, Object> endpointConfigurations;
 
     private RemoteConfiguration(@NonNull AppConfiguration appConfiguration, @NonNull String hostname,
         String sdkSentryDsn, String appSentryDsn, String gcmSenderId,
-        boolean enhancedIntegrationChecks) {
+        boolean enhancedIntegrationChecks, JSONObject endpointConfigurations) {
         this.appConfiguration = appConfiguration;
         this.hostname = hostname;
         this.appSentryDsn = appSentryDsn;
         this.sdkSentryDsn = sdkSentryDsn;
         this.gcmSenderId = gcmSenderId;
         this.enhancedIntegrationChecks = enhancedIntegrationChecks;
+        this.endpointConfigurations = endpointConfigurations == null ? null : Helpers.jsonToMap(endpointConfigurations);
     }
 
     public static void registerStaticEventListeners() {
@@ -80,7 +84,8 @@ public class RemoteConfiguration {
                                         nullInsteadOfEmpty(response.isNull("sdk_sentry_dsn") ? null : response.getString("sdk_sentry_dsn")),
                                         nullInsteadOfEmpty(response.isNull("app_sentry_dsn") ? null : response.getString("app_sentry_dsn")),
                                         nullInsteadOfEmpty(response.isNull("gcm_sender_id") ? null : response.getString("gcm_sender_id")),
-                                        response.optBoolean("enhanced_integration_checks", false));
+                                        response.optBoolean("enhanced_integration_checks", false),
+                                            response.has("endpoint_configurations") ? response.getJSONObject("endpoint_configurations") : null);
 
                                     Teak.log.i("configuration.remote", configuration.toHash());
                                     TeakEvent.postEvent(new RemoteConfigurationEvent(configuration));
