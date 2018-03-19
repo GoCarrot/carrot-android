@@ -855,7 +855,7 @@ public class Session {
                                         public void run() {
                                             try {
                                                 final TeakNotification.Reward reward = rewardFuture.get();
-                                                final HashMap<String, Object> rewardMap = Helpers.jsonToMap(reward.json);
+                                                final HashMap<String, Object> rewardMap = new HashMap<>(reward.json.toMap());
 
                                                 // This is to make sure the payloads match from a notification claim
                                                 rewardMap.put("teakNotifId", teakNotifId);

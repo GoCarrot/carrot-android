@@ -156,7 +156,7 @@ public class TeakCore implements ITeakCore {
                         if (o instanceof String) {
                             try {
                                 JSONObject jsonObject = new JSONObject(o.toString());
-                                o = Helpers.jsonToMap(jsonObject);
+                                o = jsonObject.toMap();
                             } catch (Exception ignored) {
                             }
                         }
@@ -289,7 +289,7 @@ public class TeakCore implements ITeakCore {
                             public void run() {
                                 try {
                                     TeakNotification.Reward reward = rewardFuture.get();
-                                    HashMap<String, Object> rewardMap = Helpers.jsonToMap(reward.json);
+                                    HashMap<String, Object> rewardMap = new HashMap<>(reward.json.toMap());
                                     eventDataDict.putAll(rewardMap);
 
                                     // Broadcast reward only if everything goes well

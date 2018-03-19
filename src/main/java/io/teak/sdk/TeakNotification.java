@@ -249,7 +249,7 @@ public class TeakNotification {
                                         }
                                         Reward reward = new Reward(fullParsedResponse);
 
-                                        Teak.log.i("reward.claim.response", Helpers.jsonToMap(responseJson));
+                                        Teak.log.i("reward.claim.response", responseJson.toMap());
 
                                         q.offer(reward);
                                     } catch (Exception e) {
@@ -526,7 +526,7 @@ public class TeakNotification {
                                     JSONArray jArray = response.getJSONArray("canceled");
                                     if (jArray != null) {
                                         for (int i = 0; i < jArray.length(); i++) {
-                                            canceled.add(Helpers.jsonToMap(jArray.getJSONObject(i)));
+                                            canceled.add(jArray.getJSONObject(i).toMap());
                                         }
                                     }
                                     contents.put("data", canceled);

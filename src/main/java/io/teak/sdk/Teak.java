@@ -364,7 +364,7 @@ public class Teak extends BroadcastReceiver {
     public static void openIABPurchaseSucceeded(String json) {
         try {
             JSONObject purchase = new JSONObject(json);
-            Teak.log.i("purchase.open_iab", Helpers.jsonToMap(purchase));
+            Teak.log.i("purchase.open_iab", purchase.toMap());
 
             final String originalJson = purchase.getString("originalJson");
             if (Instance != null) {
@@ -385,7 +385,7 @@ public class Teak extends BroadcastReceiver {
     public static void prime31PurchaseSucceeded(final String json) {
         try {
             final JSONObject originalJson = new JSONObject(json);
-            Teak.log.i("purchase.prime_31", Helpers.jsonToMap(originalJson));
+            Teak.log.i("purchase.prime_31", originalJson.toMap());
 
             if (Instance != null) {
                 asyncExecutor.submit(new Runnable() {

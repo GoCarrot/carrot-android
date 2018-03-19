@@ -360,7 +360,7 @@ public class Request implements Runnable {
 
             if (response != null) {
                 try {
-                    h.put("payload", Helpers.jsonToMap(new JSONObject(response.body)));
+                    h.put("payload", new JSONObject(response.body).toMap());
                 } catch (Exception ignored) {
                 }
             }

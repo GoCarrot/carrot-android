@@ -256,7 +256,7 @@ public class GooglePlay implements IStore {
 
             if (responseList != null && responseList.size() == 1) {
                 JSONObject ret = new JSONObject(responseList.get(0));
-                Teak.log.i("google_play", "SKU Details.", Helpers.jsonToMap(ret));
+                Teak.log.i("google_play", "SKU Details.", ret.toMap());
                 return ret;
             } else {
                 Teak.log.e("google_play", "Mismatched input/output length for getSkuDetails().");
@@ -307,7 +307,7 @@ public class GooglePlay implements IStore {
         }
         final int responseCode = tempResponseCode;
 
-        Teak.log.i("google_play.check_activity.bundle", Helpers.jsonToMap(Helpers.bundleToJson(data.getExtras())));
+        Teak.log.i("google_play.check_activity.bundle", Helpers.bundleToJson(data.getExtras()).toMap());
 
         final String purchaseData = data.getStringExtra(RESPONSE_INAPP_PURCHASE_DATA);
         final String dataSignature = data.getStringExtra(RESPONSE_INAPP_SIGNATURE);
