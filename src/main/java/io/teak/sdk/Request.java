@@ -60,9 +60,9 @@ public class Request implements Runnable {
     private final String requestId;
     private final Callback callback;
 
-    private final boolean blackhole;
-    private final RetryConfiguration retry;
-    private final BatchConfiguration batch;
+    protected final boolean blackhole;
+    protected final RetryConfiguration retry;
+    protected final BatchConfiguration batch;
 
     ///// Mini-configs
 
@@ -171,7 +171,7 @@ public class Request implements Runnable {
                 this.callbacks.add(callback);
             }
             this.batchContents.add(payload);
-            this.scheduledFuture = Request.requestExecutor.schedule(this, 5L, TimeUnit.SECONDS);
+            this.scheduledFuture = Request.requestExecutor.schedule(this, (long)(this.batch.time * 1000.0f), TimeUnit.MILLISECONDS);
             return true;
         }
 
