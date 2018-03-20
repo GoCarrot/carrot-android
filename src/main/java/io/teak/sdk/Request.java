@@ -443,6 +443,8 @@ public class Request implements Runnable {
 
     @Override
     public void run() {
+        if (this.blackhole) return;
+
         final SecretKeySpec keySpec = new SecretKeySpec(Request.teakApiKey.getBytes(), "HmacSHA256");
         String requestBody;
 
