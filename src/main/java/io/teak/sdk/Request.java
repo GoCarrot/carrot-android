@@ -36,6 +36,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -488,7 +489,16 @@ public class Request implements Runnable {
     }
 
     protected void onRequestCompleted(int responseCode, String responseBody) {
-        if (this.callback != null) {
+        if (responseCode >= 500 && this.retry.retryIndex < this.retry.times.length) {
+            // Retry with delay + jitter
+            float jitter = (new Random().nextFloat() * 2.0f - 1.0f) * this.retry.jitter;
+            float delay = this.retry.times[this.retry.retryIndex] + jitter;
+            if (delay < 0.0f) delay = 0.0f;
+
+            this.retry.retryIndex++;
+
+            Request.requestExecutor.schedule(this, (long)(delay * 1000.0f), TimeUnit.MILLISECONDS);
+        } else if (this.callback != null) {
             this.callback.onRequestCompleted(responseCode, responseBody);
         }
     }
