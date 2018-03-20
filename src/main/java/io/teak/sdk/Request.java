@@ -91,7 +91,7 @@ public class Request implements Runnable {
     ///// Callback
 
     public interface Callback {
-        public void onRequestCompleted(int responseCode, String responseBody);
+        void onRequestCompleted(int responseCode, String responseBody);
     }
 
     ///// Common configuration
