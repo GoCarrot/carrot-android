@@ -218,12 +218,11 @@ public class Session {
                 case Configured: {
                     TeakEvent.removeEventListener(this.remoteConfigurationEventListener);
 
-                    final Session _this = this;
                     this.executionQueue.execute(new Runnable() {
                         @Override
                         public void run() {
-                            if (_this.userId != null) {
-                                _this.identifyUser();
+                            if (Session.this.userId != null) {
+                                Session.this.identifyUser();
                             }
                         }
                     });
@@ -310,7 +309,6 @@ public class Session {
     }
 
     private void startHeartbeat() {
-        final Session _this = this;
         final TeakConfiguration teakConfiguration = TeakConfiguration.get();
 
         // TODO: Revist this when we have time, if it is important
@@ -324,11 +322,11 @@ public class Session {
                 HttpsURLConnection connection = null;
                 try {
                     String queryString = "game_id=" + URLEncoder.encode(teakConfiguration.appConfiguration.appId, "UTF-8") +
-                                         "&api_key=" + URLEncoder.encode(_this.userId, "UTF-8") +
+                                         "&api_key=" + URLEncoder.encode(Session.this.userId, "UTF-8") +
                                          "&sdk_version=" + URLEncoder.encode(teakSdkVersion, "UTF-8") +
                                          "&sdk_platform=" + URLEncoder.encode(teakConfiguration.deviceConfiguration.platformString, "UTF-8") +
                                          "&app_version=" + URLEncoder.encode(String.valueOf(teakConfiguration.appConfiguration.appVersion), "UTF-8") +
-                                         (_this.countryCode == null ? "" : "&country_code=" + URLEncoder.encode(String.valueOf(_this.countryCode), "UTF-8")) +
+                                         (Session.this.countryCode == null ? "" : "&country_code=" + URLEncoder.encode(String.valueOf(Session.this.countryCode), "UTF-8")) +
                                          "&buster=" + URLEncoder.encode(UUID.randomUUID().toString(), "UTF-8");
                     URL url = new URL("https://iroko.gocarrot.com/ping?" + queryString);
                     connection = (HttpsURLConnection) url.openConnection();
@@ -346,20 +344,19 @@ public class Session {
     }
 
     private void identifyUser() {
-        final Session _this = this;
         final TeakConfiguration teakConfiguration = TeakConfiguration.get();
 
         this.executionQueue.execute(new Runnable() {
             public void run() {
-                _this.stateLock.lock();
+                Session.this.stateLock.lock();
                 try {
-                    if (_this.state != State.UserIdentified && !_this.setState(State.IdentifyingUser)) {
+                    if (Session.this.state != State.UserIdentified && !Session.this.setState(State.IdentifyingUser)) {
                         return;
                     }
 
                     HashMap<String, Object> payload = new HashMap<>();
 
-                    if (_this.state == State.UserIdentified) {
+                    if (Session.this.state == State.UserIdentified) {
                         payload.put("do_not_track_event", Boolean.TRUE);
                     }
 
@@ -383,14 +380,14 @@ public class Session {
                         payload.put("android_limit_ad_tracking", teakConfiguration.deviceConfiguration.limitAdTracking);
                     }
 
-                    if (_this.facebookAccessToken != null) {
-                        payload.put("access_token", _this.facebookAccessToken);
+                    if (Session.this.facebookAccessToken != null) {
+                        payload.put("access_token", Session.this.facebookAccessToken);
                     }
 
                     Map<String, Object> attribution = new HashMap<>();
-                    if (_this.launchAttribution != null) {
+                    if (Session.this.launchAttribution != null) {
                         try {
-                            attribution = _this.launchAttribution.get(5, TimeUnit.SECONDS);
+                            attribution = Session.this.launchAttribution.get(5, TimeUnit.SECONDS);
                         } catch (Exception ignored) {
                         }
                     }
@@ -400,13 +397,13 @@ public class Session {
                         payload.putAll(teakConfiguration.deviceConfiguration.pushRegistration);
                     }
 
-                    Teak.log.i("session.identify_user", Helpers.mm.h("userId", _this.userId, "timezone", tzOffset, "locale", locale, "session_id", _this.sessionId));
+                    Teak.log.i("session.identify_user", Helpers.mm.h("userId", Session.this.userId, "timezone", tzOffset, "locale", locale, "session_id", Session.this.sessionId));
 
-                    Request.submit("/games/" + teakConfiguration.appConfiguration.appId + "/users.json", payload, _this,
+                    Request.submit("/games/" + teakConfiguration.appConfiguration.appId + "/users.json", payload, Session.this,
                         new Request.Callback() {
                             @Override
                             public void onRequestCompleted(int responseCode, String responseBody) {
-                                _this.stateLock.lock();
+                                Session.this.stateLock.lock();
                                 try {
                                     JSONObject response = new JSONObject(responseBody);
 
@@ -423,32 +420,32 @@ public class Session {
                                     }
 
                                     if (response.has("country_code")) {
-                                        _this.countryCode = response.getString("country_code");
+                                        Session.this.countryCode = response.getString("country_code");
                                     }
 
                                     // Prevent warning for 'do_not_track_event'
-                                    if (_this.state == State.Expiring) {
-                                        _this.previousState = State.UserIdentified;
-                                    } else if (_this.state != State.UserIdentified) {
-                                        _this.setState(State.UserIdentified);
+                                    if (Session.this.state == State.Expiring) {
+                                        Session.this.previousState = State.UserIdentified;
+                                    } else if (Session.this.state != State.UserIdentified) {
+                                        Session.this.setState(State.UserIdentified);
                                     }
 
                                     // Grab user profile
                                     JSONObject profile = response.optJSONObject("user_profile");
                                     if (profile != null) {
                                         try {
-                                            _this.userProfile = profile.toMap();
+                                            Session.this.userProfile = profile.toMap();
                                         } catch (Exception ignored) {
                                         }
                                     }
                                 } catch (Exception ignored) {
                                 } finally {
-                                    _this.stateLock.unlock();
+                                    Session.this.stateLock.unlock();
                                 }
                             }
                         });
                 } finally {
-                    _this.stateLock.unlock();
+                    Session.this.stateLock.unlock();
                 }
             }
         });

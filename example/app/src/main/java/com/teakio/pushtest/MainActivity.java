@@ -121,7 +121,6 @@ public class MainActivity extends AppCompatActivity {
         Teak.identifyUser("demo-app-thingy-3");
 
         // Create a deep link route that opens the Google Play store to a specific SKU in your game
-        final AppCompatActivity _this = this;
         Teak.registerDeepLink("/store/:sku", "Store", "Link directly to purchase an item", new Teak.DeepLink() {
             @Override
             public void call(Map<String, Object> parameters) {
@@ -256,14 +255,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showPurchaseDialogForSku(final String sku) {
-        final AppCompatActivity _this = this;
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    Bundle buyIntentBundle = mService.getBuyIntent(3, _this.getPackageName(), sku, "inapp", "");
+                    Bundle buyIntentBundle = mService.getBuyIntent(3, MainActivity.this.getPackageName(), sku, "inapp", "");
                     PendingIntent pendingIntent = buyIntentBundle.getParcelable("BUY_INTENT");
-                    _this.startIntentSenderForResult(pendingIntent.getIntentSender(), 1001, new Intent(), 0, 0, 0);
+                    MainActivity.this.startIntentSenderForResult(pendingIntent.getIntentSender(), 1001, new Intent(), 0, 0, 0);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -289,12 +287,11 @@ public class MainActivity extends AppCompatActivity {
         i.addCategory(Intent.CATEGORY_HOME);
         this.startActivity(i);
 
-        final AppCompatActivity _this = this;
         final Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                simulateNotification(_this);
+                simulateNotification(MainActivity.this);
             }
         }, 1000);
     }
