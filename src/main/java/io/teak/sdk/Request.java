@@ -59,9 +59,13 @@ public class Request implements Runnable {
     private final Session session;
     private final String requestId;
     private final Callback callback;
+    protected boolean sent;
 
+    @SuppressWarnings("WeakerAccess")
     protected final boolean blackhole;
+    @SuppressWarnings("WeakerAccess")
     protected final RetryConfiguration retry;
+    @SuppressWarnings("WeakerAccess")
     protected final BatchConfiguration batch;
 
     ///// Mini-configs
@@ -163,7 +167,16 @@ public class Request implements Runnable {
         }
 
         synchronized boolean add(@NonNull String endpoint, @NonNull Map<String, Object> payload, @Nullable Callback callback) {
+            if (this.sent) {
+                return false;
+            }
+
             if (this.scheduledFuture != null && !this.scheduledFuture.cancel(false)) {
+                requestExecutor.execute(this);
+                return false;
+            }
+
+            if (this.batchContents.size() >= this.batch.count || this.batch.time == 0.0f) {
                 return false;
             }
 
@@ -190,7 +203,7 @@ public class Request implements Runnable {
 
         static BatchedParsnipRequest getCurrentBatch(@Nullable String hostname, @NonNull Session session) {
             synchronized (mutex) {
-                if (currentBatch == null) {
+                if (currentBatch == null || currentBatch.sent) {
                     currentBatch = new BatchedParsnipRequest(hostname, session);
                 }
                 return currentBatch;
@@ -230,7 +243,7 @@ public class Request implements Runnable {
 
         static BatchedTrackEventRequest getCurrentBatch(@Nullable String hostname, @NonNull Session session) {
             synchronized (mutex) {
-                if (currentBatch == null) {
+                if (currentBatch == null || currentBatch.sent) {
                     currentBatch = new BatchedTrackEventRequest(hostname, session);
                 }
                 return currentBatch;
@@ -272,7 +285,7 @@ public class Request implements Runnable {
         submit(hostname, endpoint, payload, session, null);
     }
 
-    public static void submit(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback) {
+    public static void submit(final @Nullable String hostname, final @NonNull String endpoint, final @NonNull Map<String, Object> payload, final @NonNull Session session, final @Nullable Callback callback) {
         BatchedRequest batch = null;
 
         // HEY! Future-Pat, this doesn't work if the app gets killed in the background and a notification_received metric goes out
@@ -284,7 +297,12 @@ public class Request implements Runnable {
 
         if (batch != null) {
             if (!batch.add(endpoint, payload, callback)) {
-                // Retry
+                requestExecutor.execute(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                submit(hostname, endpoint, payload, session, callback);
+                                            }
+                                        });
             }
         } else {
             requestExecutor.execute(new Request(hostname, endpoint, payload, session, callback, true));
@@ -304,6 +322,7 @@ public class Request implements Runnable {
         this.session = session;
         this.requestId = UUID.randomUUID().toString().replace("-", "");
         this.callback = callback;
+        this.sent = false;
 
         if (addStandardAttributes) {
             if (session.userId() != null) {
@@ -443,6 +462,8 @@ public class Request implements Runnable {
 
     @Override
     public void run() {
+        this.sent = true;
+
         if (this.blackhole) return;
 
         final SecretKeySpec keySpec = new SecretKeySpec(Request.teakApiKey.getBytes(), "HmacSHA256");
