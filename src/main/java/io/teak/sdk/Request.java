@@ -59,6 +59,34 @@ public class Request implements Runnable {
     private final String requestId;
     private final Callback callback;
 
+    private final boolean blackhole;
+    private final RetryConfiguration retry;
+    private final BatchConfiguration batch;
+
+    ///// Mini-configs
+
+    class RetryConfiguration {
+        float jitter;
+        float[] times;
+        int retryIndex;
+
+        RetryConfiguration() {
+            this.jitter = 0.0f;
+            this.times = new float[]{};
+            this.retryIndex = 0;
+        }
+    }
+
+    class BatchConfiguration {
+        long count;
+        float time;
+
+        BatchConfiguration() {
+            this.count = 1;
+            this.time = 0.0f;
+        }
+    }
+
     ///// Callback
 
     public interface Callback {
@@ -283,6 +311,92 @@ public class Request implements Runnable {
 
             this.payload.putAll(Request.configurationPayload);
         }
+
+        // Defaults
+        boolean blackhole = false;
+        RetryConfiguration retry = new RetryConfiguration();
+        BatchConfiguration batch = new BatchConfiguration();
+
+        // Configure if possible
+        try {
+            if (Request.remoteConfiguration != null) {
+                Object objHost = Request.remoteConfiguration.endpointConfigurations.containsKey(hostname) ?
+                        Request.remoteConfiguration.endpointConfigurations.get(hostname) : null;
+                @SuppressWarnings("unchecked")
+                Map<String, Object> host = (objHost != null && objHost instanceof Map) ? (Map<String, Object>) objHost : null;
+                if (host != null && host.containsKey(endpoint) && host.get(endpoint) instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> endpointConfig = (Map<String, Object>) host.get(endpoint);
+
+                    blackhole = endpointConfig.containsKey("blackhole") ? (boolean) endpointConfig.get("blackhole") : blackhole;
+
+                    // Retry configuration
+                    if (endpointConfig.containsKey("retry") && endpointConfig.get("retry") instanceof Map) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> retryConfig = (Map<String, Object>) endpointConfig.get("retry");
+
+                        try {
+                            retry.jitter = retryConfig.containsKey("jitter") ? (retryConfig.get("jitter") instanceof Number ? ((Number) retryConfig.get("jitter")).floatValue()
+                                    : Float.parseFloat(retryConfig.get("jitter").toString())) : retry.jitter;
+                        } catch (Exception ignored) {
+                        }
+
+                        if (retryConfig.containsKey("times") && retryConfig.get("times") instanceof List) {
+                            List timesList = (List) retryConfig.get("times");
+                            float[] timesArray = new float[timesList.size()];
+                            int i = 0;
+                            for (Object o : timesList) {
+                                try {
+                                    timesArray[i] = o instanceof Number ? ((Number) o).floatValue()
+                                            : Float.parseFloat(o.toString());
+                                } catch (Exception ignored) {
+                                    timesArray[i] = 10.0f;
+                                }
+                                i++;
+                            }
+                            retry.times = timesArray;
+                        }
+                    }
+
+                    // Batch configuration
+                    if (endpointConfig.containsKey("batch") && endpointConfig.get("batch") instanceof Map) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> batchConfig = (Map<String, Object>) endpointConfig.get("batch");
+
+                        try {
+                            batch.count = batchConfig.containsKey("count") ? (batchConfig.get("count") instanceof Number ? ((Number) batchConfig.get("count")).longValue()
+                                    : Long.parseLong(batchConfig.get("count").toString())) : batch.count;
+                        } catch (Exception ignored) {
+                        }
+
+                        try {
+                            batch.time = batchConfig.containsKey("time") ? (batchConfig.get("time") instanceof Number ? ((Number) batchConfig.get("time")).floatValue()
+                                    : Float.parseFloat(batchConfig.get("time").toString())) : batch.time;
+                        } catch (Exception ignored) {
+                        }
+
+                        if (batchConfig.containsKey("lww")) {
+                            boolean lww = false;
+                            try {
+                                lww = batchConfig.containsKey("lww") ? (batchConfig.get("lww") instanceof Boolean ? (Boolean) batchConfig.get("lww")
+                                        : Boolean.parseBoolean(batchConfig.get("lww").toString())) : lww;
+                            } catch (Exception ignored) {
+                            }
+                            if (lww) {
+                                batch.count = Long.MAX_VALUE;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Teak.log.exception(e);
+        }
+
+        // Assign to the finals
+        this.blackhole = blackhole;
+        this.retry = retry;
+        this.batch = batch;
     }
 
     public static class Payload {
