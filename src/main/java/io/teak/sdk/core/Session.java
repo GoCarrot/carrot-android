@@ -136,6 +136,8 @@ public class Session {
     private String countryCode;
     private String facebookAccessToken;
 
+    public Map<String, Object> userProfile;
+
     // State: Expiring
     private Date endDate;
 
@@ -429,6 +431,15 @@ public class Session {
                                         _this.previousState = State.UserIdentified;
                                     } else if (_this.state != State.UserIdentified) {
                                         _this.setState(State.UserIdentified);
+                                    }
+
+                                    // Grab user profile
+                                    JSONObject profile = response.optJSONObject("user_profile");
+                                    if (profile != null) {
+                                        try {
+                                            _this.userProfile = profile.toMap();
+                                        } catch (Exception ignored) {
+                                        }
                                     }
                                 } catch (Exception ignored) {
                                 } finally {
