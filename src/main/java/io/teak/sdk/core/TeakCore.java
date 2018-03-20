@@ -108,10 +108,15 @@ public class TeakCore implements ITeakCore {
                 case TrackEventEvent.Type: {
                     final Map<String, Object> payload = ((TrackEventEvent) event).payload;
 
-                    Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+                    asyncExecutor.execute(new Runnable() {
                         @Override
-                        public void run(Session session) {
-                            Request.submit("/me/events", payload, session);
+                        public void run() {
+                            Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+                                @Override
+                                public void run(Session session) {
+                                    Request.submit("/me/events", payload, session);
+                                }
+                            });
                         }
                     });
                     break;
@@ -120,10 +125,15 @@ public class TeakCore implements ITeakCore {
                     final Map<String, Object> payload = ((PurchaseEvent) event).payload;
                     Teak.log.i("purchase.succeeded", payload);
 
-                    Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+                    asyncExecutor.execute(new Runnable() {
                         @Override
-                        public void run(Session session) {
-                            Request.submit("/me/purchase", payload, session);
+                        public void run() {
+                            Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+                                @Override
+                                public void run(Session session) {
+                                    Request.submit("/me/purchase", payload, session);
+                                }
+                            });
                         }
                     });
                     break;
@@ -133,10 +143,15 @@ public class TeakCore implements ITeakCore {
                     payload.put("errorCode", ((PurchaseFailedEvent) event).errorCode);
                     Teak.log.i("purchase.failed", payload);
 
-                    Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+                    asyncExecutor.execute(new Runnable() {
                         @Override
-                        public void run(Session session) {
-                            Request.submit("/me/purchase", payload, session);
+                        public void run() {
+                            Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+                                @Override
+                                public void run(Session session) {
+                                    Request.submit("/me/purchase", payload, session);
+                                }
+                            });
                         }
                     });
                     break;
