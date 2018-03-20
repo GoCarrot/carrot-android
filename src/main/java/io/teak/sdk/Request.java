@@ -77,7 +77,7 @@ public class Request implements Runnable {
 
         RetryConfiguration() {
             this.jitter = 0.0f;
-            this.times = new float[]{};
+            this.times = new float[] {};
             this.retryIndex = 0;
         }
     }
@@ -184,7 +184,7 @@ public class Request implements Runnable {
                 this.callbacks.add(callback);
             }
             this.batchContents.add(payload);
-            this.scheduledFuture = Request.requestExecutor.schedule(this, (long)(this.batch.time * 1000.0f), TimeUnit.MILLISECONDS);
+            this.scheduledFuture = Request.requestExecutor.schedule(this, (long) (this.batch.time * 1000.0f), TimeUnit.MILLISECONDS);
             return true;
         }
 
@@ -298,11 +298,11 @@ public class Request implements Runnable {
         if (batch != null) {
             if (!batch.add(endpoint, payload, callback)) {
                 requestExecutor.execute(new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                submit(hostname, endpoint, payload, session, callback);
-                                            }
-                                        });
+                    @Override
+                    public void run() {
+                        submit(hostname, endpoint, payload, session, callback);
+                    }
+                });
             }
         } else {
             requestExecutor.execute(new Request(hostname, endpoint, payload, session, callback, true));
@@ -340,8 +340,7 @@ public class Request implements Runnable {
         // Configure if possible
         try {
             if (Request.remoteConfiguration != null) {
-                Object objHost = Request.remoteConfiguration.endpointConfigurations.containsKey(hostname) ?
-                        Request.remoteConfiguration.endpointConfigurations.get(hostname) : null;
+                Object objHost = Request.remoteConfiguration.endpointConfigurations.containsKey(hostname) ? Request.remoteConfiguration.endpointConfigurations.get(hostname) : null;
                 @SuppressWarnings("unchecked")
                 Map<String, Object> host = (objHost != null && objHost instanceof Map) ? (Map<String, Object>) objHost : null;
                 if (host != null && host.containsKey(endpoint) && host.get(endpoint) instanceof Map) {
@@ -357,7 +356,8 @@ public class Request implements Runnable {
 
                         try {
                             retry.jitter = retryConfig.containsKey("jitter") ? (retryConfig.get("jitter") instanceof Number ? ((Number) retryConfig.get("jitter")).floatValue()
-                                    : Float.parseFloat(retryConfig.get("jitter").toString())) : retry.jitter;
+                                                                                                                            : Float.parseFloat(retryConfig.get("jitter").toString()))
+                                                                             : retry.jitter;
                         } catch (Exception ignored) {
                         }
 
@@ -368,7 +368,7 @@ public class Request implements Runnable {
                             for (Object o : timesList) {
                                 try {
                                     timesArray[i] = o instanceof Number ? ((Number) o).floatValue()
-                                            : Float.parseFloat(o.toString());
+                                                                        : Float.parseFloat(o.toString());
                                 } catch (Exception ignored) {
                                     timesArray[i] = 10.0f;
                                 }
@@ -385,13 +385,15 @@ public class Request implements Runnable {
 
                         try {
                             batch.count = batchConfig.containsKey("count") ? (batchConfig.get("count") instanceof Number ? ((Number) batchConfig.get("count")).longValue()
-                                    : Long.parseLong(batchConfig.get("count").toString())) : batch.count;
+                                                                                                                         : Long.parseLong(batchConfig.get("count").toString()))
+                                                                           : batch.count;
                         } catch (Exception ignored) {
                         }
 
                         try {
                             batch.time = batchConfig.containsKey("time") ? (batchConfig.get("time") instanceof Number ? ((Number) batchConfig.get("time")).floatValue()
-                                    : Float.parseFloat(batchConfig.get("time").toString())) : batch.time;
+                                                                                                                      : Float.parseFloat(batchConfig.get("time").toString()))
+                                                                         : batch.time;
                         } catch (Exception ignored) {
                         }
 
@@ -399,7 +401,8 @@ public class Request implements Runnable {
                             boolean lww = false;
                             try {
                                 lww = batchConfig.containsKey("lww") ? (batchConfig.get("lww") instanceof Boolean ? (Boolean) batchConfig.get("lww")
-                                        : Boolean.parseBoolean(batchConfig.get("lww").toString())) : lww;
+                                                                                                                  : Boolean.parseBoolean(batchConfig.get("lww").toString()))
+                                                                     : lww;
                             } catch (Exception ignored) {
                             }
                             if (lww) {
@@ -520,7 +523,7 @@ public class Request implements Runnable {
 
             this.retry.retryIndex++;
 
-            Request.requestExecutor.schedule(this, (long)(delay * 1000.0f), TimeUnit.MILLISECONDS);
+            Request.requestExecutor.schedule(this, (long) (delay * 1000.0f), TimeUnit.MILLISECONDS);
         } else if (this.callback != null) {
             this.callback.onRequestCompleted(responseCode, responseBody);
         }

@@ -87,7 +87,7 @@ public class RemoteConfiguration {
                                         nullInsteadOfEmpty(response.isNull("app_sentry_dsn") ? null : response.getString("app_sentry_dsn")),
                                         nullInsteadOfEmpty(response.isNull("gcm_sender_id") ? null : response.getString("gcm_sender_id")),
                                         response.optBoolean("enhanced_integration_checks", false),
-                                            response.has("endpoint_configurations") ? response.getJSONObject("endpoint_configurations") : null);
+                                        response.has("endpoint_configurations") ? response.getJSONObject("endpoint_configurations") : null);
 
                                     Teak.log.i("configuration.remote", configuration.toHash());
                                     TeakEvent.postEvent(new RemoteConfigurationEvent(configuration));
