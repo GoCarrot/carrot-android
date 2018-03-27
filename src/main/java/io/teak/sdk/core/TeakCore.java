@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 
 import io.teak.sdk.Helpers;
 import io.teak.sdk.NotificationBuilder;
@@ -336,4 +337,6 @@ public class TeakCore implements ITeakCore {
 
     private final ExecutorService asyncExecutor = Executors.newCachedThreadPool();
     private final LocalBroadcastManager localBroadcastManager;
+
+    public static final ScheduledExecutorService operationQueue = Executors.newSingleThreadScheduledExecutor();
 }
