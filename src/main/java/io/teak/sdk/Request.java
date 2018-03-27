@@ -82,9 +82,9 @@ public class Request implements Runnable {
         }
     }
 
-    class BatchConfiguration {
-        long count;
-        float time;
+    public class BatchConfiguration {
+        public long count;
+        public float time;
 
         BatchConfiguration() {
             this.count = 1;
@@ -311,7 +311,7 @@ public class Request implements Runnable {
 
     /////
 
-    private Request(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback, boolean addStandardAttributes) {
+    public Request(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback, boolean addStandardAttributes) {
         if (!endpoint.startsWith("/")) {
             throw new IllegalArgumentException("Parameter 'endpoint' must start with '/' or things will break, and you will lose an hour of your life debugging.");
         }

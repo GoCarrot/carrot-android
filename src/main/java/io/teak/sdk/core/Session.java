@@ -136,7 +136,7 @@ public class Session {
     private String countryCode;
     private String facebookAccessToken;
 
-    public Map<String, Object> userProfile;
+    public UserProfile userProfile;
 
     // State: Expiring
     private Date endDate;
@@ -270,6 +270,10 @@ public class Session {
                 case Expired: {
                     TeakEvent.removeEventListener(this.teakEventListener);
 
+                    // Send UserProfile to server
+                    if (this.userProfile != null) {
+                        this.userProfile.sendNow();
+                    }
                     // TODO: Report Session to server, once we collect that info.
                 } break;
             }
@@ -434,7 +438,7 @@ public class Session {
                                     JSONObject profile = response.optJSONObject("user_profile");
                                     if (profile != null) {
                                         try {
-                                            Session.this.userProfile = profile.toMap();
+                                            Session.this.userProfile = new UserProfile(Session.this, profile.toMap());
                                         } catch (Exception ignored) {
                                         }
                                     }

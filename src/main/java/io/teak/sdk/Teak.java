@@ -279,6 +279,42 @@ public class Teak extends BroadcastReceiver {
     }
 
     /**
+     * Track a numeric player profile attribute.
+     *
+     * @param attributeName  The name of the numeric attribute.
+     * @param attributeValue The numeric value to assign.
+     */
+    @SuppressWarnings("unused")
+    public static void setNumericAttribute(final String attributeName, final double attributeValue) {
+        if (Instance != null) {
+            asyncExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    Instance.setNumericAttribute(attributeName, attributeValue);
+                }
+            });
+        }
+    }
+
+    /**
+     * Track a string player profile attribute.
+     *
+     * @param attributeName  The name of the string attribute.
+     * @param attributeValue The string value to assign.
+     */
+    @SuppressWarnings("unused")
+    public static void setStringAttribute(final String attributeName, final String attributeValue) {
+        if (Instance != null) {
+            asyncExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    Instance.setStringAttribute(attributeName, attributeValue);
+                }
+            });
+        }
+    }
+
+    /**
      * Interface for running code when a deep link is received
      */
     public static abstract class DeepLink {
