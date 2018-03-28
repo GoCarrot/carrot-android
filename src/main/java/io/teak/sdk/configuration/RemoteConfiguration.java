@@ -57,9 +57,7 @@ public class RemoteConfiguration {
         this.sdkSentryDsn = sdkSentryDsn;
         this.gcmSenderId = gcmSenderId;
         this.enhancedIntegrationChecks = enhancedIntegrationChecks;
-        this.endpointConfigurations = endpointConfigurations.toMap();
-
-        // Process
+        this.endpointConfigurations = endpointConfigurations == null ? new HashMap<String, Object>() : endpointConfigurations.toMap();
     }
 
     public static void registerStaticEventListeners() {
