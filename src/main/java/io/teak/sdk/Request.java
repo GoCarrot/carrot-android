@@ -131,7 +131,6 @@ public class Request implements Runnable {
                 configurationPayload.put("device_model", configuration.deviceConfiguration.deviceModel);
                 configurationPayload.put("device_fallback", configuration.deviceConfiguration.deviceFallback);
                 configurationPayload.put("device_memory_class", configuration.deviceConfiguration.memoryClass);
-                configurationPayload.put("miui_version", configuration.deviceConfiguration.miuiVersion);
 
                 if (configuration.debugConfiguration.isDebug()) {
                     configurationPayload.put("debug", true);
