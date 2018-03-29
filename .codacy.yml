@@ -16,8 +16,6 @@ exclude_paths:
   - docs/**/*
   - .gradle/*
   - .gradle/**/*
-  - infer-out/*
-  - infer-out/**/
   - .idea/*
   - .idea/**/*
   - src/main/java/io/teak/sdk/json/* # Not our code, vendored JSONObject and friends
