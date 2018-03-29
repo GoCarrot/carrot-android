@@ -265,15 +265,16 @@ public class Session {
                         this.heartbeatService.shutdown();
                         this.heartbeatService = null;
                     }
-                } break;
-
-                case Expired: {
-                    TeakEvent.removeEventListener(this.teakEventListener);
 
                     // Send UserProfile to server
                     if (this.userProfile != null) {
                         TeakCore.operationQueue.execute(this.userProfile);
                     }
+                } break;
+
+                case Expired: {
+                    TeakEvent.removeEventListener(this.teakEventListener);
+
                     // TODO: Report Session to server, once we collect that info.
                 } break;
             }
