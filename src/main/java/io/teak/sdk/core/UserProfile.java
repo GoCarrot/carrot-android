@@ -71,18 +71,16 @@ public class UserProfile extends Request {
         this.context = (String) userProfile.get("context");
     }
 
-    void sendNow() {
-        // This is either running right now or pending
-        // TODO: Double check the 'currently running' case
-        if (this.scheduledSend != null) {
-            this.scheduledSend.cancel(false);
+    @Override
+    public void run() {
+        // If this has no scheduledSend, or if it isn't cancelable, then it has no pending updates
+        if (this.scheduledSend != null && this.scheduledSend.cancel(false)) {
+            this.payload.put("context", this.context);
+            this.payload.put("string_attributes", this.stringAttributes);
+            this.payload.put("number_attributes", this.numberAttributes);
+
+            super.run();
         }
-
-        this.payload.put("context", this.context);
-        this.payload.put("string_attributes", this.stringAttributes);
-        this.payload.put("number_attributes", this.numberAttributes);
-
-        TeakCore.operationQueue.execute(this);
     }
 
     public void setNumericAttribute(@NonNull String key, double value) {
@@ -95,23 +93,18 @@ public class UserProfile extends Request {
 
     private void setAttribute(@NonNull final Map<String, Object> map, @NonNull final String key, @NonNull final Object value) {
         if (map.containsKey(key)) {
-            // If this doesn't cancel it, that is fine
-            if (this.scheduledSend != null) {
-                this.scheduledSend.cancel(false);
-            }
-
             TeakCore.operationQueue.execute(new Runnable() {
                 @Override
                 public void run() {
+                    if (UserProfile.this.scheduledSend != null) {
+                        UserProfile.this.scheduledSend.cancel(false);
+                    }
+
                     // Update value
                     map.put(key, value);
 
-                    UserProfile.this.scheduledSend = TeakCore.operationQueue.schedule(new Runnable() {
-                        @Override
-                        public void run() {
-                            UserProfile.this.sendNow();
-                        }
-                    }, (long) (UserProfile.this.batch.time * 1000.0f), TimeUnit.MILLISECONDS);
+                    UserProfile.this.scheduledSend = TeakCore.operationQueue.schedule(UserProfile.this,
+                            (long) (UserProfile.this.batch.time * 1000.0f), TimeUnit.MILLISECONDS);
                 }
             });
         }

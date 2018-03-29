@@ -272,7 +272,7 @@ public class Session {
 
                     // Send UserProfile to server
                     if (this.userProfile != null) {
-                        this.userProfile.sendNow();
+                        TeakCore.operationQueue.execute(this.userProfile);
                     }
                     // TODO: Report Session to server, once we collect that info.
                 } break;
