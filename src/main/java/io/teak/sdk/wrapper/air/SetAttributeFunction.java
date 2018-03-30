@@ -37,16 +37,14 @@ public class SetAttributeFunction implements FREFunction {
     @Override
     public FREObject call(FREContext context, FREObject[] argv) {
         try {
-            switch(this.functionType) {
+            switch (this.functionType) {
                 case Numeric: {
                     Teak.setNumericAttribute(argv[0].getAsString(), argv[1].getAsDouble());
-                }
-                break;
+                } break;
 
                 case String: {
                     Teak.setStringAttribute(argv[0].getAsString(), argv[1].getAsString());
-                }
-                break;
+                } break;
             }
         } catch (Exception e) {
             Teak.log.exception(e);
