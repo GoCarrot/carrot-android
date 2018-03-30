@@ -85,8 +85,7 @@ public class UserProfile extends Request {
 
     public void setNumericAttribute(@NonNull String key, double value) {
         if (this.numberAttributes.get(key) == null ||
-            !(this.numberAttributes.get(key) instanceof Double) ||
-            ((double) this.numberAttributes.get(key)) != value) {
+            !this.numberAttributes.get(key).equals(value)) {
             setAttribute(this.numberAttributes, key, value);
         }
     }
