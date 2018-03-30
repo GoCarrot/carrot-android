@@ -84,11 +84,15 @@ public class UserProfile extends Request {
     }
 
     public void setNumericAttribute(@NonNull String key, double value) {
-        setAttribute(this.numberAttributes, key, value);
+        if (this.numberAttributes.get(key) != value) {
+            setAttribute(this.numberAttributes, key, value);
+        }
     }
 
     public void setStringAttribute(@NonNull String key, String value) {
-        setAttribute(this.stringAttributes, key, value);
+        if (!value.equals(this.stringAttributes.get(key))) {
+            setAttribute(this.stringAttributes, key, value);
+        }
     }
 
     private void setAttribute(@NonNull final Map<String, Object> map, @NonNull final String key, @NonNull final Object value) {
