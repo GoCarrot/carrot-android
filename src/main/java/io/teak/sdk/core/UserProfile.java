@@ -84,7 +84,9 @@ public class UserProfile extends Request {
     }
 
     public void setNumericAttribute(@NonNull String key, double value) {
-        if (this.numberAttributes.get(key) != value) {
+        if (this.numberAttributes.get(key) == null ||
+            !(this.numberAttributes.get(key) instanceof Double) ||
+            ((double) this.numberAttributes.get(key)) != value) {
             setAttribute(this.numberAttributes, key, value);
         }
     }
@@ -108,7 +110,7 @@ public class UserProfile extends Request {
                     map.put(key, value);
 
                     UserProfile.this.scheduledSend = TeakCore.operationQueue.schedule(UserProfile.this,
-                            (long) (UserProfile.this.batch.time * 1000.0f), TimeUnit.MILLISECONDS);
+                        (long) (UserProfile.this.batch.time * 1000.0f), TimeUnit.MILLISECONDS);
                 }
             });
         }
