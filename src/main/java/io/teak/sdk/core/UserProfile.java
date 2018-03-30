@@ -73,8 +73,11 @@ public class UserProfile extends Request {
 
     @Override
     public void run() {
-        // If this has no scheduledSend, or if it isn't cancelable, then it has no pending updates
-        if (this.scheduledSend != null && this.scheduledSend.cancel(false)) {
+        // If this has no scheduledSend then it has no pending updates
+        if (this.scheduledSend != null) {
+            this.scheduledSend.cancel(false);
+            this.scheduledSend = null;
+
             this.payload.put("context", this.context);
             this.payload.put("string_attributes", this.stringAttributes);
             this.payload.put("number_attributes", this.numberAttributes);
