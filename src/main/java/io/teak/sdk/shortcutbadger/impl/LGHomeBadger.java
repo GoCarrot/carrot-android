@@ -30,7 +30,7 @@ public class LGHomeBadger implements Badger {
         intent.putExtra(INTENT_EXTRA_BADGE_COUNT, badgeCount);
         intent.putExtra(INTENT_EXTRA_PACKAGENAME, componentName.getPackageName());
         intent.putExtra(INTENT_EXTRA_ACTIVITY_NAME, componentName.getClassName());
-        if(BroadcastHelper.canResolveBroadcast(context, intent)) {
+        if (BroadcastHelper.canResolveBroadcast(context, intent)) {
             context.sendBroadcast(intent);
         } else {
             throw new ShortcutBadgeException("unable to resolve intent: " + intent.toString());
@@ -40,8 +40,7 @@ public class LGHomeBadger implements Badger {
     @Override
     public List<String> getSupportLaunchers() {
         return Arrays.asList(
-                "com.lge.launcher",
-                "com.lge.launcher2"
-        );
+            "com.lge.launcher",
+            "com.lge.launcher2");
     }
 }

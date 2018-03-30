@@ -83,9 +83,9 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
             screenStateFilter.addAction(DeviceStateService.SCREEN_OFF);
             context.registerReceiver(this, screenStateFilter);
 
-             this.handler = new Handler(Looper.getMainLooper());
+            this.handler = new Handler(Looper.getMainLooper());
         } else {
-            this.handler = new Handler();
+            this.handler = null;
         }
 
         TeakEvent.addEventListener(new TeakEvent.EventListener() {
@@ -130,6 +130,12 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
     public void displayNotification(@NonNull final Context context, @NonNull final TeakNotification teakNotification, @NonNull final Notification nativeNotification) {
         // Send it out
         Teak.log.i("notification.display", Helpers.mm.h("teakNotifId", teakNotification.teakNotifId, "platformId", teakNotification.platformId));
+
+        // This should only be the case during unit tests, but catch it here anyway
+        if (this.handler == null) {
+            Teak.log.e("notification.display.error", "this.handler is null, skipping display");
+            return;
+        }
 
         try {
             Intent intent = new Intent(context, DeviceStateService.class);
@@ -181,6 +187,12 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                 // Since Android O doesn't have an install base worth mentioning, this can be fixed later
             }
 
+            // This should only be the case during unit tests, but catch it here anyway
+            if (this.handler == null) {
+                Teak.log.e("notification.animation.error", "this.handler is null, skipping animation refresh");
+                return;
+            }
+
             // Double, double, toil and trouble...
             String tempNotificationChannelId = null;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -201,7 +213,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                                     @SuppressWarnings("deprecation")
                                     private void assignDeprecated() {
                                         entry.notification.defaults = 0; // Disable sound/vibrate etc
-                                        entry.notification.vibrate = new long[]{0L};
+                                        entry.notification.vibrate = new long[] {0L};
                                         entry.notification.sound = null;
                                     }
                                 }

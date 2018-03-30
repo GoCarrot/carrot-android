@@ -20,7 +20,7 @@ import io.teak.sdk.shortcutbadger.util.CloseHelper;
  */
 public class SamsungHomeBadger implements Badger {
     private static final String CONTENT_URI = "content://com.sec.badge/apps?notify=true";
-    private static final String[] CONTENT_PROJECTION = new String[]{"_id", "class"};
+    private static final String[] CONTENT_PROJECTION = new String[] {"_id", "class"};
 
     private DefaultBadger defaultBadger;
 
@@ -39,14 +39,14 @@ public class SamsungHomeBadger implements Badger {
             ContentResolver contentResolver = context.getContentResolver();
             Cursor cursor = null;
             try {
-                cursor = contentResolver.query(mUri, CONTENT_PROJECTION, "package=?", new String[]{componentName.getPackageName()}, null);
+                cursor = contentResolver.query(mUri, CONTENT_PROJECTION, "package=?", new String[] {componentName.getPackageName()}, null);
                 if (cursor != null) {
                     String entryActivityName = componentName.getClassName();
                     boolean entryActivityExist = false;
                     while (cursor.moveToNext()) {
                         int id = cursor.getInt(0);
                         ContentValues contentValues = getContentValues(componentName, badgeCount, false);
-                        contentResolver.update(mUri, contentValues, "_id=?", new String[]{String.valueOf(id)});
+                        contentResolver.update(mUri, contentValues, "_id=?", new String[] {String.valueOf(id)});
                         if (entryActivityName.equals(cursor.getString(cursor.getColumnIndex("class")))) {
                             entryActivityExist = true;
                         }
@@ -78,8 +78,7 @@ public class SamsungHomeBadger implements Badger {
     @Override
     public List<String> getSupportLaunchers() {
         return Arrays.asList(
-                "com.sec.android.app.launcher",
-                "com.sec.android.app.twlauncher"
-        );
+            "com.sec.android.app.launcher",
+            "com.sec.android.app.twlauncher");
     }
 }

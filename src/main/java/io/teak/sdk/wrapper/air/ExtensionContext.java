@@ -74,6 +74,8 @@ public class ExtensionContext extends FREContext {
         functionMap.put("registerRoute", new RegisterRouteFunction());
         functionMap.put("getVersion", new GetVersionFunction());
         functionMap.put("getInitializationErrors", new GetInitializationErrorsFunction(this.initializationErrors));
+        functionMap.put("setNumericAttribute", new SetAttributeFunction(SetAttributeFunction.FunctionType.Numeric));
+        functionMap.put("setStringAttribute", new SetAttributeFunction(SetAttributeFunction.FunctionType.String));
         return functionMap;
     }
 

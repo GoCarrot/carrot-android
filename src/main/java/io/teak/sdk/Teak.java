@@ -82,7 +82,7 @@ public class Teak extends BroadcastReceiver {
             MajorMinorRevision = new int[] {
                 Integer.parseInt(m.group(1)), // major
                 Integer.parseInt(m.group(2)), // minor
-                Integer.parseInt(m.group(3)) // revision
+                Integer.parseInt(m.group(3))  // revision
             };
         } else {
             MajorMinorRevision = new int[] {0, 0, 0};
@@ -111,7 +111,6 @@ public class Teak extends BroadcastReceiver {
      *
      * @param activity The main <code>Activity</code> of your app.
      */
-    @SuppressLint("infer")
     @SuppressWarnings("unused")
     public static void onCreate(@NonNull Activity activity) {
         onCreate(activity, null);
@@ -140,7 +139,6 @@ public class Teak extends BroadcastReceiver {
 
         // Add version info for Unity/Air
         IAndroidResources androidResources = objectFactory.getAndroidResources();
-        //noinspection ConstantConditions - Infer isn't picking up the @NonNull for some reason
         if (androidResources != null) {
             String wrapperSDKName = androidResources.getStringResource("io_teak_wrapper_sdk_name");
             String wrapperSDKVersion = androidResources.getStringResource("io_teak_wrapper_sdk_version");
@@ -279,6 +277,42 @@ public class Teak extends BroadcastReceiver {
     }
 
     /**
+     * Track a numeric player profile attribute.
+     *
+     * @param attributeName  The name of the numeric attribute.
+     * @param attributeValue The numeric value to assign.
+     */
+    @SuppressWarnings("unused")
+    public static void setNumericAttribute(final String attributeName, final double attributeValue) {
+        if (Instance != null) {
+            asyncExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    Instance.setNumericAttribute(attributeName, attributeValue);
+                }
+            });
+        }
+    }
+
+    /**
+     * Track a string player profile attribute.
+     *
+     * @param attributeName  The name of the string attribute.
+     * @param attributeValue The string value to assign.
+     */
+    @SuppressWarnings("unused")
+    public static void setStringAttribute(final String attributeName, final String attributeValue) {
+        if (Instance != null) {
+            asyncExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    Instance.setStringAttribute(attributeName, attributeValue);
+                }
+            });
+        }
+    }
+
+    /**
      * Interface for running code when a deep link is received
      */
     public static abstract class DeepLink {
@@ -364,7 +398,7 @@ public class Teak extends BroadcastReceiver {
     public static void openIABPurchaseSucceeded(String json) {
         try {
             JSONObject purchase = new JSONObject(json);
-            Teak.log.i("purchase.open_iab", Helpers.jsonToMap(purchase));
+            Teak.log.i("purchase.open_iab", purchase.toMap());
 
             final String originalJson = purchase.getString("originalJson");
             if (Instance != null) {
@@ -385,7 +419,7 @@ public class Teak extends BroadcastReceiver {
     public static void prime31PurchaseSucceeded(final String json) {
         try {
             final JSONObject originalJson = new JSONObject(json);
-            Teak.log.i("purchase.prime_31", Helpers.jsonToMap(originalJson));
+            Teak.log.i("purchase.prime_31", originalJson.toMap());
 
             if (Instance != null) {
                 asyncExecutor.submit(new Runnable() {

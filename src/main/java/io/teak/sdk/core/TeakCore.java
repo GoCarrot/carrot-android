@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 
 import io.teak.sdk.Helpers;
 import io.teak.sdk.NotificationBuilder;
@@ -108,10 +109,15 @@ public class TeakCore implements ITeakCore {
                 case TrackEventEvent.Type: {
                     final Map<String, Object> payload = ((TrackEventEvent) event).payload;
 
-                    Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+                    asyncExecutor.execute(new Runnable() {
                         @Override
-                        public void run(Session session) {
-                            asyncExecutor.execute(new Request("/me/events", payload, session));
+                        public void run() {
+                            Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+                                @Override
+                                public void run(Session session) {
+                                    Request.submit("/me/events", payload, session);
+                                }
+                            });
                         }
                     });
                     break;
@@ -120,10 +126,15 @@ public class TeakCore implements ITeakCore {
                     final Map<String, Object> payload = ((PurchaseEvent) event).payload;
                     Teak.log.i("purchase.succeeded", payload);
 
-                    Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+                    asyncExecutor.execute(new Runnable() {
                         @Override
-                        public void run(Session session) {
-                            asyncExecutor.execute(new Request("/me/purchase", payload, session));
+                        public void run() {
+                            Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+                                @Override
+                                public void run(Session session) {
+                                    Request.submit("/me/purchase", payload, session);
+                                }
+                            });
                         }
                     });
                     break;
@@ -133,10 +144,15 @@ public class TeakCore implements ITeakCore {
                     payload.put("errorCode", ((PurchaseFailedEvent) event).errorCode);
                     Teak.log.i("purchase.failed", payload);
 
-                    Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+                    asyncExecutor.execute(new Runnable() {
                         @Override
-                        public void run(Session session) {
-                            asyncExecutor.execute(new Request("/me/purchase", payload, session));
+                        public void run() {
+                            Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+                                @Override
+                                public void run(Session session) {
+                                    Request.submit("/me/purchase", payload, session);
+                                }
+                            });
                         }
                     });
                     break;
@@ -156,7 +172,7 @@ public class TeakCore implements ITeakCore {
                         if (o instanceof String) {
                             try {
                                 JSONObject jsonObject = new JSONObject(o.toString());
-                                o = Helpers.jsonToMap(jsonObject);
+                                o = jsonObject.toMap();
                             } catch (Exception ignored) {
                             }
                         }
@@ -204,7 +220,7 @@ public class TeakCore implements ITeakCore {
                                         AppConfiguration tempAppConfiguration = new AppConfiguration(context, new DefaultAndroidResources(context));
                                         Request.setTeakApiKey(tempAppConfiguration.apiKey);
                                     }
-                                    asyncExecutor.execute(new Request("parsnip.gocarrot.com", "/notification_received", payload, Session.NullSession));
+                                    Request.submit("parsnip.gocarrot.com", "/notification_received", payload, Session.NullSession);
                                 } catch (IntegrationChecker.InvalidConfigurationException ignored) {
                                 }
                             }
@@ -289,7 +305,7 @@ public class TeakCore implements ITeakCore {
                             public void run() {
                                 try {
                                     TeakNotification.Reward reward = rewardFuture.get();
-                                    HashMap<String, Object> rewardMap = Helpers.jsonToMap(reward.json);
+                                    HashMap<String, Object> rewardMap = new HashMap<>(reward.json.toMap());
                                     eventDataDict.putAll(rewardMap);
 
                                     // Broadcast reward only if everything goes well
@@ -321,4 +337,6 @@ public class TeakCore implements ITeakCore {
 
     private final ExecutorService asyncExecutor = Executors.newCachedThreadPool();
     private final LocalBroadcastManager localBroadcastManager;
+
+    public static final ScheduledExecutorService operationQueue = Executors.newSingleThreadScheduledExecutor();
 }

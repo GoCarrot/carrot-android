@@ -22,10 +22,10 @@ public class DefaultBadger implements Badger {
 
     @Override
     public void executeBadge(Context context, ComponentName componentName, int badgeCount) throws ShortcutBadgeException {
-            Intent intent = new Intent(INTENT_ACTION);
-            intent.putExtra(INTENT_EXTRA_BADGE_COUNT, badgeCount);
-            intent.putExtra(INTENT_EXTRA_PACKAGENAME, componentName.getPackageName());
-            intent.putExtra(INTENT_EXTRA_ACTIVITY_NAME, componentName.getClassName());
+        Intent intent = new Intent(INTENT_ACTION);
+        intent.putExtra(INTENT_EXTRA_BADGE_COUNT, badgeCount);
+        intent.putExtra(INTENT_EXTRA_PACKAGENAME, componentName.getPackageName());
+        intent.putExtra(INTENT_EXTRA_ACTIVITY_NAME, componentName.getClassName());
         if (BroadcastHelper.canResolveBroadcast(context, intent)) {
             context.sendBroadcast(intent);
         } else {
@@ -36,10 +36,9 @@ public class DefaultBadger implements Badger {
     @Override
     public List<String> getSupportLaunchers() {
         return Arrays.asList(
-                "fr.neamar.kiss",
-                "com.quaap.launchtime",
-                "com.quaap.launchtime_official"
-        );
+            "fr.neamar.kiss",
+            "com.quaap.launchtime",
+            "com.quaap.launchtime_official");
     }
 
     boolean isSupported(Context context) {

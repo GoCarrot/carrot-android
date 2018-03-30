@@ -43,7 +43,6 @@ public class DeviceConfiguration {
     public final String deviceFallback;
     public final String platformString;
     public final int memoryClass;
-    public final String miuiVersion;
 
     public String advertisingId;
     public boolean limitAdTracking;
@@ -60,11 +59,6 @@ public class DeviceConfiguration {
             this.platformString = "android_unknown";
         } else {
             this.platformString = "android_" + android.os.Build.VERSION.RELEASE;
-        }
-
-        // MIUI version (if applicable)
-        {
-            this.miuiVersion = androidDeviceInfo.getSystemProperty("ro.miui.ui.version.name") == null ? null : androidDeviceInfo.getSystemProperty("ro.build.version.incremental");
         }
 
         // Heap size (kind of)

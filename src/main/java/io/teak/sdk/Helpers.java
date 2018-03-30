@@ -38,47 +38,6 @@ public class Helpers {
         return b.getBoolean(key);
     }
 
-    public static HashMap<String, Object> jsonToMap(JSONObject json) throws JSONException {
-        HashMap<String, Object> retMap = new HashMap<>();
-
-        if (json != JSONObject.NULL) {
-            retMap = toMap(json);
-        }
-        return retMap;
-    }
-
-    private static HashMap<String, Object> toMap(JSONObject object) throws JSONException {
-        HashMap<String, Object> map = new HashMap<>();
-
-        Iterator keysItr = object.keys();
-        while (keysItr.hasNext()) {
-            String key = keysItr.next().toString();
-            Object value = object.get(key);
-
-            if (value instanceof JSONArray) {
-                value = toList((JSONArray) value);
-            } else if (value instanceof JSONObject) {
-                value = toMap((JSONObject) value);
-            }
-            map.put(key, value);
-        }
-        return map;
-    }
-
-    private static List<Object> toList(JSONArray array) throws JSONException {
-        List<Object> list = new ArrayList<>();
-        for (int i = 0; i < array.length(); i++) {
-            Object value = array.get(i);
-            if (value instanceof JSONArray) {
-                value = toList((JSONArray) value);
-            } else if (value instanceof JSONObject) {
-                value = toMap((JSONObject) value);
-            }
-            list.add(value);
-        }
-        return list;
-    }
-
     public static class mm {
         public static Map<String, Object> h(@NonNull Object... args) {
             Map<String, Object> ret = new HashMap<>();
@@ -101,5 +60,41 @@ public class Helpers {
             }
         }
         return json;
+    }
+
+    public static Bundle jsonToGCMBundle(JSONObject jsonObject) {
+        Bundle bundle = new Bundle();
+
+        for (Iterator<String> it = jsonObject.keys(); it.hasNext();) {
+            String key = it.next();
+            Object obj = jsonObject.get(key);
+
+            if (obj instanceof Integer || obj instanceof Long) {
+                if (key.startsWith("google.")) {
+                    long value = ((Number) obj).longValue();
+                    bundle.putLong(key, value);
+                } else {
+                    bundle.putString(key, String.valueOf(obj));
+                }
+            } else if (obj instanceof Boolean) {
+                boolean value = (Boolean) obj;
+                bundle.putBoolean(key, value);
+            } else if (obj instanceof Float || obj instanceof Double) {
+                if (key.startsWith("google.")) {
+                    double value = ((Number) obj).doubleValue();
+                    bundle.putDouble(key, value);
+                } else {
+                    bundle.putString(key, String.valueOf(obj));
+                }
+            } else if (obj instanceof JSONObject || obj instanceof JSONArray) {
+                String value = obj.toString();
+                bundle.putString(key, value);
+            } else if (obj instanceof String) {
+                String value = jsonObject.getString(key);
+                bundle.putString(key, value);
+            }
+        }
+
+        return bundle;
     }
 }

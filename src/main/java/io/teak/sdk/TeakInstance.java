@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.teak.sdk.configuration.RemoteConfiguration;
+import io.teak.sdk.core.Session;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
@@ -166,6 +167,30 @@ public class TeakInstance {
             }
             TeakEvent.postEvent(new TrackEventEvent(payload));
         }
+    }
+
+    ///// Player profile
+
+    void setNumericAttribute(final String attributeName, final double attributeValue) {
+        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+            @Override
+            public void run(Session session) {
+                if (session.userProfile != null) {
+                    session.userProfile.setNumericAttribute(attributeName, attributeValue);
+                }
+            }
+        });
+    }
+
+    void setStringAttribute(final String attributeName, final String attributeValue) {
+        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+            @Override
+            public void run(Session session) {
+                if (session.userProfile != null) {
+                    session.userProfile.setStringAttribute(attributeName, attributeValue);
+                }
+            }
+        });
     }
 
     ///// Notifications and Settings

@@ -15,7 +15,6 @@ import java.util.List;
 import io.teak.sdk.shortcutbadger.Badger;
 import io.teak.sdk.shortcutbadger.ShortcutBadgeException;
 
-
 /**
  * @author Leo Lin
  */
@@ -38,7 +37,7 @@ public class SonyHomeBadger implements Badger {
 
     @Override
     public void executeBadge(Context context, ComponentName componentName,
-                             int badgeCount) throws ShortcutBadgeException {
+        int badgeCount) throws ShortcutBadgeException {
         if (sonyBadgeContentProviderExists(context)) {
             executeBadgeByContentProvider(context, componentName, badgeCount);
         } else {
@@ -52,7 +51,7 @@ public class SonyHomeBadger implements Badger {
     }
 
     private static void executeBadgeByBroadcast(Context context, ComponentName componentName,
-                                                int badgeCount) {
+        int badgeCount) {
         Intent intent = new Intent(INTENT_ACTION);
         intent.putExtra(INTENT_EXTRA_PACKAGE_NAME, componentName.getPackageName());
         intent.putExtra(INTENT_EXTRA_ACTIVITY_NAME, componentName.getClassName());
@@ -69,7 +68,7 @@ public class SonyHomeBadger implements Badger {
      * @param badgeCount    the badge count
      */
     private void executeBadgeByContentProvider(Context context, ComponentName componentName,
-                                               int badgeCount) {
+        int badgeCount) {
         if (badgeCount < 0) {
             return;
         }
@@ -80,7 +79,7 @@ public class SonyHomeBadger implements Badger {
             // thread by using an AsyncQueryHandler and an async update.
             if (mQueryHandler == null) {
                 mQueryHandler = new AsyncQueryHandler(
-                        context.getApplicationContext().getContentResolver()) {
+                    context.getApplicationContext().getContentResolver()) {
                 };
             }
             insertBadgeAsync(contentValues);
@@ -108,8 +107,7 @@ public class SonyHomeBadger implements Badger {
      * @param contentValues Content values containing the badge count, package and activity names
      */
     private void insertBadgeSync(final Context context, final ContentValues contentValues) {
-        context.getApplicationContext().getContentResolver()
-                .insert(BADGE_CONTENT_URI, contentValues);
+        context.getApplicationContext().getContentResolver().insert(BADGE_CONTENT_URI, contentValues);
     }
 
     /**
@@ -128,7 +126,7 @@ public class SonyHomeBadger implements Badger {
      *
      */
     private ContentValues createContentValues(final int badgeCount,
-            final ComponentName componentName) {
+        final ComponentName componentName) {
         final ContentValues contentValues = new ContentValues();
         contentValues.put(PROVIDER_COLUMNS_BADGE_COUNT, badgeCount);
         contentValues.put(PROVIDER_COLUMNS_PACKAGE_NAME, componentName.getPackageName());

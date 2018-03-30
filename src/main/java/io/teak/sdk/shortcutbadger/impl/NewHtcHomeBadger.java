@@ -35,7 +35,7 @@ public class NewHtcHomeBadger implements Badger {
         intent.putExtra(PACKAGENAME, componentName.getPackageName());
         intent.putExtra(COUNT, badgeCount);
 
-        if(BroadcastHelper.canResolveBroadcast(context, intent1) || BroadcastHelper.canResolveBroadcast(context, intent)) {
+        if (BroadcastHelper.canResolveBroadcast(context, intent1) || BroadcastHelper.canResolveBroadcast(context, intent)) {
             context.sendBroadcast(intent1);
             context.sendBroadcast(intent);
         } else {
