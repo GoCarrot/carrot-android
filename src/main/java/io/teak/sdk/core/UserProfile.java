@@ -84,16 +84,11 @@ public class UserProfile extends Request {
     }
 
     public void setNumericAttribute(@NonNull String key, double value) {
-        if (this.numberAttributes.get(key) == null ||
-            !this.numberAttributes.get(key).equals(value)) {
-            setAttribute(this.numberAttributes, key, value);
-        }
+        setAttribute(this.numberAttributes, key, value);
     }
 
     public void setStringAttribute(@NonNull String key, String value) {
-        if (!value.equals(this.stringAttributes.get(key))) {
-            setAttribute(this.stringAttributes, key, value);
-        }
+        setAttribute(this.stringAttributes, key, value);
     }
 
     private void setAttribute(@NonNull final Map<String, Object> map, @NonNull final String key, @NonNull final Object value) {
@@ -101,15 +96,17 @@ public class UserProfile extends Request {
             TeakCore.operationQueue.execute(new Runnable() {
                 @Override
                 public void run() {
-                    if (UserProfile.this.scheduledSend != null) {
-                        UserProfile.this.scheduledSend.cancel(false);
+                    if (!value.equals(map.get(key))) {
+                        if (UserProfile.this.scheduledSend != null) {
+                            UserProfile.this.scheduledSend.cancel(false);
+                        }
+
+                        // Update value
+                        map.put(key, value);
+
+                        UserProfile.this.scheduledSend = TeakCore.operationQueue.schedule(UserProfile.this,
+                                (long) (UserProfile.this.batch.time * 1000.0f), TimeUnit.MILLISECONDS);
                     }
-
-                    // Update value
-                    map.put(key, value);
-
-                    UserProfile.this.scheduledSend = TeakCore.operationQueue.schedule(UserProfile.this,
-                        (long) (UserProfile.this.batch.time * 1000.0f), TimeUnit.MILLISECONDS);
                 }
             });
         }
