@@ -99,7 +99,13 @@ public class UserProfile extends Request {
             TeakCore.operationQueue.execute(new Runnable() {
                 @Override
                 public void run() {
-                    if (!value.equals(map.get(key))) {
+                    boolean safeNotEqual = true;
+                    try {
+                        safeNotEqual = !value.equals(map.get(key));
+                    } catch (Exception ignored) {
+                    }
+
+                    if (safeNotEqual) {
                         if (UserProfile.this.scheduledSend != null) {
                             UserProfile.this.scheduledSend.cancel(false);
                         }
