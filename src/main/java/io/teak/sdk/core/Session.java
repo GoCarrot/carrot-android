@@ -485,7 +485,7 @@ public class Session {
             public void run() {
                 stateLock.lock();
                 try {
-                    if (state == State.UserIdentified) {
+                    if (Session.this.state == State.UserIdentified || Session.this.state == State.IdentifyingUser) {
                         identifyUser();
                     }
                 } finally {
