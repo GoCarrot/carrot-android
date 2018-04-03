@@ -77,6 +77,7 @@ public class ExtensionContext extends FREContext {
         functionMap.put("setNumericAttribute", new SetAttributeFunction(SetAttributeFunction.FunctionType.Numeric));
         functionMap.put("setStringAttribute", new SetAttributeFunction(SetAttributeFunction.FunctionType.String));
         functionMap.put("openSettingsAppToThisAppsSettings", new OpenSettingsAppToThisAppsSettingsFunction());
+        functionMap.put("areNotificationsEnabled", new AreNotificationsEnabledFunction());
         return functionMap;
     }
 
