@@ -232,7 +232,7 @@ public class TeakInstance {
                 intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
                 intent.putExtra("app_package", this.context.getPackageName());
                 intent.putExtra("app_uid", this.context.getApplicationInfo().uid);
-            } else if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT) {
+            } else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT) {
                 intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
                 intent.addCategory(Intent.CATEGORY_DEFAULT);
                 intent.setData(Uri.parse("package:" + this.context.getPackageName()));
