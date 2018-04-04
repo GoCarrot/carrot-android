@@ -485,8 +485,15 @@ public class Session {
             public void run() {
                 Session.this.stateLock.lock();
                 try {
-                    if (Session.this.state == State.UserIdentified || Session.this.state == State.IdentifyingUser) {
+                    if (Session.this.state == State.UserIdentified) {
                         identifyUser();
+                    } else if (Session.this.state == State.IdentifyingUser) {
+                        Session.whenUserIdIsReadyRun(new SessionRunnable() {
+                            @Override
+                            public void run(Session session) {
+                                identifyUser();
+                            }
+                        });
                     }
                 } finally {
                     Session.this.stateLock.unlock();
