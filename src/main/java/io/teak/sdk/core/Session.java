@@ -483,13 +483,13 @@ public class Session {
         this.executionQueue.execute(new Runnable() {
             @Override
             public void run() {
-                stateLock.lock();
+                Session.this.stateLock.lock();
                 try {
                     if (Session.this.state == State.UserIdentified || Session.this.state == State.IdentifyingUser) {
                         identifyUser();
                     }
                 } finally {
-                    stateLock.unlock();
+                    Session.this.stateLock.unlock();
                 }
             }
         });
