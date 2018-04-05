@@ -268,10 +268,10 @@ public class IntegrationChecker {
             }
 
             // Find the teakXXXX:// scheme
-            final List<ManifestParser.XmlTag> teakScheme = applications.get(0).find("activity.intent\\-filter.data",
+            final List<ManifestParser.XmlTag> teakScheme = applications.get(0).find("(activity|activity\\-alias).intent\\-filter.data",
                 new HashMap.SimpleEntry<>("scheme", "teak\\d+"));
             if (teakScheme.size() < 1) {
-                addErrorToReport("activity.intent-filter.data.scheme", "No <intent-filter> in any <activity> has the \"teak\" data scheme.");
+                addErrorToReport("activity.intent-filter.data.scheme", "No <intent-filter> in any <activity> or <activity-alias> has the \"teak\" data scheme.");
             } else {
                 // Make sure the <intent-filter> for the teakXXXX:// scheme has <action android:name="android.intent.action.VIEW" />
                 final List<ManifestParser.XmlTag> teakSchemeAction = teakScheme.get(0).find("intent\\-filter.action",
