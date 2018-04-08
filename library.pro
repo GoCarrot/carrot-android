@@ -81,7 +81,7 @@
 -keep public class io.teak.sdk.TeakNotification { public *; }
 
 # Receivers
--keep public class io.teak.sdk.ADMMessageHandler { public *; }
+-keep public class io.teak.sdk.ADMPushProvider { public *; }
 -keep public class io.teak.sdk.InstanceIDListenerService { public *; }
 -keep public class io.teak.sdk.InstallReferrerReceiver { public *; }
 
