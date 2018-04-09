@@ -80,9 +80,11 @@
 -keep public class io.teak.sdk.Teak { public *; }
 -keep public class io.teak.sdk.TeakNotification { public *; }
 
+# Amazon Device Messaging
+-keep public class io.teak.sdk.ADMPushProvider { *; }
+-keep public class io.teak.sdk.ADMPushProvider$MessageAlertReceiver { *; }
+
 # Receivers
--keep public class io.teak.sdk.ADMPushProvider { public *; }
--keep public class io.teak.sdk.ADMPushProvider$MessageAlertReceiver { public *; }
 -keep public class io.teak.sdk.InstanceIDListenerService { public *; }
 -keep public class io.teak.sdk.InstallReferrerReceiver { public *; }
 
