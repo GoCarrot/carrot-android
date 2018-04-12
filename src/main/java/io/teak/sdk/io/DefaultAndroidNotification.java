@@ -32,8 +32,6 @@ import android.support.v4.app.NotificationCompat;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import io.teak.sdk.Helpers;
 import io.teak.sdk.NotificationBuilder;

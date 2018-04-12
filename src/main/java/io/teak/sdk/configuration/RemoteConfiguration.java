@@ -16,7 +16,6 @@ package io.teak.sdk.configuration;
 
 import android.support.annotation.NonNull;
 
-import io.teak.sdk.Helpers;
 import io.teak.sdk.json.JSONObject;
 
 import java.util.HashMap;
