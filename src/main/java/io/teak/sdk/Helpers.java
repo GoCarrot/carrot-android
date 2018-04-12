@@ -24,8 +24,6 @@ import io.teak.sdk.json.JSONException;
 import java.security.InvalidParameterException;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Set;
 
