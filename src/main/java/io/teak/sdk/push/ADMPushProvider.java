@@ -139,7 +139,7 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
             try {
                 inputStream = getApplicationContext().getAssets().open("api_key.txt");
             } catch (IOException e) {
-                Teak.log.e("amazon.adm.registration_error", "Unable to find 'api_key.txt' in assets, this is required for debugging. Please see: https://developer.amazon.com/public/apis/engage/device-messaging/tech-docs/04-integrating-your-app-with-adm");
+                Teak.log.e("amazon.adm.registration_error", "Unable to find 'api_key.txt' in assets, this is required for ADM use. Please see: https://developer.amazon.com/docs/adm/integrate-your-app.html#store-your-api-key-as-an-asset");
             }
 
             // Check for whitespace
