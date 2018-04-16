@@ -129,6 +129,10 @@ public class Log {
         exception(t, null, true);
     }
 
+    public void exception(@NonNull Throwable t, @Nullable Map<String, Object> extras) {
+        exception(t, extras, true);
+    }
+
     public void exception(@NonNull Throwable t, @Nullable Map<String, Object> extras, boolean reportToRaven) {
         // Send to Raven
         if (reportToRaven && Teak.Instance != null && Teak.Instance.sdkRaven != null) {

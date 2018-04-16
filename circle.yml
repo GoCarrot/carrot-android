@@ -37,7 +37,7 @@ compile:
   override:
     #- ./validate-code-format
     - ./org_json_check
-    #- ./check_size
+    - ./check_size
     - ./gradlew assemble
 test:
   override:
