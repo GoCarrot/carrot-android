@@ -53,10 +53,10 @@ public class GCMPushProvider implements IPushProvider {
         InstanceIDListenerService.addEventListener(new InstanceIDListenerService.EventListener() {
             @Override
             public void onTokenRefresh() {
-                if (gcmSenderId == null) {
+                if (GCMPushProvider.this.gcmSenderId == null) {
                     Teak.log.e("google.gcm.sender_id", "InstanceIDListenerService requested a token refresh, but gcmSenderId is null.");
                 } else {
-                    requestPushKey(gcmSenderId);
+                    requestPushKey(GCMPushProvider.this.gcmSenderId);
                 }
             }
         });
@@ -75,9 +75,9 @@ public class GCMPushProvider implements IPushProvider {
             final FutureTask<String> gcmRegistration = new FutureTask<>(new RetriableTask<>(100, 7000L, new Callable<String>() {
                 @Override
                 public String call() throws Exception {
-                    GoogleCloudMessaging gcm = gcmFuture.get();
-                    Teak.log.i("device_configuration", Helpers.mm.h("sender_id", gcmSenderId));
-                    return gcm == null ? null : deprecatedRegister(gcm, gcmSenderId);
+                    GoogleCloudMessaging gcm = GCMPushProvider.this.gcmFuture.get();
+                    Teak.log.i("device_configuration", Helpers.mm.h("sender_id", GCMPushProvider.this.gcmSenderId));
+                    return gcm == null ? null : deprecatedRegister(gcm, GCMPushProvider.this.gcmSenderId);
                 }
             }));
             new Thread(gcmRegistration).start();
