@@ -121,13 +121,17 @@ public class Log {
         this.log(Level.Warn, eventType, eventData);
     }
 
-    public void exception(@NonNull Throwable t) {
-        exception(t, null);
+    public void exception(@NonNull Throwable t, boolean reportToRaven) {
+        exception(t, null, reportToRaven);
     }
 
-    public void exception(@NonNull Throwable t, @Nullable Map<String, Object> extras) {
+    public void exception(@NonNull Throwable t) {
+        exception(t, null, true);
+    }
+
+    public void exception(@NonNull Throwable t, @Nullable Map<String, Object> extras, boolean reportToRaven) {
         // Send to Raven
-        if (Teak.Instance != null && Teak.Instance.sdkRaven != null) {
+        if (reportToRaven && Teak.Instance != null && Teak.Instance.sdkRaven != null) {
             Teak.Instance.sdkRaven.reportException(t, extras);
         }
 
