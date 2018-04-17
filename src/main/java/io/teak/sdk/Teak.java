@@ -324,7 +324,9 @@ public class Teak extends BroadcastReceiver {
                 "deviceModel",
                 "deviceFallback",
                 "platformString",
-                "memoryClass"
+                "memoryClass",
+                "advertisingId",
+                "limitAdTracking"
         });
     }
 

@@ -138,6 +138,10 @@ public class DeviceConfiguration {
         if (this.pushRegistration != null) {
             ret.put("pushRegistration", this.pushRegistration);
         }
+        if (this.advertisingId != null) {
+            ret.put("advertisingId", this.advertisingId);
+            ret.put("limitAdTracking", this.limitAdTracking);
+        }
         ret.put("deviceId", this.deviceId);
         ret.put("deviceManufacturer", this.deviceManufacturer);
         ret.put("deviceModel", this.deviceModel);
