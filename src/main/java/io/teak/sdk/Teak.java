@@ -312,6 +312,64 @@ public class Teak extends BroadcastReceiver {
     }
 
     /**
+     * Get Teak's configuration data about the current device.
+     *
+     * @return JSON string containing device info, or null if it's not ready
+     */
+    @SuppressWarnings("unused")
+    public static String getDeviceConfiguration() {
+        return getConfiguration("deviceConfiguration", new String[]{
+                "deviceId",
+                "deviceManufacturer",
+                "deviceModel",
+                "deviceFallback",
+                "platformString",
+                "memoryClass"
+        });
+    }
+
+    /**
+     * Get Teak's configuration data about the current app.
+     *
+     * @return JSON string containing device info, or null if it's not ready
+     */
+    @SuppressWarnings("unused")
+    public static String getAppConfiguration() {
+        return getConfiguration("appConfiguration", new String[]{
+                "appId",
+                "apiKey",
+                "appVersion",
+                "bundleId",
+                "installerPackage",
+                "targetSdkVersion"
+        });
+    }
+
+    private static String getConfiguration(String subConfiguration, String[] configurationElements) {
+        try {
+            final TeakConfiguration teakConfiguration = TeakConfiguration.get();
+
+            Map<String, Object> configurationMap = null;
+            if ("deviceConfiguration".equalsIgnoreCase(subConfiguration)) {
+                configurationMap = teakConfiguration.deviceConfiguration.toMap();
+            } else if ("appConfiguration".equalsIgnoreCase(subConfiguration)) {
+                configurationMap = teakConfiguration.appConfiguration.toMap();
+            }
+            if (configurationMap == null) return null;
+
+            JSONObject configurationJSON = new JSONObject();
+            for (String element : configurationElements) {
+                if (configurationMap.containsKey(element)) {
+                    configurationJSON.put(element, configurationMap.get(element));
+                }
+            }
+            return configurationJSON.toString();
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    /**
      * Interface for running code when a deep link is received
      */
     public static abstract class DeepLink {

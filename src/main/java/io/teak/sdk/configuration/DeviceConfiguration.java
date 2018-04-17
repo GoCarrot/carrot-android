@@ -143,6 +143,7 @@ public class DeviceConfiguration {
         ret.put("deviceModel", this.deviceModel);
         ret.put("deviceFallback", this.deviceFallback);
         ret.put("platformString", this.platformString);
+        ret.put("memoryClass", this.memoryClass);
         return ret;
     }
 
