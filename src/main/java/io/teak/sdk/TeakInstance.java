@@ -21,6 +21,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -28,9 +29,11 @@ import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationManagerCompat;
 
+import java.net.URLEncoder;
 import java.security.InvalidParameterException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.teak.sdk.configuration.RemoteConfiguration;
@@ -40,6 +43,7 @@ import io.teak.sdk.event.PurchaseFailedEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.event.UserIdEvent;
+import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.shortcutbadger.ShortcutBadger;
 import io.teak.sdk.store.IStore;
 
@@ -468,6 +472,46 @@ public class TeakInstance {
                 if (TeakInstance.this.appStore != null) {
                     TeakInstance.this.appStore.launchPurchaseFlowForSKU((String) params.get("sku"));
                 }
+            }
+        });
+
+        Teak.registerDeepLink("/teak_internal/companion", "", "", new Teak.DeepLink() {
+            @Override
+            public void call(Map<String, Object> params) {
+                Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
+                    @Override
+                    public void run(Session session) {
+                        final TeakConfiguration teakConfiguration = TeakConfiguration.get();
+                        String key;
+                        String value;
+                        try {
+                            JSONObject params = new JSONObject();
+                            params.put("user_id", session.userId());
+                            params.put("device_id", teakConfiguration.deviceConfiguration.deviceId);
+                            key = "response";
+                            value = params.toString();
+                        } catch (Exception e) {
+                            key = "error";
+                            value = e.toString();
+                            Teak.log.exception(e);
+                        }
+
+                        try {
+                            final String uriString = "teak:///callback?" + key + "=" + URLEncoder.encode(value, "UTF-8");
+                            final Intent uriIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(uriString));
+                            uriIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            final List<ResolveInfo> resolvedActivities = teakConfiguration.appConfiguration.packageManager.queryIntentActivities(uriIntent, 0);
+                            for (ResolveInfo info : resolvedActivities) {
+                                if ("io.teak.app.Teak".equalsIgnoreCase(info.activityInfo.packageName)) {
+                                    teakConfiguration.appConfiguration.applicationContext.startActivity(uriIntent);
+                                    break;
+                                }
+                            }
+                        } catch (Exception e) {
+                            Teak.log.exception(e);
+                        }
+                    }
+                });
             }
         });
     }
