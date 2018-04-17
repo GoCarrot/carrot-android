@@ -30,6 +30,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -174,7 +175,7 @@ public class Request implements Runnable {
                 return false;
             }
 
-            if (this.batchContents.size() >= this.batch.count || this.batch.time == 0.0f) {
+            if (this.batchContents.size() >= this.batch.count || this.batch.time < 0.0f) {
                 return false;
             }
 
@@ -182,7 +183,12 @@ public class Request implements Runnable {
                 this.callbacks.add(callback);
             }
             this.batchContents.add(payload);
-            this.scheduledFuture = Request.requestExecutor.schedule(this, (long) (this.batch.time * 1000.0f), TimeUnit.MILLISECONDS);
+
+            if (this.batch.time == 0.0f) {
+                Request.requestExecutor.execute(this);
+            } else {
+                this.scheduledFuture = Request.requestExecutor.schedule(this, (long) (this.batch.time * 1000.0f), TimeUnit.MILLISECONDS);
+            }
             return true;
         }
 
