@@ -47,9 +47,18 @@ public class DefaultObjectFactory implements IObjectFactory {
         this.androidResources = new DefaultAndroidResources(context);
         this.store = createStore(context);
         this.androidDeviceInfo = new DefaultAndroidDeviceInfo(context);
-        this.pushProvider = createPushProvider(context);
         this.androidNotification = DefaultAndroidNotification.get(context);
         this.teakCore = TeakCore.get(context);
+
+        // Future-Pat, this is handled differently because it can be the case where someone just uploads
+        // their Google Play build to Amazon, in which case things can go wrong, and Teak should just
+        // ignore this instead of disabling itself.
+        IPushProvider tempPushProvider = null;
+        try {
+            tempPushProvider = createPushProvider(context);
+        } catch (Exception ignored) {
+        }
+        this.pushProvider = tempPushProvider;
     }
 
     ///// IObjectFactory

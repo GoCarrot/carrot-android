@@ -50,6 +50,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLProtocolException;
 
 import io.teak.sdk.Helpers;
@@ -483,7 +484,7 @@ public class Session {
         this.executionQueue.execute(new Runnable() {
             @Override
             public void run() {
-                stateLock.lock();
+                Session.this.stateLock.lock();
                 try {
                     if (Session.this.state == State.UserIdentified) {
                         identifyUser();
@@ -496,7 +497,7 @@ public class Session {
                         });
                     }
                 } finally {
-                    stateLock.unlock();
+                    Session.this.stateLock.unlock();
                 }
             }
         });
@@ -986,6 +987,8 @@ public class Session {
                             }
                         } catch (SSLProtocolException ssl_e) {
                             // Ignored, Sentry issue 'TEAK-SDK-Z'
+                        } catch (SSLException ssl_e) {
+                            // Ignored
                         } catch (Exception e) {
                             Teak.log.exception(e);
                         } finally {

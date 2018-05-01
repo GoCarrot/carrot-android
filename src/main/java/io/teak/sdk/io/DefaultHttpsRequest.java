@@ -33,7 +33,7 @@ public class DefaultHttpsRequest implements IHttpsRequest {
     @Override
     @SuppressWarnings("TryWithIdenticalCatches")
     public Response synchronousRequest(URL url, String requestBody) throws IOException {
-        Response ret = null;
+        Response ret = Response.ERROR_RESPONSE;
 
         HttpsURLConnection connection = null;
         BufferedReader rd = null;

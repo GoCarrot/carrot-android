@@ -76,6 +76,10 @@ public class ExtensionContext extends FREContext {
         functionMap.put("getInitializationErrors", new GetInitializationErrorsFunction(this.initializationErrors));
         functionMap.put("setNumericAttribute", new SetAttributeFunction(SetAttributeFunction.FunctionType.Numeric));
         functionMap.put("setStringAttribute", new SetAttributeFunction(SetAttributeFunction.FunctionType.String));
+        functionMap.put("openSettingsAppToThisAppsSettings", new OpenSettingsAppToThisAppsSettingsFunction());
+        functionMap.put("areNotificationsEnabled", new AreNotificationsEnabledFunction());
+        functionMap.put("getAppConfiguration", new GetConfigurationFunction(GetConfigurationFunction.ConfigurationType.AppConfiguration));
+        functionMap.put("getDeviceConfiguration", new GetConfigurationFunction(GetConfigurationFunction.ConfigurationType.DeviceConfiguration));
         return functionMap;
     }
 

@@ -18,34 +18,35 @@ import com.adobe.fre.FREContext;
 import com.adobe.fre.FREFunction;
 import com.adobe.fre.FREObject;
 
+import java.util.function.Function;
+
+import io.teak.sdk.json.JSONObject;
+
 import io.teak.sdk.Teak;
 
-public class SetAttributeFunction implements FREFunction {
-    public enum FunctionType {
-        Numeric,
-        String
+public class GetConfigurationFunction implements FREFunction {
+    public enum ConfigurationType {
+        AppConfiguration,
+        DeviceConfiguration
     }
+    private final ConfigurationType configurationType;
 
-    private final FunctionType functionType;
-
-    SetAttributeFunction(FunctionType functionType) {
-        this.functionType = functionType;
+    public GetConfigurationFunction(final ConfigurationType configurationType) {
+        this.configurationType = configurationType;
     }
 
     @Override
     public FREObject call(FREContext context, FREObject[] argv) {
         try {
-            switch (this.functionType) {
-                case Numeric: {
-                    Teak.setNumericAttribute(argv[0].getAsString(), argv[1].getAsDouble());
-                } break;
-
-                case String: {
-                    Teak.setStringAttribute(argv[0].getAsString(), argv[1].getAsString());
-                } break;
+            switch (this.configurationType) {
+                case AppConfiguration: {
+                    return FREObject.newObject(Teak.getAppConfiguration());
+                }
+                case DeviceConfiguration: {
+                    return FREObject.newObject(Teak.getDeviceConfiguration());
+                }
             }
-        } catch (Exception e) {
-            Teak.log.exception(e);
+        } catch (Exception ignored) {
         }
         return null;
     }

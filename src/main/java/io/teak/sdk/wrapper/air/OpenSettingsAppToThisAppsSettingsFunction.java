@@ -1,4 +1,4 @@
-/* Teak -- Copyright (C) 2016 GoCarrot Inc.
+/* Teak -- Copyright (C) 2018 GoCarrot Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,32 +20,12 @@ import com.adobe.fre.FREObject;
 
 import io.teak.sdk.Teak;
 
-public class SetAttributeFunction implements FREFunction {
-    public enum FunctionType {
-        Numeric,
-        String
-    }
-
-    private final FunctionType functionType;
-
-    SetAttributeFunction(FunctionType functionType) {
-        this.functionType = functionType;
-    }
-
+public class OpenSettingsAppToThisAppsSettingsFunction implements FREFunction {
     @Override
     public FREObject call(FREContext context, FREObject[] argv) {
         try {
-            switch (this.functionType) {
-                case Numeric: {
-                    Teak.setNumericAttribute(argv[0].getAsString(), argv[1].getAsDouble());
-                } break;
-
-                case String: {
-                    Teak.setStringAttribute(argv[0].getAsString(), argv[1].getAsString());
-                } break;
-            }
-        } catch (Exception e) {
-            Teak.log.exception(e);
+            return FREObject.newObject(Teak.openSettingsAppToThisAppsSettings());
+        } catch (Exception ignored) {
         }
         return null;
     }

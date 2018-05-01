@@ -28,6 +28,8 @@ public interface IHttpsRequest {
             this.statusCode = statusCode;
             this.body = body;
         }
+
+        public static final Response ERROR_RESPONSE = new Response(599, "{}");
     }
 
     @Nullable

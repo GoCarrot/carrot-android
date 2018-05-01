@@ -19,7 +19,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 
 import io.teak.sdk.TeakEvent;
-import io.teak.sdk.TeakNotification;
 
 public class NotificationReDisplayEvent extends TeakEvent {
     public static final String Type = "NotificationReDisplayEvent";

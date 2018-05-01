@@ -157,7 +157,11 @@ class Raven implements Thread.UncaughtExceptionHandler {
         Intent intent = new Intent(RavenService.SET_DSN_INTENT_ACTION, null, applicationContext, RavenService.class);
         intent.putExtra("appId", appId);
         intent.putExtra("dsn", dsn);
-        applicationContext.startService(intent);
+        try {
+            applicationContext.startService(intent);
+        } catch (Exception e) {
+            Teak.log.exception(e, false);
+        }
     }
 
     static Map<String, Object> throwableToMap(Throwable t) {

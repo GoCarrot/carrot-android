@@ -118,7 +118,12 @@ public class MainActivity extends AppCompatActivity {
         filter.addAction(Teak.REWARD_CLAIM_ATTEMPT);
         LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, filter);
 
-        Teak.identifyUser("demo-app-thingy-3");
+        // Identify user.
+        // In your game, you will want to use the same user id that you use in your database.
+        //
+        // These user ids should be unique, no two players should have the same user id.
+        final String userId = "native-" + Build.MODEL.toLowerCase();
+        Teak.identifyUser(userId);
 
         // Create a deep link route that opens the Google Play store to a specific SKU in your game
         Teak.registerDeepLink("/store/:sku", "Store", "Link directly to purchase an item", new Teak.DeepLink() {
