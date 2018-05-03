@@ -31,32 +31,39 @@ jobs:
       - run:
           name: Build Teak SDK
           command: ./gradlew assemble
+      - persist_to_workspace:
+          root: build/
+          paths:
+            - distributions/teak-release.zip
+            - outputs/aar/teak-release.aar
+            - intermediates/manifests/full/release/AndroidManifest.xml
       # - run:
       #     name: Check the added size of SDK in bytes and methods
       #     command: ./check_size
       - run:
           name: Run Teak SDK Unit Tests
-          command: |
-            (cd test_app; ./gradlew test)
-            mkdir -p $CIRCLE_TEST_REPORTS/junit/
-            (cd test_app; find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;)
+          command: (cd test_app; ./gradlew test)
+      - store_test_results:
+          path: test_app/app/build/test-results/
   deploy:
     docker:
       - image: circleci/android:api-26-alpha
         environment:
           ANDROID_HOME=/opt/android/sdk
     steps:
+      - attach_workspace:
+          at: build/
       - run: git fetch --tags
       - run:
-        name: Upload ProGuard Mappings to Sentry
-        command: sentry-cli upload-proguard --android-manifest build/intermediates/manifests/full/release/AndroidManifest.xml build/outputs/mapping/release/mapping.txt
+          name: Upload ProGuard Mappings to Sentry
+          command: sentry-cli upload-proguard --android-manifest build/intermediates/manifests/full/release/AndroidManifest.xml build/outputs/mapping/release/mapping.txt
       - run:
-        name: Upload SDK to S3
-        command: |
-          aws s3 cp build/distributions/teak-release.zip s3://teak-build-artifacts/android/teak-$(git describe --tags --always).zip --acl public-read
-          aws s3 cp build/distributions/teak-release.zip s3://teak-build-artifacts/android/teak.zip --acl public-read
-          aws s3 cp build/outputs/aar/teak-release.aar s3://teak-build-artifacts/android/teak-$(git describe --tags --always).aar --acl public-read
-          aws s3 cp build/outputs/aar/teak-release.aar s3://teak-build-artifacts/android/teak.aar --acl public-read
+          name: Upload SDK to S3
+          command: |
+            aws s3 cp build/distributions/teak-release.zip s3://teak-build-artifacts/android/teak-$(git describe --tags --always).zip --acl public-read
+            aws s3 cp build/distributions/teak-release.zip s3://teak-build-artifacts/android/teak.zip --acl public-read
+            aws s3 cp build/outputs/aar/teak-release.aar s3://teak-build-artifacts/android/teak-$(git describe --tags --always).aar --acl public-read
+            aws s3 cp build/outputs/aar/teak-release.aar s3://teak-build-artifacts/android/teak.aar --acl public-read
 workflows:
   version: 2
   build_and_deploy:
