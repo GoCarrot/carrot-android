@@ -11,7 +11,7 @@ jobs:
           name: Check for any usage of the org.json.* namespace
           command: ./org_json_check
       - restore_cache:
-          key: v0-{{ checksum "build.gradle" }}-{{ checksum  "test_app/build.gradle" }}
+          key: v0-{{ checksum "build.gradle" }}-{{ checksum  "test_app/build.gradle" }}-{{ checksum "Gemfile.lock" }}
       - run:
           name: Install Sentry CLI
           command: curl -sL https://sentry.io/get-cli/ | bash
@@ -27,7 +27,7 @@ jobs:
       - save_cache:
           paths:
             - ~/.gradle
-          key: v0-{{ checksum "build.gradle" }}-{{ checksum  "test_app/build.gradle" }}
+          key: v0-{{ checksum "build.gradle" }}-{{ checksum  "test_app/build.gradle" }}-{{ checksum "Gemfile.lock" }}
       - run:
           name: Build Teak SDK
           command: ./gradlew assemble
