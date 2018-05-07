@@ -14,6 +14,7 @@
  */
 package io.teak.sdk.wrapper.unity;
 
+import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.json.JSONObject;
 
 import android.support.annotation.NonNull;
@@ -25,7 +26,7 @@ import io.teak.sdk.Teak;
 import io.teak.sdk.wrapper.ISDKWrapper;
 import io.teak.sdk.wrapper.TeakInterface;
 
-public class TeakUnity {
+public class TeakUnity implements Unobfuscable {
     private static Method unitySendMessage;
     private static TeakInterface teakInterface;
 

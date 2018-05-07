@@ -1,4 +1,4 @@
-/* Teak -- Copyright (C) 2016 GoCarrot Inc.
+/* Teak -- Copyright (C) 2018 GoCarrot Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,29 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.teak.sdk.wrapper.air;
 
-import com.adobe.fre.FREContext;
-import com.adobe.fre.FREExtension;
+package io.teak.sdk;
 
-import io.teak.sdk.Unobfuscable;
-
-public class Extension implements FREExtension, Unobfuscable {
-    public static FREContext context;
-
-    @Override
-    public FREContext createContext(String extId) {
-        context = new ExtensionContext();
-        return context;
-    }
-
-    @Override
-    public void dispose() {
-        context = null;
-    }
-
-    @Override
-    public void initialize() {
-        // None
-    }
-}
+@SuppressWarnings("unused")
+public interface Unobfuscable {}

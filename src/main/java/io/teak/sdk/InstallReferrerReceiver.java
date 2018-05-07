@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import io.teak.sdk.Helpers.mm;
 
-public class InstallReferrerReceiver extends BroadcastReceiver {
+public class InstallReferrerReceiver extends BroadcastReceiver implements Unobfuscable {
 
     public static final ConcurrentLinkedQueue<String> installReferrerQueue = new ConcurrentLinkedQueue<>();
 

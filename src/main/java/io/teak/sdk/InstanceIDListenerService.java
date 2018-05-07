@@ -16,7 +16,7 @@ package io.teak.sdk;
 
 import java.util.ArrayList;
 
-public class InstanceIDListenerService extends com.google.android.gms.iid.InstanceIDListenerService {
+public class InstanceIDListenerService extends com.google.android.gms.iid.InstanceIDListenerService implements Unobfuscable {
     @Override
     public void onTokenRefresh() {
         synchronized (eventListenersMutex) {

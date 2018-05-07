@@ -48,7 +48,7 @@ import io.teak.sdk.io.IAndroidResources;
 /**
  * Teak
  */
-public class Teak extends BroadcastReceiver {
+public class Teak extends BroadcastReceiver implements Unobfuscable {
     static final String LOG_TAG = "Teak";
 
     /**

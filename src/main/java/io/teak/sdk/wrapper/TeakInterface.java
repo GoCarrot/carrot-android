@@ -21,6 +21,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 
+import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.json.JSONObject;
 
 import java.util.HashMap;
@@ -28,7 +29,7 @@ import java.util.concurrent.FutureTask;
 
 import io.teak.sdk.Teak;
 
-public class TeakInterface {
+public class TeakInterface implements Unobfuscable {
     private final ISDKWrapper sdkWrapper;
     private final FutureTask<Void> deepLinksReadyTask;
 

@@ -58,7 +58,7 @@ import io.teak.sdk.core.Session;
  * }
  * </pre>
  */
-public class TeakNotification {
+public class TeakNotification implements Unobfuscable {
     /**
      * The {@link Intent} action sent by Teak when a notification has been opened by the user.
      * <p/>
