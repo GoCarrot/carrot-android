@@ -37,6 +37,7 @@ jobs:
             - distributions/teak-release.zip
             - outputs/aar/teak-release.aar
             - intermediates/manifests/full/release/AndroidManifest.xml
+            - outputs/mapping/release/mapping.txt
       # - run:
       #     name: Check the added size of SDK in bytes and methods
       #     command: ./check_size
