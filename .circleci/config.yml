@@ -54,21 +54,12 @@ jobs:
     steps:
       - checkout
       - run: git fetch --tags
-      - restore_cache:
-          key: v0-{{ checksum "Gemfile.lock" }}
-      - run:
-          name: Ruby Gems
-          command: bundle check || bundle install --path vendor/bundle
       - run:
           name: Install Sentry CLI
           command: curl -sL https://sentry.io/get-cli/ | bash
       - run:
           name: Install AWS CLI
           command: sudo apt-get -y -qq install awscli
-      - save_cache:
-          paths:
-            - vendor/bundle
-          key: v0-{{ checksum "Gemfile.lock" }}
       - attach_workspace:
           at: build/
       - run:
