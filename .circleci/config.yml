@@ -59,6 +59,9 @@ jobs:
           name: Ruby Gems
           command: bundle check || bundle install --path vendor/bundle
       - run:
+          name: Install Sentry CLI
+          command: curl -sL https://sentry.io/get-cli/ | bash
+      - run:
           name: Install AWS CLI
           command: sudo apt-get -y -qq install awscli
       - save_cache:
