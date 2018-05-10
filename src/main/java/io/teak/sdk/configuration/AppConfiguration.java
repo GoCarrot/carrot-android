@@ -53,11 +53,11 @@ public class AppConfiguration {
     public final int targetSdkVersion;
 
     @SuppressWarnings("WeakerAccess")
-    public static final String TEAK_API_KEY = "io_teak_api_key";
+    public static final String TEAK_API_KEY_RESOURCE = "io_teak_api_key";
     @SuppressWarnings("WeakerAccess")
-    public static final String TEAK_APP_ID = "io_teak_app_id";
+    public static final String TEAK_APP_ID_RESOURCE = "io_teak_app_id";
     @SuppressWarnings("WeakerAccess")
-    public static final String TEAK_GCM_SENDER_ID = "io_teak_gcm_sender_id";
+    public static final String TEAK_GCM_SENDER_ID_RESOURCE = "io_teak_gcm_sender_id";
 
     public AppConfiguration(@NonNull Context context, @NonNull IAndroidResources androidResources) throws IntegrationChecker.InvalidConfigurationException {
         this.applicationContext = context.getApplicationContext();
@@ -74,9 +74,9 @@ public class AppConfiguration {
 
         // Teak App Id
         {
-            String tempAppId = androidResources.getStringResource(TEAK_APP_ID);
+            String tempAppId = androidResources.getStringResource(TEAK_APP_ID_RESOURCE);
             if (tempAppId == null && metaData != null) {
-                String appIdFromMetaData = metaData.getString(TEAK_APP_ID);
+                String appIdFromMetaData = metaData.getString(TEAK_APP_ID_RESOURCE);
                 if (appIdFromMetaData != null && appIdFromMetaData.startsWith("teak")) {
                     tempAppId = appIdFromMetaData.substring(4);
                 }
@@ -84,17 +84,17 @@ public class AppConfiguration {
 
             this.appId = tempAppId;
             if (this.appId == null) {
-                throw new IntegrationChecker.InvalidConfigurationException("Failed to find R.string." + TEAK_APP_ID);
+                throw new IntegrationChecker.InvalidConfigurationException("Failed to find R.string." + TEAK_APP_ID_RESOURCE);
             } else if (this.appId.trim().length() < 1) {
-                throw new IntegrationChecker.InvalidConfigurationException("R.string." + TEAK_APP_ID + " is empty.");
+                throw new IntegrationChecker.InvalidConfigurationException("R.string." + TEAK_APP_ID_RESOURCE + " is empty.");
             }
         }
 
         // Teak API Key
         {
-            String tempApiKey = androidResources.getStringResource(TEAK_API_KEY);
+            String tempApiKey = androidResources.getStringResource(TEAK_API_KEY_RESOURCE);
             if (tempApiKey == null && metaData != null) {
-                String apiKeyFromMetaData = metaData.getString(TEAK_API_KEY);
+                String apiKeyFromMetaData = metaData.getString(TEAK_API_KEY_RESOURCE);
                 if (apiKeyFromMetaData != null && apiKeyFromMetaData.startsWith("teak")) {
                     tempApiKey = apiKeyFromMetaData.substring(4);
                 }
@@ -102,17 +102,17 @@ public class AppConfiguration {
 
             this.apiKey = tempApiKey;
             if (this.apiKey == null) {
-                throw new IntegrationChecker.InvalidConfigurationException("Failed to find R.string." + TEAK_API_KEY);
+                throw new IntegrationChecker.InvalidConfigurationException("Failed to find R.string." + TEAK_API_KEY_RESOURCE);
             } else if (this.apiKey.trim().length() < 1) {
-                throw new IntegrationChecker.InvalidConfigurationException("R.string." + TEAK_API_KEY + " is empty.");
+                throw new IntegrationChecker.InvalidConfigurationException("R.string." + TEAK_API_KEY_RESOURCE + " is empty.");
             }
         }
 
         // Push Sender Id
         {
-            String tempPushSenderId = androidResources.getStringResource(TEAK_GCM_SENDER_ID);
+            String tempPushSenderId = androidResources.getStringResource(TEAK_GCM_SENDER_ID_RESOURCE);
             if (tempPushSenderId == null && metaData != null) {
-                String pushSenderIdFromMetaData = metaData.getString(TEAK_GCM_SENDER_ID);
+                String pushSenderIdFromMetaData = metaData.getString(TEAK_GCM_SENDER_ID_RESOURCE);
                 if (pushSenderIdFromMetaData != null && pushSenderIdFromMetaData.startsWith("teak")) {
                     tempPushSenderId = pushSenderIdFromMetaData.substring(4);
                 }
@@ -120,7 +120,7 @@ public class AppConfiguration {
 
             this.pushSenderId = tempPushSenderId;
             if (this.pushSenderId == null || this.pushSenderId.trim().length() < 1) {
-                android.util.Log.e(IntegrationChecker.LOG_TAG, "R.string." + TEAK_GCM_SENDER_ID + " not present or empty, push notifications disabled");
+                android.util.Log.e(IntegrationChecker.LOG_TAG, "R.string." + TEAK_GCM_SENDER_ID_RESOURCE + " not present or empty, push notifications disabled");
             }
         }
 
