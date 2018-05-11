@@ -20,7 +20,6 @@ import android.app.job.JobParameters;
 import android.app.job.JobScheduler;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
@@ -28,6 +27,7 @@ import android.support.annotation.RequiresApi;
 import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.Teak;
 import io.teak.sdk.configuration.AppConfiguration;
+import io.teak.sdk.io.DefaultAndroidNotification;
 import io.teak.sdk.io.DefaultAndroidResources;
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
@@ -53,11 +53,8 @@ public class JobService extends android.app.job.JobService {
         android.util.Log.i(LOG_TAG, "onStartJob [" + jobParameters.getJobId() + "]: " + jobParameters.toString());
 
         // Update screen state
-        final boolean isScreenOn = DeviceStateService.isScreenOn(this);
-        final Intent stateIntent = new Intent(this, DeviceStateService.class);
-        stateIntent.setAction(DeviceStateService.SCREEN_STATE);
-        stateIntent.putExtra("state", isScreenOn ? DeviceStateService.State.ScreenOn.toString() : DeviceStateService.State.ScreenOff.toString());
-        this.startService(stateIntent);
+        // HAX
+        DefaultAndroidNotification.get(this).reIssueAnimatedNotifications(this);
 
         // If there are still any active animated notifications, re-schedule ourselves
         synchronized (activeAnimatedNotificationsMutex) {
