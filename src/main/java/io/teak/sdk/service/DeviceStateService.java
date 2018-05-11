@@ -132,20 +132,6 @@ public class DeviceStateService extends Service {
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            try {
-                JobScheduler jobScheduler = (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
-                if (jobScheduler != null) {
-                    JobInfo job = new JobInfo.Builder(42, new ComponentName(this, JobService.class))
-                            .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
-                            .setRequiresCharging(false)
-                            .setPeriodic(5000)
-                            .build();
-                    jobScheduler.schedule(job);
-                }
-            } catch (Exception ignored) {
-            }
-        }
         return START_STICKY;
     }
 

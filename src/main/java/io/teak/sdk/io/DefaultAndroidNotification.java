@@ -17,6 +17,8 @@ package io.teak.sdk.io;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -42,6 +44,7 @@ import io.teak.sdk.event.NotificationDisplayEvent;
 import io.teak.sdk.event.NotificationReDisplayEvent;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.service.DeviceStateService;
+import io.teak.sdk.service.JobService;
 
 public class DefaultAndroidNotification extends BroadcastReceiver implements IAndroidNotification {
     private final NotificationManager notificationManager;
@@ -135,13 +138,18 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
             return;
         }
 
-        try {
-            Intent intent = new Intent(context, DeviceStateService.class);
-            context.startService(intent);
-        } catch (Exception ignored) {
-            // Android-O has issues with background services
-            // https://developer.android.com/about/versions/oreo/background.html
-            // Since Android O doesn't have an install base worth mentioning, this can be fixed later
+        // If we are running on Android 8+ set up a repeating job
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                JobService.scheduleDeviceStateJob(context);
+            } catch (Exception ignored) {
+            }
+        } else {
+            try {
+                Intent intent = new Intent(context, DeviceStateService.class);
+                context.startService(intent);
+            } catch (Exception ignored) {
+            }
         }
 
         this.handler.post(new Runnable() {

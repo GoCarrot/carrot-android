@@ -24,7 +24,6 @@
     <!--<uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />-->
     <!--<uses-permission android:name="com.android.launcher.permission.UNINSTALL_SHORTCUT" />-->
 
-
     <!--for Samsung-->
     <uses-permission android:name="com.sec.android.provider.badge.permission.READ"/>
     <uses-permission android:name="com.sec.android.provider.badge.permission.WRITE"/>
@@ -66,8 +65,8 @@
         <!-- Device state background service for minimizing power consumption -->
         <service android:name="io.teak.sdk.service.DeviceStateService" android:process=":teak.device_state" android:exported="false"/>
 
-        <!-- Job service, API 21+ -->
-        <service android:name="io.teak.sdk.service.JobService" android:permission="android.permission.BIND_JOB_SERVICE" />
+        <!-- Job service, Android O and higher -->
+        <service android:name="io.teak.sdk.service.JobService" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="true"/>
 
         <!-- GCM id listener service -->
         <service android:name="io.teak.sdk.InstanceIDListenerService" android:exported="false" >

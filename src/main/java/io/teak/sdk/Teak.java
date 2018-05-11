@@ -52,6 +52,11 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     static final String LOG_TAG = "Teak";
 
     /**
+     * The default id Teak uses for {@link android.app.job.JobInfo}.
+     */
+    public static final int JOB_ID = 1946157056;
+
+    /**
      * Version of the Teak SDK.
      *
      * @deprecated Use the {@link Teak#Version} member instead.

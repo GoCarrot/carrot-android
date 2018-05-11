@@ -40,6 +40,8 @@ public class AppConfiguration {
     @SuppressWarnings("WeakerAccess")
     public final String pushSenderId;
     @SuppressWarnings("WeakerAccess")
+    public final int jobId;
+    @SuppressWarnings("WeakerAccess")
     public final int appVersion;
     @SuppressWarnings("WeakerAccess")
     public final String bundleId;
@@ -58,6 +60,8 @@ public class AppConfiguration {
     public static final String TEAK_APP_ID_RESOURCE = "io_teak_app_id";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_GCM_SENDER_ID_RESOURCE = "io_teak_gcm_sender_id";
+    @SuppressWarnings("WeakerAccess")
+    public static final String TEAK_JOB_ID_RESOURCE = "io_teak_job_id";
 
     public AppConfiguration(@NonNull Context context, @NonNull IAndroidResources androidResources) throws IntegrationChecker.InvalidConfigurationException {
         this.applicationContext = context.getApplicationContext();
@@ -124,6 +128,24 @@ public class AppConfiguration {
             }
         }
 
+        // Job Id
+        {
+            String tempJobId = androidResources.getStringResource(TEAK_JOB_ID_RESOURCE);
+            if (tempJobId == null && metaData != null) {
+                String jobIdFromMetaData = metaData.getString(TEAK_JOB_ID_RESOURCE);
+                if (jobIdFromMetaData != null && jobIdFromMetaData.startsWith("teak")) {
+                    tempJobId = jobIdFromMetaData.substring(4);
+                }
+            }
+
+            int jobIdAsInt = Teak.JOB_ID;
+            if (tempJobId != null && tempJobId.trim().length() > 0) {
+                jobIdAsInt = Integer.parseInt(tempJobId.trim());
+            }
+
+            this.jobId = jobIdAsInt;
+        }
+
         // Package Id
         {
             this.bundleId = context.getPackageName();
@@ -168,6 +190,7 @@ public class AppConfiguration {
         ret.put("appId", this.appId);
         ret.put("apiKey", this.apiKey);
         ret.put("pushSenderId", this.pushSenderId);
+        ret.put("jobId", this.jobId);
         ret.put("appVersion", this.appVersion);
         ret.put("bundleId", this.bundleId);
         ret.put("installerPackage", this.installerPackage);

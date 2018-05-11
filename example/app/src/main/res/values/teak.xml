@@ -3,4 +3,5 @@
     <string name="io_teak_app_id">1136371193060244</string>
     <string name="io_teak_api_key">1f3850f794b9093864a0778009744d03</string>
     <string name="io_teak_gcm_sender_id">944348058057</string>
+    <string name="io_teak_job_id">8675309</string>
 </resources>
