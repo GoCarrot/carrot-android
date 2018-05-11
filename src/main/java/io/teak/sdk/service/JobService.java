@@ -30,7 +30,7 @@ import io.teak.sdk.Teak;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.io.DefaultAndroidResources;
 
-@RequiresApi(Build.VERSION_CODES.O)
+@RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 public class JobService extends android.app.job.JobService {
     private static final String LOG_TAG = "Teak.JobService";
 
