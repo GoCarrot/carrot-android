@@ -98,7 +98,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                         final Intent intent = ((PushNotificationEvent) event).intent;
                         if (intent != null && intent.getExtras() != null) {
                             final Bundle bundle = intent.getExtras();
-                            cancelNotification(bundle.getInt("platformId"));
+                            cancelNotification(context, bundle.getInt("platformId"));
                         }
                     } break;
                     case NotificationDisplayEvent.Type: {
@@ -111,7 +111,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
     }
 
     @Override
-    public void cancelNotification(int platformId) {
+    public void cancelNotification(@NonNull Context context, int platformId) {
         Teak.log.i("notification.cancel", Helpers.mm.h("platformId", platformId));
 
         notificationManager.cancel(NOTIFICATION_TAG, platformId);
@@ -124,11 +124,18 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                 }
             }
             this.animatedNotifications.removeAll(removeList);
+
+            // Update the JobService with the number of remaining animated notifications
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                JobService.setNumberOfAnimatedNotifications(context, this.animatedNotifications.size());
+            }
         }
     }
 
     @Override
     public void displayNotification(@NonNull final Context context, @NonNull final TeakNotification teakNotification, @NonNull final Notification nativeNotification) {
+        keepDeviceStateServiceAlive(context);
+
         // Send it out
         Teak.log.i("notification.display", Helpers.mm.h("teakNotifId", teakNotification.teakNotifId, "platformId", teakNotification.platformId));
 
@@ -138,29 +145,20 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
             return;
         }
 
-        // If we are running on Android 8+ set up a repeating job
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            try {
-                JobService.scheduleDeviceStateJob(context);
-            } catch (Exception ignored) {
-            }
-        } else {
-            try {
-                Intent intent = new Intent(context, DeviceStateService.class);
-                context.startService(intent);
-            } catch (Exception ignored) {
-            }
-        }
-
         this.handler.post(new Runnable() {
             @Override
             public void run() {
                 try {
-                    notificationManager.notify(NOTIFICATION_TAG, teakNotification.platformId, nativeNotification);
+                    DefaultAndroidNotification.this.notificationManager.notify(NOTIFICATION_TAG, teakNotification.platformId, nativeNotification);
 
                     if (teakNotification.isAnimated) {
-                        synchronized (animatedNotifications) {
-                            animatedNotifications.add(new AnimationEntry(nativeNotification, teakNotification));
+                        synchronized (DefaultAndroidNotification.this.animatedNotifications) {
+                            DefaultAndroidNotification.this.animatedNotifications.add(new AnimationEntry(nativeNotification, teakNotification));
+
+                            // Update the JobService with the number of remaining animated notifications
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                JobService.setNumberOfAnimatedNotifications(context, DefaultAndroidNotification.this.animatedNotifications.size());
+                            }
                         }
                     }
                 } catch (SecurityException ignored) {
@@ -178,20 +176,12 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
 
     @Override
     public void onReceive(final Context context, final Intent intent) {
+        keepDeviceStateServiceAlive(context);
+
         if (DeviceStateService.SCREEN_ON.equals(intent.getAction())) {
             Teak.log.i("notification.animation", Helpers.mm.h("animating", true));
         } else if (DeviceStateService.SCREEN_OFF.equals(intent.getAction())) {
             Teak.log.i("notification.animation", Helpers.mm.h("animating", false));
-
-            // Start service again (just in case)
-            try {
-                Intent serviceIntent = new Intent(context, DeviceStateService.class);
-                context.startService(serviceIntent);
-            } catch (Exception ignored) {
-                // Android-O has issues with background services
-                // https://developer.android.com/about/versions/oreo/background.html
-                // Since Android O doesn't have an install base worth mentioning, this can be fixed later
-            }
 
             // This should only be the case during unit tests, but catch it here anyway
             if (this.handler == null) {
@@ -209,11 +199,11 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
             this.handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    synchronized (animatedNotifications) {
+                    synchronized (DefaultAndroidNotification.this.animatedNotifications) {
                         Random rng = new Random();
-                        for (final AnimationEntry entry : animatedNotifications) {
+                        for (final AnimationEntry entry : DefaultAndroidNotification.this.animatedNotifications) {
                             try {
-                                notificationManager.cancel(NOTIFICATION_TAG, entry.bundle.getInt("platformId"));
+                                DefaultAndroidNotification.this.notificationManager.cancel(NOTIFICATION_TAG, entry.bundle.getInt("platformId"));
 
                                 class Deprecated {
                                     @SuppressWarnings("deprecation")
@@ -253,7 +243,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                                 pushOpenedIntent.setComponent(cn);
                                 entry.notification.contentIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
 
-                                notificationManager.notify(NOTIFICATION_TAG, entry.bundle.getInt("platformId"), entry.notification);
+                                DefaultAndroidNotification.this.notificationManager.notify(NOTIFICATION_TAG, entry.bundle.getInt("platformId"), entry.notification);
                                 TeakEvent.postEvent(new NotificationReDisplayEvent(entry.bundle, entry.notification));
                             } catch (Exception e) {
                                 Teak.log.exception(e);
@@ -262,6 +252,16 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                     }
                 }
             }, 1000);
+        }
+    }
+
+    private void keepDeviceStateServiceAlive(@NonNull Context context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            try {
+                Intent serviceIntent = new Intent(context, DeviceStateService.class);
+                context.startService(serviceIntent);
+            } catch (Exception ignored) {
+            }
         }
     }
 }
