@@ -114,7 +114,7 @@ public class NotificationBuilder {
         if (quietNotificationChannelId == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
             try {
                 final String channelId = "teak-quiet";
-                final int importance = NotificationManager.IMPORTANCE_DEFAULT;
+                final int importance = NotificationManager.IMPORTANCE_LOW;
                 final NotificationChannel channel = new NotificationChannel(channelId, "Notifications", importance);
                 channel.enableLights(true);
                 channel.setLightColor(Color.RED);
