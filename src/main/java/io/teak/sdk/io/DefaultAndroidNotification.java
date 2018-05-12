@@ -65,12 +65,15 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
      */
     private static final String NOTIFICATION_TAG = "io.teak.sdk.TeakNotification";
 
+    private static final Object InstanceMutex = new Object();
     private static DefaultAndroidNotification Instance = null;
     public static DefaultAndroidNotification get(@NonNull Context context) {
-        if (Instance == null) {
-            Instance = new DefaultAndroidNotification(context);
+        synchronized (InstanceMutex) {
+            if (Instance == null) {
+                Instance = new DefaultAndroidNotification(context);
+            }
+            return Instance;
         }
-        return Instance;
     }
 
     public DefaultAndroidNotification(@NonNull final Context context) {
