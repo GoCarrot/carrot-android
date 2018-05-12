@@ -127,7 +127,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
             this.animatedNotifications.removeAll(removeList);
 
             // Update the JobService with the number of remaining animated notifications
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && Helpers.getTargetSDKVersion(context) >= Build.VERSION_CODES.O) {
                 JobService.setNumberOfAnimatedNotifications(context, this.animatedNotifications.size());
             }
         }
@@ -157,7 +157,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                             DefaultAndroidNotification.this.animatedNotifications.add(new AnimationEntry(nativeNotification, teakNotification));
 
                             // Update the JobService with the number of remaining animated notifications
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && Helpers.getTargetSDKVersion(context) >= Build.VERSION_CODES.O) {
                                 JobService.setNumberOfAnimatedNotifications(context, DefaultAndroidNotification.this.animatedNotifications.size());
                             }
                         }
@@ -260,7 +260,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
     }
 
     private void keepDeviceStateServiceAlive(@NonNull Context context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+        if (Helpers.getTargetSDKVersion(context) < Build.VERSION_CODES.O) {
             try {
                 Intent serviceIntent = new Intent(context, DeviceStateService.class);
                 context.startService(serviceIntent);
