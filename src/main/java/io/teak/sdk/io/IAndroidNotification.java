@@ -21,7 +21,7 @@ import android.support.annotation.NonNull;
 import io.teak.sdk.TeakNotification;
 
 public interface IAndroidNotification {
-    void cancelNotification(int platformId);
+    void cancelNotification(@NonNull Context context, int platformId);
 
     void displayNotification(@NonNull Context context, @NonNull TeakNotification teakNotification, @NonNull Notification nativeNotification);
 }

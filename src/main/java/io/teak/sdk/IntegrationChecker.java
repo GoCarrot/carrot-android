@@ -54,8 +54,8 @@ public class IntegrationChecker {
         new String[] {"com.google.android.gms.iid.InstanceIDListenerService", "com.google.android.gms:play-services-iid:10+"}};
 
     public static final String[] configurationStrings = new String[] {
-        AppConfiguration.TEAK_API_KEY,
-        AppConfiguration.TEAK_APP_ID};
+        AppConfiguration.TEAK_API_KEY_RESOURCE,
+        AppConfiguration.TEAK_APP_ID_RESOURCE};
 
     public static void requireDependency(@NonNull String fullyQualifiedClassName) throws MissingDependencyException {
         // Protect against future-Pat adding/removing a dependency and forgetting to update the array
