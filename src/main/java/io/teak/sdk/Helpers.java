@@ -14,6 +14,9 @@
  */
 package io.teak.sdk;
 
+import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 
@@ -94,5 +97,17 @@ public class Helpers {
         }
 
         return bundle;
+    }
+
+    private static int targetSDKVersion = 0;
+    public static int getTargetSDKVersion(@NonNull Context context) {
+        if (targetSDKVersion == 0) {
+            try {
+                ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+                targetSDKVersion = appInfo.targetSdkVersion;
+            } catch (Exception ignored) {
+            }
+        }
+        return targetSDKVersion;
     }
 }

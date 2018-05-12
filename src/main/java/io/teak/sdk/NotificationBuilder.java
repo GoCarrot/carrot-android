@@ -129,16 +129,8 @@ public class NotificationBuilder {
     }
 
     private static NotificationCompat.Builder getNotificationCompatBuilder(Context context) {
-        // Do not use TeakConfiguration.get() instead, this code needs to be runnable via a BroadcastReceiver
-        int targetSdkVersion = 0;
-        try {
-            ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-            targetSdkVersion = appInfo.targetSdkVersion;
-        } catch (Exception ignored) {
-        }
-
         NotificationCompat.Builder builder;
-        if (targetSdkVersion >= Build.VERSION_CODES.O) {
+        if (Helpers.getTargetSDKVersion(context) >= Build.VERSION_CODES.O) {
             builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
             builder.setGroup(UUID.randomUUID().toString());
         } else {
