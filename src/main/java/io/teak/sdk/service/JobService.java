@@ -38,17 +38,7 @@ public class JobService extends android.app.job.JobService {
     private static final Object activeAnimatedNotificationsMutex = new Object();
     private static int activeAnimatedNotifications = 0;
 
-    private final DeviceScreenState deviceScreenState = new DeviceScreenState(new DeviceScreenState.Callbacks() {
-        @Override
-        public void onStateChanged(DeviceScreenState.State oldState, DeviceScreenState.State newState) {
-            if (newState == DeviceScreenState.State.ScreenOff) {
-                try {
-                    DefaultAndroidNotification.get(JobService.this).reIssueAnimatedNotifications(JobService.this);
-                } catch (NullPointerException ignored) {
-                }
-            }
-        }
-    });
+    private static final DeviceScreenState deviceScreenState = new DeviceScreenState();
 
     public static class Exception extends java.lang.Exception {
         public Exception(@NonNull String message) {
@@ -67,7 +57,17 @@ public class JobService extends android.app.job.JobService {
 
         // Update screen state
         final boolean isScreenOn = DeviceStateService.isScreenOn(this);
-        this.deviceScreenState.setState(isScreenOn ? DeviceScreenState.State.ScreenOn : DeviceScreenState.State.ScreenOff);
+        deviceScreenState.setState(isScreenOn ? DeviceScreenState.State.ScreenOn : DeviceScreenState.State.ScreenOff, new DeviceScreenState.Callbacks() {
+            @Override
+            public void onStateChanged(DeviceScreenState.State oldState, DeviceScreenState.State newState) {
+                if (newState == DeviceScreenState.State.ScreenOff) {
+                    try {
+                        DefaultAndroidNotification.get(JobService.this).reIssueAnimatedNotifications(JobService.this);
+                    } catch (NullPointerException ignored) {
+                    }
+                }
+            }
+        });
 
         // If there are still any active animated notifications, re-schedule ourselves
         synchronized (activeAnimatedNotificationsMutex) {

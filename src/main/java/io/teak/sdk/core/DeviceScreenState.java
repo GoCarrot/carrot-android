@@ -51,18 +51,14 @@ public class DeviceScreenState {
 
     private State state = State.Unknown;
     private final Object stateMutex = new Object();
-    private final Callbacks callbacks;
 
-    public DeviceScreenState(@NonNull Callbacks callbacks) {
-        this.callbacks = callbacks;
-    }
 
-    public void setState(State newState) {
+    public void setState(State newState, Callbacks callbacks) {
         synchronized (this.stateMutex) {
             if (this.state.canTransitionTo(newState)) {
                 State oldState = this.state;
                 this.state = newState;
-                this.callbacks.onStateChanged(oldState, newState);
+                callbacks.onStateChanged(oldState, newState);
                 android.util.Log.i("Teak.Animation", String.format("State %s -> %s", oldState, newState));
             }
         }

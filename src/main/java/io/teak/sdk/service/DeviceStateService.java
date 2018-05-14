@@ -34,13 +34,7 @@ public class DeviceStateService extends Service {
     public static final String SCREEN_ON = "DeviceStateService.SCREEN_ON";
     public static final String SCREEN_OFF = "DeviceStateService.SCREEN_OFF";
 
-    private final DeviceScreenState deviceScreenState = new DeviceScreenState(new DeviceScreenState.Callbacks() {
-        @Override
-        public void onStateChanged(DeviceScreenState.State oldState, DeviceScreenState.State newState) {
-            Intent intent = newState == DeviceScreenState.State.ScreenOn ? new Intent(DeviceStateService.SCREEN_ON) : new Intent(DeviceStateService.SCREEN_OFF);
-            DeviceStateService.this.sendBroadcast(intent);
-        }
-    });
+    private final DeviceScreenState deviceScreenState = new DeviceScreenState();
 
     private BroadcastReceiver screenStateReceiver = new BroadcastReceiver() {
         @Override
@@ -86,11 +80,18 @@ public class DeviceStateService extends Service {
             }
 
             if (SCREEN_STATE.equals(intent.getAction())) {
+                DeviceScreenState.State screenState = DeviceScreenState.State.ScreenOff;
                 if (DeviceScreenState.State.ScreenOn.toString().equals(intent.getStringExtra("state"))) {
-                    this.deviceScreenState.setState(DeviceScreenState.State.ScreenOn);
-                } else if (DeviceScreenState.State.ScreenOff.toString().equals(intent.getStringExtra("state"))) {
-                    this.deviceScreenState.setState(DeviceScreenState.State.ScreenOff);
+                    screenState = DeviceScreenState.State.ScreenOn;
                 }
+
+                deviceScreenState.setState(screenState, new DeviceScreenState.Callbacks() {
+                    @Override
+                    public void onStateChanged(DeviceScreenState.State oldState, DeviceScreenState.State newState) {
+                        Intent intent = newState == DeviceScreenState.State.ScreenOn ? new Intent(DeviceStateService.SCREEN_ON) : new Intent(DeviceStateService.SCREEN_OFF);
+                        DeviceStateService.this.sendBroadcast(intent);
+                    }
+                });
             }
         }
 
@@ -108,16 +109,25 @@ public class DeviceStateService extends Service {
 
         android.util.Log.i("Teak.Animation", "Service created");
 
-        if (isScreenOn(this)) {
-            this.deviceScreenState.setState(DeviceScreenState.State.ScreenOn);
-        } else {
-            this.deviceScreenState.setState(DeviceScreenState.State.ScreenOff);
-        }
+        final DeviceScreenState.State screenState = isScreenOn(this) ? DeviceScreenState.State.ScreenOn : DeviceScreenState.State.ScreenOff;
+        this.deviceScreenState.setState(screenState, new DeviceScreenState.Callbacks() {
+            @Override
+            public void onStateChanged(DeviceScreenState.State oldState, DeviceScreenState.State newState) {
+                Intent intent = newState == DeviceScreenState.State.ScreenOn ? new Intent(DeviceStateService.SCREEN_ON) : new Intent(DeviceStateService.SCREEN_OFF);
+                DeviceStateService.this.sendBroadcast(intent);
+            }
+        });
     }
 
     @Override
     public void onDestroy() {
-        this.deviceScreenState.setState(DeviceScreenState.State.ScreenOff);
+        this.deviceScreenState.setState(DeviceScreenState.State.ScreenOff, new DeviceScreenState.Callbacks() {
+            @Override
+            public void onStateChanged(DeviceScreenState.State oldState, DeviceScreenState.State newState) {
+                Intent intent = newState == DeviceScreenState.State.ScreenOn ? new Intent(DeviceStateService.SCREEN_ON) : new Intent(DeviceStateService.SCREEN_OFF);
+                DeviceStateService.this.sendBroadcast(intent);
+            }
+        });
         unregisterReceiver(screenStateReceiver);
 
         android.util.Log.i("Teak.Animation", "Service stopped");
