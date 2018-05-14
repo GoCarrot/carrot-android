@@ -127,7 +127,8 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
             this.animatedNotifications.removeAll(removeList);
 
             // Update the JobService with the number of remaining animated notifications
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && Helpers.getTargetSDKVersion(context) >= Build.VERSION_CODES.O) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                    Helpers.getTargetSDKVersion(context) >= Build.VERSION_CODES.O) {
                 JobService.setNumberOfAnimatedNotifications(context, this.animatedNotifications.size());
             }
         }
