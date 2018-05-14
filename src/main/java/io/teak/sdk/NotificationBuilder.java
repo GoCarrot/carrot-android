@@ -133,6 +133,14 @@ public class NotificationBuilder {
         if (Helpers.getTargetSDKVersion(context) >= Build.VERSION_CODES.O) {
             builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
             builder.setGroup(UUID.randomUUID().toString());
+
+            // Set visibility of our notifications to public
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+                try {
+                    builder.setVisibility(Notification.VISIBILITY_PUBLIC);
+                } catch (Exception ignored) {
+                }
+            }
         } else {
             @SuppressWarnings("deprecation")
             final NotificationCompat.Builder deprecatedBuilder = new NotificationCompat.Builder(context);
