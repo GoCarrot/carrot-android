@@ -260,7 +260,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
     }
 
     private void keepDeviceStateServiceAlive(@NonNull Context context) {
-        if (Helpers.getTargetSDKVersion(context) < Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             try {
                 Intent serviceIntent = new Intent(context, DeviceStateService.class);
                 context.startService(serviceIntent);
