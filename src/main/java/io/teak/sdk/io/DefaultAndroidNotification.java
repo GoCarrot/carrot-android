@@ -188,7 +188,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
         }
     }
 
-    public void reIssueAnimatedNotifications(@NonNull final Context context) {
+    private void reIssueAnimatedNotifications(@NonNull final Context context) {
         // This should only be the case during unit tests, but catch it here anyway
         if (this.handler == null) {
             Teak.log.e("notification.animation.error", "this.handler is null, skipping animation refresh");

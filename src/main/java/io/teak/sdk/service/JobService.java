@@ -20,6 +20,7 @@ import android.app.job.JobParameters;
 import android.app.job.JobScheduler;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
@@ -28,7 +29,6 @@ import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.Teak;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.core.DeviceScreenState;
-import io.teak.sdk.io.DefaultAndroidNotification;
 import io.teak.sdk.io.DefaultAndroidResources;
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
@@ -60,12 +60,8 @@ public class JobService extends android.app.job.JobService {
         deviceScreenState.setState(isScreenOn ? DeviceScreenState.State.ScreenOn : DeviceScreenState.State.ScreenOff, new DeviceScreenState.Callbacks() {
             @Override
             public void onStateChanged(DeviceScreenState.State oldState, DeviceScreenState.State newState) {
-                if (newState == DeviceScreenState.State.ScreenOff) {
-                    try {
-                        DefaultAndroidNotification.get(JobService.this).reIssueAnimatedNotifications(JobService.this);
-                    } catch (NullPointerException ignored) {
-                    }
-                }
+                Intent intent = newState == DeviceScreenState.State.ScreenOn ? new Intent(DeviceStateService.SCREEN_ON) : new Intent(DeviceStateService.SCREEN_OFF);
+                JobService.this.sendBroadcast(intent);
             }
         });
 
