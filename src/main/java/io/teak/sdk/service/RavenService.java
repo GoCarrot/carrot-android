@@ -74,7 +74,7 @@ public class RavenService extends Service implements Unobfuscable {
             }
         }
 
-        return START_STICKY;
+        return START_NOT_STICKY;
     }
 
     @Override
