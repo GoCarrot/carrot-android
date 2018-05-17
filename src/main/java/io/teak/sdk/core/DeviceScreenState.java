@@ -26,8 +26,8 @@ public class DeviceScreenState {
 
         private static final State[][] allowedTransitions = {
                 {State.ScreenOn, State.ScreenOff},
-                {State.ScreenOff},
-                {State.ScreenOn}};
+                {State.ScreenOff, State.Unknown},
+                {State.ScreenOn, State.Unknown}};
 
         public final String name;
         public final int ordinal;
@@ -58,7 +58,9 @@ public class DeviceScreenState {
             if (this.state.canTransitionTo(newState)) {
                 State oldState = this.state;
                 this.state = newState;
-                callbacks.onStateChanged(oldState, newState);
+                if (callbacks != null) {
+                    callbacks.onStateChanged(oldState, newState);
+                }
                 android.util.Log.i("Teak.Animation", String.format("State %s -> %s", oldState, newState));
             }
         }

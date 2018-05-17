@@ -121,13 +121,7 @@ public class DeviceStateService extends Service {
 
     @Override
     public void onDestroy() {
-        this.deviceScreenState.setState(DeviceScreenState.State.ScreenOff, new DeviceScreenState.Callbacks() {
-            @Override
-            public void onStateChanged(DeviceScreenState.State oldState, DeviceScreenState.State newState) {
-                Intent intent = newState == DeviceScreenState.State.ScreenOn ? new Intent(DeviceStateService.SCREEN_ON) : new Intent(DeviceStateService.SCREEN_OFF);
-                DeviceStateService.this.sendBroadcast(intent);
-            }
-        });
+        this.deviceScreenState.setState(DeviceScreenState.State.Unknown, null);
         unregisterReceiver(screenStateReceiver);
 
         android.util.Log.i("Teak.Animation", "Service stopped");
