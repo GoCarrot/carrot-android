@@ -127,10 +127,10 @@ public class JobService extends android.app.job.JobService {
         //   setRequiresDeviceIdle - I have not gotten this to run a job even after 20+ minutes of idle
         //       setMinimumLatency - Seems to work just fine with any delay given
         final JobInfo job = new JobInfo.Builder(teakJobId, new ComponentName(context, JobService.class))
-                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
-                .setRequiresCharging(false)
-                .setMinimumLatency(getDeviceStateJobDelayMs())
-                .build();
+                                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                                .setRequiresCharging(false)
+                                .setMinimumLatency(getDeviceStateJobDelayMs())
+                                .build();
 
         final JobScheduler jobScheduler = (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
         if (jobScheduler == null) {

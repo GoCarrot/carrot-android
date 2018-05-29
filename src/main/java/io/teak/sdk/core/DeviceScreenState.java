@@ -25,9 +25,9 @@ public class DeviceScreenState {
         //public static final Integer length = 1 + Expired.ordinal();
 
         private static final State[][] allowedTransitions = {
-                {State.ScreenOn, State.ScreenOff},
-                {State.ScreenOff, State.Unknown},
-                {State.ScreenOn, State.Unknown}};
+            {State.ScreenOn, State.ScreenOff},
+            {State.ScreenOff, State.Unknown},
+            {State.ScreenOn, State.Unknown}};
 
         public final String name;
         public final int ordinal;
@@ -51,7 +51,6 @@ public class DeviceScreenState {
 
     private State state = State.Unknown;
     private final Object stateMutex = new Object();
-
 
     public void setState(State newState, Callbacks callbacks) {
         synchronized (this.stateMutex) {

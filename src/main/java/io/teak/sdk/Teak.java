@@ -323,16 +323,15 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static String getDeviceConfiguration() {
-        return getConfiguration("deviceConfiguration", new String[]{
-                "deviceId",
-                "deviceManufacturer",
-                "deviceModel",
-                "deviceFallback",
-                "platformString",
-                "memoryClass",
-                "advertisingId",
-                "limitAdTracking"
-        });
+        return getConfiguration("deviceConfiguration", new String[] {
+                                                           "deviceId",
+                                                           "deviceManufacturer",
+                                                           "deviceModel",
+                                                           "deviceFallback",
+                                                           "platformString",
+                                                           "memoryClass",
+                                                           "advertisingId",
+                                                           "limitAdTracking"});
     }
 
     /**
@@ -342,14 +341,13 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static String getAppConfiguration() {
-        return getConfiguration("appConfiguration", new String[]{
-                "appId",
-                "apiKey",
-                "appVersion",
-                "bundleId",
-                "installerPackage",
-                "targetSdkVersion"
-        });
+        return getConfiguration("appConfiguration", new String[] {
+                                                        "appId",
+                                                        "apiKey",
+                                                        "appVersion",
+                                                        "bundleId",
+                                                        "installerPackage",
+                                                        "targetSdkVersion"});
     }
 
     private static String getConfiguration(String subConfiguration, String[] configurationElements) {
