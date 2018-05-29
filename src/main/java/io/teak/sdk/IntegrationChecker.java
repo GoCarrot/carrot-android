@@ -287,6 +287,13 @@ public class IntegrationChecker {
                 if (teakSchemeCategories.size() < 2) {
                     addErrorToReport("activity.intent-filter.data.scheme", "the <intent-filter> with the \"teak\" data scheme should have <category android:name=\"android.intent.category.DEFAULT\" /> and <category android:name=\"android.intent.category.BROWSABLE\" />");
                 }
+
+                // Make sure the <intent-filter> for the teakXXXX:// scheme does *not* also contain any http(s) schemes
+                final List<ManifestParser.XmlTag> teakSchemeOtherSchemes = teakSchemeCategories.get(0).find("data",
+                    new HashMap.SimpleEntry<>("scheme", "(http|https)"));
+                if (teakSchemeOtherSchemes.size() > 0) {
+                    addErrorToReport("activity.intent-filter.data.scheme", "the <intent-filter> with the \"teak\" data scheme *should not* contain any http or https schemes.\n\nPut the \"teak\" data scheme in its own <intent-filter>");
+                }
             }
         } catch (Exception ignored) {
         }
