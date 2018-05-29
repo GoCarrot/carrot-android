@@ -87,6 +87,7 @@ public class IntegrationChecker {
 
     public static class MissingDependencyException extends ClassNotFoundException {
         public final String[] missingDependency;
+
         public MissingDependencyException(@NonNull ClassNotFoundException e) {
             super();
 
@@ -111,6 +112,7 @@ public class IntegrationChecker {
 
     @SuppressLint("StaticFieldLeak")
     private static IntegrationChecker integrationChecker;
+
     static boolean init(@NonNull Activity activity) {
         if (integrationChecker == null) {
             try {
