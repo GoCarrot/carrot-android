@@ -118,10 +118,18 @@ workflows:
               ignore: /.*/
             tags:
               only: /.*/
-      - deploy_latest:
+      - hold:
           type: approval
           requires:
             - build
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
+      - deploy_latest:
+          requires:
+            - hold
           filters:
             branches:
               ignore: /.*/
