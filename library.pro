@@ -75,30 +75,5 @@
 -dontwarn javax.**
 
 ### Teak ###
-
-# Public interface
--keep public class io.teak.sdk.Teak { public *; }
--keep public class io.teak.sdk.TeakNotification { public *; }
-
-# Amazon Device Messaging
--keep public class io.teak.sdk.push.ADMPushProvider** { *; }
-
-# Receivers
--keep public class io.teak.sdk.InstanceIDListenerService { public *; }
--keep public class io.teak.sdk.InstallReferrerReceiver { public *; }
-
-# Services
--keep public class io.teak.sdk.service.RavenService { public *; }
-
-# Wrapper Classes
--keep public class io.teak.sdk.wrapper.Application { public *; }
--keep public class io.teak.sdk.wrapper.TeakInterface { public *; }
-
-# Adobe AIR
--keep public class io.teak.sdk.wrapper.air.Extension { public *; }
--keep public class io.teak.sdk.wrapper.air.ExtensionContext { public *; }
-
-# Unity
--keep public class io.teak.sdk.wrapper.unity.TeakUnity { public *; }
--keep public class io.teak.sdk.wrapper.unity.TeakUnityPlayerActivity { public *; }
--keep public class io.teak.sdk.wrapper.unity.TeakUnityPlayerNativeActivity { public *; }
+-keep interface io.teak.sdk.Unobfuscable
+-keep class * implements io.teak.sdk.Unobfuscable { *; }

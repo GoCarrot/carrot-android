@@ -24,7 +24,7 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
-        android:hardwareAccelerated="true">
+        android:hardwareAccelerated="false">
         <activity android:name=".MainActivity" android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -34,9 +34,14 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="http" android:host="teakangrybots.jckpt.me" />
-                <data android:scheme="https" android:host="teakangrybots.jckpt.me" />
                 <data android:scheme="teak1136371193060244" android:host="*" />
+            </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" android:host="teak-prod.jckpt.me" />
+                <data android:scheme="https" android:host="teak-prod.jckpt.me" />
             </intent-filter>
         </activity>
         <receiver android:name="io.teak.sdk.Teak"

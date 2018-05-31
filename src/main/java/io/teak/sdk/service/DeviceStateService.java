@@ -26,11 +26,15 @@ import android.os.PowerManager;
 import android.support.annotation.NonNull;
 import android.view.Display;
 
+import io.teak.sdk.core.DeviceScreenState;
+
 public class DeviceStateService extends Service {
     public static final String SCREEN_STATE = "DeviceStateService.SCREEN_STATE";
 
     public static final String SCREEN_ON = "DeviceStateService.SCREEN_ON";
     public static final String SCREEN_OFF = "DeviceStateService.SCREEN_OFF";
+
+    private final DeviceScreenState deviceScreenState = new DeviceScreenState();
 
     private BroadcastReceiver screenStateReceiver = new BroadcastReceiver() {
         @Override
@@ -38,61 +42,16 @@ public class DeviceStateService extends Service {
             if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
                 final Intent stateIntent = new Intent(context, DeviceStateService.class);
                 stateIntent.setAction(SCREEN_STATE);
-                stateIntent.putExtra("state", State.ScreenOn.toString());
+                stateIntent.putExtra("state", DeviceScreenState.State.ScreenOn.toString());
                 context.startService(stateIntent);
             } else if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
                 final Intent stateIntent = new Intent(context, DeviceStateService.class);
                 stateIntent.setAction(SCREEN_STATE);
-                stateIntent.putExtra("state", State.ScreenOff.toString());
+                stateIntent.putExtra("state", DeviceScreenState.State.ScreenOff.toString());
                 context.startService(stateIntent);
             }
         }
     };
-
-    public enum State {
-        Unknown("Unknown"),
-        ScreenOn("ScreenOn"),
-        ScreenOff("ScreenOff");
-
-        //public static final Integer length = 1 + Expired.ordinal();
-
-        private static final State[][] allowedTransitions = {
-            {State.ScreenOn, State.ScreenOff},
-            {State.ScreenOff},
-            {State.ScreenOn}};
-
-        public final String name;
-        public final int ordinal;
-
-        State(String name) {
-            this.name = name;
-            this.ordinal = this.ordinal();
-        }
-
-        public boolean canTransitionTo(State nextState) {
-            for (State allowedTransition : allowedTransitions[this.ordinal()]) {
-                if (nextState.equals(allowedTransition)) return true;
-            }
-            return false;
-        }
-    }
-
-    private State state = State.Unknown;
-    private final Object stateMutex = new Object();
-
-    private void setState(State newState) {
-        synchronized (this.stateMutex) {
-            if (this.state.canTransitionTo(newState)) {
-                android.util.Log.i("Teak.Animation", String.format("State %s -> %s", this.state, newState));
-                this.state = newState;
-
-                Intent intent = this.state == State.ScreenOn ? new Intent(DeviceStateService.SCREEN_ON) : new Intent(DeviceStateService.SCREEN_OFF);
-                this.sendBroadcast(intent);
-            } else {
-                android.util.Log.e("Teak.Animation", String.format("Invalid State transition (%s -> %s). Ignoring.", this.state, newState));
-            }
-        }
-    }
 
     public static boolean isScreenOn(@NonNull Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
@@ -121,13 +80,21 @@ public class DeviceStateService extends Service {
             }
 
             if (SCREEN_STATE.equals(intent.getAction())) {
-                if (State.ScreenOn.toString().equals(intent.getStringExtra("state"))) {
-                    setState(State.ScreenOn);
-                } else if (State.ScreenOff.toString().equals(intent.getStringExtra("state"))) {
-                    setState(State.ScreenOff);
+                DeviceScreenState.State screenState = DeviceScreenState.State.ScreenOff;
+                if (DeviceScreenState.State.ScreenOn.toString().equals(intent.getStringExtra("state"))) {
+                    screenState = DeviceScreenState.State.ScreenOn;
                 }
+
+                deviceScreenState.setState(screenState, new DeviceScreenState.Callbacks() {
+                    @Override
+                    public void onStateChanged(DeviceScreenState.State oldState, DeviceScreenState.State newState) {
+                        Intent intent = newState == DeviceScreenState.State.ScreenOn ? new Intent(DeviceStateService.SCREEN_ON) : new Intent(DeviceStateService.SCREEN_OFF);
+                        DeviceStateService.this.sendBroadcast(intent);
+                    }
+                });
             }
         }
+
         return START_STICKY;
     }
 
@@ -142,16 +109,19 @@ public class DeviceStateService extends Service {
 
         android.util.Log.i("Teak.Animation", "Service created");
 
-        if (isScreenOn(this)) {
-            setState(State.ScreenOn);
-        } else {
-            setState(State.ScreenOff);
-        }
+        final DeviceScreenState.State screenState = isScreenOn(this) ? DeviceScreenState.State.ScreenOn : DeviceScreenState.State.ScreenOff;
+        this.deviceScreenState.setState(screenState, new DeviceScreenState.Callbacks() {
+            @Override
+            public void onStateChanged(DeviceScreenState.State oldState, DeviceScreenState.State newState) {
+                Intent intent = newState == DeviceScreenState.State.ScreenOn ? new Intent(DeviceStateService.SCREEN_ON) : new Intent(DeviceStateService.SCREEN_OFF);
+                DeviceStateService.this.sendBroadcast(intent);
+            }
+        });
     }
 
     @Override
     public void onDestroy() {
-        setState(State.ScreenOff);
+        this.deviceScreenState.setState(DeviceScreenState.State.Unknown, null);
         unregisterReceiver(screenStateReceiver);
 
         android.util.Log.i("Teak.Animation", "Service stopped");

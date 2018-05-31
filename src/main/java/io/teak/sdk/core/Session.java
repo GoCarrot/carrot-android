@@ -868,6 +868,8 @@ public class Session {
 
                             // Send reward broadcast
                             final String teakRewardId = attribution.containsKey("teak_reward_id") ? attribution.get("teak_reward_id").toString() : null;
+                            final String teakRewardLinkName = attribution.containsKey("teak_rewardlink_name") ? attribution.get("teak_rewardlink_name").toString() : null;
+                            final String teakRewardLinkId = attribution.containsKey("teak_rewardlink_id") ? attribution.get("teak_rewardlink_id").toString() : null;
                             if (teakRewardId != null) {
                                 final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
                                 if (rewardFuture != null) {
@@ -883,7 +885,7 @@ public class Session {
                                                 rewardMap.put("incentivized", true);
                                                 rewardMap.put("teakRewardId", teakRewardId);
                                                 rewardMap.put("teakScheduleName", null);
-                                                rewardMap.put("teakCreativeName", null);
+                                                rewardMap.put("teakCreativeName", teakRewardLinkName);
 
                                                 final Intent rewardIntent = new Intent(Teak.REWARD_CLAIM_ATTEMPT);
                                                 rewardIntent.putExtra("reward", rewardMap);

@@ -28,6 +28,7 @@ import com.amazon.device.messaging.ADMMessageHandlerBase;
 import com.amazon.device.messaging.ADMMessageReceiver;
 import com.amazon.device.messaging.development.ADMManifest;
 
+import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.json.JSONObject;
 
 import java.io.IOException;
@@ -45,7 +46,7 @@ import io.teak.sdk.TeakEvent;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.event.PushRegistrationEvent;
 
-public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvider {
+public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvider, Unobfuscable {
     private ADM admInstance;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -109,24 +110,6 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
         }
     }
 
-    private static String formatSig(Signature sig, String hashType) throws java.security.NoSuchAlgorithmException {
-        MessageDigest md = MessageDigest.getInstance(hashType);
-        byte[] sha256Bytes = md.digest(sig.toByteArray());
-        StringBuilder hexString = new StringBuilder();
-        for (byte aSha256Byte : sha256Bytes) {
-            if (hexString.length() > 0) {
-                hexString.append(":");
-            }
-
-            if ((0xff & aSha256Byte) < 0x10) {
-                hexString.append("0").append(Integer.toHexString((0xFF & aSha256Byte)));
-            } else {
-                hexString.append(Integer.toHexString(0xFF & aSha256Byte));
-            }
-        }
-        return hexString.toString().toUpperCase();
-    }
-
     @Override
     protected void onRegistrationError(String s) {
         Teak.log.e("amazon.adm.registration_error", "Error registering for ADM id: " + s);
@@ -178,21 +161,21 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
                     Signature[] sigs = getApplicationContext().getPackageManager().getPackageInfo(getApplicationContext().getPackageName(), PackageManager.GET_SIGNATURES).signatures;
                     for (Signature sig : sigs) {
                         if (json.has("appsigSha256")) {
-                            String sigSha256 = formatSig(sig, "SHA-256");
+                            String sigSha256 = Helpers.formatSig(sig, "SHA-256");
                             if (!sigSha256.equalsIgnoreCase(json.getString("appsigSha256"))) {
                                 Teak.log.e("amazon.adm.registration_error.debugging", Helpers.mm.h("sha256", sigSha256, "api_key.sha256", json.getString("appsigSha256")));
                                 throw new Exception("App signature SHA-256 does not match api_key.txt");
                             }
                             Teak.log.i("amazon.adm.registration_error.debugging", "[✓] App signature matches signature inside 'api_key.txt'");
                         } else if (json.has("appsig")) {
-                            String sigMd5 = formatSig(sig, "MD5");
+                            String sigMd5 = Helpers.formatSig(sig, "MD5");
                             if (!sigMd5.equalsIgnoreCase(json.getString("appsig"))) {
                                 Teak.log.e("amazon.adm.registration_error.debugging", Helpers.mm.h("md5", sigMd5, "api_key.md5", json.getString("appsig")));
                                 throw new Exception("App signature MD5 does not match api_key.txt");
                             }
                         } else {
-                            String sigMd5 = formatSig(sig, "MD5");
-                            String sigSha256 = formatSig(sig, "SHA-256");
+                            String sigMd5 = Helpers.formatSig(sig, "MD5");
+                            String sigSha256 = Helpers.formatSig(sig, "SHA-256");
                             Teak.log.w("amazon.adm.registration_error.debugging", "Couldn't find 'appsigSha256' or 'appsig' please ensure that your API key matches one of the included signatures.",
                                 Helpers.mm.h("md5", sigMd5, "sha256", sigSha256));
                         }

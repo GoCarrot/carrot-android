@@ -110,7 +110,6 @@ public class Amazon implements IStore {
             payload.put("purchase_token", receipt.get("receiptId"));
             payload.put("purchase_time_string", receipt.get("purchaseDate"));
             payload.put("product_id", receipt.get("sku"));
-            payload.put("store_user_id", userData.get("userId"));
             payload.put("store_marketplace", userData.get("marketplace"));
 
             JSONObject skuDetails = querySkuDetails((String) payload.get("product_id"));

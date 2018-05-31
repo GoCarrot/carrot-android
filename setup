@@ -20,5 +20,3 @@ if [ "$(which sentry-cli)" == "" ]; then brew install getsentry/tools/sentry-cli
 
 ANDROID_HOME=/usr/local/share/android-sdk
 export ANDROID_HOME
-
-sdkmanager "platforms;android-25" "build-tools;25.0.2" "extras;google;m2repository" "extras;android;m2repository"

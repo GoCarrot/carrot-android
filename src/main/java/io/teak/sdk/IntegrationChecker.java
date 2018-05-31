@@ -54,8 +54,8 @@ public class IntegrationChecker {
         new String[] {"com.google.android.gms.iid.InstanceIDListenerService", "com.google.android.gms:play-services-iid:10+"}};
 
     public static final String[] configurationStrings = new String[] {
-        AppConfiguration.TEAK_API_KEY,
-        AppConfiguration.TEAK_APP_ID};
+        AppConfiguration.TEAK_API_KEY_RESOURCE,
+        AppConfiguration.TEAK_APP_ID_RESOURCE};
 
     public static void requireDependency(@NonNull String fullyQualifiedClassName) throws MissingDependencyException {
         // Protect against future-Pat adding/removing a dependency and forgetting to update the array
@@ -87,6 +87,7 @@ public class IntegrationChecker {
 
     public static class MissingDependencyException extends ClassNotFoundException {
         public final String[] missingDependency;
+
         public MissingDependencyException(@NonNull ClassNotFoundException e) {
             super();
 
@@ -111,6 +112,7 @@ public class IntegrationChecker {
 
     @SuppressLint("StaticFieldLeak")
     private static IntegrationChecker integrationChecker;
+
     static boolean init(@NonNull Activity activity) {
         if (integrationChecker == null) {
             try {
@@ -286,6 +288,13 @@ public class IntegrationChecker {
                     new HashMap.SimpleEntry<>("name", "android.intent.category.(DEFAULT|BROWSABLE)"));
                 if (teakSchemeCategories.size() < 2) {
                     addErrorToReport("activity.intent-filter.data.scheme", "the <intent-filter> with the \"teak\" data scheme should have <category android:name=\"android.intent.category.DEFAULT\" /> and <category android:name=\"android.intent.category.BROWSABLE\" />");
+                }
+
+                // Make sure the <intent-filter> for the teakXXXX:// scheme does *not* also contain any http(s) schemes
+                final List<ManifestParser.XmlTag> teakSchemeOtherSchemes = teakSchemeCategories.get(0).find("data",
+                    new HashMap.SimpleEntry<>("scheme", "(http|https)"));
+                if (teakSchemeOtherSchemes.size() > 0) {
+                    addErrorToReport("activity.intent-filter.data.scheme", "the <intent-filter> with the \"teak\" data scheme *should not* contain any http or https schemes.\n\nPut the \"teak\" data scheme in its own <intent-filter>");
                 }
             }
         } catch (Exception ignored) {

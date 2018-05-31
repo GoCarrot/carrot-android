@@ -20,6 +20,7 @@ import android.net.Uri;
 import android.os.IBinder;
 import android.util.Log;
 
+import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -36,7 +37,7 @@ import java.util.zip.GZIPOutputStream;
 
 import javax.net.ssl.HttpsURLConnection;
 
-public class RavenService extends Service {
+public class RavenService extends Service implements Unobfuscable {
     public static final String LOG_TAG = "Teak.Raven.Service";
 
     public static final int SENTRY_VERSION = 7;
@@ -73,7 +74,7 @@ public class RavenService extends Service {
             }
         }
 
-        return START_STICKY;
+        return START_NOT_STICKY;
     }
 
     @Override

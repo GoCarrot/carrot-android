@@ -14,6 +14,10 @@
  */
 package io.teak.sdk;
 
+import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 
@@ -22,6 +26,7 @@ import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONException;
 
 import java.security.InvalidParameterException;
+import java.security.MessageDigest;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -94,5 +99,35 @@ public class Helpers {
         }
 
         return bundle;
+    }
+
+    private static int targetSDKVersion = 0;
+    public static int getTargetSDKVersion(@NonNull Context context) {
+        if (targetSDKVersion == 0) {
+            try {
+                ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+                targetSDKVersion = appInfo.targetSdkVersion;
+            } catch (Exception ignored) {
+            }
+        }
+        return targetSDKVersion;
+    }
+
+    public static String formatSig(Signature sig, String hashType) throws java.security.NoSuchAlgorithmException {
+        MessageDigest md = MessageDigest.getInstance(hashType);
+        byte[] sha256Bytes = md.digest(sig.toByteArray());
+        StringBuilder hexString = new StringBuilder();
+        for (byte aSha256Byte : sha256Bytes) {
+            if (hexString.length() > 0) {
+                hexString.append(":");
+            }
+
+            if ((0xff & aSha256Byte) < 0x10) {
+                hexString.append("0").append(Integer.toHexString((0xFF & aSha256Byte)));
+            } else {
+                hexString.append(Integer.toHexString(0xFF & aSha256Byte));
+            }
+        }
+        return hexString.toString().toUpperCase();
     }
 }

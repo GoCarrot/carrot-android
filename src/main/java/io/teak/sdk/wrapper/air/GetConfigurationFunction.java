@@ -18,10 +18,6 @@ import com.adobe.fre.FREContext;
 import com.adobe.fre.FREFunction;
 import com.adobe.fre.FREObject;
 
-import java.util.function.Function;
-
-import io.teak.sdk.json.JSONObject;
-
 import io.teak.sdk.Teak;
 
 public class GetConfigurationFunction implements FREFunction {

@@ -22,10 +22,11 @@ import android.support.annotation.NonNull;
 import com.adobe.fre.FREContext;
 import com.adobe.fre.FREFunction;
 
+import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.wrapper.ISDKWrapper;
 import io.teak.sdk.wrapper.TeakInterface;
 
-public class ExtensionContext extends FREContext {
+public class ExtensionContext extends FREContext implements Unobfuscable {
     @SuppressWarnings("FieldCanBeLocal")
     private final TeakInterface teakInterface;
     private final String initializationErrors;

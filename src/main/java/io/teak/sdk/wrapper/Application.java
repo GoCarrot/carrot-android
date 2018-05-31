@@ -19,9 +19,10 @@ import android.content.Context;
 import android.os.Bundle;
 
 import io.teak.sdk.Teak;
+import io.teak.sdk.Unobfuscable;
 
 @SuppressWarnings("unused")
-public class Application extends android.app.Application {
+public class Application extends android.app.Application implements Unobfuscable {
     ActivityLifecycleCallbacks lifecycleCallbacks;
 
     @Override

@@ -48,8 +48,13 @@ import io.teak.sdk.io.IAndroidResources;
 /**
  * Teak
  */
-public class Teak extends BroadcastReceiver {
+public class Teak extends BroadcastReceiver implements Unobfuscable {
     static final String LOG_TAG = "Teak";
+
+    /**
+     * The default id Teak uses for {@link android.app.job.JobInfo}.
+     */
+    public static final int JOB_ID = 1946157056;
 
     /**
      * Version of the Teak SDK.
@@ -318,16 +323,15 @@ public class Teak extends BroadcastReceiver {
      */
     @SuppressWarnings("unused")
     public static String getDeviceConfiguration() {
-        return getConfiguration("deviceConfiguration", new String[]{
-                "deviceId",
-                "deviceManufacturer",
-                "deviceModel",
-                "deviceFallback",
-                "platformString",
-                "memoryClass",
-                "advertisingId",
-                "limitAdTracking"
-        });
+        return getConfiguration("deviceConfiguration", new String[] {
+                                                           "deviceId",
+                                                           "deviceManufacturer",
+                                                           "deviceModel",
+                                                           "deviceFallback",
+                                                           "platformString",
+                                                           "memoryClass",
+                                                           "advertisingId",
+                                                           "limitAdTracking"});
     }
 
     /**
@@ -337,14 +341,13 @@ public class Teak extends BroadcastReceiver {
      */
     @SuppressWarnings("unused")
     public static String getAppConfiguration() {
-        return getConfiguration("appConfiguration", new String[]{
-                "appId",
-                "apiKey",
-                "appVersion",
-                "bundleId",
-                "installerPackage",
-                "targetSdkVersion"
-        });
+        return getConfiguration("appConfiguration", new String[] {
+                                                        "appId",
+                                                        "apiKey",
+                                                        "appVersion",
+                                                        "bundleId",
+                                                        "installerPackage",
+                                                        "targetSdkVersion"});
     }
 
     private static String getConfiguration(String subConfiguration, String[] configurationElements) {
