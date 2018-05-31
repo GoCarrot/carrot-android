@@ -74,12 +74,20 @@ jobs:
             aws s3 cp build/outputs/aar/teak-release.aar s3://teak-build-artifacts/android/teak.aar --acl public-read
 workflows:
   version: 2
-  build_and_deploy:
+  un-tagged-build:
     jobs:
       - build:
           filters:
             tags:
-              ignore: /^ignore.*/
+              ignore: /.*/
+  tagged-build:
+    jobs:
+      - build:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
       - deploy:
           requires:
             - build
