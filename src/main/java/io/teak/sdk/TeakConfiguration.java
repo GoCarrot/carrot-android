@@ -21,6 +21,7 @@ import android.support.annotation.NonNull;
 import java.util.ArrayList;
 
 import io.teak.sdk.configuration.AppConfiguration;
+import io.teak.sdk.configuration.DataCollectionConfiguration;
 import io.teak.sdk.configuration.DebugConfiguration;
 import io.teak.sdk.configuration.DeviceConfiguration;
 import io.teak.sdk.configuration.RemoteConfiguration;
@@ -50,11 +51,13 @@ public class TeakConfiguration {
     public final AppConfiguration appConfiguration;
     public final DeviceConfiguration deviceConfiguration;
     public RemoteConfiguration remoteConfiguration;
+    public DataCollectionConfiguration dataCollectionConfiguration;
 
     private TeakConfiguration(@NonNull Context context, @NonNull IObjectFactory objectFactory) throws IntegrationChecker.InvalidConfigurationException {
         this.debugConfiguration = new DebugConfiguration(context);
         this.appConfiguration = new AppConfiguration(context, objectFactory.getAndroidResources());
         this.deviceConfiguration = new DeviceConfiguration(context, objectFactory);
+        this.dataCollectionConfiguration = new DataCollectionConfiguration(context, objectFactory.getAndroidResources());
     }
 
     private static TeakConfiguration Instance;
