@@ -50,27 +50,7 @@ public class DataCollectionConfiguration {
 
         // Facebook Access Token
         this.enableFacebookAccessToken = checkFeatureConfiguration(TEAK_ENABLE_FACEBOOK_RESOURCE, androidResources, metaData);
-    }
 
-    private DataCollectionConfiguration(boolean enableIDFA, boolean enableFacebookAccessToken) {
-        this.enableIDFA = enableIDFA;
-        this.enableFacebookAccessToken = enableFacebookAccessToken;
-    }
-
-    public DataCollectionConfiguration extend(@Nullable Map<String, Object> dataCollectionConfiguration) {
-        if (dataCollectionConfiguration == null) return this;
-
-        return new DataCollectionConfiguration(
-            this.enableIDFA && objToBoolean(dataCollectionConfiguration.get("idfa")),
-            this.enableFacebookAccessToken && objToBoolean(dataCollectionConfiguration.get("facebook_access_token")));
-    }
-
-    private static boolean objToBoolean(Object obj) {
-        try {
-            return (obj == null || Boolean.parseBoolean(obj.toString()));
-        } catch (Exception ignored) {
-        }
-        return true;
     }
 
     private static boolean checkFeatureConfiguration(@NonNull String featureName, @NonNull IAndroidResources androidResources, @Nullable Bundle metaData) {
