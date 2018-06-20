@@ -21,9 +21,13 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
+import io.teak.sdk.Teak;
 import io.teak.sdk.io.IAndroidResources;
+import io.teak.sdk.json.JSONObject;
 
 public class DataCollectionConfiguration {
     @SuppressWarnings("WeakerAccess")
@@ -66,5 +70,22 @@ public class DataCollectionConfiguration {
             enableFeature = metaData.getBoolean(featureName, true);
         }
         return (enableFeature == null || enableFeature);
+    }
+
+    public Map<String, Object> toMap() {
+        HashMap<String, Object> ret = new HashMap<>();
+        ret.put("enableIDFA", this.enableIDFA);
+        ret.put("enableFacebookAccessToken", this.enableFacebookAccessToken);
+        ret.put("enablePushKey", this.enablePushKey);
+        return ret;
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toMap())));
+        } catch (Exception ignored) {
+            return super.toString();
+        }
     }
 }
