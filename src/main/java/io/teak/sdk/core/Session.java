@@ -401,7 +401,8 @@ public class Session {
                     }
                     payload.putAll(attribution);
 
-                    if (teakConfiguration.deviceConfiguration.pushRegistration != null) {
+                    if (teakConfiguration.deviceConfiguration.pushRegistration != null &&
+                        teakConfiguration.dataCollectionConfiguration.enablePushKey) {
                         payload.putAll(teakConfiguration.deviceConfiguration.pushRegistration);
                     }
 

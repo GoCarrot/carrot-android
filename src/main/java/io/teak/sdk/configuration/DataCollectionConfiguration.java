@@ -33,9 +33,14 @@ public class DataCollectionConfiguration {
     public final boolean enableFacebookAccessToken;
 
     @SuppressWarnings("WeakerAccess")
+    public final boolean enablePushKey;
+
+    @SuppressWarnings("WeakerAccess")
     public static final String TEAK_ENABLE_IDFA_RESOURCE = "io_teak_enable_idfa";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_ENABLE_FACEBOOK_RESOURCE = "io_teak_enable_facebook";
+    @SuppressWarnings("WeakerAccess")
+    public static final String TEAK_ENABLE_PUSH_KEY_RESOURCE = "io_teak_enable_push_key";
 
     public DataCollectionConfiguration(@NonNull Context context, @NonNull IAndroidResources androidResources) {
         Bundle metaData = null;
@@ -51,6 +56,8 @@ public class DataCollectionConfiguration {
         // Facebook Access Token
         this.enableFacebookAccessToken = checkFeatureConfiguration(TEAK_ENABLE_FACEBOOK_RESOURCE, androidResources, metaData);
 
+        // Push key
+        this.enablePushKey = checkFeatureConfiguration(TEAK_ENABLE_PUSH_KEY_RESOURCE, androidResources, metaData);
     }
 
     private static boolean checkFeatureConfiguration(@NonNull String featureName, @NonNull IAndroidResources androidResources, @Nullable Bundle metaData) {
