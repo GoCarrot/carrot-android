@@ -14,8 +14,6 @@
  */
 package io.teak.sdk.core;
 
-import android.support.annotation.NonNull;
-
 public class DeviceScreenState {
     public enum State {
         Unknown("Unknown"),
