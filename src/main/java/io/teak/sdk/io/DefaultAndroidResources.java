@@ -36,4 +36,16 @@ public class DefaultAndroidResources implements IAndroidResources {
         }
         return null;
     }
+
+    @Nullable
+    @Override
+    public Boolean getBooleanResource(@NonNull String name) {
+        try {
+            String packageName = this.context.getPackageName();
+            int resId = this.context.getResources().getIdentifier(name, "bool", packageName);
+            return this.context.getResources().getBoolean(resId);
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
 }

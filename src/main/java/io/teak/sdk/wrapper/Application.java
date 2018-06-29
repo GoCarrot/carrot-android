@@ -37,7 +37,9 @@ public class Application extends android.app.Application implements Unobfuscable
                 public void onActivityCreated(Activity activity, Bundle bundle) {
                     if (activity.getClass().getCanonicalName().equalsIgnoreCase(appEntryCanonicalName)) {
                         Teak.onCreate(activity);
-                        Teak.Instance.lifecycleCallbacks.onActivityCreated(activity, bundle);
+                        if (Teak.Instance != null) {
+                            Teak.Instance.lifecycleCallbacks.onActivityCreated(activity, bundle);
+                        }
                     }
                 }
 

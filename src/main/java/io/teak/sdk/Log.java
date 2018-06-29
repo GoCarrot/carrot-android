@@ -182,6 +182,9 @@ public class Log {
                     commonPayload.put("app_id", configuration.appConfiguration.appId);
                     commonPayload.put("client_app_version", configuration.appConfiguration.appVersion);
 
+                    // Log data collection configuration
+                    log(Level.Info, "configuration.data_collection", configuration.dataCollectionConfiguration.toMap());
+
                     synchronized (queuedLogEvents) {
                         for (LogEvent event : queuedLogEvents) {
                             logEvent(event);
