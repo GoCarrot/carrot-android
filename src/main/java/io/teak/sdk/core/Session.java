@@ -381,10 +381,12 @@ public class Session {
                     String locale = Locale.getDefault().toString();
                     payload.put("locale", locale);
 
+                    payload.put("android_limit_ad_tracking", !teakConfiguration.dataCollectionConfiguration.enableIDFA);
                     if (teakConfiguration.deviceConfiguration.advertisingId != null &&
                         teakConfiguration.dataCollectionConfiguration.enableIDFA) {
                         payload.put("android_ad_id", teakConfiguration.deviceConfiguration.advertisingId);
-                        payload.put("android_limit_ad_tracking", teakConfiguration.deviceConfiguration.limitAdTracking);
+                    } else {
+                        payload.put("android_ad_id", "");
                     }
 
                     if (Session.this.facebookAccessToken != null &&

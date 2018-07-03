@@ -26,12 +26,14 @@ import java.util.Locale;
 import java.util.Map;
 
 import io.teak.sdk.Teak;
+import io.teak.sdk.TeakEvent;
+import io.teak.sdk.event.AdvertisingInfoEvent;
 import io.teak.sdk.io.IAndroidResources;
 import io.teak.sdk.json.JSONObject;
 
 public class DataCollectionConfiguration {
     @SuppressWarnings("WeakerAccess")
-    public final boolean enableIDFA;
+    public boolean enableIDFA;
 
     @SuppressWarnings("WeakerAccess")
     public final boolean enableFacebookAccessToken;
@@ -62,6 +64,18 @@ public class DataCollectionConfiguration {
 
         // Push key
         this.enablePushKey = checkFeatureConfiguration(TEAK_ENABLE_PUSH_KEY_RESOURCE, androidResources, metaData);
+
+        // Listen for Ad Info event and update enableIDFA
+        TeakEvent.addEventListener(new TeakEvent.EventListener() {
+            @Override
+            public void onNewEvent(@NonNull TeakEvent event) {
+                switch (event.eventType) {
+                    case AdvertisingInfoEvent.Type: {
+                        DataCollectionConfiguration.this.enableIDFA &= !((AdvertisingInfoEvent) event).limitAdTracking;
+                    } break;
+                }
+            }
+        });
     }
 
     private static boolean checkFeatureConfiguration(@NonNull String featureName, @NonNull IAndroidResources androidResources, @Nullable Bundle metaData) {
