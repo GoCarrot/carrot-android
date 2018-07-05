@@ -81,7 +81,9 @@ public class DataCollectionConfiguration {
         return (enableFeature == null || enableFeature);
     }
 
-    public void extend(JSONObject json) {
+    // Future-Pat: No, we do *not* want to ever configure what data is collected as the result of a server call,
+    //             because that would change us from being a "data processor" to a "data controller" under the GDPR
+    public void addConfigurationFromDeveloper(JSONObject json) {
         this.enableIDFA &= json.optBoolean("enable_idfa", true);
         this.enableFacebookAccessToken &= json.optBoolean("enable_facebook", true);
         this.enablePushKey &= json.optBoolean("enable_push_key", true);
