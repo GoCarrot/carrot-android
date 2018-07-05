@@ -32,14 +32,9 @@ import io.teak.sdk.io.IAndroidResources;
 import io.teak.sdk.json.JSONObject;
 
 public class DataCollectionConfiguration {
-    @SuppressWarnings("WeakerAccess")
-    public boolean enableIDFA;
-
-    @SuppressWarnings("WeakerAccess")
-    public final boolean enableFacebookAccessToken;
-
-    @SuppressWarnings("WeakerAccess")
-    public final boolean enablePushKey;
+    private boolean enableIDFA;
+    private boolean enableFacebookAccessToken;
+    private boolean enablePushKey;
 
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_ENABLE_IDFA_RESOURCE = "io_teak_enable_idfa";
@@ -101,5 +96,17 @@ public class DataCollectionConfiguration {
         } catch (Exception ignored) {
             return super.toString();
         }
+    }
+
+    public boolean enableIDFA() {
+        return enableIDFA;
+    }
+
+    public boolean enableFacebookAccessToken() {
+        return enableFacebookAccessToken;
+    }
+
+    public boolean enablePushKey() {
+        return enablePushKey;
     }
 }
