@@ -81,6 +81,12 @@ public class DataCollectionConfiguration {
         return (enableFeature == null || enableFeature);
     }
 
+    public void extend(JSONObject json) {
+        this.enableIDFA &= json.optBoolean("enable_idfa", true);
+        this.enableFacebookAccessToken &= json.optBoolean("enable_facebook", true);
+        this.enablePushKey &= json.optBoolean("enable_push_key", true);
+    }
+
     public Map<String, Object> toMap() {
         HashMap<String, Object> ret = new HashMap<>();
         ret.put("enableIDFA", this.enableIDFA);

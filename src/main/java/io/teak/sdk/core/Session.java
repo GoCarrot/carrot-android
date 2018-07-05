@@ -449,6 +449,12 @@ public class Session {
                                         } catch (Exception ignored) {
                                         }
                                     }
+
+                                    // Per-user data opt-out
+                                    final JSONObject opt_out = response.optJSONObject("data_collection_configuration");
+                                    if (opt_out != null) {
+                                        teakConfiguration.dataCollectionConfiguration.extend(opt_out);
+                                    }
                                 } catch (Exception ignored) {
                                 } finally {
                                     Session.this.stateLock.unlock();
