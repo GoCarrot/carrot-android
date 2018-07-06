@@ -143,6 +143,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
         // Add version info for Unity/Air
         IAndroidResources androidResources = objectFactory.getAndroidResources();
+        //noinspection ConstantConditions
         if (androidResources != null) {
             String wrapperSDKName = androidResources.getStringResource("io_teak_wrapper_sdk_name");
             String wrapperSDKVersion = androidResources.getStringResource("io_teak_wrapper_sdk_version");
@@ -270,7 +271,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      *
      * @return 'true' if Teak was able to set the badge number, 'false' otherwise.
      */
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "UnusedReturnValue", "SameParameterValue"})
     public static boolean setApplicationBadgeNumber(int count) {
         if (Instance == null) {
             Teak.log.e("error.setApplicationBadgeNumber", "setApplicationBadgeNumber() should not be called before onCreate()");
