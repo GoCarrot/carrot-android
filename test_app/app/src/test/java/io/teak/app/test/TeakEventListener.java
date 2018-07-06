@@ -31,7 +31,7 @@ public class TeakEventListener extends TeakUnitTest {
     @Test
     public void a_verify_setupReset() throws Exception {
         io.teak.sdk.TeakEvent.addEventListener(verifyResetListener);
-        io.teak.sdk.TeakEvent.postEvent(new UserIdEvent("test"));
+        io.teak.sdk.TeakEvent.postEvent(new UserIdEvent("test", new String[]{}));
         verify(verifyResetListener, timeout(5000).times(1)).eventRecieved(any(Class.class), anyString());
     }
 
