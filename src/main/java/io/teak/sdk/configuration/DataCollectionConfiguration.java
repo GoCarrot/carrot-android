@@ -24,6 +24,7 @@ import android.support.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
@@ -83,10 +84,10 @@ public class DataCollectionConfiguration {
 
     // Future-Pat: No, we do *not* want to ever configure what data is collected as the result of a server call,
     //             because that would change us from being a "data processor" to a "data controller" under the GDPR
-    public void addConfigurationFromDeveloper(JSONObject json) {
-        this.enableIDFA &= json.optBoolean("enable_idfa", true);
-        this.enableFacebookAccessToken &= json.optBoolean("enable_facebook", true);
-        this.enablePushKey &= json.optBoolean("enable_push_key", true);
+    public void addConfigurationFromDeveloper(Set<String> optOut) {
+        this.enablePushKey &= !optOut.contains(Teak.OPT_OUT_PUSH_KEY);
+        this.enableIDFA &= !optOut.contains(Teak.OPT_OUT_IDFA);
+        this.enableFacebookAccessToken &= !optOut.contains(Teak.OPT_OUT_FACEBOOK);
     }
 
     public Map<String, Object> toMap() {

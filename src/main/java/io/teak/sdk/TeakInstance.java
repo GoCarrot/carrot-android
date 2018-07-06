@@ -131,16 +131,16 @@ public class TeakInstance {
 
     ///// identifyUser
 
-    void identifyUser(String userIdentifier) {
+    void identifyUser(String userIdentifier, String[] optOut) {
         if (userIdentifier == null || userIdentifier.isEmpty()) {
             Teak.log.e("identify_user.error", "User identifier can not be null or empty.");
             return;
         }
 
-        Teak.log.i("identify_user", Helpers.mm.h("userId", userIdentifier));
+        Teak.log.i("identify_user", Helpers.mm.h("userId", userIdentifier, "optOut", optOut));
 
         if (this.isEnabled()) {
-            TeakEvent.postEvent(new UserIdEvent(userIdentifier));
+            TeakEvent.postEvent(new UserIdEvent(userIdentifier, optOut));
         }
     }
 

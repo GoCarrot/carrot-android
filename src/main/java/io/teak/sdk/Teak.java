@@ -204,7 +204,55 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             asyncExecutor.submit(new Runnable() {
                 @Override
                 public void run() {
-                    Instance.identifyUser(userIdentifier);
+                    Instance.identifyUser(userIdentifier, new String[]{});
+                }
+            });
+        }
+    }
+
+    /**
+     * Value provided to {@link #identifyUser(String, String[])} to opt out of
+     * collecting an IDFA for this specific user.
+     * <p/>
+     * If you prevent Teak from collecting the Identifier For Advertisers (IDFA), Teak will no longer be able to add this user to Facebook Ad Audiences.
+     */
+    @SuppressWarnings("unused")
+    public static final String OPT_OUT_IDFA = "opt_out_idfa";
+
+    /**
+     * Value provided to {@link #identifyUser(String, String[])} to opt out of
+     * collecting a Facebook Access Token for this specific user.
+     * <p/>
+     * If you prevent Teak from collecting the Facebook Access Token, Teak will no longer be able to correlate this user across multiple devices.
+     */
+    @SuppressWarnings("unused")
+    public static final String OPT_OUT_FACEBOOK = "opt_out_facebook";
+
+    /**
+     * Value provided to {@link #identifyUser(String, String[])} to opt out of
+     * collecting a Push Key for this specific user.
+     * <p/>
+     * If you prevent Teak from collecting the Push Key, Teak will no longer be able to send Local Notifications or Push Notifications for this user.
+     */
+    @SuppressWarnings("unused")
+    public static final String OPT_OUT_PUSH_KEY = "opt_out_push_key";
+
+    /**
+     * Tell Teak how it should identify the current user, with data collection opt-out.
+     * <p/>
+     * <p>This should be the same way you identify the user in your backend.</p>
+     *
+     * @param userIdentifier An identifier which is unique for the current user.
+     * @param optOut         A list containing zero or more of:
+     *                          {@link #OPT_OUT_IDFA}, {@link #OPT_OUT_FACEBOOK}, {@link #OPT_OUT_PUSH_KEY}
+     */
+    @SuppressWarnings("unused")
+    public static void identifyUser(final String userIdentifier, final String[] optOut) {
+        if (Instance != null) {
+            asyncExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    Instance.identifyUser(userIdentifier, optOut != null ? optOut : new String[]{});
                 }
             });
         }

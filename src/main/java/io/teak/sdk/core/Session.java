@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -538,7 +539,17 @@ public class Session {
         public void onNewEvent(@NonNull TeakEvent event) {
             switch (event.eventType) {
                 case UserIdEvent.Type:
-                    String userId = ((UserIdEvent) event).userId;
+                    final String userId = ((UserIdEvent) event).userId;
+                    final Set<String> optOut = ((UserIdEvent) event).optOut;
+                    final TeakConfiguration teakConfiguration = TeakConfiguration.get();
+
+                    // Data-collection opt-out
+                    //noinspection ConstantConditions
+                    if (teakConfiguration != null) {
+                        teakConfiguration.dataCollectionConfiguration.addConfigurationFromDeveloper(optOut);
+                    }
+
+                    // Assign user id
                     setUserId(userId);
                     break;
                 case LifecycleEvent.Paused:
