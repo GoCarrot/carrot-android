@@ -5,7 +5,9 @@
     android:layout_marginTop="4dp"
     android:background="?android:attr/selectableItemBackground">
 
-    <ListView
+    <!-- Specify android.widget.ListView, otherwise on Huawei EMUI 8+ it will crash,
+         since huawei.android.widget.ListView is not flagged as being allowed on RemoteViews. -->
+    <android.widget.ListView
         android:layout_width="match_parent"
         android:layout_height="0.5dp"
         android:layout_alignParentTop="true"
