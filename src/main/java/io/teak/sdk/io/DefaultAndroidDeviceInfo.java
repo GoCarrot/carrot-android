@@ -203,18 +203,18 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
         }
         char[] arr = str.toCharArray();
         boolean capitalizeNext = true;
-        String phrase = "";
+        StringBuilder phrase = new StringBuilder();
         for (char c : arr) {
             if (capitalizeNext && Character.isLetter(c)) {
-                phrase += Character.toUpperCase(c);
+                phrase.append(Character.toUpperCase(c));
                 capitalizeNext = false;
                 continue;
             } else if (Character.isWhitespace(c)) {
                 capitalizeNext = true;
             }
-            phrase += c;
+            phrase.append(c);
         }
-        return phrase;
+        return phrase.toString();
     }
 
     @Override
