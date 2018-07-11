@@ -77,13 +77,17 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
     @SuppressLint("HardwareIds") // The fallback device id uses these
     public String getDeviceId() {
         String tempDeviceId = null;
-        try {
-            @SuppressWarnings("deprecation")
-            final byte[] buildSerial = android.os.Build.SERIAL.getBytes("utf8");
-            tempDeviceId = UUID.nameUUIDFromBytes(buildSerial).toString();
-        } catch (Exception e) {
-            Teak.log.e("getDeviceId", "android.os.Build.SERIAL not available, falling back to Settings.Secure.ANDROID_ID.");
-            Teak.log.exception(e);
+
+        // Build.SERIAL will always return "UNKNOWN" on Android P (API 28+) and greater
+        // TODO: Replace hard coded '28' with Build.VERSION_CODES.P once we have that SDK
+        if (Build.VERSION.SDK_INT < 28) {
+            try {
+                @SuppressWarnings("deprecation") final byte[] buildSerial = android.os.Build.SERIAL.getBytes("utf8");
+                tempDeviceId = UUID.nameUUIDFromBytes(buildSerial).toString();
+            } catch (Exception e) {
+                Teak.log.e("getDeviceId", "android.os.Build.SERIAL not available, falling back to Settings.Secure.ANDROID_ID.");
+                Teak.log.exception(e);
+            }
         }
 
         if (tempDeviceId == null) {
