@@ -116,9 +116,11 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
                 if (tempDeviceId == null) {
                     try {
                         String prefDeviceId = UUID.randomUUID().toString();
-                        SharedPreferences.Editor editor = preferences.edit();
-                        editor.putString(PREFERENCE_DEVICE_ID, prefDeviceId);
-                        editor.apply();
+                        synchronized (Teak.PREFERENCES_FILE) {
+                            SharedPreferences.Editor editor = preferences.edit();
+                            editor.putString(PREFERENCE_DEVICE_ID, prefDeviceId);
+                            editor.apply();
+                        }
                         tempDeviceId = prefDeviceId;
                     } catch (Exception e) {
                         Teak.log.e("getDeviceId", "Error storing random UUID, no more fallbacks.");

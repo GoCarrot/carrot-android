@@ -414,9 +414,11 @@ public class TeakInstance {
                         long firstLaunch = preferences.getLong(PREFERENCE_FIRST_RUN, 0);
                         if (firstLaunch == 0) {
                             firstLaunch = new Date().getTime() / 1000;
-                            SharedPreferences.Editor editor = preferences.edit();
-                            editor.putLong(PREFERENCE_FIRST_RUN, firstLaunch);
-                            editor.apply();
+                            synchronized (Teak.PREFERENCES_FILE) {
+                                SharedPreferences.Editor editor = preferences.edit();
+                                editor.putLong(PREFERENCE_FIRST_RUN, firstLaunch);
+                                editor.apply();
+                            }
                             isFirstLaunch = true;
                         }
                     }
