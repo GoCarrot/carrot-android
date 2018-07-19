@@ -26,7 +26,7 @@ import io.teak.sdk.json.JSONArray;
 public class IdentifyUserFunction implements FREFunction {
     @Override
     public FREObject call(FREContext context, FREObject[] argv) {
-        String[] optOut = new String[]{};
+        String[] optOut = new String[] {};
         try {
             final JSONArray jsonList = new JSONArray(argv[1].getAsString());
             optOut = Arrays.copyOf(jsonList.toList().toArray(), jsonList.length(), String[].class);

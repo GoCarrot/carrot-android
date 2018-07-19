@@ -82,7 +82,8 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
         // TODO: Replace hard coded '28' with Build.VERSION_CODES.P once we have that SDK
         if (Build.VERSION.SDK_INT < 28) {
             try {
-                @SuppressWarnings("deprecation") final byte[] buildSerial = android.os.Build.SERIAL.getBytes("utf8");
+                @SuppressWarnings("deprecation")
+                final byte[] buildSerial = android.os.Build.SERIAL.getBytes("utf8");
                 tempDeviceId = UUID.nameUUIDFromBytes(buildSerial).toString();
             } catch (Exception e) {
                 Teak.log.e("getDeviceId", "android.os.Build.SERIAL not available, falling back to Settings.Secure.ANDROID_ID.");

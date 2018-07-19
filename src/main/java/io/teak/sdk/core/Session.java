@@ -384,14 +384,14 @@ public class Session {
 
                     payload.put("android_limit_ad_tracking", !teakConfiguration.dataCollectionConfiguration.enableIDFA());
                     if (teakConfiguration.deviceConfiguration.advertisingId != null &&
-                            teakConfiguration.dataCollectionConfiguration.enableIDFA()) {
+                        teakConfiguration.dataCollectionConfiguration.enableIDFA()) {
                         payload.put("android_ad_id", teakConfiguration.deviceConfiguration.advertisingId);
                     } else {
                         payload.put("android_ad_id", "");
                     }
 
                     if (Session.this.facebookAccessToken != null &&
-                            teakConfiguration.dataCollectionConfiguration.enableFacebookAccessToken()) {
+                        teakConfiguration.dataCollectionConfiguration.enableFacebookAccessToken()) {
                         payload.put("access_token", Session.this.facebookAccessToken);
                     }
 
@@ -405,7 +405,7 @@ public class Session {
                     payload.putAll(attribution);
 
                     if (teakConfiguration.deviceConfiguration.pushRegistration != null &&
-                            teakConfiguration.dataCollectionConfiguration.enablePushKey()) {
+                        teakConfiguration.dataCollectionConfiguration.enablePushKey()) {
                         payload.putAll(teakConfiguration.deviceConfiguration.pushRegistration);
                     }
 
