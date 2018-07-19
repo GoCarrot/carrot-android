@@ -386,7 +386,7 @@ public class TeakInstance {
                     intent = new Intent();
                 }
 
-                if (!TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Created, intent))) {
+                if (!TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Created, intent, context))) {
                     cleanup(activity);
                     setState(State.Disabled);
                 } else {
@@ -426,7 +426,7 @@ public class TeakInstance {
                 }
                 intent.putExtra("teakIsFirstLaunch", isFirstLaunch);
 
-                TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Resumed, intent));
+                TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Resumed, intent, activity.getApplicationContext()));
             }
         }
 
@@ -438,7 +438,7 @@ public class TeakInstance {
                 if (intent == null) {
                     intent = new Intent();
                 }
-                TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Paused, intent));
+                TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Paused, intent, activity.getApplicationContext()));
             }
         }
 
