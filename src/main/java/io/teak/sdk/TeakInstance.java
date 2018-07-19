@@ -27,7 +27,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
-import android.support.v4.app.NotificationManagerCompat;
 
 import java.net.URLEncoder;
 import java.security.InvalidParameterException;
@@ -44,19 +43,19 @@ import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.event.UserIdEvent;
 import io.teak.sdk.json.JSONObject;
+import io.teak.sdk.push.PushState;
 import io.teak.sdk.shortcutbadger.ShortcutBadger;
 import io.teak.sdk.store.IStore;
 
 public class TeakInstance {
     public final IObjectFactory objectFactory;
     private final Context context;
+    private final PushState pushState;
 
     private static final String PREFERENCE_FIRST_RUN = "io.teak.sdk.Preferences.FirstRun";
 
     @SuppressLint("ObsoleteSdkInt")
     TeakInstance(@NonNull Activity activity, @NonNull final IObjectFactory objectFactory) throws IntegrationChecker.MissingDependencyException {
-        IntegrationChecker.requireDependency("android.support.v4.app.NotificationManagerCompat");
-
         //noinspection all -- Disable warning on the null check
         if (activity == null) {
             throw new InvalidParameterException("null Activity passed to Teak.onCreate");
@@ -65,7 +64,7 @@ public class TeakInstance {
         this.context = activity.getApplicationContext();
         this.activityHashCode = activity.hashCode();
         this.objectFactory = objectFactory;
-        this.notificationManagerCompat = NotificationManagerCompat.from(activity);
+        this.pushState = new PushState(this.context);
 
         // Ravens
         TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
@@ -199,26 +198,8 @@ public class TeakInstance {
 
     ///// Notifications and Settings
 
-    private final NotificationManagerCompat notificationManagerCompat;
-
     boolean areNotificationsEnabled() {
-        boolean ret = true;
-        boolean notificationManagerCompatHas_areNotificationsEnabled = false;
-        try {
-            if (NotificationManagerCompat.class.getMethod("areNotificationsEnabled") != null) {
-                notificationManagerCompatHas_areNotificationsEnabled = true;
-            }
-        } catch (Exception ignored) {
-        }
-
-        if (notificationManagerCompatHas_areNotificationsEnabled && this.notificationManagerCompat != null) {
-            try {
-                ret = this.notificationManagerCompat.areNotificationsEnabled();
-            } catch (Exception e) {
-                Teak.log.exception(e);
-            }
-        }
-        return ret;
+        return this.pushState.areNotificationsEnabled();
     }
 
     boolean openSettingsAppToThisAppsSettings() {
