@@ -108,9 +108,13 @@ android.libraryVariants.all { variant ->
     // Jar task
     // https://docs.gradle.org/current/dsl/org.gradle.api.tasks.bundling.Jar.html
     // ${android.defaultConfig.versionName}
+    def variantName = variant.name.capitalize();
+    def proguardTask = project.tasks.findByName(
+            "transformClassesAndResourcesWithProguardFor${variantName}")
+
     def jarTask = task("jar${variant.name.capitalize()}", type: Jar) {
         description "Bundles compiled .class files into a JAR file for $variant.name."
-        dependsOn variant.javaCompile
+        dependsOn (proguardTask == null ? variant.javaCompile : proguardTask)
         from variant.javaCompile.destinationDir
         include 'io/teak/**'
         if (variant.buildType.name.equals(BuilderConstants.DEBUG)) {
@@ -136,6 +140,19 @@ android.libraryVariants.all { variant ->
             rename(Pattern.quote(jarTask.archivePath.name), "teak.jar")
         }
 
+        // Use 'filter' to insert the proguard uuid into zip archive
+        def sentry_debug_meta_properties = "${project.rootDir.toPath()}/build/intermediates/assets" +
+                "/${variant.dirName}/sentry-debug-meta.properties";
+        def props = new Properties()
+        try {
+            file(sentry_debug_meta_properties).withInputStream { props.load(it) }
+            def uuid = props.getProperty("io.sentry.ProguardUuids")
+
+            filter { line ->
+                line.replaceAll("<string name=\"io_teak_sentry_proguard_uuid\"/>", "<string name=\"io_teak_sentry_proguard_uuid\">${uuid}</string>")
+            }
+        } catch (ignored) {
+        }
         from fileTree(dir: "src/main", include: 'res/**')
     })
 }
