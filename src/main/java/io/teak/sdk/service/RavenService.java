@@ -41,7 +41,7 @@ public class RavenService extends Service implements Unobfuscable {
     public static final String LOG_TAG = "Teak.Raven.Service";
 
     public static final int SENTRY_VERSION = 7;
-    public static final String TEAK_SENTRY_VERSION = "1.0.0";
+    public static final String TEAK_SENTRY_VERSION = "1.1.0";
     public static final String SENTRY_CLIENT = "teak-android/" + TEAK_SENTRY_VERSION;
 
     public static final String REPORT_EXCEPTION_INTENT_ACTION = "REPORT_EXCEPTION";

@@ -93,25 +93,42 @@ class Raven implements Thread.UncaughtExceptionHandler {
         payloadTemplate.put("logger", "teak");
         payloadTemplate.put("platform", "java");
         payloadTemplate.put("release", teakSdkVersion);
-        this.payloadTemplate.put("server_name", configuration.appConfiguration.bundleId);
 
         final HashMap<String, Object> sdkAttribute = new HashMap<>();
         sdkAttribute.put("name", "teak");
         sdkAttribute.put("version", RavenService.TEAK_SENTRY_VERSION);
         this.payloadTemplate.put("sdk", sdkAttribute);
 
+        String deviceFamily = null;
+        try {
+            deviceFamily = Build.MODEL.split(" ")[0];
+        } catch (Exception ignored) {
+        }
+
         final HashMap<String, Object> device = new HashMap<>();
-        device.put("name", configuration.deviceConfiguration.deviceFallback);
-        device.put("family", configuration.deviceConfiguration.deviceManufacturer);
-        device.put("model", configuration.deviceConfiguration.deviceModel);
+        device.put("manufacturer", Build.MANUFACTURER);
+        device.put("brand", Build.BRAND);
+        device.put("model", Build.MODEL);
+        device.put("family", deviceFamily);
+        device.put("model_id", Build.ID);
+        device.put("arch", Build.CPU_ABI);
 
         final HashMap<String, Object> os = new HashMap<>();
-        os.put("version", Build.VERSION.SDK_INT);
-        os.put("build", Build.VERSION.RELEASE);
+        os.put("name", "Android");
+        os.put("version", Build.VERSION.RELEASE);
+        os.put("build", Build.DISPLAY);
+
+        final HashMap<String, Object> app = new HashMap<>();
+        app.put("app_identifier", configuration.appConfiguration.bundleId);
+        app.put("teak_app_identifier", configuration.appConfiguration.appId);
+        app.put("app_version", configuration.appConfiguration.appVersion);
+        app.put("build_type", configuration.debugConfiguration.isDebug() ? "debug" : "production");
+        app.put("target_sdk_version", configuration.appConfiguration.targetSdkVersion);
 
         final HashMap<String, Object> contexts = new HashMap<>();
         contexts.put("device", device);
         contexts.put("os", os);
+        contexts.put("app", app);
         this.payloadTemplate.put("contexts", contexts);
 
         final HashMap<String, Object> user = new HashMap<>();
