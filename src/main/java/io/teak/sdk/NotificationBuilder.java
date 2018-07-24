@@ -87,19 +87,21 @@ public class NotificationBuilder {
     }
 
     private static String notificationChannelId;
-    static String getNotificationChannelId(Context context) {
+    public static String getNotificationChannelId(Context context) {
         // Notification channel, required for targeting API 26+
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (notificationChannelId == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
             try {
                 final String channelId = "teak";
-                final int importance = NotificationManager.IMPORTANCE_HIGH;
-                final NotificationChannel channel = new NotificationChannel(channelId, "Notifications", importance);
-                channel.enableLights(true);
-                channel.setLightColor(Color.RED);
-                channel.enableVibration(true);
-                channel.setVibrationPattern(new long[] {100L, 300L, 0L, 0L, 100L, 300L});
-                notificationManager.createNotificationChannel(channel);
+                if (notificationManager.getNotificationChannel(channelId) == null) {
+                    final int importance = NotificationManager.IMPORTANCE_HIGH;
+                    final NotificationChannel channel = new NotificationChannel(channelId, "Notifications", importance);
+                    channel.enableLights(true);
+                    channel.setLightColor(Color.RED);
+                    channel.enableVibration(true);
+                    channel.setVibrationPattern(new long[]{100L, 300L, 0L, 0L, 100L, 300L});
+                    notificationManager.createNotificationChannel(channel);
+                }
                 notificationChannelId = channelId;
             } catch (Exception ignored) {
             }
