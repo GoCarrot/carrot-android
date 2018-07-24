@@ -35,9 +35,15 @@ import java.util.UUID;
 import io.teak.sdk.event.UserIdEvent;
 import io.teak.sdk.service.RavenService;
 
-class Raven implements Thread.UncaughtExceptionHandler {
+public class Raven implements Thread.UncaughtExceptionHandler {
     private static final String LOG_TAG = "Teak.Raven";
     private static final String TEAK_SENTRY_PROGUARD_UUID = "io_teak_sentry_proguard_uuid";
+
+    public static class ReportTestException extends Exception {
+        public ReportTestException(@NonNull String version) {
+            super("Version: " + version);
+        }
+    }
 
     private enum Level {
         FATAL("fatal"),
