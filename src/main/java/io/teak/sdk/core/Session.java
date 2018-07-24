@@ -490,6 +490,7 @@ public class Session {
         this.executionQueue.execute(new Runnable() {
             @Override
             public void run() {
+                Session.currentSessionLock.lock();
                 Session.this.stateLock.lock();
                 try {
                     if (Session.this.state == State.UserIdentified) {
@@ -504,6 +505,7 @@ public class Session {
                     }
                 } finally {
                     Session.this.stateLock.unlock();
+                    Session.currentSessionLock.unlock();
                 }
             }
         });
