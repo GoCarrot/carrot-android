@@ -117,6 +117,23 @@ public class PushState {
         JSONObject toJson() {
             return new JSONObject(this.toMap());
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof StateChainEntry)) {
+                return super.equals(obj);
+            }
+
+            StateChainEntry other = (StateChainEntry) obj;
+            return this.equalsIgnoreDate(other) && this.date.equals(other.date);
+        }
+
+        public boolean equalsIgnoreDate(StateChainEntry other) {
+            return this.state.equals(other.state) &&
+                    this.canBypassDnd == other.canBypassDnd &&
+                    this.canShowOnLockscreen == other.canShowOnLockscreen &&
+                    this.canShowBadge == other.canShowBadge;
+        }
     }
 
     private List<StateChainEntry> stateChain = new ArrayList<>();
@@ -171,8 +188,11 @@ public class PushState {
         return this.executionQueue.submit(new Callable<State>() {
             @Override
             public State call() {
+                final State currentState = PushState.this.getCurrentStateFromChain();
+                final StateChainEntry currentEntry = PushState.this.stateChain.size() == 0 ? null : PushState.this.stateChain.get(PushState.this.stateChain.size() - 1);
                 final StateChainEntry newStateEntry = PushState.this.determineStateFromSystem(context);
-                if (PushState.this.getCurrentStateFromChain().canTransitionTo(newStateEntry.state)) {
+                if (currentState.canTransitionTo(newStateEntry.state) ||
+                        (currentState.equals(newStateEntry.state) && !newStateEntry.equalsIgnoreDate(currentEntry))) {
                     List<StateChainEntry> newChain = new ArrayList<>(PushState.this.stateChain);
                     newChain.add(newStateEntry);
                     PushState.this.stateChain = Collections.unmodifiableList(newChain);
