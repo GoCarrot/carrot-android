@@ -108,9 +108,11 @@ public class PushState {
             HashMap<String, Object> ret = new HashMap<>();
             ret.put("state", this.state.name);
             ret.put("date", this.date.getTime() / 1000L); // MS -> Sec
-            ret.put("canBypassDnd", this.canBypassDnd);
-            ret.put("canShowOnLockscreen", this.canShowOnLockscreen);
-            ret.put("canShowBadge", this.canShowBadge);
+            if (this.state == State.Authorized) {
+                ret.put("canBypassDnd", this.canBypassDnd);
+                ret.put("canShowOnLockscreen", this.canShowOnLockscreen);
+                ret.put("canShowBadge", this.canShowBadge);
+            }
             return ret;
         }
 
