@@ -50,7 +50,6 @@ import io.teak.sdk.store.IStore;
 public class TeakInstance {
     public final IObjectFactory objectFactory;
     private final Context context;
-    private final PushState pushState;
 
     private static final String PREFERENCE_FIRST_RUN = "io.teak.sdk.Preferences.FirstRun";
 
@@ -64,7 +63,7 @@ public class TeakInstance {
         this.context = activity.getApplicationContext();
         this.activityHashCode = activity.hashCode();
         this.objectFactory = objectFactory;
-        this.pushState = new PushState(this.context);
+        PushState.init(this.context);
 
         // Ravens
         TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
@@ -199,7 +198,7 @@ public class TeakInstance {
     ///// Notifications and Settings
 
     boolean areNotificationsEnabled() {
-        return this.pushState.areNotificationsEnabled();
+        return PushState.get().areNotificationsEnabled();
     }
 
     boolean openSettingsAppToThisAppsSettings() {

@@ -70,6 +70,7 @@ import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.SessionStateEvent;
 import io.teak.sdk.event.UserIdEvent;
+import io.teak.sdk.push.PushState;
 
 public class Session {
 
@@ -407,6 +408,7 @@ public class Session {
                     if (teakConfiguration.deviceConfiguration.pushRegistration != null &&
                         teakConfiguration.dataCollectionConfiguration.enablePushKey()) {
                         payload.putAll(teakConfiguration.deviceConfiguration.pushRegistration);
+                        payload.putAll(PushState.get().toMap());
                     }
 
                     Teak.log.i("session.identify_user", Helpers.mm.h("userId", Session.this.userId, "timezone", tzOffset, "locale", locale, "session_id", Session.this.sessionId));
