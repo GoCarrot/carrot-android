@@ -67,13 +67,21 @@ import java.util.concurrent.FutureTask;
 import javax.net.ssl.SSLException;
 
 public class NotificationBuilder {
-    public static Notification createNativeNotification(Context context, Bundle bundle, TeakNotification teakNotificaton) {
+    public static class AssetLoadException extends Exception {
+        AssetLoadException(String assetName) {
+            super("Failed to load asset: " + assetName);
+        }
+    }
+
+    public static Notification createNativeNotification(Context context, Bundle bundle, TeakNotification teakNotificaton) throws AssetLoadException {
         if (teakNotificaton.notificationVersion == TeakNotification.TEAK_NOTIFICATION_V0) {
             return null;
         }
 
         try {
             return createNativeNotificationV1Plus(context, bundle, teakNotificaton);
+        } catch (AssetLoadException e) {
+            throw e;
         } catch (Exception e) {
             HashMap<String, Object> extras = new HashMap<>();
             if (teakNotificaton.teakCreativeName != null) {
@@ -398,7 +406,7 @@ public class NotificationBuilder {
                                 if ("left_image".equals(key)) {
                                     remoteViews.setViewVisibility(viewElementId, View.GONE);
                                 } else {
-                                    throw new IllegalArgumentException("Bitmap is null (" + value + ")");
+                                    throw new AssetLoadException(value);
                                 }
                             } else {
                                 remoteViews.setImageViewBitmap(viewElementId, bitmap);
@@ -409,7 +417,7 @@ public class NotificationBuilder {
                         try {
                             final Bitmap bitmap = loadBitmapFromUriString(animationConfig.getString("sprite_sheet"));
                             if (bitmap == null) {
-                                throw new IllegalArgumentException("Bitmap is null (" + animationConfig.getString("sprite_sheet") + ")");
+                                throw new AssetLoadException(animationConfig.getString("sprite_sheet"));
                             }
                             final int frameWidth = animationConfig.getInt("width");
                             final int frameHeight = animationConfig.getInt("height");
