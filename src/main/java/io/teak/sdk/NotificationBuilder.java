@@ -526,6 +526,7 @@ public class NotificationBuilder {
                     // Request lower-res version?
                 } catch (SocketException ignored) {
                 } catch (SSLException ignored) {
+                } catch (UnknownHostException ignored) {
                 } catch (FileNotFoundException ignored) {
                 } finally {
                     if (inputStream != null) {
