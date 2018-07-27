@@ -83,6 +83,8 @@ public class DefaultHttpsRequest implements IHttpsRequest {
             // Ignored, Sentry issue 'TEAK-SDK-T'
         } catch (SocketException sock_e) {
             // Ignored, Sentry issue 'TEAK-SDK-S'
+        } catch (IOException io_e) {
+            // Ignored, Sentry issue 'TEAK-ANDROID-SDK-E2'
         } finally {
             if (rd != null) {
                 try {
