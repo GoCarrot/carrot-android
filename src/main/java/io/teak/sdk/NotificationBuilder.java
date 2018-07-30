@@ -51,12 +51,14 @@ import android.widget.ViewFlipper;
 import io.teak.sdk.json.JSONObject;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.SocketException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
@@ -528,6 +530,7 @@ public class NotificationBuilder {
                 } catch (SSLException ignored) {
                 } catch (UnknownHostException ignored) {
                 } catch (FileNotFoundException ignored) {
+                } catch (IOException ignored) {
                 } finally {
                     if (inputStream != null) {
                         inputStream.close();
