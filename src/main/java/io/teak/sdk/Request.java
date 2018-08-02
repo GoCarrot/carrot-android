@@ -292,7 +292,6 @@ public class Request implements Runnable {
     public static void submit(final @Nullable String hostname, final @NonNull String endpoint, final @NonNull Map<String, Object> payload, final @NonNull Session session, final @Nullable Callback callback) {
         BatchedRequest batch = null;
 
-        // HEY! Future-Pat, this doesn't work if the app gets killed in the background and a notification_received metric goes out
         if ("parsnip.gocarrot.com".equals(hostname)) {
             batch = BatchedParsnipRequest.getCurrentBatch(hostname, session);
         } else if ("/me/events".equals(endpoint)) {

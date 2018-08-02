@@ -16,6 +16,7 @@ package io.teak.sdk.io;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -83,6 +84,10 @@ public class DefaultHttpsRequest implements IHttpsRequest {
             // Ignored, Sentry issue 'TEAK-SDK-T'
         } catch (SocketException sock_e) {
             // Ignored, Sentry issue 'TEAK-SDK-S'
+        } catch (EOFException eof_e) {
+            // Ignored, Sentry issue 'TEAK-ANDROID-SDK-E4'
+        } catch (IOException io_e) {
+            // Ignored, Sentry issue 'TEAK-ANDROID-SDK-E2'
         } finally {
             if (rd != null) {
                 try {

@@ -27,7 +27,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
-import android.support.v4.app.NotificationManagerCompat;
 
 import java.net.URLEncoder;
 import java.security.InvalidParameterException;
@@ -44,6 +43,7 @@ import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.event.UserIdEvent;
 import io.teak.sdk.json.JSONObject;
+import io.teak.sdk.push.PushState;
 import io.teak.sdk.shortcutbadger.ShortcutBadger;
 import io.teak.sdk.store.IStore;
 
@@ -55,8 +55,6 @@ public class TeakInstance {
 
     @SuppressLint("ObsoleteSdkInt")
     TeakInstance(@NonNull Activity activity, @NonNull final IObjectFactory objectFactory) throws IntegrationChecker.MissingDependencyException {
-        IntegrationChecker.requireDependency("android.support.v4.app.NotificationManagerCompat");
-
         //noinspection all -- Disable warning on the null check
         if (activity == null) {
             throw new InvalidParameterException("null Activity passed to Teak.onCreate");
@@ -65,7 +63,7 @@ public class TeakInstance {
         this.context = activity.getApplicationContext();
         this.activityHashCode = activity.hashCode();
         this.objectFactory = objectFactory;
-        this.notificationManagerCompat = NotificationManagerCompat.from(activity);
+        PushState.init(this.context);
 
         // Ravens
         TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
@@ -131,16 +129,16 @@ public class TeakInstance {
 
     ///// identifyUser
 
-    void identifyUser(String userIdentifier) {
+    void identifyUser(String userIdentifier, String[] optOut) {
         if (userIdentifier == null || userIdentifier.isEmpty()) {
             Teak.log.e("identify_user.error", "User identifier can not be null or empty.");
             return;
         }
 
-        Teak.log.i("identify_user", Helpers.mm.h("userId", userIdentifier));
+        Teak.log.i("identify_user", Helpers.mm.h("userId", userIdentifier, "optOut", optOut));
 
         if (this.isEnabled()) {
-            TeakEvent.postEvent(new UserIdEvent(userIdentifier));
+            TeakEvent.postEvent(new UserIdEvent(userIdentifier, optOut));
         }
     }
 
@@ -199,26 +197,8 @@ public class TeakInstance {
 
     ///// Notifications and Settings
 
-    private final NotificationManagerCompat notificationManagerCompat;
-
     boolean areNotificationsEnabled() {
-        boolean ret = true;
-        boolean notificationManagerCompatHas_areNotificationsEnabled = false;
-        try {
-            if (NotificationManagerCompat.class.getMethod("areNotificationsEnabled") != null) {
-                notificationManagerCompatHas_areNotificationsEnabled = true;
-            }
-        } catch (Exception ignored) {
-        }
-
-        if (notificationManagerCompatHas_areNotificationsEnabled && this.notificationManagerCompat != null) {
-            try {
-                ret = this.notificationManagerCompat.areNotificationsEnabled();
-            } catch (Exception e) {
-                Teak.log.exception(e);
-            }
-        }
-        return ret;
+        return PushState.get().areNotificationsEnabled();
     }
 
     boolean openSettingsAppToThisAppsSettings() {
@@ -386,7 +366,7 @@ public class TeakInstance {
                     intent = new Intent();
                 }
 
-                if (!TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Created, intent))) {
+                if (!TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Created, intent, context))) {
                     cleanup(activity);
                     setState(State.Disabled);
                 } else {
@@ -414,9 +394,11 @@ public class TeakInstance {
                         long firstLaunch = preferences.getLong(PREFERENCE_FIRST_RUN, 0);
                         if (firstLaunch == 0) {
                             firstLaunch = new Date().getTime() / 1000;
-                            SharedPreferences.Editor editor = preferences.edit();
-                            editor.putLong(PREFERENCE_FIRST_RUN, firstLaunch);
-                            editor.apply();
+                            synchronized (Teak.PREFERENCES_FILE) {
+                                SharedPreferences.Editor editor = preferences.edit();
+                                editor.putLong(PREFERENCE_FIRST_RUN, firstLaunch);
+                                editor.apply();
+                            }
                             isFirstLaunch = true;
                         }
                     }
@@ -424,7 +406,7 @@ public class TeakInstance {
                 }
                 intent.putExtra("teakIsFirstLaunch", isFirstLaunch);
 
-                TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Resumed, intent));
+                TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Resumed, intent, activity.getApplicationContext()));
             }
         }
 
@@ -436,7 +418,7 @@ public class TeakInstance {
                 if (intent == null) {
                     intent = new Intent();
                 }
-                TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Paused, intent));
+                TeakEvent.postEvent(new LifecycleEvent(LifecycleEvent.Paused, intent, activity.getApplicationContext()));
             }
         }
 

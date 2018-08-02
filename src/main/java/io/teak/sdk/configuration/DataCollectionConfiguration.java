@@ -24,20 +24,18 @@ import android.support.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import io.teak.sdk.Teak;
+import io.teak.sdk.TeakEvent;
+import io.teak.sdk.event.AdvertisingInfoEvent;
 import io.teak.sdk.io.IAndroidResources;
 import io.teak.sdk.json.JSONObject;
 
 public class DataCollectionConfiguration {
-    @SuppressWarnings("WeakerAccess")
-    public final boolean enableIDFA;
-
-    @SuppressWarnings("WeakerAccess")
-    public final boolean enableFacebookAccessToken;
-
-    @SuppressWarnings("WeakerAccess")
-    public final boolean enablePushKey;
+    private boolean enableIDFA;
+    private boolean enableFacebookAccessToken;
+    private boolean enablePushKey;
 
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_ENABLE_IDFA_RESOURCE = "io_teak_enable_idfa";
@@ -62,6 +60,18 @@ public class DataCollectionConfiguration {
 
         // Push key
         this.enablePushKey = checkFeatureConfiguration(TEAK_ENABLE_PUSH_KEY_RESOURCE, androidResources, metaData);
+
+        // Listen for Ad Info event and update enableIDFA
+        TeakEvent.addEventListener(new TeakEvent.EventListener() {
+            @Override
+            public void onNewEvent(@NonNull TeakEvent event) {
+                switch (event.eventType) {
+                    case AdvertisingInfoEvent.Type: {
+                        DataCollectionConfiguration.this.enableIDFA &= !((AdvertisingInfoEvent) event).limitAdTracking;
+                    } break;
+                }
+            }
+        });
     }
 
     private static boolean checkFeatureConfiguration(@NonNull String featureName, @NonNull IAndroidResources androidResources, @Nullable Bundle metaData) {
@@ -70,6 +80,14 @@ public class DataCollectionConfiguration {
             enableFeature = metaData.getBoolean(featureName, true);
         }
         return (enableFeature == null || enableFeature);
+    }
+
+    // Future-Pat: No, we do *not* want to ever configure what data is collected as the result of a server call,
+    //             because that would change us from being a "data processor" to a "data controller" under the GDPR
+    public void addConfigurationFromDeveloper(Set<String> optOut) {
+        this.enablePushKey &= !optOut.contains(Teak.OPT_OUT_PUSH_KEY);
+        this.enableIDFA &= !optOut.contains(Teak.OPT_OUT_IDFA);
+        this.enableFacebookAccessToken &= !optOut.contains(Teak.OPT_OUT_FACEBOOK);
     }
 
     public Map<String, Object> toMap() {
@@ -87,5 +105,17 @@ public class DataCollectionConfiguration {
         } catch (Exception ignored) {
             return super.toString();
         }
+    }
+
+    public boolean enableIDFA() {
+        return enableIDFA;
+    }
+
+    public boolean enableFacebookAccessToken() {
+        return enableFacebookAccessToken;
+    }
+
+    public boolean enablePushKey() {
+        return enablePushKey;
     }
 }

@@ -77,13 +77,18 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
     @SuppressLint("HardwareIds") // The fallback device id uses these
     public String getDeviceId() {
         String tempDeviceId = null;
-        try {
-            @SuppressWarnings("deprecation")
-            final byte[] buildSerial = android.os.Build.SERIAL.getBytes("utf8");
-            tempDeviceId = UUID.nameUUIDFromBytes(buildSerial).toString();
-        } catch (Exception e) {
-            Teak.log.e("getDeviceId", "android.os.Build.SERIAL not available, falling back to Settings.Secure.ANDROID_ID.");
-            Teak.log.exception(e);
+
+        // Build.SERIAL will always return "UNKNOWN" on Android P (API 28+) and greater
+        // TODO: Replace hard coded '28' with Build.VERSION_CODES.P once we have that SDK
+        if (Build.VERSION.SDK_INT < 28) {
+            try {
+                @SuppressWarnings("deprecation")
+                final byte[] buildSerial = android.os.Build.SERIAL.getBytes("utf8");
+                tempDeviceId = UUID.nameUUIDFromBytes(buildSerial).toString();
+            } catch (Exception e) {
+                Teak.log.e("getDeviceId", "android.os.Build.SERIAL not available, falling back to Settings.Secure.ANDROID_ID.");
+                Teak.log.exception(e);
+            }
         }
 
         if (tempDeviceId == null) {
@@ -112,9 +117,11 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
                 if (tempDeviceId == null) {
                     try {
                         String prefDeviceId = UUID.randomUUID().toString();
-                        SharedPreferences.Editor editor = preferences.edit();
-                        editor.putString(PREFERENCE_DEVICE_ID, prefDeviceId);
-                        editor.apply();
+                        synchronized (Teak.PREFERENCES_FILE) {
+                            SharedPreferences.Editor editor = preferences.edit();
+                            editor.putString(PREFERENCE_DEVICE_ID, prefDeviceId);
+                            editor.apply();
+                        }
                         tempDeviceId = prefDeviceId;
                     } catch (Exception e) {
                         Teak.log.e("getDeviceId", "Error storing random UUID, no more fallbacks.");
@@ -199,18 +206,18 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
         }
         char[] arr = str.toCharArray();
         boolean capitalizeNext = true;
-        String phrase = "";
+        StringBuilder phrase = new StringBuilder();
         for (char c : arr) {
             if (capitalizeNext && Character.isLetter(c)) {
-                phrase += Character.toUpperCase(c);
+                phrase.append(Character.toUpperCase(c));
                 capitalizeNext = false;
                 continue;
             } else if (Character.isWhitespace(c)) {
                 capitalizeNext = true;
             }
-            phrase += c;
+            phrase.append(c);
         }
-        return phrase;
+        return phrase.toString();
     }
 
     @Override

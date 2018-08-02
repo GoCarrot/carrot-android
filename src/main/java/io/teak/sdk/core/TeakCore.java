@@ -26,6 +26,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 
 import io.teak.sdk.IntegrationChecker;
+import io.teak.sdk.RetriableTask;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.io.DefaultAndroidNotification;
 import io.teak.sdk.io.DefaultAndroidResources;
@@ -34,6 +35,7 @@ import io.teak.sdk.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -192,15 +194,15 @@ public class TeakCore implements ITeakCore {
 
                     // Create & display native notification asynchronously, image downloads etc
                     final Context context = ((PushNotificationEvent) event).context;
-                    asyncExecutor.execute(new Runnable() {
+                    asyncExecutor.submit(new RetriableTask<>(3, 2000L, 2, new Callable<Object>() {
                         @Override
-                        public void run() {
+                        public Object call() throws NotificationBuilder.AssetLoadException {
                             // Create native notification
                             Notification nativeNotification = NotificationBuilder.createNativeNotification(context, bundle, teakNotification);
-                            if (nativeNotification == null) return;
+                            if (nativeNotification == null) return null;
 
                             // Ensure that DefaultAndroidNotification instance exists.
-                            if (DefaultAndroidNotification.get(context) == null) return;
+                            if (DefaultAndroidNotification.get(context) == null) return null;
 
                             // Send metric
                             final String teakUserId = bundle.getString("teakUserId", null);
@@ -227,8 +229,9 @@ public class TeakCore implements ITeakCore {
 
                             // Send display event
                             TeakEvent.postEvent(new NotificationDisplayEvent(teakNotification, nativeNotification));
+                            return null;
                         }
-                    });
+                    }));
                     break;
                 }
 

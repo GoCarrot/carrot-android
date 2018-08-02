@@ -14,6 +14,7 @@
  */
 package io.teak.sdk.wrapper.unity;
 
+import io.teak.sdk.Raven;
 import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.json.JSONObject;
 
@@ -99,5 +100,10 @@ public class TeakUnity implements Unobfuscable {
         } catch (Exception e) {
             Teak.log.exception(e);
         }
+    }
+
+    @SuppressWarnings("unused")
+    public static void testExceptionReporting() {
+        Teak.log.exception(new Raven.ReportTestException(Teak.SDKVersion));
     }
 }

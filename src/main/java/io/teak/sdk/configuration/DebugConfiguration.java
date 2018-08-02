@@ -66,10 +66,12 @@ public class DebugConfiguration {
     public void setLogPreferences(boolean logLocal, boolean logRemote) {
         if (logLocal != this.logLocal) {
             try {
-                SharedPreferences.Editor editor = this.preferences.edit();
-                editor.putBoolean(PREFERENCE_LOG_LOCAL, logLocal);
-                editor.putBoolean(PREFERENCE_LOG_REMOTE, logRemote);
-                editor.apply();
+                synchronized (Teak.PREFERENCES_FILE) {
+                    SharedPreferences.Editor editor = this.preferences.edit();
+                    editor.putBoolean(PREFERENCE_LOG_LOCAL, logLocal);
+                    editor.putBoolean(PREFERENCE_LOG_REMOTE, logRemote);
+                    editor.apply();
+                }
             } catch (Exception e) {
                 Teak.log.exception(e);
             }

@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -69,6 +70,7 @@ import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.SessionStateEvent;
 import io.teak.sdk.event.UserIdEvent;
+import io.teak.sdk.push.PushState;
 
 public class Session {
 
@@ -381,14 +383,16 @@ public class Session {
                     String locale = Locale.getDefault().toString();
                     payload.put("locale", locale);
 
+                    payload.put("android_limit_ad_tracking", !teakConfiguration.dataCollectionConfiguration.enableIDFA());
                     if (teakConfiguration.deviceConfiguration.advertisingId != null &&
-                        teakConfiguration.dataCollectionConfiguration.enableIDFA) {
+                        teakConfiguration.dataCollectionConfiguration.enableIDFA()) {
                         payload.put("android_ad_id", teakConfiguration.deviceConfiguration.advertisingId);
-                        payload.put("android_limit_ad_tracking", teakConfiguration.deviceConfiguration.limitAdTracking);
+                    } else {
+                        payload.put("android_ad_id", "");
                     }
 
                     if (Session.this.facebookAccessToken != null &&
-                        teakConfiguration.dataCollectionConfiguration.enableFacebookAccessToken) {
+                        teakConfiguration.dataCollectionConfiguration.enableFacebookAccessToken()) {
                         payload.put("access_token", Session.this.facebookAccessToken);
                     }
 
@@ -402,8 +406,9 @@ public class Session {
                     payload.putAll(attribution);
 
                     if (teakConfiguration.deviceConfiguration.pushRegistration != null &&
-                        teakConfiguration.dataCollectionConfiguration.enablePushKey) {
+                        teakConfiguration.dataCollectionConfiguration.enablePushKey()) {
                         payload.putAll(teakConfiguration.deviceConfiguration.pushRegistration);
+                        payload.putAll(PushState.get().toMap());
                     }
 
                     Teak.log.i("session.identify_user", Helpers.mm.h("userId", Session.this.userId, "timezone", tzOffset, "locale", locale, "session_id", Session.this.sessionId));
@@ -487,6 +492,7 @@ public class Session {
         this.executionQueue.execute(new Runnable() {
             @Override
             public void run() {
+                Session.currentSessionLock.lock();
                 Session.this.stateLock.lock();
                 try {
                     if (Session.this.state == State.UserIdentified) {
@@ -501,6 +507,7 @@ public class Session {
                     }
                 } finally {
                     Session.this.stateLock.unlock();
+                    Session.currentSessionLock.unlock();
                 }
             }
         });
@@ -536,7 +543,17 @@ public class Session {
         public void onNewEvent(@NonNull TeakEvent event) {
             switch (event.eventType) {
                 case UserIdEvent.Type:
-                    String userId = ((UserIdEvent) event).userId;
+                    final String userId = ((UserIdEvent) event).userId;
+                    final Set<String> optOut = ((UserIdEvent) event).optOut;
+                    final TeakConfiguration teakConfiguration = TeakConfiguration.get();
+
+                    // Data-collection opt-out
+                    //noinspection ConstantConditions
+                    if (teakConfiguration != null) {
+                        teakConfiguration.dataCollectionConfiguration.addConfigurationFromDeveloper(optOut);
+                    }
+
+                    // Assign user id
                     setUserId(userId);
                     break;
                 case LifecycleEvent.Paused:

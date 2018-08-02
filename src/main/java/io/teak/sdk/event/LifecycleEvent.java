@@ -14,6 +14,7 @@
  */
 package io.teak.sdk.event;
 
+import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 
@@ -25,11 +26,13 @@ public class LifecycleEvent extends TeakEvent {
     public static final String Resumed = "LifecycleEvent.Resumed";
 
     public final Intent intent;
+    public final Context context;
 
-    public LifecycleEvent(@NonNull String type, @NonNull Intent intent) {
+    public LifecycleEvent(@NonNull String type, @NonNull Intent intent, @NonNull Context context) {
         super(type);
         if (type.equals(Created) || type.equals(Paused) || type.equals(Resumed)) {
             this.intent = intent;
+            this.context = context;
         } else {
             throw new IllegalArgumentException("Type must be one of 'Created', 'Paused' or 'Resumed'");
         }

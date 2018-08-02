@@ -51,12 +51,14 @@ import android.widget.ViewFlipper;
 import io.teak.sdk.json.JSONObject;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.SocketException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
@@ -67,13 +69,21 @@ import java.util.concurrent.FutureTask;
 import javax.net.ssl.SSLException;
 
 public class NotificationBuilder {
-    public static Notification createNativeNotification(Context context, Bundle bundle, TeakNotification teakNotificaton) {
+    public static class AssetLoadException extends Exception {
+        AssetLoadException(String assetName) {
+            super("Failed to load asset: " + assetName);
+        }
+    }
+
+    public static Notification createNativeNotification(Context context, Bundle bundle, TeakNotification teakNotificaton) throws AssetLoadException {
         if (teakNotificaton.notificationVersion == TeakNotification.TEAK_NOTIFICATION_V0) {
             return null;
         }
 
         try {
             return createNativeNotificationV1Plus(context, bundle, teakNotificaton);
+        } catch (AssetLoadException e) {
+            throw e;
         } catch (Exception e) {
             HashMap<String, Object> extras = new HashMap<>();
             if (teakNotificaton.teakCreativeName != null) {
@@ -87,19 +97,21 @@ public class NotificationBuilder {
     }
 
     private static String notificationChannelId;
-    static String getNotificationChannelId(Context context) {
+    public static String getNotificationChannelId(Context context) {
         // Notification channel, required for targeting API 26+
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (notificationChannelId == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
             try {
                 final String channelId = "teak";
-                final int importance = NotificationManager.IMPORTANCE_HIGH;
-                final NotificationChannel channel = new NotificationChannel(channelId, "Notifications", importance);
-                channel.enableLights(true);
-                channel.setLightColor(Color.RED);
-                channel.enableVibration(true);
-                channel.setVibrationPattern(new long[] {100L, 300L, 0L, 0L, 100L, 300L});
-                notificationManager.createNotificationChannel(channel);
+                if (notificationManager.getNotificationChannel(channelId) == null) {
+                    final int importance = NotificationManager.IMPORTANCE_HIGH;
+                    final NotificationChannel channel = new NotificationChannel(channelId, "Notifications", importance);
+                    channel.enableLights(true);
+                    channel.setLightColor(Color.RED);
+                    channel.enableVibration(true);
+                    channel.setVibrationPattern(new long[]{100L, 300L, 0L, 0L, 100L, 300L});
+                    notificationManager.createNotificationChannel(channel);
+                }
                 notificationChannelId = channelId;
             } catch (Exception ignored) {
             }
@@ -396,7 +408,7 @@ public class NotificationBuilder {
                                 if ("left_image".equals(key)) {
                                     remoteViews.setViewVisibility(viewElementId, View.GONE);
                                 } else {
-                                    throw new IllegalArgumentException("Bitmap is null (" + value + ")");
+                                    throw new AssetLoadException(value);
                                 }
                             } else {
                                 remoteViews.setImageViewBitmap(viewElementId, bitmap);
@@ -407,7 +419,7 @@ public class NotificationBuilder {
                         try {
                             final Bitmap bitmap = loadBitmapFromUriString(animationConfig.getString("sprite_sheet"));
                             if (bitmap == null) {
-                                throw new IllegalArgumentException("Bitmap is null (" + animationConfig.getString("sprite_sheet") + ")");
+                                throw new AssetLoadException(animationConfig.getString("sprite_sheet"));
                             }
                             final int frameWidth = animationConfig.getInt("width");
                             final int frameHeight = animationConfig.getInt("height");
@@ -516,7 +528,9 @@ public class NotificationBuilder {
                     // Request lower-res version?
                 } catch (SocketException ignored) {
                 } catch (SSLException ignored) {
+                } catch (UnknownHostException ignored) {
                 } catch (FileNotFoundException ignored) {
+                } catch (IOException ignored) {
                 } finally {
                     if (inputStream != null) {
                         inputStream.close();
