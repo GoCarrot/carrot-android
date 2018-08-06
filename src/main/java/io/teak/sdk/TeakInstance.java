@@ -28,6 +28,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 
+import java.io.File;
 import java.net.URLEncoder;
 import java.security.InvalidParameterException;
 import java.util.Date;
@@ -351,6 +352,19 @@ public class TeakInstance {
                 Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityCreated"));
 
                 final Context context = activity.getApplicationContext();
+
+                // Turn on HTTPS caching
+                TeakConfiguration teakConfiguration = TeakConfiguration.get();
+                if (!teakConfiguration.appConfiguration.disableCache) {
+                    try {
+                        long httpCacheSize = 20 * 1024 * 1024; // 20 MiB
+                        File httpCacheDir = new File(activity.getCacheDir(), "http");
+                        Class.forName("android.net.http.HttpResponseCache")
+                            .getMethod("install", File.class, long.class)
+                            .invoke(null, httpCacheDir, httpCacheSize);
+                    } catch (Exception ignored) {
+                    }
+                }
 
                 // Create IStore
                 appStore = objectFactory.getIStore();

@@ -66,6 +66,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
+import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
 
 public class NotificationBuilder {
@@ -519,7 +520,8 @@ public class NotificationBuilder {
                         uriBuilder.appendQueryParameter("scaled_density", String.valueOf(displayMetrics.scaledDensity));
 
                         URL aURL = new URL(uriBuilder.toString());
-                        URLConnection conn = aURL.openConnection();
+                        HttpsURLConnection conn = (HttpsURLConnection) aURL.openConnection();
+                        conn.setUseCaches(true);
                         conn.connect();
                         inputStream = conn.getInputStream();
                         ret = BitmapFactory.decodeStream(inputStream);

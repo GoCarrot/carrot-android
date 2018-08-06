@@ -31,8 +31,6 @@ import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.net.ssl.HttpsURLConnection;
-
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONObject;
 
@@ -219,8 +217,6 @@ public class TeakNotification implements Unobfuscable {
             Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
                 @Override
                 public void run(Session session) {
-                    HttpsURLConnection connection = null;
-
                     Teak.log.i("reward.claim.request", mm.h("teakRewardId", teakRewardId));
 
                     try {

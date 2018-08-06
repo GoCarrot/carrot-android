@@ -53,6 +53,8 @@ public class AppConfiguration {
     public final Context applicationContext;
     @SuppressWarnings("WeakerAccess")
     public final int targetSdkVersion;
+    @SuppressWarnings("WeakerAccess")
+    public final boolean disableCache;
 
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_API_KEY_RESOURCE = "io_teak_api_key";
@@ -62,6 +64,8 @@ public class AppConfiguration {
     public static final String TEAK_GCM_SENDER_ID_RESOURCE = "io_teak_gcm_sender_id";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_JOB_ID_RESOURCE = "io_teak_job_id";
+    @SuppressWarnings("WeakerAccess")
+    public static final String TEAK_DISABLE_CACHE_RESOURCE = "io_teak_disable_cache";
 
     public AppConfiguration(@NonNull Context context, @NonNull IAndroidResources androidResources) throws IntegrationChecker.InvalidConfigurationException {
         this.applicationContext = context.getApplicationContext();
@@ -144,6 +148,15 @@ public class AppConfiguration {
             }
 
             this.jobId = jobIdAsInt;
+        }
+
+        // Disable Cache?
+        {
+            Boolean disableCache = androidResources.getBooleanResource(TEAK_DISABLE_CACHE_RESOURCE);
+            if (disableCache == null && metaData != null) {
+                disableCache = metaData.getBoolean(TEAK_DISABLE_CACHE_RESOURCE, false);
+            }
+            this.disableCache = disableCache == null ? false : disableCache;
         }
 
         // Package Id
