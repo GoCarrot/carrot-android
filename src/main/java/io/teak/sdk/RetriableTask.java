@@ -31,7 +31,7 @@ public class RetriableTask<T> implements Callable<T> {
             } catch (final Exception e) {
                 triesLeft--;
                 if (triesLeft == 0) throw e;
-                if (nextRetryDelay> 0) Thread.sleep(nextRetryDelay);
+                if (nextRetryDelay > 0) Thread.sleep(nextRetryDelay);
                 nextRetryDelay *= this.retryMultiplier;
             }
         }
