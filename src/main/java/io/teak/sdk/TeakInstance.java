@@ -363,7 +363,7 @@ public class TeakInstance {
                 }
 
                 TeakConfiguration teakConfiguration = TeakConfiguration.get();
-                if (!cacheAlreadyEnabled && !teakConfiguration.appConfiguration.disableCache) {
+                if (!cacheAlreadyEnabled && teakConfiguration.appConfiguration.enableCaching) {
                     try {
                         long httpCacheSize = 20 * 1024 * 1024; // 20 MiB
                         File httpCacheDir = new File(activity.getCacheDir(), "http");
