@@ -56,6 +56,7 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
@@ -532,6 +533,7 @@ public class NotificationBuilder {
                 } catch (SSLException ignored) {
                 } catch (UnknownHostException ignored) {
                 } catch (FileNotFoundException ignored) {
+                } catch (SocketTimeoutException ignored) {
                 } catch (IOException ignored) {
                 } finally {
                     if (inputStream != null) {
