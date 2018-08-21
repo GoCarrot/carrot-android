@@ -455,6 +455,12 @@ public class Request implements Runnable {
                         valueString = new JSONArray(Collections.singletonList(value)).toString();
                     } else if (value instanceof Collection) {
                         valueString = new JSONArray((Collection) value).toString();
+                    } else if (value instanceof String[]) {
+                        JSONArray jsonArray = new JSONArray();
+                        for (String v : (String[]) value) {
+                            jsonArray.put(v);
+                        }
+                        valueString = jsonArray.toString();
                     } else {
                         valueString = value.toString();
                     }
