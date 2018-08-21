@@ -51,7 +51,20 @@ public class TeakNotificationFunction implements FREFunction {
     @Override
     public FREObject call(FREContext context, FREObject[] argv) {
         try {
-            final Future<String> future = callType == CallType.Cancel ? TeakNotification.cancelNotification(argv[0].getAsString()) : (callType == CallType.CancelAll ? TeakNotification.cancelAll() : TeakNotification.scheduleNotification(argv[0].getAsString(), argv[1].getAsString(), (long) argv[2].getAsDouble()));
+            Future<String> tempFuture = null;
+            switch (callType) {
+                case Cancel: {
+                    tempFuture = TeakNotification.cancelNotification(argv[0].getAsString());
+                } break;
+                case CancelAll: {
+                    tempFuture = TeakNotification.cancelAll();
+                } break;
+                case Schedule: {
+                    tempFuture = TeakNotification.scheduleNotification(argv[0].getAsString(), argv[1].getAsString(), (long) argv[2].getAsDouble());
+                } break;
+            }
+
+            final Future<String> future = tempFuture;
             if (future != null) {
                 new Thread(new Runnable() {
                     @Override
