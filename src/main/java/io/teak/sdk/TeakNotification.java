@@ -387,6 +387,129 @@ public class TeakNotification implements Unobfuscable {
     }
 
     /**
+     * Schedules a push notification, to be delivered to other users, for some time in the future.
+     *
+     * @param creativeId     The identifier of the notification in the Teak dashboard (will create if not found).
+     * @param delayInSeconds The delay in seconds from now to send the notification.
+     * @param userIds        A list of game-assigned user ids to deliver the notification to.
+     * @return The identifiers of the scheduled notifications (see {@link TeakNotification#cancelNotification(String)} or null.
+     */
+    @SuppressWarnings({"unused", "WeakerAccess"})
+    public static FutureTask<String> scheduleNotification(final String creativeId, final long delayInSeconds, final String[] userIds) {
+        if (Teak.Instance == null || !Teak.Instance.isEnabled()) {
+            Teak.log.e("notification.schedule.disabled", "Teak is disabled, ignoring scheduleNotification().");
+
+            final Map<String, Object> ret = new HashMap<>();
+            ret.put("status", "error.teak.disabled");
+
+            return new FutureTask<>(new Callable<String>() {
+                @Override
+                public String call() throws Exception {
+                    return new JSONObject(ret).toString();
+                }
+            });
+        }
+
+        if (creativeId == null || creativeId.isEmpty()) {
+            Teak.log.e("notification.schedule.error", "creativeId cannot be null or empty");
+
+            final Map<String, Object> ret = new HashMap<>();
+            ret.put("status", "error.parameter.creativeId");
+
+            return new FutureTask<>(new Callable<String>() {
+                @Override
+                public String call() throws Exception {
+                    return new JSONObject(ret).toString();
+                }
+            });
+        }
+
+        if (userIds == null || userIds.length < 1) {
+            Teak.log.e("notification.schedule.error", "userIds cannot be null or empty");
+
+            final Map<String, Object> ret = new HashMap<>();
+            ret.put("status", "error.parameter.userIds");
+
+            return new FutureTask<>(new Callable<String>() {
+                @Override
+                public String call() throws Exception {
+                    return new JSONObject(ret).toString();
+                }
+            });
+        }
+
+        if (delayInSeconds > 2630000 /* one month in seconds */ || delayInSeconds < 0) {
+            Teak.log.e("notification.schedule.error", "delayInSeconds can not be negative, or greater than one month");
+
+            final Map<String, Object> ret = new HashMap<>();
+            ret.put("status", "error.parameter.delayInSeconds");
+
+            return new FutureTask<>(new Callable<String>() {
+                @Override
+                public String call() throws Exception {
+                    return new JSONObject(ret).toString();
+                }
+            });
+        }
+
+        final ArrayBlockingQueue<String> q = new ArrayBlockingQueue<>(1);
+        final FutureTask<String> ret = new FutureTask<>(new Callable<String>() {
+            public String call() {
+                try {
+                    return q.take();
+                } catch (InterruptedException e) {
+                    Teak.log.exception(e);
+
+                    final Map<String, Object> err = new HashMap<>();
+                    err.put("status", "error.exception.exception");
+                    return new JSONObject(err).toString();
+                }
+            }
+        });
+
+        Session.whenUserIdIsOrWasReadyRun(new Session.SessionRunnable() {
+            @Override
+            public void run(Session session) {
+                HashMap<String, Object> payload = new HashMap<>();
+                payload.put("identifier", creativeId);
+                payload.put("offset", delayInSeconds);
+                payload.put("user_ids", userIds);
+
+                Request.submit("/me/long_distance_notify.json", payload, session,
+                    new Request.Callback() {
+                        @Override
+                        public void onRequestCompleted(int responseCode, String responseBody) {
+                            try {
+                                JSONObject response = new JSONObject(responseBody);
+
+                                final Map<String, Object> contents = new HashMap<>();
+                                contents.put("status", response.getString("status"));
+
+                                if (response.getString("status").equals("ok")) {
+                                    Teak.log.i("notification.schedule", "Scheduled notification.", mm.h("notification", response.getJSONArray("ids").toString()));
+                                    contents.put("data", response.getJSONArray("ids").toString());
+                                } else {
+                                    Teak.log.e("notification.schedule.error", "Error scheduling notification.", mm.h("response", response.toString()));
+                                }
+
+                                q.offer(new JSONObject(contents).toString());
+                            } catch (Exception e) {
+                                Teak.log.exception(e, mm.h("teakCreativeId", creativeId));
+
+                                final Map<String, Object> contents = new HashMap<>();
+                                contents.put("status", "error.internal");
+                                q.offer(new JSONObject(contents).toString());
+                            }
+
+                            ret.run();
+                        }
+                    });
+            }
+        });
+        return ret;
+    }
+
+    /**
      * Cancel a push notification that was scheduled with {@link TeakNotification#scheduleNotification(String, String, long)}
      *
      * @param scheduleId Id returned by {@link TeakNotification#scheduleNotification(String, String, long)}
