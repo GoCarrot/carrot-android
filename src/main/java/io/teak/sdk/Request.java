@@ -451,8 +451,6 @@ public class Request implements Runnable {
                     String valueString;
                     if (value instanceof Map) {
                         valueString = new JSONObject((Map) value).toString();
-                    } else if (value instanceof Array) {
-                        valueString = new JSONArray(Collections.singletonList(value)).toString();
                     } else if (value instanceof Collection) {
                         valueString = new JSONArray((Collection) value).toString();
                     } else if (value instanceof String[]) {
