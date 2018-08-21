@@ -373,7 +373,7 @@ public class TeakInstance {
                         Teak.log.i("cache", "enabled");
                     } catch (Exception ignored) {
                     }
-                } else if(cacheAlreadyEnabled) {
+                } else if (cacheAlreadyEnabled) {
                     Teak.log.i("cache", "previously_enabled");
                 } else {
                     Teak.log.i("cache", "disabled");
