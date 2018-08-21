@@ -28,6 +28,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -448,21 +449,18 @@ public class Request implements Runnable {
             for (String key : payloadKeys) {
                 Object value = payload.get(key);
                 if (value != null) {
-                    String valueString;
                     if (value instanceof Map) {
-                        valueString = new JSONObject((Map) value).toString();
-                    } else if (value instanceof Collection) {
-                        valueString = new JSONArray((Collection) value).toString();
-                    } else if (value instanceof String[]) {
-                        JSONArray jsonArray = new JSONArray();
-                        for (String v : (String[]) value) {
-                            jsonArray.put(v);
+                        // TODO: Map should be changed to properly form-encode once the server supports it
+                        builder.append(key).append("=").append(escape ? URLEncoder.encode(value.toString(), "UTF-8") : value.toString()).append("&");
+                    } else if (value instanceof Collection || value instanceof Object[]) {
+                        // If something is not an instanceof Map, then it's an array/set/vector Collection
+                        Collection valueCollection = value instanceof Collection ? (Collection) value : Arrays.asList((Object[]) value);
+                        for (Object v : valueCollection) {
+                            builder.append(key).append("[]=").append(escape ? URLEncoder.encode(v.toString(), "UTF-8") : v).append("&");
                         }
-                        valueString = jsonArray.toString();
                     } else {
-                        valueString = value.toString();
+                        builder.append(key).append("=").append(escape ? URLEncoder.encode(value.toString(), "UTF-8") : value.toString()).append("&");
                     }
-                    builder.append(key).append("=").append(escape ? URLEncoder.encode(valueString, "UTF-8") : valueString).append("&");
                 } else {
                     Teak.log.e("request", "Value for key is null.", Helpers.mm.h("key", key));
                 }
