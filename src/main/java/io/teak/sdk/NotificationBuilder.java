@@ -127,10 +127,11 @@ public class NotificationBuilder {
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (quietNotificationChannelId == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
             try {
-                final String channelId = "teak-quiet";
-                final int importance = NotificationManager.IMPORTANCE_LOW;
+                final String channelId = "teak-no-sound-or-vibrate";
+                final int importance = NotificationManager.IMPORTANCE_HIGH;
                 final NotificationChannel channel = new NotificationChannel(channelId, "Notifications", importance);
                 channel.enableLights(true);
+                channel.setSound(null, null);
                 channel.setLightColor(Color.RED);
                 channel.enableVibration(false);
                 channel.setVibrationPattern(new long[] {0L});
