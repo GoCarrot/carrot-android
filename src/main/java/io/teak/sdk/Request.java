@@ -442,13 +442,10 @@ public class Request implements Runnable {
         private static String formEncode(String name, Object value, boolean escape) throws UnsupportedEncodingException {
             List<String> listOfThingsToJoin = new ArrayList<>();
             if (value instanceof Map) {
-                final String mapAsJson = new JSONObject((Map) value).toString();
-                listOfThingsToJoin.add(formEncode(name, mapAsJson, escape));
-                // TODO: Change to this once server supports this encoding format for signing strings
-//                Map<?, ?> valueMap = (Map<?, ?>) value;
-//                for (Map.Entry<?, ?> entry : valueMap.entrySet()) {
-//                    listOfThingsToJoin.add(formEncode(String.format("%s[%s]", name, entry.getKey().toString()), entry.getValue(), escape));
-//                }
+                Map<?, ?> valueMap = (Map<?, ?>) value;
+                for (Map.Entry<?, ?> entry : valueMap.entrySet()) {
+                    listOfThingsToJoin.add(formEncode(String.format("%s[%s]", name, entry.getKey().toString()), entry.getValue(), escape));
+                }
             } else if (value instanceof Collection || value instanceof Object[]) {
                 // If something is not an instanceof Map, then it's an array/set/vector Collection
                 Collection valueCollection = value instanceof Collection ? (Collection) value : Arrays.asList((Object[]) value);
