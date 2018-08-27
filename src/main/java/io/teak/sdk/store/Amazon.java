@@ -92,21 +92,21 @@ public class Amazon implements IStore {
     }
 
     @Override
-    public void processPurchase(String purchaseDataAsString) {
+    public void processPurchase(String purchaseDataAsString, Map<String, Object> extras) {
         try {
             JSONObject originalJson = new JSONObject(purchaseDataAsString);
-            this.processPurchaseJson(originalJson);
+            this.processPurchaseJson(originalJson, extras);
         } catch (Exception e) {
             Teak.log.exception(e);
         }
     }
 
-    private void processPurchaseJson(JSONObject originalJson) {
+    private void processPurchaseJson(JSONObject originalJson, Map<String, Object> extras) {
         try {
             JSONObject receipt = originalJson.getJSONObject("receipt");
             JSONObject userData = originalJson.getJSONObject("userData");
 
-            Map<String, Object> payload = new HashMap<>();
+            Map<String, Object> payload = (extras == null ? new HashMap<String, Object>() : extras);
             payload.put("purchase_token", receipt.get("receiptId"));
             payload.put("purchase_time_string", receipt.get("purchaseDate"));
             payload.put("product_id", receipt.get("sku"));
@@ -163,12 +163,12 @@ public class Amazon implements IStore {
         public void onPurchaseResponse(PurchaseResponse purchaseResponse) {
             if (purchaseResponse.getRequestStatus() == PurchaseResponse.RequestStatus.SUCCESSFUL) {
                 try {
-                    processPurchase(purchaseResponse.toJSON().toString());
+                    processPurchase(purchaseResponse.toJSON().toString(), null);
                 } catch (Exception e) {
                     Teak.log.exception(e);
                 }
             } else {
-                TeakEvent.postEvent(new PurchaseFailedEvent(-1));
+                TeakEvent.postEvent(new PurchaseFailedEvent(-1, null));
             }
         }
 

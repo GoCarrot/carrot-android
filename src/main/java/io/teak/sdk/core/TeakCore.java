@@ -142,7 +142,7 @@ public class TeakCore implements ITeakCore {
                     break;
                 }
                 case PurchaseFailedEvent.Type: {
-                    final Map<String, Object> payload = new HashMap<>();
+                    final Map<String, Object> payload = ((PurchaseFailedEvent) event).extras;
                     payload.put("errorCode", ((PurchaseFailedEvent) event).errorCode);
                     Teak.log.i("purchase.failed", payload);
 

@@ -509,6 +509,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     public static void openIABPurchaseSucceeded(String json) {
         try {
             JSONObject purchase = new JSONObject(json);
+            final Map<String, Object> extras = new HashMap<>();
+            extras.put("iap_plugin", "openiab");
             Teak.log.i("purchase.open_iab", purchase.toMap());
 
             final String originalJson = purchase.getString("originalJson");
@@ -516,7 +518,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
                 asyncExecutor.submit(new Runnable() {
                     @Override
                     public void run() {
-                        Instance.purchaseSucceeded(originalJson);
+                        Instance.purchaseSucceeded(originalJson, extras);
                     }
                 });
             }
@@ -530,13 +532,15 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     public static void prime31PurchaseSucceeded(final String json) {
         try {
             final JSONObject originalJson = new JSONObject(json);
+            final Map<String, Object> extras = new HashMap<>();
+            extras.put("iap_plugin", "prime31");
             Teak.log.i("purchase.prime_31", originalJson.toMap());
 
             if (Instance != null) {
                 asyncExecutor.submit(new Runnable() {
                     @Override
                     public void run() {
-                        Instance.purchaseSucceeded(json);
+                        Instance.purchaseSucceeded(json, extras);
                     }
                 });
             }
@@ -547,12 +551,15 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     // Called by Unity integration
     @SuppressWarnings("unused")
-    public static void pluginPurchaseFailed(final int errorCode) {
+    public static void pluginPurchaseFailed(final int errorCode, final String pluginName) {
         if (Instance != null) {
+            final Map<String, Object> extras = new HashMap<>();
+            extras.put("iap_plugin", pluginName);
+
             asyncExecutor.submit(new Runnable() {
                 @Override
                 public void run() {
-                    Instance.purchaseFailed(errorCode);
+                    Instance.purchaseFailed(errorCode, extras);
                 }
             });
         }

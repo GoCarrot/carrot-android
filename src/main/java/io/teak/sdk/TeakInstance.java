@@ -27,6 +27,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.io.File;
 import java.net.URLEncoder;
@@ -316,16 +317,16 @@ public class TeakInstance {
 
     private IStore appStore;
 
-    void purchaseSucceeded(String purchaseString) {
+    void purchaseSucceeded(String purchaseString, @Nullable Map<String, Object> extras) {
         if (this.appStore != null) {
-            this.appStore.processPurchase(purchaseString);
+            this.appStore.processPurchase(purchaseString, extras);
         } else {
             Teak.log.e("purchase.succeeded.error", "Unable to process purchaseSucceeded, no active app store.");
         }
     }
 
-    void purchaseFailed(int errorCode) {
-        TeakEvent.postEvent(new PurchaseFailedEvent(errorCode));
+    void purchaseFailed(int errorCode, @Nullable Map<String, Object> extras) {
+        TeakEvent.postEvent(new PurchaseFailedEvent(errorCode, extras));
     }
 
     void checkActivityResultForPurchase(int resultCode, Intent data) {
