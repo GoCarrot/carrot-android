@@ -70,6 +70,7 @@ public class ExtensionContext extends FREContext implements Unobfuscable {
         functionMap.put("identifyUser", new IdentifyUserFunction());
         functionMap.put("_log", new LogFunction());
         functionMap.put("scheduleNotification", new TeakNotificationFunction(TeakNotificationFunction.CallType.Schedule));
+        functionMap.put("scheduleLongDistanceNotification", new TeakNotificationFunction(TeakNotificationFunction.CallType.ScheduleLongDistance));
         functionMap.put("cancelNotification", new TeakNotificationFunction(TeakNotificationFunction.CallType.Cancel));
         functionMap.put("cancelAllNotifications", new TeakNotificationFunction(TeakNotificationFunction.CallType.CancelAll));
         functionMap.put("registerRoute", new RegisterRouteFunction());
