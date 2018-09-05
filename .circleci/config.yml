@@ -43,7 +43,7 @@ jobs:
       #     command: ./check_size
       - run:
           name: Run Teak SDK Unit Tests
-          command: (cd test_app; ./gradlew test)
+          command: (cd test_app; ./gradlew test --continue)
       - store_test_results:
           path: test_app/app/build/test-results/
   deploy_versioned:

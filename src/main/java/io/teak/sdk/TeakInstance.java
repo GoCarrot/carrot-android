@@ -27,7 +27,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
+import java.io.File;
 import java.net.URLEncoder;
 import java.security.InvalidParameterException;
 import java.util.Date;
@@ -315,16 +317,16 @@ public class TeakInstance {
 
     private IStore appStore;
 
-    void purchaseSucceeded(String purchaseString) {
+    void purchaseSucceeded(String purchaseString, @Nullable Map<String, Object> extras) {
         if (this.appStore != null) {
-            this.appStore.processPurchase(purchaseString);
+            this.appStore.processPurchase(purchaseString, extras);
         } else {
             Teak.log.e("purchase.succeeded.error", "Unable to process purchaseSucceeded, no active app store.");
         }
     }
 
-    void purchaseFailed(int errorCode) {
-        TeakEvent.postEvent(new PurchaseFailedEvent(errorCode));
+    void purchaseFailed(int errorCode, @Nullable Map<String, Object> extras) {
+        TeakEvent.postEvent(new PurchaseFailedEvent(errorCode, extras));
     }
 
     void checkActivityResultForPurchase(int resultCode, Intent data) {
@@ -351,6 +353,32 @@ public class TeakInstance {
                 Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityCreated"));
 
                 final Context context = activity.getApplicationContext();
+
+                // Turn on HTTPS caching
+                boolean cacheAlreadyEnabled = false;
+                try {
+                    cacheAlreadyEnabled = (Class.forName("android.net.http.HttpResponseCache")
+                                                  .getMethod("getInstalled")
+                                                  .invoke(null)) != null;
+                } catch (Exception ignored) {
+                }
+
+                TeakConfiguration teakConfiguration = TeakConfiguration.get();
+                if (!cacheAlreadyEnabled && teakConfiguration.appConfiguration.enableCaching) {
+                    try {
+                        long httpCacheSize = 20 * 1024 * 1024; // 20 MiB
+                        File httpCacheDir = new File(activity.getCacheDir(), "http");
+                        Class.forName("android.net.http.HttpResponseCache")
+                            .getMethod("install", File.class, long.class)
+                            .invoke(null, httpCacheDir, httpCacheSize);
+                        Teak.log.i("cache", "enabled");
+                    } catch (Exception ignored) {
+                    }
+                } else if (cacheAlreadyEnabled) {
+                    Teak.log.i("cache", "previously_enabled");
+                } else {
+                    Teak.log.i("cache", "disabled");
+                }
 
                 // Create IStore
                 appStore = objectFactory.getIStore();

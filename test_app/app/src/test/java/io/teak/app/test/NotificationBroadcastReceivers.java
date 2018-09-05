@@ -8,6 +8,7 @@ import android.os.Bundle;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.Field;
@@ -32,7 +33,7 @@ import static org.mockito.Mockito.when;
 public class NotificationBroadcastReceivers {
     @Test
     public void GCM_RECEIVE_INTENT_ACTION() throws PackageManager.NameNotFoundException, NoSuchFieldException, IllegalAccessException {
-        final Log teakLog = mock(Log.class);
+        final Log teakLog = mock(Log.class); // withSettings().verboseLogging()
         final Field teakLogField = Teak.class.getDeclaredField("log");
         teakLogField.setAccessible(true);
         teakLogField.set(null, teakLog);
@@ -73,6 +74,11 @@ public class NotificationBroadcastReceivers {
 
         verify(eventListener, timeout(500).times(1)).eventRecieved(PushNotificationEvent.class, PushNotificationEvent.Received);
         verify(eventListener, timeout(500).times(1)).eventRecieved(NotificationDisplayEvent.class, NotificationDisplayEvent.Type);
-        verify(teakLog, timeout(1000).times(0)).exception(any(Throwable.class));
+
+        ArgumentCaptor<Throwable> thrown = ArgumentCaptor.forClass(Throwable.class);
+        verify(teakLog, timeout(1000).times(0)).exception(thrown.capture());
+        for (Throwable t : thrown.getAllValues()) {
+            t.printStackTrace();
+        }
     }
 }

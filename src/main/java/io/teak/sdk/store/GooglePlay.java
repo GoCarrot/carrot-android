@@ -181,17 +181,17 @@ public class GooglePlay implements IStore {
     }
 
     @Override
-    public void processPurchase(String purchaseString) {
+    public void processPurchase(String purchaseString, Map<String, Object> extras) {
         try {
-            this.processPurchaseJson(new JSONObject(purchaseString));
+            this.processPurchaseJson(new JSONObject(purchaseString), extras);
         } catch (Exception e) {
             Teak.log.exception(e);
         }
     }
 
-    private void processPurchaseJson(JSONObject originalJson) {
+    private void processPurchaseJson(JSONObject originalJson, Map<String, Object> extras) {
         try {
-            Map<String, Object> payload = new HashMap<>();
+            Map<String, Object> payload = (extras == null ? new HashMap<String, Object>() : extras);
             payload.put("purchase_token", originalJson.get("purchaseToken"));
             payload.put("purchase_time", originalJson.get("purchaseTime"));
             payload.put("product_id", originalJson.get("productId"));
@@ -321,12 +321,12 @@ public class GooglePlay implements IStore {
         if (purchaseData != null && dataSignature != null &&
             resultCode == Activity.RESULT_OK && responseCode == BILLING_RESPONSE_RESULT_OK) {
             try {
-                processPurchaseJson(new JSONObject(purchaseData));
+                processPurchaseJson(new JSONObject(purchaseData), null);
             } catch (Exception e) {
                 Teak.log.exception(e);
             }
         } else if (responseCode > 0) {
-            TeakEvent.postEvent(new PurchaseFailedEvent(responseCode));
+            TeakEvent.postEvent(new PurchaseFailedEvent(responseCode, null));
         }
     }
 }

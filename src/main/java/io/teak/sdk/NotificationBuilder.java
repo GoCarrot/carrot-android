@@ -56,6 +56,7 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
@@ -66,6 +67,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
+import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
 
 public class NotificationBuilder {
@@ -109,7 +111,7 @@ public class NotificationBuilder {
                     channel.enableLights(true);
                     channel.setLightColor(Color.RED);
                     channel.enableVibration(true);
-                    channel.setVibrationPattern(new long[]{100L, 300L, 0L, 0L, 100L, 300L});
+                    channel.setVibrationPattern(new long[] {100L, 300L, 0L, 0L, 100L, 300L});
                     notificationManager.createNotificationChannel(channel);
                 }
                 notificationChannelId = channelId;
@@ -125,10 +127,11 @@ public class NotificationBuilder {
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (quietNotificationChannelId == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
             try {
-                final String channelId = "teak-quiet";
-                final int importance = NotificationManager.IMPORTANCE_LOW;
+                final String channelId = "teak-no-sound-or-vibrate";
+                final int importance = NotificationManager.IMPORTANCE_HIGH;
                 final NotificationChannel channel = new NotificationChannel(channelId, "Notifications", importance);
                 channel.enableLights(true);
+                channel.setSound(null, null);
                 channel.setLightColor(Color.RED);
                 channel.enableVibration(false);
                 channel.setVibrationPattern(new long[] {0L});
@@ -519,7 +522,8 @@ public class NotificationBuilder {
                         uriBuilder.appendQueryParameter("scaled_density", String.valueOf(displayMetrics.scaledDensity));
 
                         URL aURL = new URL(uriBuilder.toString());
-                        URLConnection conn = aURL.openConnection();
+                        HttpsURLConnection conn = (HttpsURLConnection) aURL.openConnection();
+                        conn.setUseCaches(true);
                         conn.connect();
                         inputStream = conn.getInputStream();
                         ret = BitmapFactory.decodeStream(inputStream);
@@ -530,6 +534,7 @@ public class NotificationBuilder {
                 } catch (SSLException ignored) {
                 } catch (UnknownHostException ignored) {
                 } catch (FileNotFoundException ignored) {
+                } catch (SocketTimeoutException ignored) {
                 } catch (IOException ignored) {
                 } finally {
                     if (inputStream != null) {

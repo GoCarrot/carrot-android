@@ -116,29 +116,24 @@ public class DefaultObjectFactory implements IObjectFactory {
 
         final String installerPackage = packageManager.getInstallerPackageName(bundleId);
 
-        // Applicable store
-        if (installerPackage != null) {
-            Class<?> clazz = io.teak.sdk.store.GooglePlay.class;
-            if ("com.amazon.venezia".equals(installerPackage)) {
-                try {
-                    clazz = Class.forName("com.amazon.device.iap.PurchasingListener");
-                } catch (Exception e) {
-                    Teak.log.exception(e);
-                }
-
-                if (clazz != null) {
-                    clazz = io.teak.sdk.store.Amazon.class;
-                }
-            }
-
+        // Applicable store, default to GooglePlay
+        Class<?> clazz = io.teak.sdk.store.GooglePlay.class;
+        if ("com.amazon.venezia".equals(installerPackage)) {
             try {
-                return (IStore) (clazz != null ? clazz.newInstance() : null);
+                clazz = Class.forName("com.amazon.device.iap.PurchasingListener");
             } catch (Exception e) {
                 Teak.log.exception(e);
             }
-        } else {
-            // TODO: This will happen before Logs are initialized, need to figure out a reasonable solution
-            Teak.log.e("factory.istore", "Installer package (Store) is null, purchase tracking disabled.");
+
+            if (clazz != null) {
+                clazz = io.teak.sdk.store.Amazon.class;
+            }
+        }
+
+        try {
+            return (IStore) (clazz != null ? clazz.newInstance() : null);
+        } catch (Exception e) {
+            Teak.log.exception(e);
         }
 
         return null;

@@ -981,6 +981,7 @@ public class Session {
                             httpsUri.scheme("https");
                             URL url = new URL(httpsUri.build().toString());
                             connection = (HttpsURLConnection) url.openConnection();
+                            connection.setUseCaches(false);
                             connection.setRequestProperty("Accept-Charset", "UTF-8");
                             connection.setRequestProperty("X-Teak-DeviceType", "API");
 

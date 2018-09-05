@@ -132,9 +132,9 @@ public class PushState {
 
         public boolean equalsIgnoreDate(StateChainEntry other) {
             return this.state.equals(other.state) &&
-                    this.canBypassDnd == other.canBypassDnd &&
-                    this.canShowOnLockscreen == other.canShowOnLockscreen &&
-                    this.canShowBadge == other.canShowBadge;
+                this.canBypassDnd == other.canBypassDnd &&
+                this.canShowOnLockscreen == other.canShowOnLockscreen &&
+                this.canShowBadge == other.canShowBadge;
         }
     }
 
@@ -194,7 +194,7 @@ public class PushState {
                 final StateChainEntry currentEntry = PushState.this.stateChain.size() == 0 ? null : PushState.this.stateChain.get(PushState.this.stateChain.size() - 1);
                 final StateChainEntry newStateEntry = PushState.this.determineStateFromSystem(context);
                 if (currentState.canTransitionTo(newStateEntry.state) ||
-                        (currentState.equals(newStateEntry.state) && !newStateEntry.equalsIgnoreDate(currentEntry))) {
+                    (currentState.equals(newStateEntry.state) && !newStateEntry.equalsIgnoreDate(currentEntry))) {
                     List<StateChainEntry> newChain = new ArrayList<>(PushState.this.stateChain);
                     newChain.add(newStateEntry);
                     PushState.this.stateChain = Collections.unmodifiableList(newChain);

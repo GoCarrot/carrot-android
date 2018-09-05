@@ -16,6 +16,7 @@ package io.teak.sdk;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.text.TextUtils;
 import android.util.Base64;
 
 import javax.crypto.Mac;
@@ -28,6 +29,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -292,7 +294,8 @@ public class Request implements Runnable {
     public static void submit(final @Nullable String hostname, final @NonNull String endpoint, final @NonNull Map<String, Object> payload, final @NonNull Session session, final @Nullable Callback callback) {
         BatchedRequest batch = null;
 
-        if ("parsnip.gocarrot.com".equals(hostname)) {
+        if ("parsnip.gocarrot.com".equals(hostname) &&
+            !"/notification_received".equals(endpoint)) {
             batch = BatchedParsnipRequest.getCurrentBatch(hostname, session);
         } else if ("/me/events".equals(endpoint)) {
             batch = BatchedTrackEventRequest.getCurrentBatch(hostname, session);
@@ -428,41 +431,50 @@ public class Request implements Runnable {
     public static class Payload {
         @SuppressWarnings("WeakerAccess")
         public static String toSigningString(Map<String, Object> payload) throws UnsupportedEncodingException {
-            final StringBuilder builder = payloadToString(payload, false);
-            builder.deleteCharAt(builder.length() - 1);
-            return builder.toString();
+            return payloadToString(payload, false);
         }
 
         @SuppressWarnings("WeakerAccess")
         public static String toRequestBody(Map<String, Object> payload, String sig) throws UnsupportedEncodingException {
-            final StringBuilder builder = payloadToString(payload, true);
-            builder.append("sig=").append(URLEncoder.encode(sig, "UTF-8"));
-            return builder.toString();
+            return payloadToString(payload, true) + "&sig=" + URLEncoder.encode(sig, "UTF-8");
         }
 
-        private static StringBuilder payloadToString(Map<String, Object> payload, boolean escape) throws UnsupportedEncodingException {
+        private static String formEncode(String name, Object value, boolean escape) throws UnsupportedEncodingException {
+            List<String> listOfThingsToJoin = new ArrayList<>();
+            if (value instanceof Map) {
+                Map<?, ?> valueMap = (Map<?, ?>) value;
+                for (Map.Entry<?, ?> entry : valueMap.entrySet()) {
+                    listOfThingsToJoin.add(formEncode(String.format("%s[%s]", name, entry.getKey().toString()), entry.getValue(), escape));
+                }
+            } else if (value instanceof Collection || value instanceof Object[]) {
+                // If something is not an instanceof Map, then it's an array/set/vector Collection
+                Collection valueCollection = value instanceof Collection ? (Collection) value : Arrays.asList((Object[]) value);
+                for (Object v : valueCollection) {
+                    listOfThingsToJoin.add(formEncode(String.format("%s[]", name == null ? "" : name), v, escape));
+                }
+            } else {
+                if (name == null) {
+                    listOfThingsToJoin.add(escape ? URLEncoder.encode(value.toString(), "UTF-8") : value.toString());
+                } else {
+                    listOfThingsToJoin.add(String.format("%s=%s", name, escape ? URLEncoder.encode(value.toString(), "UTF-8") : value.toString()));
+                }
+            }
+            return TextUtils.join("&", listOfThingsToJoin);
+        }
+
+        private static String payloadToString(Map<String, Object> payload, boolean escape) throws UnsupportedEncodingException {
             ArrayList<String> payloadKeys = new ArrayList<>(payload.keySet());
             Collections.sort(payloadKeys);
-            StringBuilder builder = new StringBuilder();
+            List<String> listOfThingsToJoin = new ArrayList<>();
             for (String key : payloadKeys) {
                 Object value = payload.get(key);
                 if (value != null) {
-                    String valueString;
-                    if (value instanceof Map) {
-                        valueString = new JSONObject((Map) value).toString();
-                    } else if (value instanceof Array) {
-                        valueString = new JSONArray(Collections.singletonList(value)).toString();
-                    } else if (value instanceof Collection) {
-                        valueString = new JSONArray((Collection) value).toString();
-                    } else {
-                        valueString = value.toString();
-                    }
-                    builder.append(key).append("=").append(escape ? URLEncoder.encode(valueString, "UTF-8") : valueString).append("&");
+                    listOfThingsToJoin.add(formEncode(key, value, escape));
                 } else {
                     Teak.log.e("request", "Value for key is null.", Helpers.mm.h("key", key));
                 }
             }
-            return builder;
+            return TextUtils.join("&", listOfThingsToJoin);
         }
     }
 
