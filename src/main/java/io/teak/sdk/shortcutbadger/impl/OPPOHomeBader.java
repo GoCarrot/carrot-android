@@ -38,7 +38,7 @@ public class OPPOHomeBader implements Badger {
             return;
         }
         mCurrentTotalCount = badgeCount;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB){
             executeBadgeByContentProvider(context, badgeCount);
         } else {
             executeBadgeByBroadcast(context, componentName, badgeCount);
@@ -51,7 +51,7 @@ public class OPPOHomeBader implements Badger {
     }
 
     private void executeBadgeByBroadcast(Context context, ComponentName componentName,
-        int badgeCount) throws ShortcutBadgeException {
+                                         int badgeCount) throws ShortcutBadgeException {
         if (badgeCount == 0) {
             badgeCount = -1;
         }
@@ -59,11 +59,8 @@ public class OPPOHomeBader implements Badger {
         intent.putExtra(INTENT_EXTRA_PACKAGENAME, componentName.getPackageName());
         intent.putExtra(INTENT_EXTRA_BADGE_COUNT, badgeCount);
         intent.putExtra(INTENT_EXTRA_BADGE_UPGRADENUMBER, badgeCount);
-        if (BroadcastHelper.canResolveBroadcast(context, intent)) {
-            context.sendBroadcast(intent);
-        } else {
-            throw new ShortcutBadgeException("unable to resolve intent: " + intent.toString());
-        }
+
+        BroadcastHelper.sendIntentExplicitly(context, intent);
     }
 
     /**

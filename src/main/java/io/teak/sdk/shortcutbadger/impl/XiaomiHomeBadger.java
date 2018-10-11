@@ -19,6 +19,7 @@ import io.teak.sdk.shortcutbadger.Badger;
 import io.teak.sdk.shortcutbadger.ShortcutBadgeException;
 import io.teak.sdk.shortcutbadger.util.BroadcastHelper;
 
+
 /**
  * @author leolin
  */
@@ -44,12 +45,13 @@ public class XiaomiHomeBadger implements Badger {
             }
         } catch (Exception e) {
             Intent localIntent = new Intent(
-                INTENT_ACTION);
+                    INTENT_ACTION);
             localIntent.putExtra(EXTRA_UPDATE_APP_COMPONENT_NAME, componentName.getPackageName() + "/" + componentName.getClassName());
             localIntent.putExtra(EXTRA_UPDATE_APP_MSG_TEXT, String.valueOf(badgeCount == 0 ? "" : badgeCount));
-            if (BroadcastHelper.canResolveBroadcast(context, localIntent)) {
-                context.sendBroadcast(localIntent);
-            }
+
+            try {
+                BroadcastHelper.sendIntentExplicitly(context, localIntent);
+            } catch (ShortcutBadgeException ignored) {}
         }
         if (Build.MANUFACTURER.equalsIgnoreCase("Xiaomi")) {
             tryNewMiuiBadge(context, badgeCount);
@@ -66,11 +68,11 @@ public class XiaomiHomeBadger implements Badger {
 
         if (resolveInfo != null) {
             NotificationManager mNotificationManager = (NotificationManager) context
-                                                           .getSystemService(Context.NOTIFICATION_SERVICE);
+                    .getSystemService(Context.NOTIFICATION_SERVICE);
             Notification.Builder builder = new Notification.Builder(context)
-                                               .setContentTitle("")
-                                               .setContentText("")
-                                               .setSmallIcon(resolveInfo.getIconResource());
+                    .setContentTitle("")
+                    .setContentText("")
+                    .setSmallIcon(resolveInfo.getIconResource());
             Notification notification = builder.build();
             try {
                 Field field = notification.getClass().getDeclaredField("extraNotification");
@@ -87,12 +89,13 @@ public class XiaomiHomeBadger implements Badger {
     @Override
     public List<String> getSupportLaunchers() {
         return Arrays.asList(
-            "com.miui.miuilite",
-            "com.miui.home",
-            "com.miui.miuihome",
-            "com.miui.miuihome2",
-            "com.miui.mihome",
-            "com.miui.mihome2",
-            "com.i.miui.launcher");
+                "com.miui.miuilite",
+                "com.miui.home",
+                "com.miui.miuihome",
+                "com.miui.miuihome2",
+                "com.miui.mihome",
+                "com.miui.mihome2",
+                "com.i.miui.launcher"
+        );
     }
 }
