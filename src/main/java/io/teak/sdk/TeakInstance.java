@@ -49,7 +49,7 @@ import io.teak.sdk.push.PushState;
 import io.teak.sdk.shortcutbadger.ShortcutBadger;
 import io.teak.sdk.store.IStore;
 
-public class TeakInstance {
+public class TeakInstance implements Unobfuscable {
     public final IObjectFactory objectFactory;
     private final Context context;
 
