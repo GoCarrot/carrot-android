@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "12126273415",
+    "firebase_url": "https://teak-sdk-test.firebaseio.com",
+    "project_id": "teak-sdk-test",
+    "storage_bucket": "teak-sdk-test.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:12126273415:android:102329156b15bf0c",
+        "android_client_info": {
+          "package_name": "com.teakio.pushtest"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "12126273415-qkrit6uv5h3ei3a58gvjmjipgpu387l8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_lmYrQPyGS8QQtCKk05-YRU92zWcIZbQ"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

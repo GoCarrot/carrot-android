@@ -31,7 +31,7 @@ import io.teak.sdk.io.IAndroidDeviceInfo;
 import io.teak.sdk.io.IAndroidNotification;
 import io.teak.sdk.io.IAndroidResources;
 import io.teak.sdk.push.ADMPushProvider;
-import io.teak.sdk.push.GCMPushProvider;
+import io.teak.sdk.push.FCMPushProvider;
 import io.teak.sdk.push.IPushProvider;
 import io.teak.sdk.store.IStore;
 
@@ -158,8 +158,8 @@ public class DefaultObjectFactory implements IObjectFactory {
             try {
                 Class.forName("com.google.android.gms.common.GooglePlayServicesUtil");
                 try {
-                    ret = new GCMPushProvider(context);
-                    Teak.log.i("factory.pushProvider", Helpers.mm.h("type", "gcm"));
+                    ret = new FCMPushProvider(context);
+                    Teak.log.i("factory.pushProvider", Helpers.mm.h("type", "fcm"));
                 } catch (IntegrationChecker.MissingDependencyException e) {
                     pushCreationException = e;
                 }

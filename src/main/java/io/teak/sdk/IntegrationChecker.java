@@ -29,6 +29,7 @@ import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -49,9 +50,29 @@ public class IntegrationChecker {
     public static final String[][] dependencies = new String[][] {
         new String[] {"android.support.v4.content.LocalBroadcastManager", "com.android.support:support-core-utils:26+"},
         new String[] {"android.support.v4.app.NotificationManagerCompat", "com.android.support:support-compat:26+"},
-        new String[] {"com.google.android.gms.common.GooglePlayServicesUtil", "com.google.android.gms:play-services-base:10+", "com.google.android.gms:play-services-basement:10+"},
-        new String[] {"com.google.android.gms.gcm.GoogleCloudMessaging", "com.google.android.gms:play-services-gcm:10+"},
-        new String[] {"com.google.android.gms.iid.InstanceIDListenerService", "com.google.android.gms:play-services-iid:10+"}};
+        new String[] {"com.google.android.gms.common.GooglePlayServicesUtil", "com.google.android.gms:play-services-base:15+", "com.google.android.gms:play-services-basement:15+"},
+        new String[] {"com.google.firebase.messaging.FirebaseMessagingService", "com.google.firebase:firebase-messaging:17+"}};
+
+    public static final String[] permissionFeatures = new String[] {
+        "shortcutbadger"};
+    public static final String[][] permissions = new String[][] {
+        new String[] {
+            "com.sec.android.provider.badge.permission.READ",
+            "com.sec.android.provider.badge.permission.WRITE",
+            "com.htc.launcher.permission.READ_SETTINGS",
+            "com.htc.launcher.permission.UPDATE_SHORTCUT",
+            "com.sonyericsson.home.permission.BROADCAST_BADGE",
+            "com.sonymobile.home.permission.PROVIDER_INSERT_BADGE",
+            "com.anddoes.launcher.permission.UPDATE_COUNT",
+            "com.majeur.launcher.permission.UPDATE_BADGE",
+            "com.huawei.android.launcher.permission.CHANGE_BADGE",
+            "com.huawei.android.launcher.permission.READ_SETTINGS",
+            "com.huawei.android.launcher.permission.WRITE_SETTINGS",
+            "android.permission.READ_APP_BADGE",
+            "com.oppo.launcher.permission.READ_SETTINGS",
+            "com.oppo.launcher.permission.WRITE_SETTINGS",
+            "me.everything.badger.permission.BADGE_COUNT_READ",
+            "me.everything.badger.permission.BADGE_COUNT_WRITE"}};
 
     public static final String[] configurationStrings = new String[] {
         AppConfiguration.TEAK_API_KEY_RESOURCE,
@@ -295,6 +316,31 @@ public class IntegrationChecker {
                     new HashMap.SimpleEntry<>("scheme", "(http|https)"));
                 if (teakSchemeOtherSchemes.size() > 0) {
                     addErrorToReport("activity.intent-filter.data.scheme", "the <intent-filter> with the \"teak\" data scheme *should not* contain any http or https schemes.\n\nPut the \"teak\" data scheme in its own <intent-filter>");
+                }
+
+                // Make sure per-feature permissions are included
+                final List<ManifestParser.XmlTag> usesPermissions = manifestParser.tags.find("$.uses-permission");
+                final Map<String, Boolean> permissionsAsMap = new HashMap<>();
+                for (ManifestParser.XmlTag permission : usesPermissions) {
+                    permissionsAsMap.put(permission.attributes.get("name"), true);
+                }
+
+                for (int i = 0; i < IntegrationChecker.permissionFeatures.length; i++) {
+                    final String feature = IntegrationChecker.permissionFeatures[i];
+                    final List<Integer> missingPermissions = new ArrayList<>();
+                    for (int j = 0; j < IntegrationChecker.permissions[i].length; i++) {
+                        final String permission = IntegrationChecker.permissions[i][j];
+                        if (!permissionsAsMap.containsKey(permission)) {
+                            missingPermissions.add(j);
+                        }
+                    }
+
+                    for (int j = 0; j < missingPermissions.size(); j++) {
+                        addErrorToReport("permission." + feature, "missing permission '" + IntegrationChecker.permissions[i][missingPermissions.get(j)] + "'");
+                    }
+                }
+                for (ManifestParser.XmlTag permission : usesPermissions) {
+                    Teak.log.i("permission", permission.toString());
                 }
             }
         } catch (Exception ignored) {

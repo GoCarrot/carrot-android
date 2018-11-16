@@ -5,10 +5,6 @@
 
     <uses-permission android:name="com.android.vending.BILLING" />
 
-    <permission android:name="com.teakio.pushtest" android:protectionLevel="signature"/>
-    <uses-permission android:name="com.teakio.pushtest.permission.C2D_MESSAGE"/>
-    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE"/>
-
     <!-- ADM Stuff -->
     <permission
         android:name="com.teakio.pushtest.permission.RECEIVE_ADM_MESSAGE"
@@ -44,17 +40,15 @@
                 <data android:scheme="https" android:host="teak-prod.jckpt.me" />
             </intent-filter>
         </activity>
-        <receiver android:name="io.teak.sdk.Teak"
-            android:exported="true"> <!-- android:permission="com.google.android.c2dm.permission.SEND"-->
+        <receiver android:name="io.teak.sdk.Teak" android:exported="false">
             <intent-filter>
-                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
-                <action android:name="com.google.android.c2dm.intent.REGISTRATION" />
                 <action android:name="com.teakio.pushtest.intent.TEAK_NOTIFICATION_OPENED" />
                 <action android:name="com.teakio.pushtest.intent.TEAK_NOTIFICATION_CLEARED" />
                 <category android:name="com.teakio.pushtest" />
             </intent-filter>
         </receiver>
 
+        <!-- ADM -->
         <amazon:enable-feature
             android:name="com.amazon.device.messaging"
             android:required="false"/>
@@ -68,7 +62,7 @@
                 <action android:name="com.amazon.device.messaging.intent.RECEIVE" />
                 <category android:name="com.teakio.pushtest" />
             </intent-filter>
-
         </receiver>
+        <!-- End ADM -->
     </application>
 </manifest>
