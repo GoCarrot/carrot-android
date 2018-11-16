@@ -102,7 +102,7 @@ public class TeakUnity implements Unobfuscable {
         }
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "deprecation"})
     public static void testExceptionReporting() {
         Teak.log.exception(new Raven.ReportTestException(Teak.SDKVersion));
     }

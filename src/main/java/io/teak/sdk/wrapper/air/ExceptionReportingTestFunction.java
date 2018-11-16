@@ -23,6 +23,7 @@ import io.teak.sdk.Teak;
 
 public class ExceptionReportingTestFunction implements FREFunction {
     @Override
+    @SuppressWarnings("deprecation")
     public FREObject call(FREContext context, FREObject[] argv) {
         Teak.log.exception(new Raven.ReportTestException(Teak.SDKVersion));
         return null;
