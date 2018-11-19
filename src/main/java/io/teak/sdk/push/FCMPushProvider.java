@@ -15,6 +15,7 @@
 package io.teak.sdk.push;
 
 import android.content.Context;
+import android.content.Intent;
 import android.support.annotation.NonNull;
 
 import com.google.android.gms.tasks.Task;
@@ -59,7 +60,12 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
-        TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Received, getApplicationContext(), remoteMessage.toIntent()));
+        this.postEvent(getApplicationContext(), remoteMessage.toIntent());
+    }
+
+    // For unit testing
+    public void postEvent(final Context context, final Intent intent) {
+        TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Received, context, intent));
     }
 
     //// IPushProvider
