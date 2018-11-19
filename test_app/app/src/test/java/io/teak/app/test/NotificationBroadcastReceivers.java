@@ -1,7 +1,6 @@
 package io.teak.app.test;
 
 import android.content.Context;
-import com.google.firebase.messaging.RemoteMessage;
 
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -68,7 +67,6 @@ public class NotificationBroadcastReceivers {
         when(extras.getBoolean("teakUnitTest")).thenReturn(true);
 
         final Intent intent = mock(Intent.class);
-        when(intent.getAction()).thenReturn(null);
         when(intent.getExtras()).thenReturn(extras);
 
         Request.setTeakApiKey("test_teak_api_key");
@@ -76,9 +74,7 @@ public class NotificationBroadcastReceivers {
         fcmPushProvider.postEvent(context, intent);
 
         verify(eventListener, timeout(500).times(1)).eventRecieved(PushNotificationEvent.class, PushNotificationEvent.Received);
-
-        // TODO: Figure out why this stopped firing after FCM transition.
-        //verify(eventListener, timeout(500).times(1)).eventRecieved(NotificationDisplayEvent.class, NotificationDisplayEvent.Type);
+        verify(eventListener, timeout(500).times(1)).eventRecieved(NotificationDisplayEvent.class, NotificationDisplayEvent.Type);
 
         ArgumentCaptor<Throwable> thrown = ArgumentCaptor.forClass(Throwable.class);
         verify(teakLog, timeout(1000).times(0)).exception(thrown.capture());
