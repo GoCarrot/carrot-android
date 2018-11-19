@@ -487,12 +487,6 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             return;
         }
 
-//        if (GCM_RECEIVE_INTENT_ACTION.equals(action)) {
-//            TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Received, context, intent));
-//        } else if (GCM_REGISTRATION_INTENT_ACTION.equals(action)) {
-//            final String registrationId = intent.getStringExtra("registration_id");
-//            TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", registrationId));
-//        } else
         if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX)) {
             TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Interaction, context, intent));
         } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX)) {
