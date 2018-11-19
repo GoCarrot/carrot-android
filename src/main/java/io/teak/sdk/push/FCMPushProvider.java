@@ -30,6 +30,7 @@ import io.teak.sdk.Helpers;
 import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
+import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.event.PushRegistrationEvent;
 
@@ -63,8 +64,11 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
         this.postEvent(getApplicationContext(), remoteMessage.toIntent());
     }
 
-    // For unit testing
     public void postEvent(final Context context, final Intent intent) {
+        final TeakCore teakCore = TeakCore.getWithoutThrow(context);
+        if (teakCore == null) {
+            Teak.log.e("google.fcm.null_teak_core", "TeakCore.getWithoutThrow returned null.");
+        }
         TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Received, context, intent));
     }
 
