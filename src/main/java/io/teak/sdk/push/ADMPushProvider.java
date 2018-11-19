@@ -34,6 +34,7 @@ import io.teak.sdk.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -74,7 +75,7 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
     ///// IPushProvider
 
     @Override
-    public void requestPushKey(@NonNull String ignored) {
+    public void requestPushKey(@NonNull Map<String, Object> ignored) {
         executor.execute(new Runnable() {
             @Override
             public void run() {

@@ -38,7 +38,9 @@ public class AppConfiguration {
     @SuppressWarnings("WeakerAccess")
     public final String apiKey;
     @SuppressWarnings("WeakerAccess")
-    public final String pushSenderId;
+    public final String gcmSenderId;
+    @SuppressWarnings("WeakerAccess")
+    public final String firebaseAppId;
     @SuppressWarnings("WeakerAccess")
     public final int jobId;
     @SuppressWarnings("WeakerAccess")
@@ -62,6 +64,8 @@ public class AppConfiguration {
     public static final String TEAK_APP_ID_RESOURCE = "io_teak_app_id";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_GCM_SENDER_ID_RESOURCE = "io_teak_gcm_sender_id";
+    @SuppressWarnings("WeakerAccess")
+    public static final String TEAK_FIREBASE_APP_ID_RESOURCE = "io_teak_firebase_app_id";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_JOB_ID_RESOURCE = "io_teak_job_id";
     @SuppressWarnings("WeakerAccess")
@@ -126,9 +130,36 @@ public class AppConfiguration {
                 }
             }
 
-            this.pushSenderId = tempPushSenderId;
-            if (this.pushSenderId == null || this.pushSenderId.trim().length() < 1) {
+            // If the google-services.json file was included and processed, gcm_defaultSenderId will be present
+            if (tempPushSenderId == null) {
+                tempPushSenderId = androidResources.getStringResource("gcm_defaultSenderId");
+            }
+
+            this.gcmSenderId = tempPushSenderId;
+            if (this.gcmSenderId == null || this.gcmSenderId.trim().length() < 1) {
                 android.util.Log.e(IntegrationChecker.LOG_TAG, "R.string." + TEAK_GCM_SENDER_ID_RESOURCE + " not present or empty, push notifications disabled");
+            }
+        }
+
+        // Firebase App Id
+        // Push Sender Id
+        {
+            String tempFirebaseAppId = androidResources.getStringResource(TEAK_FIREBASE_APP_ID_RESOURCE);
+            if (tempFirebaseAppId == null && metaData != null) {
+                String firebaseAppIdFromMetaData = metaData.getString(TEAK_FIREBASE_APP_ID_RESOURCE);
+                if (firebaseAppIdFromMetaData != null && firebaseAppIdFromMetaData.startsWith("teak")) {
+                    tempFirebaseAppId = firebaseAppIdFromMetaData.substring(4);
+                }
+            }
+
+            // If the google-services.json file was included and processed, google_app_id will be present
+            if (tempFirebaseAppId == null) {
+                tempFirebaseAppId = androidResources.getStringResource("google_app_id");
+            }
+
+            this.firebaseAppId = tempFirebaseAppId;
+            if (this.firebaseAppId == null || this.firebaseAppId.trim().length() < 1) {
+                android.util.Log.e(IntegrationChecker.LOG_TAG, "R.string." + TEAK_FIREBASE_APP_ID_RESOURCE + " not present or empty, push notifications disabled");
             }
         }
 
@@ -202,7 +233,8 @@ public class AppConfiguration {
         HashMap<String, Object> ret = new HashMap<>();
         ret.put("appId", this.appId);
         ret.put("apiKey", this.apiKey);
-        ret.put("pushSenderId", this.pushSenderId);
+        ret.put("gcmSenderId", this.gcmSenderId);
+        ret.put("firebaseAppId", this.firebaseAppId);
         ret.put("jobId", this.jobId);
         ret.put("appVersion", this.appVersion);
         ret.put("bundleId", this.bundleId);

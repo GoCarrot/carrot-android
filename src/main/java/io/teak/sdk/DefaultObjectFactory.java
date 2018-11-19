@@ -158,7 +158,7 @@ public class DefaultObjectFactory implements IObjectFactory {
             try {
                 Class.forName("com.google.android.gms.common.GooglePlayServicesUtil");
                 try {
-                    ret = new FCMPushProvider(context);
+                    ret = FCMPushProvider.initialize(context);
                     Teak.log.i("factory.pushProvider", Helpers.mm.h("type", "fcm"));
                 } catch (IntegrationChecker.MissingDependencyException e) {
                     pushCreationException = e;
