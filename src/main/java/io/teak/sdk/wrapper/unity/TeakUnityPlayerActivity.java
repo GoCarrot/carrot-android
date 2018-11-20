@@ -29,10 +29,4 @@ public class TeakUnityPlayerActivity extends UnityPlayerActivity implements Unob
         super.onCreate(savedInstanceState);
         TeakUnity.initialize();
     }
-
-    @Override
-    protected void onNewIntent(Intent intent) {
-        setIntent(intent);
-        super.onNewIntent(intent);
-    }
 }
