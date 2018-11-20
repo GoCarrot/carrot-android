@@ -10,6 +10,11 @@ android {
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
+
+        manifestPlaceholders = [
+                teakShortDomain:"teak-prod.jckpt.me",
+                teakAppId:"1136371193060244"
+        ]
     }
     buildTypes {
         release {

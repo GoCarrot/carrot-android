@@ -10,6 +10,10 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders = [
+                teakShortDomain:"teakangrybots.jckpt.me",
+                teakAppId:"1136371193060244"
+        ]
     }
     buildTypes {
         release {

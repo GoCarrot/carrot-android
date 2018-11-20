@@ -1,21 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-   Copyright (C) 2013 Google Inc.
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-      http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
--->
-
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:amazon="http://schemas.amazon.com/apk/res/android"
     package="io.teak.sdk">
 
     <!--for android-->
@@ -58,7 +44,28 @@
     <uses-permission android:name="me.everything.badger.permission.BADGE_COUNT_READ"/>
     <uses-permission android:name="me.everything.badger.permission.BADGE_COUNT_WRITE"/>
 
+    <!-- ADM -->
+    <permission
+        android:name="${applicationId}.permission.RECEIVE_ADM_MESSAGE"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="${applicationId}.permission.RECEIVE_ADM_MESSAGE" />
+    <uses-permission android:name="com.amazon.device.messaging.permission.RECEIVE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
     <application>
+        <!--<provider
+            android:authorities="${applicationId}.yourcontentprovider"
+            android:name=".YourContentProvider"
+            android:exported="false" />-->
+
+        <receiver android:name="io.teak.sdk.Teak" android:exported="false">
+            <intent-filter>
+                <action android:name="${applicationId}.intent.TEAK_NOTIFICATION_OPENED" />
+                <action android:name="${applicationId}.TEAK_NOTIFICATION_CLEARED" />
+                <category android:name="${applicationId}" />
+            </intent-filter>
+        </receiver>
+
         <!-- Teak error reporter -->
         <service android:name="io.teak.sdk.service.RavenService"
                  android:process=":teak.raven"
@@ -82,7 +89,21 @@
                 <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
             </intent-filter>
         </service>
+
+        <!-- ADM -->
+        <amazon:enable-feature
+            android:name="com.amazon.device.messaging"
+            android:required="false"/>
+        <service android:name="io.teak.sdk.push.ADMPushProvider"
+            android:exported="false" />
+        <receiver
+            android:name="io.teak.sdk.push.ADMPushProvider$MessageAlertReceiver"
+            android:permission="com.amazon.device.messaging.permission.SEND" >
+            <intent-filter>
+                <action android:name="com.amazon.device.messaging.intent.REGISTRATION" />
+                <action android:name="com.amazon.device.messaging.intent.RECEIVE" />
+                <category android:name="${applicationId}" />
+            </intent-filter>
+        </receiver>
     </application>
-
-
 </manifest>
