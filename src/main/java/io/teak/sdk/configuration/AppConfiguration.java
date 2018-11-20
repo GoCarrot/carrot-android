@@ -131,6 +131,7 @@ public class AppConfiguration {
             }
 
             // If the google-services.json file was included and processed, gcm_defaultSenderId will be present
+            // https://developers.google.com/android/guides/google-services-plugin#processing_the_json_file
             if (tempPushSenderId == null) {
                 tempPushSenderId = androidResources.getStringResource("gcm_defaultSenderId");
             }
@@ -153,6 +154,7 @@ public class AppConfiguration {
             }
 
             // If the google-services.json file was included and processed, google_app_id will be present
+            // https://developers.google.com/android/guides/google-services-plugin#processing_the_json_file
             if (tempFirebaseAppId == null) {
                 tempFirebaseAppId = androidResources.getStringResource("google_app_id");
             }
