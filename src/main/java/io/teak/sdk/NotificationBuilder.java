@@ -100,7 +100,7 @@ public class NotificationBuilder {
 
     private static String notificationChannelId;
     public static String getNotificationChannelId(Context context) {
-        // Notification channel, required for targeting API 26+
+        // Notification channel, required for running on API 26+
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (notificationChannelId == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
             try {
@@ -123,7 +123,7 @@ public class NotificationBuilder {
 
     private static String quietNotificationChannelId;
     public static String getQuietNotificationChannelId(Context context) {
-        // Notification channel, required for targeting API 26+
+        // Notification channel, required for running on API 26+
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (quietNotificationChannelId == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
             try {
@@ -144,22 +144,15 @@ public class NotificationBuilder {
     }
 
     private static NotificationCompat.Builder getNotificationCompatBuilder(Context context) {
-        NotificationCompat.Builder builder;
-        if (Helpers.getTargetSDKVersion(context) >= Build.VERSION_CODES.O) {
-            builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
-            builder.setGroup(UUID.randomUUID().toString());
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
+        builder.setGroup(UUID.randomUUID().toString());
 
-            // Set visibility of our notifications to public
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
-                try {
-                    builder.setVisibility(Notification.VISIBILITY_PUBLIC);
-                } catch (Exception ignored) {
-                }
+        // Set visibility of our notifications to public
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+            try {
+                builder.setVisibility(Notification.VISIBILITY_PUBLIC);
+            } catch (Exception ignored) {
             }
-        } else {
-            @SuppressWarnings("deprecation")
-            final NotificationCompat.Builder deprecatedBuilder = new NotificationCompat.Builder(context);
-            builder = deprecatedBuilder;
         }
         return builder;
     }

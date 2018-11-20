@@ -106,6 +106,12 @@ public class IntegrationChecker {
         }
     }
 
+    public static class UnsupportedVersionException extends Exception {
+        public UnsupportedVersionException(@NonNull String message) {
+            super(message);
+        }
+    }
+
     public static class MissingDependencyException extends ClassNotFoundException {
         public final String[] missingDependency;
 
@@ -147,8 +153,13 @@ public class IntegrationChecker {
         return false;
     }
 
-    private IntegrationChecker(@NonNull Activity activity) {
+    private IntegrationChecker(@NonNull Activity activity) throws UnsupportedVersionException {
         this.activity = activity;
+
+        // Teak 2.0+ requires targeting Android 26+
+        if (Helpers.getTargetSDKVersion(activity) < Build.VERSION_CODES.O) {
+            throw new UnsupportedVersionException("Teak only supports targetSdkVersion 26 or higher.");
+        }
 
         // Check for configuration strings
         try {
@@ -375,16 +386,14 @@ public class IntegrationChecker {
         try {
             final ApplicationInfo appInfo = this.activity.getPackageManager().getApplicationInfo(this.activity.getPackageName(), PackageManager.GET_META_DATA);
             final int targetSdkVersion = appInfo.targetSdkVersion;
-            if (targetSdkVersion >= Build.VERSION_CODES.O) {
-                try {
-                    Class<?> notificationCompatBuilderClass = Class.forName("android.support.v4.app.NotificationCompat$Builder");
-                    notificationCompatBuilderClass.getMethod("setChannelId", String.class);
-                } catch (ClassNotFoundException ignored) {
-                    // This is fine, it will get caught by the
-                } catch (Exception ignored) {
-                    addErrorToReport("support-v4.less-than.26.1", "App is targeting SDK version " + targetSdkVersion +
-                                                                      " but support-v4 library needs to be updated to at least version 26.1.0 to support notification categories.");
-                }
+            try {
+                Class<?> notificationCompatBuilderClass = Class.forName("android.support.v4.app.NotificationCompat$Builder");
+                notificationCompatBuilderClass.getMethod("setChannelId", String.class);
+            } catch (ClassNotFoundException ignored) {
+                // This is fine, it will get caught by the
+            } catch (Exception ignored) {
+                addErrorToReport("support-v4.less-than.26.1", "App is targeting SDK version " + targetSdkVersion +
+                                                                  " but support-v4 library needs to be updated to at least version 26.1.0 to support notification categories.");
             }
         } catch (Exception ignored) {
         }
