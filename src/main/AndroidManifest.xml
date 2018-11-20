@@ -53,11 +53,14 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application>
-        <!--<provider
-            android:authorities="${applicationId}.yourcontentprovider"
-            android:name=".YourContentProvider"
-            android:exported="false" />-->
+        <!-- Teak Init via ContentProvider -->
+        <provider
+            android:authorities="${applicationId}.TeakInitProvider"
+            android:exported="false"
+            android:enabled="true"
+            android:name="io.teak.sdk.provider.TeakInitProvider"/>
 
+        <!-- Teak Broadcast Receiver -->
         <receiver android:name="io.teak.sdk.Teak" android:exported="false">
             <intent-filter>
                 <action android:name="${applicationId}.intent.TEAK_NOTIFICATION_OPENED" />
