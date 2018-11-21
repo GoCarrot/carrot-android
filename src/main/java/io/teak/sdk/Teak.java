@@ -498,40 +498,17 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     // Called by Unity integration
     @SuppressWarnings("unused")
-    public static void openIABPurchaseSucceeded(String json) {
-        try {
-            JSONObject purchase = new JSONObject(json);
-            final Map<String, Object> extras = new HashMap<>();
-            extras.put("iap_plugin", "openiab");
-            Teak.log.i("purchase.open_iab", purchase.toMap());
-
-            final String originalJson = purchase.getString("originalJson");
-            if (Instance != null) {
-                asyncExecutor.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        Instance.purchaseSucceeded(originalJson, extras);
-                    }
-                });
-            }
-        } catch (Exception e) {
-            Teak.log.exception(e);
-        }
-    }
-
-    // Called by Unity integration
-    @SuppressWarnings("unused")
-    public static void prime31PurchaseSucceeded(final String json) {
+    public static void pluginPurchaseSucceeded(final String json, final String pluginName) {
         try {
             final JSONObject originalJson = new JSONObject(json);
-            final Map<String, Object> extras = new HashMap<>();
-            extras.put("iap_plugin", "prime31");
-            Teak.log.i("purchase.prime_31", originalJson.toMap());
+            Teak.log.i("purchase." + pluginName, originalJson.toMap());
 
             if (Instance != null) {
                 asyncExecutor.submit(new Runnable() {
                     @Override
                     public void run() {
+                        final Map<String, Object> extras = new HashMap<>();
+                        extras.put("iap_plugin", pluginName);
                         Instance.purchaseSucceeded(json, extras);
                     }
                 });
