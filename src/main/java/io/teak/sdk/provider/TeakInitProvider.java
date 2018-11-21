@@ -13,6 +13,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import io.teak.sdk.Teak;
 import io.teak.sdk.wrapper.unity.TeakUnity;
@@ -21,16 +22,17 @@ public class TeakInitProvider extends ContentProvider {
     private boolean validConfiguration = true;
 
     public static final String IO_TEAK_INITIALIZE = "io.teak.sdk.initialize";
+    public static final String LOG_TAG = "Teak.InitProvider";
 
     @Override
     public void attachInfo(Context context, ProviderInfo providerInfo) {
         final String initProviderAuthorities = context.getPackageName() + ".TeakInitProvider";
         if (providerInfo == null) {
             this.validConfiguration = false;
-            Teak.log.e("init_provider.attachInfo","ProviderInfo cannot be null.");
+            Log.e(LOG_TAG, "ProviderInfo cannot be null.");
         } else if (!initProviderAuthorities.equals(providerInfo.authority)) {
             this.validConfiguration = false;
-            Teak.log.e("init_provider.authority","Missing applicationId during AndroidManifest merge.");
+            Log.e(LOG_TAG,"Missing applicationId during AndroidManifest merge.");
         }
 
         super.attachInfo(context, providerInfo);
@@ -66,6 +68,7 @@ public class TeakInitProvider extends ContentProvider {
         @Override
         public void onActivityCreated(Activity activity, Bundle bundle) {
             if (shouldAttachToActivity(activity)) {
+                Log.i(LOG_TAG, activity.getComponentName().flattenToShortString());
                 Teak.onCreate(activity);
                 if (Teak.Instance != null) {
                     Teak.Instance.lifecycleCallbacks.onActivityCreated(activity, bundle);
