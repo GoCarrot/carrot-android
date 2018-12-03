@@ -50,7 +50,7 @@ public class IntegrationChecker {
     public static final String[][] dependencies = new String[][] {
         new String[] {"android.support.v4.content.LocalBroadcastManager", "com.android.support:support-core-utils:26+"},
         new String[] {"android.support.v4.app.NotificationManagerCompat", "com.android.support:support-compat:26+"},
-        new String[] {"com.google.android.gms.common.GooglePlayServicesUtil", "com.google.android.gms:play-services-base:15+", "com.google.android.gms:play-services-basement:15+"},
+        new String[] {"com.google.android.gms.common.GooglePlayServicesUtil", "com.google.android.gms:play-services-base:16+", "com.google.android.gms:play-services-basement:16+"},
         new String[] {"com.google.firebase.messaging.FirebaseMessagingService", "com.google.firebase:firebase-messaging:17+"}};
 
     public static final String[] permissionFeatures = new String[] {
