@@ -16,6 +16,7 @@ package io.teak.sdk.push;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 
 import com.google.android.gms.tasks.Task;
@@ -85,9 +86,13 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
     public void onMessageReceived(RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
 
+        // Future-Pat, the RemoteMessage.toIntent method doesn't seem to exist all the time
+        // so don't rely on it.
+        final Intent intent = new Intent().putExtras(welcomeToTheBundle(remoteMessage.getData()));
+
         // Future-Pat, this method will only be invoked via an incoming message,
         // in which case getApplicationContext() will work
-        this.postEvent(getApplicationContext(), remoteMessage.toIntent());
+        this.postEvent(getApplicationContext(), intent);
     }
 
     //// IPushProvider
@@ -107,11 +112,13 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
             // and wants to use the [DEFAULT] app name.
             if (this.firebaseApp == null) {
                 try {
+                    Teak.log.i("google.fcm.intialization", pushConfiguration);
                     FirebaseOptions.Builder builder = new FirebaseOptions.Builder()
-                            .setGcmSenderId((String) pushConfiguration.get("gcmSenderId"))
-                            .setApplicationId((String) pushConfiguration.get("firebaseAppId"));
+                                                          .setGcmSenderId((String) pushConfiguration.get("gcmSenderId"))
+                                                          .setApplicationId((String) pushConfiguration.get("firebaseAppId"));
                     this.firebaseApp = FirebaseApp.initializeApp(this.context, builder.build(), "teak");
-                } catch (Exception ignored) {
+                } catch (Exception e) {
+                    Teak.log.exception(e);
                 }
             }
         }
@@ -121,8 +128,8 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
         } else {
             try {
                 final Task<InstanceIdResult> instanceIdTask = FirebaseInstanceId
-                        .getInstance(this.firebaseApp)
-                        .getInstanceId();
+                                                                  .getInstance(this.firebaseApp)
+                                                                  .getInstanceId();
 
                 instanceIdTask.addOnSuccessListener(new OnSuccessListener<InstanceIdResult>() {
                     @Override
@@ -138,5 +145,43 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
                 Teak.log.exception(e);
             }
         }
+    }
+
+    ///// Beware of the Leopard
+
+    /*
+        //
+        // com.google.firebase.messaging.RemoteMessage
+        //
+        public final Map<String, String> getData() {
+            if (this.zzdt == null) {
+                Bundle var1 = this.zzds;
+                ArrayMap var2 = new ArrayMap();
+                Iterator var3 = var1.keySet().iterator();
+
+                while(var3.hasNext()) {
+                    String var4 = (String)var3.next();
+                    Object var5;
+                    if ((var5 = var1.get(var4)) instanceof String) {
+                        String var6 = (String)var5;
+                        if (!var4.startsWith("google.") && !var4.startsWith("gcm.") && !var4.equals("from") && !var4.equals("message_type") && !var4.equals("collapse_key")) {
+                            var2.put(var4, var6);
+                        }
+                    }
+                }
+
+                this.zzdt = var2;
+            }
+
+            return this.zzdt;
+        }
+     */
+
+    private static Bundle welcomeToTheBundle(Map<String, String> remoteMessageGetDataResult) {
+        final Bundle bundle = new Bundle();
+        for (Map.Entry<String, String> entry : remoteMessageGetDataResult.entrySet()) {
+            bundle.putString(entry.getKey(), entry.getValue());
+        }
+        return bundle;
     }
 }
