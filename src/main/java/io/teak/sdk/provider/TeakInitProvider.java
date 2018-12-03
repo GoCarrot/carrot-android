@@ -32,7 +32,7 @@ public class TeakInitProvider extends ContentProvider {
             Log.e(LOG_TAG, "ProviderInfo cannot be null.");
         } else if (!initProviderAuthorities.equals(providerInfo.authority)) {
             this.validConfiguration = false;
-            Log.e(LOG_TAG,"Missing applicationId during AndroidManifest merge.");
+            Log.e(LOG_TAG, "Missing applicationId during AndroidManifest merge.");
         }
 
         super.attachInfo(context, providerInfo);
