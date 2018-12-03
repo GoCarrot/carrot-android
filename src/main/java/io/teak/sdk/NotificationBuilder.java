@@ -423,45 +423,39 @@ public class NotificationBuilder {
                         }
                     } else if (isUIType(viewElement, ViewFlipper.class)) {
                         final JSONObject animationConfig = viewConfig.getJSONObject(key);
-                        try {
-                            final Bitmap bitmap = loadBitmapFromUriString(animationConfig.getString("sprite_sheet"));
-                            if (bitmap == null) {
-                                throw new AssetLoadException(animationConfig.getString("sprite_sheet"));
-                            }
-                            final int frameWidth = animationConfig.getInt("width");
-                            final int frameHeight = animationConfig.getInt("height");
-                            final int numCols = bitmap.getWidth() / frameWidth;
-                            final int numRows = bitmap.getHeight() / frameHeight;
-                            final int msPerFrame = animationConfig.optInt("display_ms", 500);
-
-                            for (int x = 0; x < numCols; x++) {
-                                for (int y = 0; y < numRows; y++) {
-                                    final int startX = x * frameWidth;
-                                    final int startY = y * frameHeight;
-                                    Bitmap frame = Bitmap.createBitmap(bitmap, startX, startY, frameWidth, frameHeight);
-
-                                    if (frame == null) {
-                                        throw new IllegalArgumentException("Frame [" + x + ", " + y + "] is null (" + animationConfig.getString("sprite_sheet") + ")");
-                                    }
-
-                                    final RemoteViews frameView = new RemoteViews(context.getPackageName(),
-                                        isLargeView ? R.layout("teak_big_frame") : R.layout("teak_frame"));
-                                    final int frameViewId = R.id("notification_background");
-                                    frameView.setImageViewBitmap(frameViewId, frame);
-                                    remoteViews.addView(viewElementId, frameView);
-                                }
-                            }
-
-                            // Set frame rate
-                            remoteViews.setInt(viewElementId, "setFlipInterval", msPerFrame);
-
-                            // Mark notification as containing animated element(s)
-                            teakNotificaton.isAnimated = true;
-                        } catch (OutOfMemoryError ignored) {
-                            // Request lower-res version?
-                        } catch (Exception e) {
-                            Teak.log.exception(e);
+                        final Bitmap bitmap = loadBitmapFromUriString(animationConfig.getString("sprite_sheet"));
+                        if (bitmap == null) {
+                            throw new AssetLoadException(animationConfig.getString("sprite_sheet"));
                         }
+                        final int frameWidth = animationConfig.getInt("width");
+                        final int frameHeight = animationConfig.getInt("height");
+                        final int numCols = bitmap.getWidth() / frameWidth;
+                        final int numRows = bitmap.getHeight() / frameHeight;
+                        final int msPerFrame = animationConfig.optInt("display_ms", 500);
+
+                        for (int x = 0; x < numCols; x++) {
+                            for (int y = 0; y < numRows; y++) {
+                                final int startX = x * frameWidth;
+                                final int startY = y * frameHeight;
+                                Bitmap frame = Bitmap.createBitmap(bitmap, startX, startY, frameWidth, frameHeight);
+
+                                if (frame == null) {
+                                    throw new IllegalArgumentException("Frame [" + x + ", " + y + "] is null (" + animationConfig.getString("sprite_sheet") + ")");
+                                }
+
+                                final RemoteViews frameView = new RemoteViews(context.getPackageName(),
+                                    isLargeView ? R.layout("teak_big_frame") : R.layout("teak_frame"));
+                                final int frameViewId = R.id("notification_background");
+                                frameView.setImageViewBitmap(frameViewId, frame);
+                                remoteViews.addView(viewElementId, frameView);
+                            }
+                        }
+
+                        // Set frame rate
+                        remoteViews.setInt(viewElementId, "setFlipInterval", msPerFrame);
+
+                        // Mark notification as containing animated element(s)
+                        teakNotificaton.isAnimated = true;
                     }
                     // TODO: Else, report error to dashboard.
                 }
@@ -503,16 +497,19 @@ public class NotificationBuilder {
                 return remoteViews;
             }
 
-            private Bitmap loadBitmapFromUriString(String bitmapUriString) throws Exception {
+            private Bitmap loadBitmapFromUriString(String bitmapUriString) throws OutOfMemoryError {
                 final Uri bitmapUri = Uri.parse(bitmapUriString);
                 Bitmap ret = null;
                 InputStream inputStream = null;
                 try {
-                    if (bitmapUri.getScheme().equals("assets")) {
+                    if (bitmapUri.getScheme() != null &&
+                        bitmapUri.getScheme().equals("assets")) {
                         String assetFilePath = bitmapUri.getPath();
-                        assetFilePath = assetFilePath.startsWith("/") ? assetFilePath.substring(1) : assetFilePath;
-                        inputStream = context.getAssets().open(assetFilePath);
-                        ret = BitmapFactory.decodeStream(inputStream);
+                        if (assetFilePath != null) {
+                            assetFilePath = assetFilePath.startsWith("/") ? assetFilePath.substring(1) : assetFilePath;
+                            inputStream = context.getAssets().open(assetFilePath);
+                            ret = BitmapFactory.decodeStream(inputStream);
+                        }
                     } else {
                         // Add the "well behaved heap size" as a query param
                         final Uri.Builder uriBuilder = Uri.parse(bitmapUriString).buildUpon();
@@ -532,8 +529,6 @@ public class NotificationBuilder {
                         inputStream = conn.getInputStream();
                         ret = BitmapFactory.decodeStream(inputStream);
                     }
-                } catch (OutOfMemoryError ignored) {
-                    // Request lower-res version?
                 } catch (SocketException ignored) {
                 } catch (SSLException ignored) {
                 } catch (UnknownHostException ignored) {
@@ -542,7 +537,10 @@ public class NotificationBuilder {
                 } catch (IOException ignored) {
                 } finally {
                     if (inputStream != null) {
-                        inputStream.close();
+                        try {
+                            inputStream.close();
+                        } catch (IOException ignored) {
+                        }
                     }
                 }
                 return ret;
@@ -558,7 +556,11 @@ public class NotificationBuilder {
             }
 
             private RemoteViews buildLargeViews(String name) throws Exception {
-                return this.buildViews(name, true);
+                try {
+                    return this.buildViews(name, true);
+                } catch (OutOfMemoryError e) {
+                    return null;
+                }
             }
         }
         ViewBuilder viewBuilder = new ViewBuilder();
@@ -580,10 +582,10 @@ public class NotificationBuilder {
                 bigContentView = viewBuilder.buildLargeViews(teakNotificaton.display.getString("bigContentView"));
 
                 // Assign small content view to display above big content view, if that's what the notification wants
-                if (displayContentViewAboveBigContentView) {
+                if (bigContentView != null && displayContentViewAboveBigContentView) {
                     final RemoteViews frameView = viewBuilder.buildViews(teakNotificaton.display.getString("contentView"));
                     bigContentView.addView(R.id("small_view_container"), frameView);
-                } else {
+                } else if (bigContentView != null) {
                     bigContentView.setViewVisibility(R.id("small_view_container"), View.GONE);
                 }
             } catch (Exception e) {
