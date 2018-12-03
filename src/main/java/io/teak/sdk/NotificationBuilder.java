@@ -62,6 +62,7 @@ import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -331,6 +332,16 @@ public class NotificationBuilder {
 
         class ViewBuilder {
             private RemoteViews buildViews(String name, boolean isLargeView) throws Exception {
+                // Run the GC
+                long preGc = Runtime.getRuntime().freeMemory();
+                Runtime.getRuntime().gc();
+                long postGc = Runtime.getRuntime().freeMemory();
+                Teak.log.i("notification_builder.gc", Helpers.mm.h(
+                        "pre_gc", String.format(Locale.US, "%dk", preGc / 1024L),
+                        "post_gc", String.format(Locale.US, "%dk", postGc / 1024L),
+                        "delta_gc", String.format(Locale.US, "%dk", (postGc - preGc) / 1024L)
+                ));
+
                 final int viewLayout = R.layout(name);
                 final RemoteViews remoteViews = new RemoteViews(context.getPackageName(), viewLayout);
 
