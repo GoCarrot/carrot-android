@@ -51,7 +51,8 @@ public class IntegrationChecker {
         new String[] {"android.support.v4.content.LocalBroadcastManager", "com.android.support:support-core-utils:26+"},
         new String[] {"android.support.v4.app.NotificationManagerCompat", "com.android.support:support-compat:26+"},
         new String[] {"com.google.android.gms.common.GooglePlayServicesUtil", "com.google.android.gms:play-services-base:16+", "com.google.android.gms:play-services-basement:16+"},
-        new String[] {"com.google.firebase.messaging.FirebaseMessagingService", "com.google.firebase:firebase-messaging:17+"}};
+        new String[] {"com.google.firebase.messaging.FirebaseMessagingService", "com.google.firebase:firebase-messaging:17+"},
+        new String[] {"com.google.android.gms.ads.identifier.AdvertisingIdClient", "com.google.android.gms:play-services-ads:16+"}};
 
     public static final String[] permissionFeatures = new String[] {
         "shortcutbadger"};
