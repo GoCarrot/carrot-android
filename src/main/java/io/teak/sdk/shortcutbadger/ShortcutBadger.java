@@ -29,6 +29,7 @@ import io.teak.sdk.shortcutbadger.impl.VivoHomeBadger;
 import io.teak.sdk.shortcutbadger.impl.ZTEHomeBadger;
 import io.teak.sdk.shortcutbadger.impl.ZukHomeBadger;
 
+
 /**
  * @author Leo Lin
  */
@@ -136,7 +137,8 @@ public final class ShortcutBadger {
                     String lastErrorMessage = null;
                     for (int i = 0; i < SUPPORTED_CHECK_ATTEMPTS; i++) {
                         try {
-                            Log.i(LOG_TAG, "Checking if platform supports badge counters, attempt " + String.format("%d/%d.", i + 1, SUPPORTED_CHECK_ATTEMPTS));
+                            Log.i(LOG_TAG, "Checking if platform supports badge counters, attempt "
+                                    + String.format("%d/%d.", i + 1, SUPPORTED_CHECK_ATTEMPTS));
                             if (initBadger(context)) {
                                 sShortcutBadger.executeBadge(context, sComponentName, 0);
                                 sIsBadgeCounterSupported = true;
@@ -154,7 +156,8 @@ public final class ShortcutBadger {
                     }
 
                     if (sIsBadgeCounterSupported == null) {
-                        Log.w(LOG_TAG, "Badge counter seems not supported for this platform: " + lastErrorMessage);
+                        Log.w(LOG_TAG, "Badge counter seems not supported for this platform: "
+                                + lastErrorMessage);
                         sIsBadgeCounterSupported = false;
                     }
                 }
@@ -235,5 +238,6 @@ public final class ShortcutBadger {
 
     // Avoid anybody to instantiate this class
     private ShortcutBadger() {
+
     }
 }

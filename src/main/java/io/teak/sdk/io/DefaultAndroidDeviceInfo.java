@@ -47,9 +47,23 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
     private final Context context;
 
     public DefaultAndroidDeviceInfo(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
-        IntegrationChecker.requireDependency("com.google.android.gms.common.GooglePlayServicesUtil");
-
         this.context = context;
+
+        IntegrationChecker.requireDependency("com.google.android.gms.common.GooglePlayServicesUtil");
+        if (isGooglePlayServicesAvailable()) {
+            IntegrationChecker.requireDependency("com.google.android.gms.ads.identifier.AdvertisingIdClient");
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private boolean isGooglePlayServicesAvailable() {
+        try {
+            // TODO: This needs to be re-checked in case it's something like SERVICE_UPDATING or SERVICE_VERSION_UPDATE_REQUIRED
+            final int gpsAvailable = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this.context);
+            return (gpsAvailable == ConnectionResult.SUCCESS);
+        } catch (Exception ignored) {
+        }
+        return false;
     }
 
     @NonNull
@@ -144,19 +158,14 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
             final FutureTask<AdvertisingIdClient.Info> adInfoFuture = new FutureTask<>(new RetriableTask<>(10, 7000L, new Callable<AdvertisingIdClient.Info>() {
                 @Override
                 public AdvertisingIdClient.Info call() throws Exception {
-                    @SuppressWarnings("deprecation")
-                    final int gpsAvailable = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
-                    if (gpsAvailable == ConnectionResult.SUCCESS) {
+                    if (isGooglePlayServicesAvailable()) {
                         return AdvertisingIdClient.getAdvertisingIdInfo(context);
                     }
                     throw new Exception("Retrying GooglePlayServicesUtil.isGooglePlayServicesAvailable()");
                 }
             }));
 
-            // TODO: This needs to be re-checked in case it's something like SERVICE_UPDATING or SERVICE_VERSION_UPDATE_REQUIRED
-            @SuppressWarnings("deprecation")
-            final int gpsAvailable = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
-            if (gpsAvailable == ConnectionResult.SUCCESS) {
+            if (isGooglePlayServicesAvailable()) {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {

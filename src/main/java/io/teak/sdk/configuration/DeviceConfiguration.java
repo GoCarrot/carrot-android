@@ -18,6 +18,7 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
+import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.json.JSONObject;
 
 import java.util.HashMap;
@@ -48,7 +49,7 @@ public class DeviceConfiguration {
     public boolean limitAdTracking;
 
     private final IPushProvider pushProvider;
-    private String pushSenderId;
+    private Map<String, Object> pushConfiguration = new HashMap<>();
 
     public DeviceConfiguration(@NonNull Context context, @NonNull IObjectFactory objectFactory) {
         this.pushProvider = objectFactory.getPushProvider();
@@ -100,6 +101,15 @@ public class DeviceConfiguration {
         // Request Ad Info, event will inform us when it's ready
         androidDeviceInfo.requestAdvertisingId();
 
+        // Push Configuration (Can be overridden via RemoteConfiguration)
+        TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
+            @Override
+            public void onConfigurationReady(@NonNull TeakConfiguration configuration) {
+                DeviceConfiguration.this.pushConfiguration.put("gcmSenderId", configuration.appConfiguration.gcmSenderId);
+                DeviceConfiguration.this.pushConfiguration.put("firebaseAppId", configuration.appConfiguration.firebaseAppId);
+            }
+        });
+
         // TODO: Test/handle the case where remote config is already ready.
 
         // Listen for remote configuration events
@@ -111,8 +121,12 @@ public class DeviceConfiguration {
 
                     // Override the provided GCM Sender Id with one from Teak, if applicable
                     if (remoteConfiguration.gcmSenderId != null) {
-                        pushSenderId = remoteConfiguration.gcmSenderId;
-                        // TODO: Future-Pat, when you add another push provider re-visit the RemoteConfiguration provided sender id
+                        DeviceConfiguration.this.pushConfiguration.put("gcmSenderId", remoteConfiguration.gcmSenderId);
+                    }
+
+                    // Override the provided Firebase App Id with one from Teak, if applicable
+                    if (remoteConfiguration.firebaseAppId != null) {
+                        DeviceConfiguration.this.pushConfiguration.put("firebaseAppId", remoteConfiguration.firebaseAppId);
                     }
 
                     requestNewPushToken();
@@ -122,14 +136,8 @@ public class DeviceConfiguration {
     }
 
     public void requestNewPushToken() {
-        if (this.pushSenderId == null) {
-            final TeakConfiguration teakConfiguration = TeakConfiguration.get();
-            this.pushSenderId = teakConfiguration.appConfiguration.pushSenderId;
-        }
-
-        // If the push provider isn't GCM, the push sender id parameter is ignored
         if (this.pushProvider != null) {
-            this.pushProvider.requestPushKey(this.pushSenderId);
+            this.pushProvider.requestPushKey(this.pushConfiguration);
         }
     }
 

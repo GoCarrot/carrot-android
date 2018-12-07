@@ -18,6 +18,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import io.teak.sdk.json.JSONObject;
+import io.teak.sdk.raven.Raven;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -147,7 +148,7 @@ public class Log {
     // Always available, can't change
     private final String androidLogTag;
     private final int jsonIndentation;
-    final String runId;
+    public final String runId;
     private final AtomicLong eventCounter;
 
     private boolean logLocally;

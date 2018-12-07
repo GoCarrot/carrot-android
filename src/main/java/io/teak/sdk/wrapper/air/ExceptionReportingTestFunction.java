@@ -18,11 +18,12 @@ import com.adobe.fre.FREContext;
 import com.adobe.fre.FREFunction;
 import com.adobe.fre.FREObject;
 
-import io.teak.sdk.Raven;
+import io.teak.sdk.raven.Raven;
 import io.teak.sdk.Teak;
 
 public class ExceptionReportingTestFunction implements FREFunction {
     @Override
+    @SuppressWarnings("deprecation")
     public FREObject call(FREContext context, FREObject[] argv) {
         Teak.log.exception(new Raven.ReportTestException(Teak.SDKVersion));
         return null;

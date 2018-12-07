@@ -43,18 +43,21 @@ public class RemoteConfiguration {
     @SuppressWarnings("WeakerAccess")
     public final String gcmSenderId;
     @SuppressWarnings("WeakerAccess")
+    public final String firebaseAppId;
+    @SuppressWarnings("WeakerAccess")
     public final boolean enhancedIntegrationChecks;
     @SuppressWarnings("WeakerAccess")
     public final Map<String, Object> endpointConfigurations;
 
     private RemoteConfiguration(@NonNull AppConfiguration appConfiguration, @NonNull String hostname,
-        String sdkSentryDsn, String appSentryDsn, String gcmSenderId,
+        String sdkSentryDsn, String appSentryDsn, String gcmSenderId, String firebaseAppId,
         boolean enhancedIntegrationChecks, JSONObject endpointConfigurations) {
         this.appConfiguration = appConfiguration;
         this.hostname = hostname;
         this.appSentryDsn = appSentryDsn;
         this.sdkSentryDsn = sdkSentryDsn;
         this.gcmSenderId = gcmSenderId;
+        this.firebaseAppId = firebaseAppId;
         this.enhancedIntegrationChecks = enhancedIntegrationChecks;
         this.endpointConfigurations = endpointConfigurations == null ? new HashMap<String, Object>() : endpointConfigurations.toMap();
     }
@@ -83,6 +86,7 @@ public class RemoteConfiguration {
                                         nullInsteadOfEmpty(response.isNull("sdk_sentry_dsn") ? null : response.getString("sdk_sentry_dsn")),
                                         nullInsteadOfEmpty(response.isNull("app_sentry_dsn") ? null : response.getString("app_sentry_dsn")),
                                         nullInsteadOfEmpty(response.isNull("gcm_sender_id") ? null : response.getString("gcm_sender_id")),
+                                        nullInsteadOfEmpty(response.isNull("firebase_app_id") ? null : response.getString("firebase_app_id")),
                                         response.optBoolean("enhanced_integration_checks", false),
                                         response.has("endpoint_configurations") ? response.getJSONObject("endpoint_configurations") : null);
 

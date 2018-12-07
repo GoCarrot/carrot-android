@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 26
-    buildToolsVersion '27.0.3'
+    buildToolsVersion '28.0.3'
 
     defaultConfig {
         applicationId "com.teakio.pushtest"
@@ -10,6 +10,11 @@ android {
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
+
+        manifestPlaceholders = [
+                teakShortDomain:"teak-prod.jckpt.me",
+                teakAppId:"1136371193060244"
+        ]
     }
     buildTypes {
         release {
@@ -27,3 +32,5 @@ dependencies {
 
     implementation project(path: ':teak')
 }
+
+apply plugin: 'com.google.gms.google-services'

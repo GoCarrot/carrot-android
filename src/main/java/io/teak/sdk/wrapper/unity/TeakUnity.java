@@ -14,7 +14,7 @@
  */
 package io.teak.sdk.wrapper.unity;
 
-import io.teak.sdk.Raven;
+import io.teak.sdk.raven.Raven;
 import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.json.JSONObject;
 
@@ -35,8 +35,7 @@ public class TeakUnity implements Unobfuscable {
         try {
             Class<?> unityPlayerClass = Class.forName("com.unity3d.player.UnityPlayer");
             TeakUnity.unitySendMessage = unityPlayerClass.getMethod("UnitySendMessage", String.class, String.class, String.class);
-        } catch (Exception e) {
-            Teak.log.exception(e);
+        } catch (Exception ignored) {
         }
     }
 
@@ -102,7 +101,7 @@ public class TeakUnity implements Unobfuscable {
         }
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "deprecation"})
     public static void testExceptionReporting() {
         Teak.log.exception(new Raven.ReportTestException(Teak.SDKVersion));
     }

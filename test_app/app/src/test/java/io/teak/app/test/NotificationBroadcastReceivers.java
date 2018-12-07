@@ -1,6 +1,7 @@
 package io.teak.app.test;
 
 import android.content.Context;
+
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -20,6 +21,7 @@ import io.teak.sdk.TeakEvent;
 import io.teak.sdk.event.NotificationDisplayEvent;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.json.JSONObject;
+import io.teak.sdk.push.FCMPushProvider;
 
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -32,7 +34,7 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class NotificationBroadcastReceivers {
     @Test
-    public void GCM_RECEIVE_INTENT_ACTION() throws PackageManager.NameNotFoundException, NoSuchFieldException, IllegalAccessException {
+    public void FcmMessageReceieved() throws PackageManager.NameNotFoundException, NoSuchFieldException, IllegalAccessException {
         final Log teakLog = mock(Log.class); // withSettings().verboseLogging()
         final Field teakLogField = Teak.class.getDeclaredField("log");
         teakLogField.setAccessible(true);
@@ -41,8 +43,8 @@ public class NotificationBroadcastReceivers {
         final TestTeakEventListener eventListener = spy(TestTeakEventListener.class);
         TeakEvent.addEventListener(eventListener);
 
-        final Teak teakBroadcastReceiver = new Teak();
-        assertNotNull(teakBroadcastReceiver);
+        final FCMPushProvider fcmPushProvider = new FCMPushProvider();
+        assertNotNull(fcmPushProvider);
 
         final ApplicationInfo applicationInfo = mock(ApplicationInfo.class);
 
@@ -65,12 +67,11 @@ public class NotificationBroadcastReceivers {
         when(extras.getBoolean("teakUnitTest")).thenReturn(true);
 
         final Intent intent = mock(Intent.class);
-        when(intent.getAction()).thenReturn(Teak.GCM_RECEIVE_INTENT_ACTION);
         when(intent.getExtras()).thenReturn(extras);
 
         Request.setTeakApiKey("test_teak_api_key");
 
-        teakBroadcastReceiver.onReceive(context, intent);
+        fcmPushProvider.postEvent(context, intent);
 
         verify(eventListener, timeout(500).times(1)).eventRecieved(PushNotificationEvent.class, PushNotificationEvent.Received);
         verify(eventListener, timeout(500).times(1)).eventRecieved(NotificationDisplayEvent.class, NotificationDisplayEvent.Type);

@@ -106,7 +106,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Teak.onCreate(this);
         super.onCreate(savedInstanceState);
 
         // Set up view
@@ -141,6 +140,10 @@ public class MainActivity extends AppCompatActivity {
 
         // Set badge count
         Teak.setApplicationBadgeNumber(42);
+
+        // HAX
+        Teak.setStringAttribute("last_slot", "some string value");
+        //Teak.trackEvent("some_boolean", null, null);
     }
 
     @Override

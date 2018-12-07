@@ -14,7 +14,22 @@
  */
 package io.teak.sdk.core;
 
+import android.content.Context;
+import android.content.Intent;
+import android.hardware.display.DisplayManager;
+import android.os.Build;
+import android.os.PowerManager;
+import android.support.annotation.NonNull;
+import android.view.Display;
+
+import java.util.concurrent.Callable;
+
 public class DeviceScreenState {
+    //    public static final String SCREEN_STATE = "DeviceScreenState.SCREEN_STATE";
+
+    public static final String SCREEN_ON = "DeviceScreenState.SCREEN_ON";
+    public static final String SCREEN_OFF = "DeviceScreenState.SCREEN_OFF";
+
     public enum State {
         Unknown("Unknown"),
         ScreenOn("ScreenOn"),
@@ -24,8 +39,8 @@ public class DeviceScreenState {
 
         private static final State[][] allowedTransitions = {
             {State.ScreenOn, State.ScreenOff},
-            {State.ScreenOff, State.Unknown},
-            {State.ScreenOn, State.Unknown}};
+            {State.ScreenOff},
+            {State.ScreenOn}};
 
         public final String name;
         public final int ordinal;
@@ -61,5 +76,36 @@ public class DeviceScreenState {
                 android.util.Log.i("Teak.Animation", String.format("State %s -> %s", oldState, newState));
             }
         }
+    }
+
+    public static Callable<Boolean> isDeviceScreenOn(@NonNull final Context context) {
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() {
+                boolean isScreenOn = false;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+                    DisplayManager dm = (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
+                    if (dm != null && dm.getDisplays() != null) {
+                        for (Display display : dm.getDisplays()) {
+                            if (display.getState() == Display.STATE_ON || display.getState() == Display.STATE_UNKNOWN) {
+                                isScreenOn = true;
+                            }
+                        }
+                    }
+                } else {
+                    final PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+                    @SuppressWarnings("deprecation")
+                    final boolean suppressDeprecation = powerManager != null && powerManager.isScreenOn();
+                    isScreenOn = suppressDeprecation;
+                }
+
+                // Broadcast to DefaultAndroidNotification
+                final Intent intent = isScreenOn ? new Intent(DeviceScreenState.SCREEN_ON) : new Intent(DeviceScreenState.SCREEN_OFF);
+                context.sendBroadcast(intent);
+
+                // Always return false, and get re-scheduled
+                return false;
+            }
+        };
     }
 }

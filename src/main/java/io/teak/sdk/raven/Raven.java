@@ -12,31 +12,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.teak.sdk;
+package io.teak.sdk.raven;
 
 import android.content.Context;
-import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.firebase.jobdispatcher.Job;
+import com.firebase.jobdispatcher.RetryStrategy;
+import com.firebase.jobdispatcher.Trigger;
+
+import io.teak.sdk.IObjectFactory;
+import io.teak.sdk.Teak;
+import io.teak.sdk.TeakConfiguration;
+import io.teak.sdk.TeakEvent;
 import io.teak.sdk.json.JSONObject;
 
 import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 
 import io.teak.sdk.event.UserIdEvent;
-import io.teak.sdk.service.RavenService;
+import io.teak.sdk.service.JobService;
 
 public class Raven implements Thread.UncaughtExceptionHandler {
-    private static final String LOG_TAG = "Teak.Raven";
+    public static final String JOB_TYPE = "Teak.Raven";
+
     private static final String TEAK_SENTRY_PROGUARD_UUID = "io_teak_sentry_proguard_uuid";
 
     public static class ReportTestException extends Exception {
@@ -64,18 +76,23 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         }
     }
 
+    private final List<Report> queuedReports = new ArrayList<>();
     private final HashMap<String, Object> payloadTemplate = new HashMap<>();
     private final Context applicationContext;
     private final String appId;
     private Thread.UncaughtExceptionHandler previousUncaughtExceptionHandler;
 
+    private String SENTRY_KEY;
+    private String SENTRY_SECRET;
+    private URL endpoint;
+
     private static final SimpleDateFormat timestampFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
 
     static {
-        timestampFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+        Raven.timestampFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
-    Raven(@NonNull Context context, @NonNull String appId, @NonNull TeakConfiguration configuration, @NonNull IObjectFactory objectFactory) {
+    public Raven(@NonNull Context context, @NonNull String appId, @NonNull TeakConfiguration configuration, @NonNull IObjectFactory objectFactory) {
         //noinspection deprecation - This must be a string as per Sentry API
         @SuppressWarnings("deprecation")
         final String teakSdkVersion = Teak.SDKVersion;
@@ -102,7 +119,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
 
         final HashMap<String, Object> sdkAttribute = new HashMap<>();
         sdkAttribute.put("name", "teak");
-        sdkAttribute.put("version", RavenService.TEAK_SENTRY_VERSION);
+        sdkAttribute.put("version", Sender.TEAK_SENTRY_VERSION);
         this.payloadTemplate.put("sdk", sdkAttribute);
 
         String deviceFamily = null;
@@ -111,13 +128,20 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         } catch (Exception ignored) {
         }
 
+        class Deprecated {
+            @SuppressWarnings("deprecation")
+            private String getCPU_ABI() {
+                return Build.CPU_ABI;
+            }
+        }
+
         final HashMap<String, Object> device = new HashMap<>();
         device.put("manufacturer", Build.MANUFACTURER);
         device.put("brand", Build.BRAND);
         device.put("model", Build.MODEL);
         device.put("family", deviceFamily);
         device.put("model_id", Build.ID);
-        device.put("arch", Build.CPU_ABI);
+        device.put("arch", new Deprecated().getCPU_ABI());
 
         final HashMap<String, Object> os = new HashMap<>();
         os.put("name", "Android");
@@ -157,7 +181,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         this.payloadTemplate.put("tags", tagsAttribute);
     }
 
-    void setAsUncaughtExceptionHandler() {
+    public void setAsUncaughtExceptionHandler() {
         if (Thread.getDefaultUncaughtExceptionHandler() instanceof Raven) {
             Raven raven = (Raven) Thread.getDefaultUncaughtExceptionHandler();
             raven.unsetAsUncaughtExceptionHandler();
@@ -176,18 +200,41 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         reportException(ex, null);
     }
 
-    void setDsn(@NonNull String dsn) {
-        Intent intent = new Intent(RavenService.SET_DSN_INTENT_ACTION, null, applicationContext, RavenService.class);
-        intent.putExtra("appId", appId);
-        intent.putExtra("dsn", dsn);
+    public void setDsn(@NonNull String dsn) {
+        if (dsn.isEmpty()) {
+            Log.e(JOB_TYPE, "DSN empty for app: " + this.appId);
+            return;
+        }
+
+        final Uri uri = Uri.parse(dsn);
+
+        String port = "";
+        if (uri.getPort() >= 0) {
+            port = ":" + uri.getPort();
+        }
+
         try {
-            applicationContext.startService(intent);
+            final String project = uri.getPath().substring(uri.getPath().lastIndexOf("/"));
+            final String[] userInfo = uri.getUserInfo().split(":");
+
+            this.SENTRY_KEY = userInfo[0];
+            this.SENTRY_SECRET = userInfo[1];
+
+            this.endpoint = new URL(String.format("%s://%s%s/api%s/store/",
+                uri.getScheme(), uri.getHost(), port, project));
+
+            synchronized (this.queuedReports) {
+                for (Report report : this.queuedReports) {
+                    report.submitJob();
+                }
+                this.queuedReports.clear();
+            }
         } catch (Exception e) {
-            Teak.log.exception(e, false);
+            Log.e(JOB_TYPE, "Error parsing DSN: '" + uri.toString() + "'" + Log.getStackTraceString(e));
         }
     }
 
-    static Map<String, Object> throwableToMap(Throwable t) {
+    public static Map<String, Object> throwableToMap(Throwable t) {
         Throwable throwable = t;
         if (throwable instanceof InvocationTargetException && throwable.getCause() != null) {
             throwable = throwable.getCause();
@@ -238,7 +285,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         return exception;
     }
 
-    void reportException(Throwable t, Map<String, Object> extras) {
+    public void reportException(Throwable t, Map<String, Object> extras) {
         if (t == null) {
             return;
         }
@@ -254,12 +301,19 @@ public class Raven implements Thread.UncaughtExceptionHandler {
 
         exceptions.add(exception);
         additions.put("exception", exceptions);
+        additions.put("extra", extras);
 
         try {
             Report report = new Report(t.getMessage(), Level.ERROR, additions);
-            report.sendToService(extras);
+            synchronized (this.queuedReports) {
+                if (this.endpoint == null) {
+                    this.queuedReports.add(report);
+                } else {
+                    report.submitJob();
+                }
+            }
         } catch (Exception e) {
-            Log.e(LOG_TAG, "Unable to report Teak SDK exception. " + Log.getStackTraceString(t) + "\n" + Log.getStackTraceString(e));
+            Log.e(JOB_TYPE, "Unable to report Teak SDK exception. " + Log.getStackTraceString(t) + "\n" + Log.getStackTraceString(e));
         }
     }
 
@@ -293,7 +347,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
             payload.put("event_id", UUID.randomUUID().toString().replace("-", ""));
             payload.put("message", message.substring(0, Math.min(message.length(), 1000)));
 
-            payload.put("timestamp", timestampFormatter.format(timestamp));
+            payload.put("timestamp", Raven.timestampFormatter.format(timestamp));
 
             payload.put("level", level.toString());
 
@@ -307,7 +361,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
                 final StackTraceElement[] ste = Thread.currentThread().getStackTrace();
                 payload.put("culprit", ste[depth].toString());
                 //for (StackTraceElement elem : ste) {
-                //    Log.d(LOG_TAG, elem.toString());
+                //    Log.d(JOB_TYPE, elem.toString());
                 //}
             } catch (Exception e) {
                 payload.put("culprit", "unknown");
@@ -318,18 +372,34 @@ public class Raven implements Thread.UncaughtExceptionHandler {
             }
         }
 
-        void sendToService(Map<String, Object> extras) {
-            payload.putAll(payloadTemplate);
-            if (extras != null) payload.put("extra", extras);
+        void submitJob() {
             try {
-                Intent intent = new Intent(RavenService.REPORT_EXCEPTION_INTENT_ACTION, null, applicationContext, RavenService.class);
-                intent.putExtra("appId", appId);
-                intent.putExtra("timestamp", this.timestamp.getTime() / 1000L);
-                intent.putExtra("payload", new JSONObject(payload).toString());
-                applicationContext.startService(intent);
+                final Job job = Teak.Instance.jobBuilder((String) this.payload.get("event_id"), this.toBundle())
+                                    .build();
+                Teak.Instance.dispatcher.mustSchedule(job);
             } catch (Exception e) {
-                Log.e(LOG_TAG, Log.getStackTraceString(e));
+                Teak.log.exception(e, false);
             }
+        }
+
+        Bundle toBundle() {
+            this.payload.putAll(Raven.this.payloadTemplate);
+            try {
+                Bundle bundle = new Bundle();
+                bundle.putString("jobType", Raven.JOB_TYPE);
+                bundle.putString("appId", appId);
+                bundle.putLong("timestamp", this.timestamp.getTime() / 1000L);
+                bundle.putString("payload", new JSONObject(this.payload).toString());
+                bundle.putString("endpoint", Raven.this.endpoint.toString());
+                bundle.putString("SENTRY_KEY", Raven.this.SENTRY_KEY);
+                bundle.putString("SENTRY_SECRET", Raven.this.SENTRY_SECRET);
+
+                return bundle;
+            } catch (Exception e) {
+                Log.e(JOB_TYPE, Log.getStackTraceString(e));
+            }
+
+            return null;
         }
 
         Map<String, Object> toMap() {

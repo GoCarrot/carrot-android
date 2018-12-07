@@ -29,10 +29,12 @@ import com.amazon.device.messaging.ADMMessageReceiver;
 import com.amazon.device.messaging.development.ADMManifest;
 
 import io.teak.sdk.Unobfuscable;
+import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -73,7 +75,7 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
     ///// IPushProvider
 
     @Override
-    public void requestPushKey(@NonNull String ignored) {
+    public void requestPushKey(@NonNull Map<String, Object> ignored) {
         executor.execute(new Runnable() {
             @Override
             public void run() {
@@ -100,12 +102,15 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
 
     @Override
     protected void onMessage(Intent intent) {
-        if (Teak.isEnabled()) {
-            if (intent.hasExtra("teakAdm")) {
-                JSONObject teakAdm = new JSONObject(intent.getStringExtra("teakAdm"));
-                intent.putExtras(Helpers.jsonToGCMBundle(teakAdm));
-                TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Received, getApplicationContext(), intent));
-            }
+        final TeakCore teakCore = TeakCore.getWithoutThrow(getApplicationContext());
+        if (teakCore == null) {
+            Teak.log.e("amazon.adm.null_teak_core", "TeakCore.getWithoutThrow returned null.");
+        }
+
+        if (intent.hasExtra("teakAdm")) {
+            JSONObject teakAdm = new JSONObject(intent.getStringExtra("teakAdm"));
+            intent.putExtras(Helpers.jsonToGCMBundle(teakAdm));
+            TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Received, getApplicationContext(), intent));
         }
     }
 

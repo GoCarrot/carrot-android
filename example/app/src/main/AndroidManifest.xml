@@ -1,22 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:amazon="http://schemas.amazon.com/apk/res/android"
     package="com.teakio.pushtest">
 
     <uses-permission android:name="com.android.vending.BILLING" />
-
-    <permission android:name="com.teakio.pushtest" android:protectionLevel="signature"/>
-    <uses-permission android:name="com.teakio.pushtest.permission.C2D_MESSAGE"/>
-    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE"/>
-
-    <!-- ADM Stuff -->
-    <permission
-        android:name="com.teakio.pushtest.permission.RECEIVE_ADM_MESSAGE"
-        android:protectionLevel="signature" />
-    <uses-permission android:name="com.teakio.pushtest.permission.RECEIVE_ADM_MESSAGE" />
-    <uses-permission android:name="com.amazon.device.messaging.permission.RECEIVE" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <!-- End ADM Stuff -->
 
     <application
         android:allowBackup="true"
@@ -26,6 +12,7 @@
         android:theme="@style/AppTheme"
         android:hardwareAccelerated="false">
         <activity android:name=".MainActivity" android:launchMode="singleTask">
+            <meta-data android:name="io.teak.sdk.initialize" android:value="true"/>
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -34,41 +21,15 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="teak1136371193060244" android:host="*" />
+                <data android:scheme="teak${teakAppId}" android:host="*" />
             </intent-filter>
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="http" android:host="teak-prod.jckpt.me" />
-                <data android:scheme="https" android:host="teak-prod.jckpt.me" />
+                <data android:scheme="http" android:host="${teakShortDomain}" />
+                <data android:scheme="https" android:host="${teakShortDomain}" />
             </intent-filter>
         </activity>
-        <receiver android:name="io.teak.sdk.Teak"
-            android:exported="true"> <!-- android:permission="com.google.android.c2dm.permission.SEND"-->
-            <intent-filter>
-                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
-                <action android:name="com.google.android.c2dm.intent.REGISTRATION" />
-                <action android:name="com.teakio.pushtest.intent.TEAK_NOTIFICATION_OPENED" />
-                <action android:name="com.teakio.pushtest.intent.TEAK_NOTIFICATION_CLEARED" />
-                <category android:name="com.teakio.pushtest" />
-            </intent-filter>
-        </receiver>
-
-        <amazon:enable-feature
-            android:name="com.amazon.device.messaging"
-            android:required="false"/>
-        <service android:name="io.teak.sdk.push.ADMPushProvider"
-            android:exported="false" />
-        <receiver
-            android:name="io.teak.sdk.push.ADMPushProvider$MessageAlertReceiver"
-            android:permission="com.amazon.device.messaging.permission.SEND" >
-            <intent-filter>
-                <action android:name="com.amazon.device.messaging.intent.REGISTRATION" />
-                <action android:name="com.amazon.device.messaging.intent.RECEIVE" />
-                <category android:name="com.teakio.pushtest" />
-            </intent-filter>
-
-        </receiver>
     </application>
 </manifest>

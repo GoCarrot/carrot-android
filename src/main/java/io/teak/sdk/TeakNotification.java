@@ -32,6 +32,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.teak.sdk.json.JSONArray;
+import io.teak.sdk.json.JSONException;
 import io.teak.sdk.json.JSONObject;
 
 import io.teak.sdk.Helpers.mm;
@@ -246,6 +247,9 @@ public class TeakNotification implements Unobfuscable {
                                         Teak.log.i("reward.claim.response", responseJson.toMap());
 
                                         q.offer(reward);
+                                    } catch (JSONException e) {
+                                        Teak.log.exception(e, false);
+                                        q.offer(null);
                                     } catch (Exception e) {
                                         Teak.log.exception(e);
                                         q.offer(null); // TODO: Fix this?
@@ -360,15 +364,25 @@ public class TeakNotification implements Unobfuscable {
                                 JSONObject response = new JSONObject(responseBody);
 
                                 final Map<String, Object> contents = new HashMap<>();
-                                contents.put("status", response.getString("status"));
+                                if (response.has("status")) {
+                                    contents.put("status", response.getString("status"));
 
-                                if (response.getString("status").equals("ok")) {
-                                    Teak.log.i("notification.schedule", "Scheduled notification.", mm.h("notification", response.getJSONObject("event").get("id")));
-                                    contents.put("data", response.getJSONObject("event").get("id").toString());
+                                    if (response.getString("status").equals("ok")) {
+                                        Teak.log.i("notification.schedule", "Scheduled notification.", mm.h("notification", response.getJSONObject("event").get("id")));
+                                        contents.put("data", response.getJSONObject("event").get("id").toString());
+                                    } else {
+                                        Teak.log.e("notification.schedule.error", "Error scheduling notification.", mm.h("response", response.toString()));
+                                    }
                                 } else {
-                                    Teak.log.e("notification.schedule.error", "Error scheduling notification.", mm.h("response", response.toString()));
+                                    Teak.log.e("notification.schedule.error", "Timed out while scheduling notification.");
+                                    contents.put("status", "error.internal");
                                 }
 
+                                q.offer(new JSONObject(contents).toString());
+                            } catch (JSONException e) {
+                                Teak.log.e("notification.schedule.error", "Timed out while scheduling notification.");
+                                final Map<String, Object> contents = new HashMap<>();
+                                contents.put("status", "error.internal");
                                 q.offer(new JSONObject(contents).toString());
                             } catch (Exception e) {
                                 Teak.log.exception(e, mm.h("teakCreativeId", creativeId));
@@ -483,15 +497,25 @@ public class TeakNotification implements Unobfuscable {
                                 JSONObject response = new JSONObject(responseBody);
 
                                 final Map<String, Object> contents = new HashMap<>();
-                                contents.put("status", response.getString("status"));
+                                if (response.has("status")) {
+                                    contents.put("status", response.getString("status"));
 
-                                if (response.getString("status").equals("ok")) {
-                                    Teak.log.i("notification.schedule", "Scheduled notification.", mm.h("notification", response.getJSONArray("ids").toString()));
-                                    contents.put("data", response.getJSONArray("ids").toString());
+                                    if (response.getString("status").equals("ok")) {
+                                        Teak.log.i("notification.schedule", "Scheduled notification.", mm.h("notification", response.getJSONArray("ids").toString()));
+                                        contents.put("data", response.getJSONArray("ids").toString());
+                                    } else {
+                                        Teak.log.e("notification.schedule.error", "Error scheduling notification.", mm.h("response", response.toString()));
+                                    }
                                 } else {
-                                    Teak.log.e("notification.schedule.error", "Error scheduling notification.", mm.h("response", response.toString()));
+                                    Teak.log.e("notification.schedule.error", "Timed out while scheduling notification.");
+                                    contents.put("status", "error.internal");
                                 }
 
+                                q.offer(new JSONObject(contents).toString());
+                            } catch (JSONException e) {
+                                Teak.log.e("notification.schedule.error", "Timed out while scheduling notification.");
+                                final Map<String, Object> contents = new HashMap<>();
+                                contents.put("status", "error.internal");
                                 q.offer(new JSONObject(contents).toString());
                             } catch (Exception e) {
                                 Teak.log.exception(e, mm.h("teakCreativeId", creativeId));
@@ -571,14 +595,24 @@ public class TeakNotification implements Unobfuscable {
                                 JSONObject response = new JSONObject(responseBody);
 
                                 final Map<String, Object> contents = new HashMap<>();
-                                contents.put("status", response.getString("status"));
+                                if (response.has("status")) {
+                                    contents.put("status", response.getString("status"));
 
-                                if (response.getString("status").equals("ok")) {
-                                    Teak.log.i("notification.cancel", "Canceled notification.", mm.h("notification", scheduleId));
-                                    contents.put("data", response.getJSONObject("event").get("id").toString());
+                                    if (response.getString("status").equals("ok")) {
+                                        Teak.log.i("notification.cancel", "Canceled notification.", mm.h("notification", scheduleId));
+                                        contents.put("data", response.getJSONObject("event").get("id").toString());
+                                    } else {
+                                        Teak.log.e("notification.cancel.error", "Error canceling notification.", mm.h("response", response.toString()));
+                                    }
                                 } else {
-                                    Teak.log.e("notification.cancel.error", "Error canceling notification.", mm.h("response", response.toString()));
+                                    Teak.log.e("notification.cancel.error", "Timed out while canceling notification.");
+                                    contents.put("status", "error.internal");
                                 }
+                                q.offer(new JSONObject(contents).toString());
+                            } catch (JSONException e) {
+                                Teak.log.e("notification.cancel.error", "Timed out while canceling notification.");
+                                final Map<String, Object> contents = new HashMap<>();
+                                contents.put("status", "error.internal");
                                 q.offer(new JSONObject(contents).toString());
                             } catch (Exception e) {
                                 final Map<String, Object> contents = new HashMap<>();
@@ -636,21 +670,31 @@ public class TeakNotification implements Unobfuscable {
                                 JSONObject response = new JSONObject(responseBody);
 
                                 final Map<String, Object> contents = new HashMap<>();
-                                contents.put("status", response.getString("status"));
+                                if (response.has("status")) {
+                                    contents.put("status", response.getString("status"));
 
-                                if (response.getString("status").equals("ok")) {
-                                    ArrayList<Map<String, Object>> canceled = new ArrayList<>();
-                                    JSONArray jArray = response.getJSONArray("canceled");
-                                    if (jArray != null) {
-                                        for (int i = 0; i < jArray.length(); i++) {
-                                            canceled.add(jArray.getJSONObject(i).toMap());
+                                    if (response.getString("status").equals("ok")) {
+                                        ArrayList<Map<String, Object>> canceled = new ArrayList<>();
+                                        JSONArray jArray = response.getJSONArray("canceled");
+                                        if (jArray != null) {
+                                            for (int i = 0; i < jArray.length(); i++) {
+                                                canceled.add(jArray.getJSONObject(i).toMap());
+                                            }
                                         }
+                                        contents.put("data", canceled);
+                                        Teak.log.i("notification.cancel_all", "Canceled all notifications.");
+                                    } else {
+                                        Teak.log.e("notification.cancel_all.error", "Error canceling all notifications.", mm.h("response", response.toString()));
                                     }
-                                    contents.put("data", canceled);
-                                    Teak.log.i("notification.cancel_all", "Canceled all notifications.");
                                 } else {
-                                    Teak.log.e("notification.cancel_all.error", "Error canceling all notifications.", mm.h("response", response.toString()));
+                                    Teak.log.e("notification.cancel.error", "Timed out while canceling all notifications.");
+                                    contents.put("status", "error.internal");
                                 }
+                                q.offer(new JSONObject(contents).toString());
+                            } catch (JSONException e) {
+                                Teak.log.e("notification.cancel.error", "Timed out while canceling all notifications.");
+                                final Map<String, Object> contents = new HashMap<>();
+                                contents.put("status", "error.internal");
                                 q.offer(new JSONObject(contents).toString());
                             } catch (Exception e) {
                                 final Map<String, Object> contents = new HashMap<>();
