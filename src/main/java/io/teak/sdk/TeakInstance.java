@@ -29,6 +29,12 @@ import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import com.firebase.jobdispatcher.FirebaseJobDispatcher;
+import com.firebase.jobdispatcher.GooglePlayDriver;
+import com.firebase.jobdispatcher.Job;
+import com.firebase.jobdispatcher.RetryStrategy;
+import com.firebase.jobdispatcher.Trigger;
+
 import java.io.File;
 import java.net.URLEncoder;
 import java.security.InvalidParameterException;
@@ -46,12 +52,15 @@ import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.event.UserIdEvent;
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.push.PushState;
+import io.teak.sdk.raven.Raven;
+import io.teak.sdk.service.JobService;
 import io.teak.sdk.shortcutbadger.ShortcutBadger;
 import io.teak.sdk.store.IStore;
 
 public class TeakInstance implements Unobfuscable {
     public final IObjectFactory objectFactory;
     private final Context context;
+    public final FirebaseJobDispatcher dispatcher;
 
     private static final String PREFERENCE_FIRST_RUN = "io.teak.sdk.Preferences.FirstRun";
 
@@ -67,12 +76,15 @@ public class TeakInstance implements Unobfuscable {
         this.objectFactory = objectFactory;
         PushState.init(this.context);
 
+        // Start Teak job dispatcher
+        this.dispatcher = new FirebaseJobDispatcher(new GooglePlayDriver(this.context));
+
         // Ravens
         TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
             @Override
             public void onConfigurationReady(@NonNull TeakConfiguration configuration) {
-                sdkRaven = new Raven(context, "sdk", configuration, objectFactory);
-                appRaven = new Raven(context, configuration.appConfiguration.bundleId, configuration, objectFactory);
+                TeakInstance.this.sdkRaven = new Raven(context, "sdk", configuration, objectFactory);
+                TeakInstance.this.appRaven = new Raven(context, configuration.appConfiguration.bundleId, configuration, objectFactory);
             }
         });
 
@@ -80,16 +92,16 @@ public class TeakInstance implements Unobfuscable {
             @Override
             public void onNewEvent(@NonNull TeakEvent event) {
                 if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
-                    RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
+                    final RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
 
-                    if (remoteConfiguration.sdkSentryDsn != null && sdkRaven != null) {
-                        sdkRaven.setDsn(remoteConfiguration.sdkSentryDsn);
+                    if (remoteConfiguration.sdkSentryDsn != null && TeakInstance.this.sdkRaven != null) {
+                        TeakInstance.this.sdkRaven.setDsn(remoteConfiguration.sdkSentryDsn);
                     }
 
-                    if (remoteConfiguration.appSentryDsn != null && appRaven != null) {
-                        appRaven.setDsn(remoteConfiguration.appSentryDsn);
+                    if (remoteConfiguration.appSentryDsn != null && TeakInstance.this.appRaven != null) {
+                        TeakInstance.this.appRaven.setDsn(remoteConfiguration.appSentryDsn);
                         if (!android.os.Debug.isDebuggerConnected()) {
-                            appRaven.setAsUncaughtExceptionHandler();
+                            TeakInstance.this.appRaven.setAsUncaughtExceptionHandler();
                         }
                     }
                 }
@@ -102,6 +114,7 @@ public class TeakInstance implements Unobfuscable {
             return;
         }
 
+        // Lifecycle callbacks
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
             Teak.log.e("api_level", "Teak requires API level 14 to operate. Teak is disabled.");
             this.setState(State.Disabled);
@@ -524,5 +537,17 @@ public class TeakInstance implements Unobfuscable {
                 });
             }
         });
+    }
+
+    ///// JobService
+
+    public Job.Builder jobBuilder(@NonNull String tag, @NonNull Bundle extras) {
+        return this.dispatcher.newJobBuilder()
+            .setService(JobService.class)
+            .setTag(tag)
+            .setExtras(extras)
+            .setTrigger(Trigger.NOW)
+            .setReplaceCurrent(true)
+            .setRetryStrategy(RetryStrategy.DEFAULT_LINEAR);
     }
 }

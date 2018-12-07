@@ -14,7 +14,7 @@
  */
 package io.teak.sdk.wrapper.unity;
 
-import io.teak.sdk.Raven;
+import io.teak.sdk.raven.Raven;
 import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.json.JSONObject;
 

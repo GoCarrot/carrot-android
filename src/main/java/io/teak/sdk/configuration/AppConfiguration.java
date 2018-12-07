@@ -30,7 +30,6 @@ import java.util.Map;
 
 import io.teak.sdk.Teak;
 import io.teak.sdk.io.IAndroidResources;
-import io.teak.sdk.service.RavenService;
 
 public class AppConfiguration {
     @SuppressWarnings("WeakerAccess")
@@ -220,14 +219,6 @@ public class AppConfiguration {
         // Get the installer package
         {
             this.installerPackage = this.packageManager.getInstallerPackageName(this.bundleId);
-        }
-
-        // Tell the Raven service about the app id
-        try {
-            Intent intent = new Intent(context, RavenService.class);
-            intent.putExtra("appId", this.appId);
-            context.startService(intent);
-        } catch (Exception ignored) {
         }
     }
 

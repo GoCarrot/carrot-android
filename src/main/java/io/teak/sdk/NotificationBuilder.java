@@ -337,10 +337,9 @@ public class NotificationBuilder {
                 Runtime.getRuntime().gc();
                 long postGc = Runtime.getRuntime().freeMemory();
                 Teak.log.i("notification_builder.gc", Helpers.mm.h(
-                        "pre_gc", String.format(Locale.US, "%dk", preGc / 1024L),
-                        "post_gc", String.format(Locale.US, "%dk", postGc / 1024L),
-                        "delta_gc", String.format(Locale.US, "%dk", (postGc - preGc) / 1024L)
-                ));
+                                                          "pre_gc", String.format(Locale.US, "%dk", preGc / 1024L),
+                                                          "post_gc", String.format(Locale.US, "%dk", postGc / 1024L),
+                                                          "delta_gc", String.format(Locale.US, "%dk", (postGc - preGc) / 1024L)));
 
                 final int viewLayout = R.layout(name);
                 final RemoteViews remoteViews = new RemoteViews(context.getPackageName(), viewLayout);

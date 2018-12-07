@@ -29,6 +29,10 @@ import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
 
+import com.firebase.jobdispatcher.Job;
+import com.firebase.jobdispatcher.RetryStrategy;
+import com.firebase.jobdispatcher.Trigger;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Random;
@@ -38,16 +42,17 @@ import io.teak.sdk.NotificationBuilder;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
+import io.teak.sdk.core.DeviceScreenState;
 import io.teak.sdk.event.NotificationDisplayEvent;
 import io.teak.sdk.event.NotificationReDisplayEvent;
 import io.teak.sdk.event.PushNotificationEvent;
-import io.teak.sdk.service.DeviceStateService;
 import io.teak.sdk.service.JobService;
 
 public class DefaultAndroidNotification extends BroadcastReceiver implements IAndroidNotification {
     private final NotificationManager notificationManager;
     private final ArrayList<AnimationEntry> animatedNotifications = new ArrayList<>();
     private final Handler handler;
+    private final DeviceScreenState deviceScreenState = new DeviceScreenState();
 
     private class AnimationEntry {
         final Notification notification;
@@ -81,8 +86,8 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
 
         if (!"test_package_name".equalsIgnoreCase(context.getPackageName())) {
             IntentFilter screenStateFilter = new IntentFilter();
-            screenStateFilter.addAction(DeviceStateService.SCREEN_ON);
-            screenStateFilter.addAction(DeviceStateService.SCREEN_OFF);
+            screenStateFilter.addAction(DeviceScreenState.SCREEN_ON);
+            screenStateFilter.addAction(DeviceScreenState.SCREEN_OFF);
             context.registerReceiver(this, screenStateFilter);
 
             this.handler = new Handler(Looper.getMainLooper());
@@ -111,11 +116,29 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
         });
     }
 
+    private void issueAnimatedNotificationSizeJob() {
+        try {
+            if (this.animatedNotifications.size() > 0) {
+                final Bundle bundle = new Bundle();
+                bundle.putInt(IAndroidNotification.ANIMATED_NOTIFICATION_COUNT_KEY, this.animatedNotifications.size());
+                bundle.putString(JobService.JOB_TYPE_KEY, IAndroidNotification.ANIMATED_NOTIFICATION_JOB_TYPE);
+
+                final Job job = Teak.Instance.jobBuilder(IAndroidNotification.ANIMATED_NOTIFICATION_JOB_TYPE, bundle)
+                                    .build();
+                Teak.Instance.dispatcher.mustSchedule(job);
+            } else {
+                Teak.Instance.dispatcher.cancel(IAndroidNotification.ANIMATED_NOTIFICATION_JOB_TYPE);
+            }
+        } catch (Exception e) {
+            Teak.log.exception(e, false);
+        }
+    }
+
     @Override
     public void cancelNotification(@NonNull Context context, int platformId) {
         Teak.log.i("notification.cancel", Helpers.mm.h("platformId", platformId));
 
-        notificationManager.cancel(NOTIFICATION_TAG, platformId);
+        this.notificationManager.cancel(NOTIFICATION_TAG, platformId);
 
         synchronized (this.animatedNotifications) {
             ArrayList<AnimationEntry> removeList = new ArrayList<>();
@@ -125,18 +148,12 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                 }
             }
             this.animatedNotifications.removeAll(removeList);
-
-            // Update the JobService with the number of remaining animated notifications
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                JobService.setNumberOfAnimatedNotifications(context, this.animatedNotifications.size());
-            }
+            this.issueAnimatedNotificationSizeJob();
         }
     }
 
     @Override
     public void displayNotification(@NonNull final Context context, @NonNull final TeakNotification teakNotification, @NonNull final Notification nativeNotification) {
-        keepDeviceStateServiceAlive(context);
-
         // Send it out
         Teak.log.i("notification.display", Helpers.mm.h("teakNotifId", teakNotification.teakNotifId, "platformId", teakNotification.platformId));
 
@@ -155,11 +172,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                     if (teakNotification.isAnimated) {
                         synchronized (DefaultAndroidNotification.this.animatedNotifications) {
                             DefaultAndroidNotification.this.animatedNotifications.add(new AnimationEntry(nativeNotification, teakNotification));
-
-                            // Update the JobService with the number of remaining animated notifications
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                JobService.setNumberOfAnimatedNotifications(context, DefaultAndroidNotification.this.animatedNotifications.size());
-                            }
+                            DefaultAndroidNotification.this.issueAnimatedNotificationSizeJob();
                         }
                     }
                 } catch (SecurityException ignored) {
@@ -177,14 +190,21 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
 
     @Override
     public void onReceive(final Context context, final Intent intent) {
-        keepDeviceStateServiceAlive(context);
-
-        if (DeviceStateService.SCREEN_ON.equals(intent.getAction())) {
-            Teak.log.i("notification.animation", Helpers.mm.h("animating", true));
-        } else if (DeviceStateService.SCREEN_OFF.equals(intent.getAction())) {
-            Teak.log.i("notification.animation", Helpers.mm.h("animating", false));
-            reIssueAnimatedNotifications(context);
+        DeviceScreenState.State state = DeviceScreenState.State.Unknown;
+        if (DeviceScreenState.SCREEN_ON.equals(intent.getAction())) {
+            state = DeviceScreenState.State.ScreenOn;
+        } else if (DeviceScreenState.SCREEN_OFF.equals(intent.getAction())) {
+            state = DeviceScreenState.State.ScreenOff;
         }
+
+        this.deviceScreenState.setState(state, new DeviceScreenState.Callbacks() {
+            @Override
+            public void onStateChanged(DeviceScreenState.State oldState, DeviceScreenState.State newState) {
+                if (newState == DeviceScreenState.State.ScreenOff) {
+                    DefaultAndroidNotification.this.reIssueAnimatedNotifications(context);
+                }
+            }
+        });
     }
 
     private void reIssueAnimatedNotifications(@NonNull final Context context) {
@@ -255,17 +275,10 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                         }
                     }
                 }
+
+                // Re-issue the job, this will overwrite the current job, and reset the retry-backoff
+                DefaultAndroidNotification.this.issueAnimatedNotificationSizeJob();
             }
         }, 1000);
-    }
-
-    private void keepDeviceStateServiceAlive(@NonNull Context context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            try {
-                Intent serviceIntent = new Intent(context, DeviceStateService.class);
-                context.startService(serviceIntent);
-            } catch (Exception ignored) {
-            }
-        }
     }
 }

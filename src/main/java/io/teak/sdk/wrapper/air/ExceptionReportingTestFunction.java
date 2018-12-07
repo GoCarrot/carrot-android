@@ -18,7 +18,7 @@ import com.adobe.fre.FREContext;
 import com.adobe.fre.FREFunction;
 import com.adobe.fre.FREObject;
 
-import io.teak.sdk.Raven;
+import io.teak.sdk.raven.Raven;
 import io.teak.sdk.Teak;
 
 public class ExceptionReportingTestFunction implements FREFunction {
