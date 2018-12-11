@@ -281,18 +281,11 @@ public class IntegrationChecker {
                 addErrorToReport("io.teak.sdk.push.FCMPushProvider", "Push notifications will not work because there is no \"io.teak.sdk.push.FCMPushProvider\" <service> in your AndroidManifest.xml.\n\nTo fix this, add the io.teak.sdk.push.FCMPushProvider <service>");
             }
 
-            // Check to make sure the Teak Raven service is present
-            final List<ManifestParser.XmlTag> teakRavenService = applications.get(0).find("service",
-                new HashMap.SimpleEntry<>("name", "io.teak.sdk.service.RavenService"));
-            if (teakRavenService.size() < 1) {
-                addErrorToReport("io.teak.sdk.service.RavenService", "Remote error reporting will not work because there is no \"io.teak.sdk.service.RavenService\" <service> in your AndroidManifest.xml.\n\nTo fix this, add the \"io.teak.sdk.service.RavenService\" <service>");
-            }
-
-            // Check to make sure the Teak Device State service is present
+            // Check to make sure the Teak job service is present
             final List<ManifestParser.XmlTag> teakDeviceStateService = applications.get(0).find("service",
-                new HashMap.SimpleEntry<>("name", "io.teak.sdk.service.DeviceStateService"));
+                new HashMap.SimpleEntry<>("name", "io.teak.sdk.service.JobService"));
             if (teakDeviceStateService.size() < 1) {
-                addErrorToReport("io.teak.sdk.service.DeviceStateService", "Animated notifications will not work on Android 8+ because there is no \"io.teak.sdk.service.DeviceStateService\" <service> in your AndroidManifest.xml.\n\nTo fix this, add the \"io.teak.sdk.service.DeviceStateService\" <service>");
+                addErrorToReport("io.teak.sdk.service.JobService", "Animated notifications will not work on Android 8+ because there is no \"io.teak.sdk.service.DeviceStateService\" <service> in your AndroidManifest.xml.\n\nTo fix this, add the \"io.teak.sdk.service.DeviceStateService\" <service>");
             }
 
             // Find the teakXXXX:// scheme
