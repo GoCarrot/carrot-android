@@ -59,7 +59,9 @@ public class JobService extends com.firebase.jobdispatcher.JobService implements
             if (Raven.JOB_TYPE.equals(jobBundle.getString(JOB_TYPE_KEY))) {
                 jobCallable = new Sender(jobBundle);
             } else if (IAndroidNotification.ANIMATED_NOTIFICATION_JOB_TYPE.equals(jobBundle.getString(JOB_TYPE_KEY))) {
-                jobCallable = DeviceScreenState.isDeviceScreenOn(this.getApplicationContext());
+                DeviceScreenState.scheduleScreenStateJob(jobParameters);
+            } else if (DeviceScreenState.SCREEN_STATE_JOB_TAG.equals(jobBundle.getString(JOB_TYPE_KEY))) {
+                jobCallable = DeviceScreenState.isDeviceScreenOn(this.getApplicationContext(), jobParameters);
             }
         } catch (Exception e) {
             Teak.log.exception(e, false);
@@ -80,7 +82,7 @@ public class JobService extends com.firebase.jobdispatcher.JobService implements
         final JobTask jobTask = this.activeTasks.get(jobParameters.getTag());
         if (jobTask != null) {
             this.activeTasks.remove(jobParameters.getTag());
-            return !jobTask.isDone();
+            jobTask.cancel(true);
         }
         return false;
     }
