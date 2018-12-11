@@ -258,35 +258,27 @@ public class IntegrationChecker {
                 addErrorToReport("application.count", "There is more than one <application> defined in your AndroidManifest.xml, only one is allowed by Android.");
             }
 
-            // Check for receivers pointing to classes that don't exist
-            final List<ManifestParser.XmlTag> gcmReceivers = applications.get(0).find("receiver.intent-filter.action",
-                new HashMap.SimpleEntry<>("name", "com.google.android.c2dm.intent.RECEIVE"));
-            ManifestParser.XmlTag teakGcmReceiver = null;
-            for (ManifestParser.XmlTag tag : gcmReceivers) {
-                final String checkReceiverClass = tag.attributes.get("name");
+            // Make sure the Teak FCM service is present
+            final List<ManifestParser.XmlTag> fcmServices = applications.get(0).find("service.intent-filter.action",
+                new HashMap.SimpleEntry<>("name", "com.google.firebase.MESSAGING_EVENT"));
+            ManifestParser.XmlTag teakFcmService = null;
+            for (ManifestParser.XmlTag tag : fcmServices) {
+                final String checkServiceClass = tag.attributes.get("name");
                 try {
-                    Class.forName(checkReceiverClass);
+                    Class.forName(checkServiceClass);
                 } catch (Exception ignored) {
-                    addErrorToReport(checkReceiverClass, "Push notifications will crash because \"" + checkReceiverClass + "\" is in your AndroidManifest.xml, but the corresponding SDK has been removed.\n\nTo fix this, remove the <receiver> for \"" + checkReceiverClass + "\"");
+                    addErrorToReport(checkServiceClass, "Push notifications will crash because \"" + checkServiceClass + "\" is in your AndroidManifest.xml, but the corresponding SDK has been removed.\n\nTo fix this, remove the <service> for \"" + checkServiceClass + "\"");
                 }
 
                 // Check to make sure Teak GCM receiver is present
-                if ("io.teak.sdk.Teak".equals(checkReceiverClass)) {
-                    teakGcmReceiver = tag;
+                if ("io.teak.sdk.push.FCMPushProvider".equals(checkServiceClass)) {
+                    teakFcmService = tag;
                 }
             }
 
             // Error if no Teak GCM receiver
-            if (teakGcmReceiver == null) {
-                addErrorToReport("io.teak.sdk.Teak", "Push notifications will not work because there is no \"io.teak.sdk.Teak\" <receiver> in your AndroidManifest.xml.\n\nTo fix this, add the Teak <receiver>");
-            }
-
-            // Check to make sure the Teak InstanceIDListenerService is present
-            final List<ManifestParser.XmlTag> teakInstanceIdListenerService = applications.get(0).find("service.intent-filter.action",
-                new HashMap.SimpleEntry<>("name", "com.google.android.gms.iid.InstanceID"));
-            if (teakInstanceIdListenerService.size() < 1 ||
-                !"io.teak.sdk.InstanceIDListenerService".equals(teakInstanceIdListenerService.get(0).attributes.get("name"))) {
-                addErrorToReport("io.teak.sdk.InstanceIDListenerService", "Push notifications will not work consistently because there is no \"io.teak.sdk.InstanceIDListenerService\" <service> in your AndroidManifest.xml.\n\nTo fix this, add the \"io.teak.sdk.InstanceIDListenerService\" <service>");
+            if (teakFcmService == null) {
+                addErrorToReport("io.teak.sdk.push.FCMPushProvider", "Push notifications will not work because there is no \"io.teak.sdk.push.FCMPushProvider\" <service> in your AndroidManifest.xml.\n\nTo fix this, add the io.teak.sdk.push.FCMPushProvider <service>");
             }
 
             // Check to make sure the Teak Raven service is present
