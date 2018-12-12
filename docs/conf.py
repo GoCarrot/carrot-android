@@ -20,9 +20,9 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 import os, re, subprocess
-read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
-if read_the_docs_build:
-    subprocess.call('cd .. ; doxygen', shell=True)
+# read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
+# if read_the_docs_build:
+#     subprocess.call('cd .. ; doxygen', shell=True)
 
 # -- General configuration ------------------------------------------------
 
@@ -33,13 +33,13 @@ if read_the_docs_build:
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [ "breathe" ]
+# extensions = [ "breathe" ]
 
-breathe_projects = {
-    "teak":"_doxygen/xml/",
-}
+# breathe_projects = {
+#     "teak":"_doxygen/xml/",
+# }
 
-breathe_default_project = "teak"
+# breathe_default_project = "teak"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
