@@ -1,0 +1,12 @@
+.. include:: ../changelog_entry.rst
+
+1.0.0
+-----
+:Breaking Changes:
+    * None
+:New Features:
+    * Notification asset downloads can be cached, if ``io_teak_enable_caching`` is enabled. It is disabled by default, but everyone is encouraged to try using it.
+    * Long Distance notifications
+:Bug Fixes:
+    * Now defaults to Google Play Store if there is no installer package, instead of disabling tracking
+    * Video notifications should no longer get sorted to the bottom after refresh on Android 8+

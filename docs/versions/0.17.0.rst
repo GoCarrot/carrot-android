@@ -1,0 +1,18 @@
+.. include:: ../changelog_entry.rst
+
+0.17.0
+------
+:Breaking Changes:
+    * Requires ``io.teak.sdk.service.JobService`` for Android 8 job compatibility.
+    * Unity requires no changes.
+    * Adobe AIR requires adding ``<service android:name="io.teak.sdk.service.JobService" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="true"/>`` to XML
+    * Renamed some public static final fields (This should have no impact unless you were using these for some very strange reason)
+
+        * ``TEAK_API_KEY`` -> ``TEAK_API_KEY_RESOURCE``
+        * ``TEAK_APP_ID`` -> ``TEAK_APP_ID_RESOURCE``
+        * ``TEAK_GCM_SENDER_ID`` -> ``TEAK_GCM_SENDER_ID_RESOURCE``
+:New Features:
+    * Android 8 job compatibility
+    * Reward Link Name is now the ‘creative name’ if the on reward callback was triggered from a deep link
+:Bug Fixes:
+    * None

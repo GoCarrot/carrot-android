@@ -1,0 +1,12 @@
+.. include:: ../changelog_entry.rst
+
+0.13.6
+------
+:Breaking Changes:
+    * None
+:New Features:
+    * None
+:Bug Fixes:
+    * Purchase tracking works once again
+    * Send common payload during reward claim
+    * ``RetryableTask`` now immediately fails if ``ClassNotFoundException`` (if GCM isn’t linked)

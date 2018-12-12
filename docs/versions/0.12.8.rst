@@ -1,0 +1,14 @@
+.. include:: ../changelog_entry.rst
+
+0.12.8
+------
+:Breaking Changes:
+    * Use ``Teak.registerDeepLink`` instead of ``DeepLink.registerRoute``
+:New Features:
+    * ``TeakNotification.cancelAll``
+    * ``TeakNotification`` calls now return a JSON string with ``status`` and ``data``
+:Bug Fixes:
+    * Setting verbose logging will immediately take effect
+    * Corner-case crash fix in Logs
+    * Attach additional info to exception reporting, teakCreativeName
+    * Fixed caught-exception in GCM if the OS kills the GCM service

@@ -1,0 +1,14 @@
+.. include:: ../changelog_entry.rst
+
+0.12.2
+------
+:Breaking Changes:
+    * None
+:New Features:
+    * Push notification remote syntax is now versioned (non-breaking), new features:
+    * Large/small image background
+    * Support setting credentials in ``<meta-data>`` for Adobe Air.
+:Bug Fixes:
+    * Fix state machine bug where a RemoteConfiguration coming back when device was in background would assign the Configured Session state.
+    * No longer calls ``ACTION_CLOSE_SYSTEM_DIALOGS`` when dismissing notifications
+    * No longer DDoS ourselves with remote logging

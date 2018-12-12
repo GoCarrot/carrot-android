@@ -1,0 +1,11 @@
+.. include:: ../changelog_entry.rst
+
+0.12.6
+------
+:Breaking Changes:
+    * None
+:New Features:
+    * None
+:Bug Fixes:
+    * Fix parameter checking logic bug in trackEvent
+    * Fix 'cold start' attribution bug

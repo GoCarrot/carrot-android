@@ -1,0 +1,14 @@
+.. include:: ../changelog_entry.rst
+
+0.13.8
+------
+:Breaking Changes:
+    * None
+:New Features:
+    * Added ``userHasDisabledNotifications``
+    * Added ``openSettingsAppToThisAppsSettings``
+    * Added ``setApplicationBadgeNumber``
+    * teakRewardId now included in the ``REWARD_CLAIM_ATTEMPT`` event
+    * Enhanced Integration Checks
+:Bug Fixes:
+    * Schedule/Cancel notification returns id as a string

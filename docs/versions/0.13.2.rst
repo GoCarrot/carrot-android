@@ -1,0 +1,13 @@
+.. include:: ../changelog_entry.rst
+
+0.13.2
+------
+:Breaking Changes:
+    * If you are compiling with a target SDK of Android 26 or greater, Teak will now check requirements and throw an exception if the Android v4 support lib doesn’t support Android 26 features (required features for push functionality)
+:New Features:
+    * None
+:Bug Fixes:
+    * Support explicit intents for Android 26+
+    * Support notification categories for Android 26+
+    * ADM listener fixed
+    * Deadlock due to very slow network conditions fixed

@@ -1,0 +1,11 @@
+.. include:: ../changelog_entry.rst
+
+0.16.0
+------
+:Breaking Changes:
+    * None
+:New Features:
+    * None
+:Bug Fixes:
+    * Fix corner case where GCM reg would not get sent if it came in *during* identifyUser (for real this time)
+    * Fixes integration checker when ``<activity-alias>`` is used

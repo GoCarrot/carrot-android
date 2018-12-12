@@ -1,0 +1,13 @@
+.. include:: ../changelog_entry.rst
+
+0.12.7
+------
+:Breaking Changes:
+    * None
+:New Features:
+    * Additional info in the notification & reward payload
+:Bug Fixes:
+    * Add specific catches for exceptions we should ignore, and not report:
+    * TEAK-SDK-F, TEAK-SDK-M, TEAK-SDK-X, TEAK-SDK-11, TEAK-SDK-Q, TEAK-SDK-Z, TEAK-SDK-N, TEAK-SDK-K, TEAK-SDK-W, TEAK-SDK-V, TEAK-SDK-T, TEAK-SDK-S, TEAK-SDK-J, TEAK-SDK-P
+    * Fixed TEAK-SDK-9
+    * Fixed issue with Android < 5 and custom notification icons

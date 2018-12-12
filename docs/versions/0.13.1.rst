@@ -1,0 +1,11 @@
+.. include:: ../changelog_entry.rst
+
+0.13.1
+------
+:Breaking Changes:
+    * None
+:New Features:
+    * Unity/Air wrapper classes now included in core for testability and better continuous integration performance
+:Bug Fixes:
+    * Hotfix from 0.12.9 integrated
+    * Internal system re-write

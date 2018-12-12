@@ -1,0 +1,10 @@
+.. include:: ../changelog_entry.rst
+
+0.13.7
+------
+:Breaking Changes:
+    * None
+:New Features:
+    * None
+:Bug Fixes:
+    * None

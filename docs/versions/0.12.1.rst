@@ -1,0 +1,10 @@
+.. include:: ../changelog_entry.rst
+
+0.12.1
+------
+:Breaking Changes:
+    * None
+:New Features:
+    * None
+:Bug Fixes:
+    * Unity and Adobe AIR now use a unified way of assigning their SDK versions

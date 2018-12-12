@@ -1,0 +1,11 @@
+.. include:: ../changelog_entry.rst
+
+0.14.0
+------
+:Breaking Changes:
+    * None
+:New Features:
+    * Notification buttons in expanded view
+    * Aspect ratio now preserved in small view notifications
+:Bug Fixes:
+    * Launch deep-link now takes precedence over install-attribution deep link on first launch of app

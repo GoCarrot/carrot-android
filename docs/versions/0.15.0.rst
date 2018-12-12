@@ -1,0 +1,11 @@
+.. include:: ../changelog_entry.rst
+
+0.15.0
+------
+:Breaking Changes:
+    * None
+:New Features:
+    * User Profile support
+    * Request batchfing for trackEvent, user profile
+:Bug Fixes:
+    * Fix corner case where GCM reg would not get sent if it came in *during* identifyUser

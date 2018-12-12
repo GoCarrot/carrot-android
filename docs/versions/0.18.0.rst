@@ -1,0 +1,14 @@
+.. include:: ../changelog_entry.rst
+
+0.18.0
+------
+:Breaking Changes:
+    * None
+:New Features:
+    * Ability to disable collection of IDFA, Push Key, and/or Facebook Access Token
+
+        * ``<meta-data android:name="io_teak_enable_idfa" android:value="false" />``
+        * ``<meta-data android:name="io_teak_enable_facebook" android:value="false" />``
+        * ``<meta-data android:name="io_teak_enable_push_key" android:value="false" />``
+:Bug Fixes:
+    * If ``Teak.onCreate`` fails, don't crash with a null pointer

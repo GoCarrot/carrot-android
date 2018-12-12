@@ -1,0 +1,12 @@
+.. include:: ../changelog_entry.rst
+
+0.13.3
+------
+:Breaking Changes:
+    * None
+:New Features:
+    * You can now load images in push notifications from your Android assets, example ``assets:///pixelgrid_2000x2000.png`` (note triple slash)
+    * Using ``NONE`` for an image resource will now remove it from the layout
+    * Notifications will no longer combine into a single notification (in as much as is possible to control) on Android 8+ only
+:Bug Fixes:
+    * None

@@ -1,0 +1,10 @@
+.. include:: ../changelog_entry.rst
+
+0.12.4
+------
+:Breaking Changes:
+    * None
+:New Features:
+    * None
+:Bug Fixes:
+    * Additional listeners for GCM registration key updates, and improvements in handling GCM registrations.
