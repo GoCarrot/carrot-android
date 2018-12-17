@@ -369,7 +369,8 @@ public class Session {
                     }
 
                     // "true", "false" or "unknown" (if API < 19)
-                    payload.put("notifications_enabled", Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ? String.valueOf(!Teak.userHasDisabledNotifications()) : "unknown");
+                    payload.put("notifications_enabled",
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ? String.valueOf(Teak.getNotificationStatus() == Teak.TEAK_NOTIFICATIONS_ENABLED) : "unknown");
 
                     TimeZone tz = TimeZone.getDefault();
                     long rawTz = tz.getRawOffset();

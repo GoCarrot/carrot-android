@@ -24,7 +24,7 @@ public class AreNotificationsEnabledFunction implements FREFunction {
     @Override
     public FREObject call(FREContext context, FREObject[] argv) {
         try {
-            return FREObject.newObject(!Teak.userHasDisabledNotifications());
+            return FREObject.newObject(Teak.getNotificationStatus() == Teak.TEAK_NOTIFICATIONS_ENABLED);
         } catch (Exception ignored) {
         }
         return null;

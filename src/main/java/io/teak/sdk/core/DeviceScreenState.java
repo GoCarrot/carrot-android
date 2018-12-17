@@ -93,16 +93,15 @@ public class DeviceScreenState {
     }
 
     private static final int[][] ExecutionWindow = new int[][] {
-            {15, 16},
-            {5, 10}, // Not an ordering error, this is to prevent the device re-checking if the screen
-            {10, 20},// gets turned on from re-issuing the notification in the case of a state change to OFF
-            {20, 30},
-            {30, 50},
-            {50, 75},
-            {75, 150},
-            {150, 300},
-            {600, 900}
-    };
+        {15, 16},
+        {5, 10},  // Not an ordering error, this is to prevent the device re-checking if the screen
+        {10, 20}, // gets turned on from re-issuing the notification in the case of a state change to OFF
+        {20, 30},
+        {30, 50},
+        {50, 75},
+        {75, 150},
+        {150, 300},
+        {600, 900}};
 
     public static void scheduleScreenStateJob(@Nullable JobParameters jobParameters) {
         final Bundle bundle = new Bundle();
@@ -114,7 +113,7 @@ public class DeviceScreenState {
 
             // Do not schedule if there is no remaining
             if (extras.containsKey(IAndroidNotification.ANIMATED_NOTIFICATION_COUNT_KEY) &&
-                    extras.getInt(IAndroidNotification.ANIMATED_NOTIFICATION_COUNT_KEY) < 1) {
+                extras.getInt(IAndroidNotification.ANIMATED_NOTIFICATION_COUNT_KEY) < 1) {
                 return;
             }
             delayIndex = extras.getInt(DeviceScreenState.DELAY_INDEX_KEY, -1) + 1;
@@ -126,8 +125,8 @@ public class DeviceScreenState {
 
         int[] executionWindow = DeviceScreenState.ExecutionWindow[delayIndex];
         final Job job = Teak.Instance.jobBuilder(DeviceScreenState.SCREEN_STATE_JOB_TAG, bundle)
-                .setTrigger(Trigger.executionWindow(executionWindow[0], executionWindow[1]))
-                .build();
+                            .setTrigger(Trigger.executionWindow(executionWindow[0], executionWindow[1]))
+                            .build();
         Teak.Instance.dispatcher.mustSchedule(job);
     }
 

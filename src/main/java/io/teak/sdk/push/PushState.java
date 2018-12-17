@@ -244,8 +244,7 @@ public class PushState {
 
         if (notificationManagerCompatHas_areNotificationsEnabled && this.notificationManagerCompat != null) {
             try {
-                ret = this.notificationManagerCompat.areNotificationsEnabled() ?
-                    Teak.TEAK_NOTIFICATIONS_ENABLED : Teak.TEAK_NOTIFICATIONS_DISABLED;
+                ret = this.notificationManagerCompat.areNotificationsEnabled() ? Teak.TEAK_NOTIFICATIONS_ENABLED : Teak.TEAK_NOTIFICATIONS_DISABLED;
             } catch (Exception e) {
                 Teak.log.exception(e);
             }
@@ -256,9 +255,15 @@ public class PushState {
     private StateChainEntry determineStateFromSystem(@NonNull Context context) {
         State tmpState;
         switch (this.getNotificationStatus()) {
-            case Teak.TEAK_NOTIFICATIONS_ENABLED: tmpState = State.Authorized; break;
-            case Teak.TEAK_NOTIFICATIONS_DISABLED: tmpState = State.Denied; break;
-            default: tmpState = State.Unknown; break;
+            case Teak.TEAK_NOTIFICATIONS_ENABLED:
+                tmpState = State.Authorized;
+                break;
+            case Teak.TEAK_NOTIFICATIONS_DISABLED:
+                tmpState = State.Denied;
+                break;
+            default:
+                tmpState = State.Unknown;
+                break;
         }
         final State newState = tmpState;
         boolean canBypassDnd = false;
