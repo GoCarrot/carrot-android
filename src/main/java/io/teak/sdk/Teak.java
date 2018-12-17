@@ -278,6 +278,21 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     }
 
     /**
+     * Notifications are enabled.
+     */
+    public static final int TEAK_NOTIFICATIONS_ENABLED = 0;
+
+    /**
+     * Notifications are disabled.
+     */
+    public static final int TEAK_NOTIFICATIONS_DISABLED = 1;
+
+    /**
+     * Notification status is not known. The device could be below API 19, or another issue.
+     */
+    public static final int TEAK_NOTIFICATIONS_UNKNOWN = 2;
+
+    /**
      * Has the user disabled notifications for this app.
      *
      * This will always return 'false' for any device below API 19.
@@ -285,12 +300,12 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * @return 'true' if the device is above API 19 and the user has disabled notifications, 'false' otherwise.
      */
     @SuppressWarnings("unused")
-    public static boolean userHasDisabledNotifications() {
+    public static int getNotificationStatus() {
         if (Instance == null) {
-            Teak.log.e("error.userHasDisabledNotifications", "userHasDisabledNotifications() should not be called before onCreate()");
-            return false;
+            Teak.log.e("error.getNotificationStatus", "getNotificationStatus() should not be called before onCreate()");
+            return TEAK_NOTIFICATIONS_UNKNOWN;
         }
-        return !Instance.areNotificationsEnabled();
+        return Instance.getNotificationStatus();
     }
 
     /**

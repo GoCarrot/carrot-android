@@ -232,8 +232,8 @@ public class PushState {
         });
     }
 
-    public boolean areNotificationsEnabled() {
-        boolean ret = true;
+    public int getNotificationStatus() {
+        int ret = Teak.TEAK_NOTIFICATIONS_UNKNOWN;
         boolean notificationManagerCompatHas_areNotificationsEnabled = false;
         try {
             if (NotificationManagerCompat.class.getMethod("areNotificationsEnabled") != null) {
@@ -244,7 +244,8 @@ public class PushState {
 
         if (notificationManagerCompatHas_areNotificationsEnabled && this.notificationManagerCompat != null) {
             try {
-                ret = this.notificationManagerCompat.areNotificationsEnabled();
+                ret = this.notificationManagerCompat.areNotificationsEnabled() ?
+                    Teak.TEAK_NOTIFICATIONS_ENABLED : Teak.TEAK_NOTIFICATIONS_DISABLED;
             } catch (Exception e) {
                 Teak.log.exception(e);
             }
@@ -253,7 +254,13 @@ public class PushState {
     }
 
     private StateChainEntry determineStateFromSystem(@NonNull Context context) {
-        final State newState = this.areNotificationsEnabled() ? State.Authorized : State.Denied;
+        State tmpState;
+        switch (this.getNotificationStatus()) {
+            case Teak.TEAK_NOTIFICATIONS_ENABLED: tmpState = State.Authorized; break;
+            case Teak.TEAK_NOTIFICATIONS_DISABLED: tmpState = State.Denied; break;
+            default: tmpState = State.Unknown; break;
+        }
+        final State newState = tmpState;
         boolean canBypassDnd = false;
         boolean canShowOnLockscreen = true;
         boolean canShowBadge = true;

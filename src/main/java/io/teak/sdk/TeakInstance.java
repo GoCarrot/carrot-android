@@ -212,8 +212,8 @@ public class TeakInstance implements Unobfuscable {
 
     ///// Notifications and Settings
 
-    boolean areNotificationsEnabled() {
-        return PushState.get().areNotificationsEnabled();
+    int getNotificationStatus() {
+        return PushState.get().getNotificationStatus();
     }
 
     boolean openSettingsAppToThisAppsSettings() {
