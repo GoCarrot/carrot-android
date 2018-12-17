@@ -290,7 +290,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     /**
      * Notification status is not known. The device could be below API 19, or another issue.
      */
-    public static final int TEAK_NOTIFICATIONS_UNKNOWN = 2;
+    public static final int TEAK_NOTIFICATIONS_UNKNOWN = -1;
 
     /**
      * Has the user disabled notifications for this app.
