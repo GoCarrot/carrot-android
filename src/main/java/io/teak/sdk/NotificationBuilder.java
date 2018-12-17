@@ -513,12 +513,6 @@ public class NotificationBuilder {
                         // Add the "well behaved heap size" as a query param
                         final Uri.Builder uriBuilder = Uri.parse(bitmapUriString).buildUpon();
                         uriBuilder.appendQueryParameter("device_memory_class", String.valueOf(deviceMemoryClass));
-                        uriBuilder.appendQueryParameter("xdpi", String.valueOf(displayMetrics.xdpi));
-                        uriBuilder.appendQueryParameter("ydpi", String.valueOf(displayMetrics.ydpi));
-                        uriBuilder.appendQueryParameter("width", String.valueOf(displayMetrics.widthPixels));
-                        uriBuilder.appendQueryParameter("height", String.valueOf(displayMetrics.heightPixels));
-                        uriBuilder.appendQueryParameter("density", String.valueOf(displayMetrics.density));
-                        uriBuilder.appendQueryParameter("density_dpi", String.valueOf(displayMetrics.densityDpi));
                         uriBuilder.appendQueryParameter("scaled_density", String.valueOf(displayMetrics.scaledDensity));
 
                         URL aURL = new URL(uriBuilder.toString());
