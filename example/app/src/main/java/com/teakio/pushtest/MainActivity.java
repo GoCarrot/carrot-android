@@ -26,6 +26,7 @@ import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
 import io.teak.sdk.event.PushNotificationEvent;
+import io.teak.sdk.raven.Raven;
 
 import android.view.View;
 import android.view.WindowManager;
@@ -309,7 +310,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void crashApp(View view) {
-        throw new RuntimeException("I crashed the app!");
+//        throw new RuntimeException("I crashed the app!");
+        Teak.log.exception(new Raven.ReportTestException(Teak.SDKVersion));
     }
 
     public void integrationTestTimeout(String timeout) {
