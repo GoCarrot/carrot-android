@@ -186,7 +186,7 @@ public class AppConfiguration {
         {
             Boolean enableCaching = androidResources.getBooleanResource(TEAK_ENABLE_CACHING_RESOURCE);
             if (enableCaching == null && metaData != null) {
-                enableCaching = metaData.getBoolean(TEAK_ENABLE_CACHING_RESOURCE, false);
+                enableCaching = metaData.getBoolean(TEAK_ENABLE_CACHING_RESOURCE, true);
             }
             this.enableCaching = enableCaching == null ? false : enableCaching;
         }
