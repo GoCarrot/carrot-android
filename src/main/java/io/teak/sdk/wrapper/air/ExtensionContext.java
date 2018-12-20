@@ -79,7 +79,7 @@ public class ExtensionContext extends FREContext implements Unobfuscable {
         functionMap.put("setNumericAttribute", new SetAttributeFunction(SetAttributeFunction.FunctionType.Numeric));
         functionMap.put("setStringAttribute", new SetAttributeFunction(SetAttributeFunction.FunctionType.String));
         functionMap.put("openSettingsAppToThisAppsSettings", new OpenSettingsAppToThisAppsSettingsFunction());
-        functionMap.put("areNotificationsEnabled", new AreNotificationsEnabledFunction());
+        functionMap.put("getNotificationState", new GetNotificationState());
         functionMap.put("getAppConfiguration", new GetConfigurationFunction(GetConfigurationFunction.ConfigurationType.AppConfiguration));
         functionMap.put("getDeviceConfiguration", new GetConfigurationFunction(GetConfigurationFunction.ConfigurationType.DeviceConfiguration));
         functionMap.put("_testExceptionReporting", new ExceptionReportingTestFunction());
