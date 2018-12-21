@@ -30,6 +30,7 @@ import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.security.SecureRandom;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -329,13 +330,25 @@ public class Session {
             public void run() {
                 HttpsURLConnection connection = null;
                 try {
+                    String buster;
+                    {
+                        final SecureRandom random = new SecureRandom();
+                        byte bytes[] = new byte[4];
+                        random.nextBytes(bytes);
+                        final StringBuilder builder = new StringBuilder();
+                        for (byte b : bytes) {
+                            builder.append(String.format("%02x", b));
+                        }
+                        buster = builder.toString();
+                    }
+
                     String queryString = "game_id=" + URLEncoder.encode(teakConfiguration.appConfiguration.appId, "UTF-8") +
                                          "&api_key=" + URLEncoder.encode(Session.this.userId, "UTF-8") +
                                          "&sdk_version=" + URLEncoder.encode(teakSdkVersion, "UTF-8") +
                                          "&sdk_platform=" + URLEncoder.encode(teakConfiguration.deviceConfiguration.platformString, "UTF-8") +
                                          "&app_version=" + URLEncoder.encode(String.valueOf(teakConfiguration.appConfiguration.appVersion), "UTF-8") +
                                          (Session.this.countryCode == null ? "" : "&country_code=" + URLEncoder.encode(String.valueOf(Session.this.countryCode), "UTF-8")) +
-                                         "&buster=" + URLEncoder.encode(UUID.randomUUID().toString(), "UTF-8");
+                                         "&buster=" + URLEncoder.encode(buster, "UTF-8");
                     URL url = new URL("https://iroko.gocarrot.com/ping?" + queryString);
                     connection = (HttpsURLConnection) url.openConnection();
                     connection.setRequestProperty("Accept-Charset", "UTF-8");
