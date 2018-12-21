@@ -335,11 +335,13 @@ public class Session {
                         final SecureRandom random = new SecureRandom();
                         byte bytes[] = new byte[4];
                         random.nextBytes(bytes);
-                        final StringBuilder builder = new StringBuilder();
-                        for (byte b : bytes) {
-                            builder.append(String.format("%02x", b));
-                        }
-                        buster = builder.toString();
+
+                        // When packing signed bytes into an int, each byte needs to be masked off
+                        // because it is sign-extended to 32 bits (rather than zero-extended) due to
+                        // the arithmetic promotion rule (described in JLS, Conversions and Promotions).
+                        // https://stackoverflow.com/questions/7619058/convert-a-byte-array-to-integer-in-java-and-vice-versa
+                        final int asInt = bytes[0] << 24 | (bytes[1] & 0xFF) << 16 | (bytes[2] & 0xFF) << 8 | (bytes[3] & 0xFF);
+                        buster = String.format("%08x", asInt);
                     }
 
                     String queryString = "game_id=" + URLEncoder.encode(teakConfiguration.appConfiguration.appId, "UTF-8") +
