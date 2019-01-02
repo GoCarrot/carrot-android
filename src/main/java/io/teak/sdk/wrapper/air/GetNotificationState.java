@@ -6,11 +6,11 @@ import com.adobe.fre.FREObject;
 
 import io.teak.sdk.Teak;
 
-public class OpenSettingsAppToThisAppsSettingsFunction implements FREFunction {
+public class GetNotificationState implements FREFunction {
     @Override
     public FREObject call(FREContext context, FREObject[] argv) {
         try {
-            return FREObject.newObject(Teak.openSettingsAppToThisAppsSettings());
+            return FREObject.newObject(Teak.getNotificationStatus());
         } catch (Exception ignored) {
         }
         return null;

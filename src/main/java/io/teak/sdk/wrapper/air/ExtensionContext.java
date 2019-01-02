@@ -1,17 +1,3 @@
-/* Teak -- Copyright (C) 2016 GoCarrot Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package io.teak.sdk.wrapper.air;
 
 import java.util.Map;
@@ -79,7 +65,7 @@ public class ExtensionContext extends FREContext implements Unobfuscable {
         functionMap.put("setNumericAttribute", new SetAttributeFunction(SetAttributeFunction.FunctionType.Numeric));
         functionMap.put("setStringAttribute", new SetAttributeFunction(SetAttributeFunction.FunctionType.String));
         functionMap.put("openSettingsAppToThisAppsSettings", new OpenSettingsAppToThisAppsSettingsFunction());
-        functionMap.put("areNotificationsEnabled", new AreNotificationsEnabledFunction());
+        functionMap.put("getNotificationState", new GetNotificationState());
         functionMap.put("getAppConfiguration", new GetConfigurationFunction(GetConfigurationFunction.ConfigurationType.AppConfiguration));
         functionMap.put("getDeviceConfiguration", new GetConfigurationFunction(GetConfigurationFunction.ConfigurationType.DeviceConfiguration));
         functionMap.put("_testExceptionReporting", new ExceptionReportingTestFunction());

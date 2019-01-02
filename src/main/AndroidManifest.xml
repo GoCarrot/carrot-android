@@ -70,7 +70,6 @@
         </receiver>
 
         <!-- Teak Job Service -->
-        <!--android:process=":teak.job"-->
         <service
             android:exported="false"
             android:name="io.teak.sdk.service.JobService">

@@ -1,5 +1,4 @@
 build/
-docs/
 .DS_Store
 *.iml
 */*.iml

@@ -1,18 +1,3 @@
-/* Teak -- Copyright (C) 2017 GoCarrot Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package io.teak.sdk;
 
 import android.annotation.SuppressLint;
@@ -258,49 +243,34 @@ public class IntegrationChecker {
                 addErrorToReport("application.count", "There is more than one <application> defined in your AndroidManifest.xml, only one is allowed by Android.");
             }
 
-            // Check for receivers pointing to classes that don't exist
-            final List<ManifestParser.XmlTag> gcmReceivers = applications.get(0).find("receiver.intent-filter.action",
-                new HashMap.SimpleEntry<>("name", "com.google.android.c2dm.intent.RECEIVE"));
-            ManifestParser.XmlTag teakGcmReceiver = null;
-            for (ManifestParser.XmlTag tag : gcmReceivers) {
-                final String checkReceiverClass = tag.attributes.get("name");
+            // Make sure the Teak FCM service is present
+            final List<ManifestParser.XmlTag> fcmServices = applications.get(0).find("service.intent-filter.action",
+                new HashMap.SimpleEntry<>("name", "com.google.firebase.MESSAGING_EVENT"));
+            ManifestParser.XmlTag teakFcmService = null;
+            for (ManifestParser.XmlTag tag : fcmServices) {
+                final String checkServiceClass = tag.attributes.get("name");
                 try {
-                    Class.forName(checkReceiverClass);
+                    Class.forName(checkServiceClass);
                 } catch (Exception ignored) {
-                    addErrorToReport(checkReceiverClass, "Push notifications will crash because \"" + checkReceiverClass + "\" is in your AndroidManifest.xml, but the corresponding SDK has been removed.\n\nTo fix this, remove the <receiver> for \"" + checkReceiverClass + "\"");
+                    addErrorToReport(checkServiceClass, "Push notifications will crash because \"" + checkServiceClass + "\" is in your AndroidManifest.xml, but the corresponding SDK has been removed.\n\nTo fix this, remove the <service> for \"" + checkServiceClass + "\"");
                 }
 
                 // Check to make sure Teak GCM receiver is present
-                if ("io.teak.sdk.Teak".equals(checkReceiverClass)) {
-                    teakGcmReceiver = tag;
+                if ("io.teak.sdk.push.FCMPushProvider".equals(checkServiceClass)) {
+                    teakFcmService = tag;
                 }
             }
 
             // Error if no Teak GCM receiver
-            if (teakGcmReceiver == null) {
-                addErrorToReport("io.teak.sdk.Teak", "Push notifications will not work because there is no \"io.teak.sdk.Teak\" <receiver> in your AndroidManifest.xml.\n\nTo fix this, add the Teak <receiver>");
+            if (teakFcmService == null) {
+                addErrorToReport("io.teak.sdk.push.FCMPushProvider", "Push notifications will not work because there is no \"io.teak.sdk.push.FCMPushProvider\" <service> in your AndroidManifest.xml.\n\nTo fix this, add the io.teak.sdk.push.FCMPushProvider <service>");
             }
 
-            // Check to make sure the Teak InstanceIDListenerService is present
-            final List<ManifestParser.XmlTag> teakInstanceIdListenerService = applications.get(0).find("service.intent-filter.action",
-                new HashMap.SimpleEntry<>("name", "com.google.android.gms.iid.InstanceID"));
-            if (teakInstanceIdListenerService.size() < 1 ||
-                !"io.teak.sdk.InstanceIDListenerService".equals(teakInstanceIdListenerService.get(0).attributes.get("name"))) {
-                addErrorToReport("io.teak.sdk.InstanceIDListenerService", "Push notifications will not work consistently because there is no \"io.teak.sdk.InstanceIDListenerService\" <service> in your AndroidManifest.xml.\n\nTo fix this, add the \"io.teak.sdk.InstanceIDListenerService\" <service>");
-            }
-
-            // Check to make sure the Teak Raven service is present
-            final List<ManifestParser.XmlTag> teakRavenService = applications.get(0).find("service",
-                new HashMap.SimpleEntry<>("name", "io.teak.sdk.service.RavenService"));
-            if (teakRavenService.size() < 1) {
-                addErrorToReport("io.teak.sdk.service.RavenService", "Remote error reporting will not work because there is no \"io.teak.sdk.service.RavenService\" <service> in your AndroidManifest.xml.\n\nTo fix this, add the \"io.teak.sdk.service.RavenService\" <service>");
-            }
-
-            // Check to make sure the Teak Device State service is present
+            // Check to make sure the Teak job service is present
             final List<ManifestParser.XmlTag> teakDeviceStateService = applications.get(0).find("service",
-                new HashMap.SimpleEntry<>("name", "io.teak.sdk.service.DeviceStateService"));
+                new HashMap.SimpleEntry<>("name", "io.teak.sdk.service.JobService"));
             if (teakDeviceStateService.size() < 1) {
-                addErrorToReport("io.teak.sdk.service.DeviceStateService", "Animated notifications will not work on Android 8+ because there is no \"io.teak.sdk.service.DeviceStateService\" <service> in your AndroidManifest.xml.\n\nTo fix this, add the \"io.teak.sdk.service.DeviceStateService\" <service>");
+                addErrorToReport("io.teak.sdk.service.JobService", "Animated notifications will not work on Android 8+ because there is no \"io.teak.sdk.service.DeviceStateService\" <service> in your AndroidManifest.xml.\n\nTo fix this, add the \"io.teak.sdk.service.DeviceStateService\" <service>");
             }
 
             // Find the teakXXXX:// scheme

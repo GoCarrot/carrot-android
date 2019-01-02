@@ -1,17 +1,3 @@
-/* Teak -- Copyright (C) 2018 GoCarrot Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package io.teak.sdk.push;
 
 import android.app.Notification;
@@ -232,8 +218,8 @@ public class PushState {
         });
     }
 
-    public boolean areNotificationsEnabled() {
-        boolean ret = true;
+    public int getNotificationStatus() {
+        int ret = Teak.TEAK_NOTIFICATIONS_UNKNOWN;
         boolean notificationManagerCompatHas_areNotificationsEnabled = false;
         try {
             if (NotificationManagerCompat.class.getMethod("areNotificationsEnabled") != null) {
@@ -244,7 +230,7 @@ public class PushState {
 
         if (notificationManagerCompatHas_areNotificationsEnabled && this.notificationManagerCompat != null) {
             try {
-                ret = this.notificationManagerCompat.areNotificationsEnabled();
+                ret = this.notificationManagerCompat.areNotificationsEnabled() ? Teak.TEAK_NOTIFICATIONS_ENABLED : Teak.TEAK_NOTIFICATIONS_DISABLED;
             } catch (Exception e) {
                 Teak.log.exception(e);
             }
@@ -253,7 +239,19 @@ public class PushState {
     }
 
     private StateChainEntry determineStateFromSystem(@NonNull Context context) {
-        final State newState = this.areNotificationsEnabled() ? State.Authorized : State.Denied;
+        State tmpState;
+        switch (this.getNotificationStatus()) {
+            case Teak.TEAK_NOTIFICATIONS_ENABLED:
+                tmpState = State.Authorized;
+                break;
+            case Teak.TEAK_NOTIFICATIONS_DISABLED:
+                tmpState = State.Denied;
+                break;
+            default:
+                tmpState = State.Unknown;
+                break;
+        }
+        final State newState = tmpState;
         boolean canBypassDnd = false;
         boolean canShowOnLockscreen = true;
         boolean canShowBadge = true;

@@ -1,18 +1,3 @@
-/* Teak -- Copyright (C) 2016 GoCarrot Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package io.teak.sdk;
 
 import android.app.Activity;
@@ -278,6 +263,21 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     }
 
     /**
+     * Notifications are enabled.
+     */
+    public static final int TEAK_NOTIFICATIONS_ENABLED = 0;
+
+    /**
+     * Notifications are disabled.
+     */
+    public static final int TEAK_NOTIFICATIONS_DISABLED = 1;
+
+    /**
+     * Notification status is not known. The device could be below API 19, or another issue.
+     */
+    public static final int TEAK_NOTIFICATIONS_UNKNOWN = -1;
+
+    /**
      * Has the user disabled notifications for this app.
      *
      * This will always return 'false' for any device below API 19.
@@ -285,12 +285,12 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * @return 'true' if the device is above API 19 and the user has disabled notifications, 'false' otherwise.
      */
     @SuppressWarnings("unused")
-    public static boolean userHasDisabledNotifications() {
+    public static int getNotificationStatus() {
         if (Instance == null) {
-            Teak.log.e("error.userHasDisabledNotifications", "userHasDisabledNotifications() should not be called before onCreate()");
-            return false;
+            Teak.log.e("error.getNotificationStatus", "getNotificationStatus() should not be called before onCreate()");
+            return TEAK_NOTIFICATIONS_UNKNOWN;
         }
-        return !Instance.areNotificationsEnabled();
+        return Instance.getNotificationStatus();
     }
 
     /**

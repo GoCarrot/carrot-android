@@ -1,17 +1,3 @@
-/* Teak -- Copyright (C) 2016 GoCarrot Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package io.teak.sdk;
 
 import android.app.ActivityManager;
@@ -513,12 +499,6 @@ public class NotificationBuilder {
                         // Add the "well behaved heap size" as a query param
                         final Uri.Builder uriBuilder = Uri.parse(bitmapUriString).buildUpon();
                         uriBuilder.appendQueryParameter("device_memory_class", String.valueOf(deviceMemoryClass));
-                        uriBuilder.appendQueryParameter("xdpi", String.valueOf(displayMetrics.xdpi));
-                        uriBuilder.appendQueryParameter("ydpi", String.valueOf(displayMetrics.ydpi));
-                        uriBuilder.appendQueryParameter("width", String.valueOf(displayMetrics.widthPixels));
-                        uriBuilder.appendQueryParameter("height", String.valueOf(displayMetrics.heightPixels));
-                        uriBuilder.appendQueryParameter("density", String.valueOf(displayMetrics.density));
-                        uriBuilder.appendQueryParameter("density_dpi", String.valueOf(displayMetrics.densityDpi));
                         uriBuilder.appendQueryParameter("scaled_density", String.valueOf(displayMetrics.scaledDensity));
 
                         URL aURL = new URL(uriBuilder.toString());

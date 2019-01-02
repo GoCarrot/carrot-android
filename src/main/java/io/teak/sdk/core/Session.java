@@ -1,17 +1,3 @@
-/* Teak -- Copyright (C) 2016 GoCarrot Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package io.teak.sdk.core;
 
 import android.content.Intent;
@@ -30,6 +16,7 @@ import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.security.SecureRandom;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -329,13 +316,27 @@ public class Session {
             public void run() {
                 HttpsURLConnection connection = null;
                 try {
+                    String buster;
+                    {
+                        final SecureRandom random = new SecureRandom();
+                        byte bytes[] = new byte[4];
+                        random.nextBytes(bytes);
+
+                        // When packing signed bytes into an int, each byte needs to be masked off
+                        // because it is sign-extended to 32 bits (rather than zero-extended) due to
+                        // the arithmetic promotion rule (described in JLS, Conversions and Promotions).
+                        // https://stackoverflow.com/questions/7619058/convert-a-byte-array-to-integer-in-java-and-vice-versa
+                        final int asInt = bytes[0] << 24 | (bytes[1] & 0xFF) << 16 | (bytes[2] & 0xFF) << 8 | (bytes[3] & 0xFF);
+                        buster = String.format("%08x", asInt);
+                    }
+
                     String queryString = "game_id=" + URLEncoder.encode(teakConfiguration.appConfiguration.appId, "UTF-8") +
                                          "&api_key=" + URLEncoder.encode(Session.this.userId, "UTF-8") +
                                          "&sdk_version=" + URLEncoder.encode(teakSdkVersion, "UTF-8") +
                                          "&sdk_platform=" + URLEncoder.encode(teakConfiguration.deviceConfiguration.platformString, "UTF-8") +
                                          "&app_version=" + URLEncoder.encode(String.valueOf(teakConfiguration.appConfiguration.appVersion), "UTF-8") +
                                          (Session.this.countryCode == null ? "" : "&country_code=" + URLEncoder.encode(String.valueOf(Session.this.countryCode), "UTF-8")) +
-                                         "&buster=" + URLEncoder.encode(UUID.randomUUID().toString(), "UTF-8");
+                                         "&buster=" + URLEncoder.encode(buster, "UTF-8");
                     URL url = new URL("https://iroko.gocarrot.com/ping?" + queryString);
                     connection = (HttpsURLConnection) url.openConnection();
                     connection.setRequestProperty("Accept-Charset", "UTF-8");
@@ -369,7 +370,8 @@ public class Session {
                     }
 
                     // "true", "false" or "unknown" (if API < 19)
-                    payload.put("notifications_enabled", Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ? String.valueOf(!Teak.userHasDisabledNotifications()) : "unknown");
+                    payload.put("notifications_enabled",
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ? String.valueOf(Teak.getNotificationStatus() == Teak.TEAK_NOTIFICATIONS_ENABLED) : "unknown");
 
                     TimeZone tz = TimeZone.getDefault();
                     long rawTz = tz.getRawOffset();
