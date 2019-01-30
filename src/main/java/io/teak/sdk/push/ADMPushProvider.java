@@ -64,7 +64,8 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
     }
 
     ///// ADMMessageReceiver
-    public static class MessageAlertReceiver extends ADMMessageReceiver {
+
+    public static class MessageAlertReceiver extends ADMMessageReceiver implements Unobfuscable {
         public MessageAlertReceiver() {
             super(ADMPushProvider.class);
         }
