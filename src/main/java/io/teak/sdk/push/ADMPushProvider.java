@@ -157,20 +157,24 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
                                 Teak.log.e("amazon.adm.registration_error.debugging", Helpers.mm.h("sha256", sigSha256, "api_key.sha256", json.getString("appsigSha256")));
                                 throw new Exception("App signature SHA-256 does not match api_key.txt");
                             }
-                            Teak.log.i("amazon.adm.registration_error.debugging", "[✓] App signature matches signature inside 'api_key.txt'");
-                        } else if (json.has("appsig")) {
+                        }
+
+                        if (json.has("appsig")) {
                             String sigMd5 = Helpers.formatSig(sig, "MD5");
                             if (!sigMd5.equalsIgnoreCase(json.getString("appsig"))) {
                                 Teak.log.e("amazon.adm.registration_error.debugging", Helpers.mm.h("md5", sigMd5, "api_key.md5", json.getString("appsig")));
                                 throw new Exception("App signature MD5 does not match api_key.txt");
                             }
-                        } else {
+                        }
+
+                        if (!json.has("appsigSha256") || !json.has("appsig")){
                             String sigMd5 = Helpers.formatSig(sig, "MD5");
                             String sigSha256 = Helpers.formatSig(sig, "SHA-256");
                             Teak.log.w("amazon.adm.registration_error.debugging", "Couldn't find 'appsigSha256' or 'appsig' please ensure that your API key matches one of the included signatures.",
                                 Helpers.mm.h("md5", sigMd5, "sha256", sigSha256));
                         }
                     }
+                    Teak.log.i("amazon.adm.registration_error.debugging", "[✓] App signature matches signature inside 'api_key.txt'");
 
                     // Couldn't find the error, sorry!
                     Teak.log.w("amazon.adm.registration_error.debugging", "Unable to automatically find reason for INVALID_SENDER");
