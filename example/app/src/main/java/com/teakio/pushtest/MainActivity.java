@@ -143,6 +143,28 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        Teak.registerDeepLink("/slots/:slot_id", "Slots", "Link directly to a slot machine", new Teak.DeepLink() {
+            @Override
+            public void call(final Map<String, Object> parameters) {
+                Log.d("MainActivity", "/slots/" + parameters.get("slot_id").toString() + ": " + parameters.toString());
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        AlertDialog.Builder builder;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                            builder = new AlertDialog.Builder(MainActivity.this, android.R.style.Theme_Material_Dialog_Alert);
+                        } else {
+                            builder = new AlertDialog.Builder(MainActivity.this);
+                        }
+                        builder.setTitle("Slot!")
+                                .setMessage(parameters.get("slot_id").toString())
+                                .setPositiveButton(android.R.string.yes, null)
+                                .setIcon(android.R.drawable.ic_dialog_alert)
+                                .show();
+                    }
+                });
+            }
+        });
+
         // Binding the in app billing service
         Intent serviceIntent = new Intent("com.android.vending.billing.InAppBillingService.BIND");
         serviceIntent.setPackage("com.android.vending");
@@ -273,8 +295,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showPurchaseDialogForSku(final String sku) {
-        new Thread(new Runnable() {
-            @Override
+        runOnUiThread(new Runnable() {
             public void run() {
                 try {
                     Bundle buyIntentBundle = mService.getBuyIntent(3, MainActivity.this.getPackageName(), sku, "inapp", "");
@@ -284,7 +305,7 @@ public class MainActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
             }
-        }).start();
+        });
     }
 
     @Override
