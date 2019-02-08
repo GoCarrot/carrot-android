@@ -105,6 +105,15 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    // If this is not overridden, it will destroy the activity when the Back button is pressed.
+    //
+    // Unity: When back is pressed, nothing happens
+    // Air: When back pressed, it backgrounds the app but does not destroy activity
+    @Override
+    public void onBackPressed() {
+        moveTaskToBack(true);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
