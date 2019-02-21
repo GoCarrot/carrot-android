@@ -10,7 +10,11 @@ public class TrackEventFunction implements FREFunction {
     @Override
     public FREObject call(FREContext context, FREObject[] argv) {
         try {
-            Teak.trackEvent(argv[0].getAsString(), argv[1].getAsString(), argv[2].getAsString());
+            if (argv.length > 3) {
+                Teak.incrementEvent(argv[0].getAsString(), argv[1].getAsString(), argv[2].getAsString(), argv[3].getAsInt());
+            } else {
+                Teak.trackEvent(argv[0].getAsString(), argv[1].getAsString(), argv[2].getAsString());
+            }
         } catch (Exception e) {
             Teak.log.exception(e);
         }

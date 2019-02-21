@@ -263,6 +263,26 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     }
 
     /**
+     * Increment the value an arbitrary event in Teak.
+     *
+     * @param actionId         The identifier for the action, e.g. 'complete'.
+     * @param objectTypeId     The type of object that is being posted, e.g. 'quest'.
+     * @param objectInstanceId The specific instance of the object, e.g. 'gather-quest-1'
+     * @param value            The amount by which to increment.
+     */
+    @SuppressWarnings("unused")
+    public static void incrementEvent(final String actionId, final String objectTypeId, final String objectInstanceId, final int value) {
+        if (Instance != null) {
+            asyncExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    Instance.incrementEvent(actionId, objectTypeId, objectInstanceId, value);
+                }
+            });
+        }
+    }
+
+    /**
      * Notifications are enabled.
      */
     public static final int TEAK_NOTIFICATIONS_ENABLED = 0;

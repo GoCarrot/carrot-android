@@ -9,7 +9,6 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Array;
 
 import java.net.URL;
 import java.net.URLEncoder;
@@ -22,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
@@ -31,8 +31,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.json.JSONObject;
-import io.teak.sdk.json.JSONArray;
 
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.Session;
@@ -147,13 +147,13 @@ public class Request implements Runnable {
     private static abstract class BatchedRequest extends Request {
         private ScheduledFuture<?> scheduledFuture;
         private final List<Callback> callbacks = new LinkedList<>();
-        final List<Object> batchContents = new LinkedList<>();
+        final List<Map<String, Object>> batchContents = new LinkedList<>();
 
         BatchedRequest(@Nullable String hostname, @NonNull String endpoint, @NonNull Session session, boolean addStandardAttributes) {
             super(hostname, endpoint, new HashMap<String, Object>(), session, null, addStandardAttributes);
         }
 
-        synchronized boolean add(@NonNull String endpoint, @NonNull Map<String, Object> payload, @Nullable Callback callback) {
+        synchronized boolean add(@NonNull String endpoint, @Nullable Map<String, Object> payload, @Nullable Callback callback) {
             if (this.sent) {
                 return false;
             }
@@ -170,7 +170,10 @@ public class Request implements Runnable {
             if (callback != null) {
                 this.callbacks.add(callback);
             }
-            this.batchContents.add(payload);
+
+            if (payload != null) {
+                this.batchContents.add(payload);
+            }
 
             if (this.batch.time == 0.0f) {
                 Request.requestExecutor.execute(this);
@@ -207,7 +210,7 @@ public class Request implements Runnable {
         }
 
         @Override
-        synchronized boolean add(@NonNull String endpoint, @NonNull Map<String, Object> payload, @Nullable Callback callback) {
+        synchronized boolean add(@NonNull String endpoint, @Nullable Map<String, Object> payload, @Nullable Callback callback) {
             final Map<String, Object> batchPayload = new HashMap<>(payload);
 
             // Parsnip needs the standard attributes in every event
@@ -247,7 +250,25 @@ public class Request implements Runnable {
         }
 
         @Override
-        synchronized boolean add(@NonNull String endpoint, @NonNull Map<String, Object> payload, @Nullable Callback callback) {
+        synchronized boolean add(@NonNull String endpoint, @Nullable Map<String, Object> payload, @Nullable Callback callback) {
+            // Check to see if current batchContents has action, and if so, sum the durations
+            ListIterator<Map<String, Object>> itr = this.batchContents.listIterator();
+            while (itr.hasNext()) {
+                final Map<String, Object> current = itr.next();
+                try {
+                    if (TrackEventEvent.payloadEquals(current, payload) &&
+                        current.get(TrackEventEvent.DurationKey) instanceof Integer &&
+                        payload.get(TrackEventEvent.DurationKey) instanceof Integer) {
+                        current.put(TrackEventEvent.DurationKey,
+                            (Integer) current.get(TrackEventEvent.DurationKey) +
+                                (Integer) payload.get(TrackEventEvent.DurationKey));
+                        itr.set(current);
+                        return super.add(endpoint, null, callback);
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+
             return super.add(endpoint, payload, callback);
         }
 

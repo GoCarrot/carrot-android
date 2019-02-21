@@ -159,14 +159,29 @@ public class TeakInstance implements Unobfuscable {
         Teak.log.i("track_event", Helpers.mm.h("actionId", actionId, "objectTypeId", objectTypeId, "objectInstanceId", objectInstanceId));
 
         if (this.isEnabled()) {
-            Map<String, Object> payload = new HashMap<>();
-            payload.put("action_type", actionId);
-            if (objectTypeId != null && objectTypeId.trim().length() > 0) {
-                payload.put("object_type", objectTypeId);
-            }
-            if (objectInstanceId != null && objectInstanceId.trim().length() > 0) {
-                payload.put("object_instance_id", objectInstanceId);
-            }
+            final Map<String, Object> payload = TrackEventEvent.payloadForEvent(actionId, objectTypeId, objectInstanceId);
+            TeakEvent.postEvent(new TrackEventEvent(payload));
+        }
+    }
+
+    ///// incrementEvent
+
+    void incrementEvent(final String actionId, final String objectTypeId, final String objectInstanceId, final int value) {
+        if (actionId == null || actionId.isEmpty()) {
+            Teak.log.e("increment_event.error", "actionId can not be null or empty for incrementEvent(), ignoring.");
+            return;
+        }
+
+        if ((objectInstanceId != null && !objectInstanceId.isEmpty()) &&
+                (objectTypeId == null || objectTypeId.isEmpty())) {
+            Teak.log.e("increment_event.error", "objectTypeId can not be null or empty if objectInstanceId is present for incrementEvent(), ignoring.");
+            return;
+        }
+
+        Teak.log.i("increment_event", Helpers.mm.h("actionId", actionId, "objectTypeId", objectTypeId, "objectInstanceId", objectInstanceId));
+
+        if (this.isEnabled()) {
+            final Map<String, Object> payload = TrackEventEvent.payloadForEvent(actionId, objectTypeId, objectInstanceId, value);
             TeakEvent.postEvent(new TrackEventEvent(payload));
         }
     }
