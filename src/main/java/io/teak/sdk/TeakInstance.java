@@ -178,6 +178,11 @@ public class TeakInstance implements Unobfuscable {
             return;
         }
 
+        if (value < 1) {
+            Teak.log.e("increment_event.error", "value can not be less than one, ignoring.");
+            return;
+        }
+
         Teak.log.i("increment_event", Helpers.mm.h("actionId", actionId, "objectTypeId", objectTypeId, "objectInstanceId", objectInstanceId));
 
         if (this.isEnabled()) {
