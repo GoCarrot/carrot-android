@@ -30,10 +30,6 @@ public class TrackEventEvent extends TeakEvent {
         return Helpers.is_equal(a.get(ObjectInstanceIdKey), b.get(ObjectInstanceIdKey));
     }
 
-    public static Map<String, Object> payloadForEvent(final @NonNull String actionId, final @Nullable String objectTypeId, final @Nullable String objectInstanceId) {
-        return payloadForEvent(actionId, objectTypeId, objectInstanceId, 1);
-    }
-
     public static Map<String, Object> payloadForEvent(final @NonNull String actionId, final @Nullable String objectTypeId, final @Nullable String objectInstanceId, final int duration) {
         Map<String, Object> payload = new HashMap<>();
         payload.put(TrackEventEvent.ActionIdKey, actionId);

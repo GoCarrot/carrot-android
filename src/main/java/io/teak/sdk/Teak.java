@@ -276,7 +276,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             asyncExecutor.submit(new Runnable() {
                 @Override
                 public void run() {
-                    Instance.incrementEvent(actionId, objectTypeId, objectInstanceId, count);
+                    Instance.trackEvent(actionId, objectTypeId, objectInstanceId, count);
                 }
             });
         }
