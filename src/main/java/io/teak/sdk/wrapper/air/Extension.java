@@ -28,11 +28,11 @@ public class Extension implements FREExtension, Unobfuscable {
         // None
     }
 
-    public static String nullOrString(FREObject obj) throws FREInvalidObjectException, FRETypeMismatchException, FREWrongThreadException {
+    static String nullOrString(FREObject obj) throws FREInvalidObjectException, FRETypeMismatchException, FREWrongThreadException {
         return obj == null ? null : obj.getAsString();
     }
 
-    public static int zeroOrInt(FREObject obj) throws FREInvalidObjectException, FRETypeMismatchException, FREWrongThreadException {
+    static int zeroOrInt(FREObject obj) throws FREInvalidObjectException, FRETypeMismatchException, FREWrongThreadException {
         return obj == null ? 0 : obj.getAsInt();
     }
 }
