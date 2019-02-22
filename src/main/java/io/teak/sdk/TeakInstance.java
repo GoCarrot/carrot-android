@@ -166,7 +166,7 @@ public class TeakInstance implements Unobfuscable {
 
     ///// incrementEvent
 
-    void incrementEvent(final String actionId, final String objectTypeId, final String objectInstanceId, final int value) {
+    void incrementEvent(final String actionId, final String objectTypeId, final String objectInstanceId, final int count) {
         if (actionId == null || actionId.isEmpty()) {
             Teak.log.e("increment_event.error", "actionId can not be null or empty for incrementEvent(), ignoring.");
             return;
@@ -178,15 +178,15 @@ public class TeakInstance implements Unobfuscable {
             return;
         }
 
-        if (value < 1) {
-            Teak.log.e("increment_event.error", "value can not be less than one, ignoring.");
+        if (count < 1) {
+            Teak.log.e("increment_event.error", "count can not be less than one, ignoring.");
             return;
         }
 
-        Teak.log.i("increment_event", Helpers.mm.h("actionId", actionId, "objectTypeId", objectTypeId, "objectInstanceId", objectInstanceId));
+        Teak.log.i("increment_event", Helpers.mm.h("actionId", actionId, "objectTypeId", objectTypeId, "objectInstanceId", objectInstanceId, "count", count));
 
         if (this.isEnabled()) {
-            final Map<String, Object> payload = TrackEventEvent.payloadForEvent(actionId, objectTypeId, objectInstanceId, value);
+            final Map<String, Object> payload = TrackEventEvent.payloadForEvent(actionId, objectTypeId, objectInstanceId, count);
             TeakEvent.postEvent(new TrackEventEvent(payload));
         }
     }
