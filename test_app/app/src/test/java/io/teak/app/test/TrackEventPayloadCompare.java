@@ -14,12 +14,12 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TrackEventPayloadCompare {
-    private final Map<String, Object> a = TrackEventEvent.payloadForEvent("a", "b", "c");
-    private final Map<String, Object> b1 = TrackEventEvent.payloadForEvent("b", null, null);
-    private final Map<String, Object> b2 = TrackEventEvent.payloadForEvent("b", "b", null);
-    private final Map<String, Object> b3 = TrackEventEvent.payloadForEvent("b", "b", "c");
+    private final Map<String, Object> a = TrackEventEvent.payloadForEvent("a", "b", "c", 1);
+    private final Map<String, Object> b1 = TrackEventEvent.payloadForEvent("b", null, null, 1);
+    private final Map<String, Object> b2 = TrackEventEvent.payloadForEvent("b", "b", null, 1);
+    private final Map<String, Object> b3 = TrackEventEvent.payloadForEvent("b", "b", "c", 1);
 
-    private final Map<String, Object> b3_dupe = TrackEventEvent.payloadForEvent("b", "b", "c");
+    private final Map<String, Object> b3_dupe = TrackEventEvent.payloadForEvent("b", "b", "c", 1);
     private final Map<String, Object> b3_with_duration = TrackEventEvent.payloadForEvent("b", "b", "c", 42);
 
     @Test
