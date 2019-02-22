@@ -2,6 +2,10 @@ package io.teak.sdk.wrapper.air;
 
 import com.adobe.fre.FREContext;
 import com.adobe.fre.FREExtension;
+import com.adobe.fre.FREInvalidObjectException;
+import com.adobe.fre.FREObject;
+import com.adobe.fre.FRETypeMismatchException;
+import com.adobe.fre.FREWrongThreadException;
 
 import io.teak.sdk.Unobfuscable;
 
@@ -22,5 +26,13 @@ public class Extension implements FREExtension, Unobfuscable {
     @Override
     public void initialize() {
         // None
+    }
+
+    public static String nullOrString(FREObject obj) throws FREInvalidObjectException, FRETypeMismatchException, FREWrongThreadException {
+        return obj == null ? null : obj.getAsString();
+    }
+
+    public static int zeroOrInt(FREObject obj) throws FREInvalidObjectException, FRETypeMismatchException, FREWrongThreadException {
+        return obj == null ? 0 : obj.getAsInt();
     }
 }

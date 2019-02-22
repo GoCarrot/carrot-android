@@ -11,9 +11,14 @@ public class TrackEventFunction implements FREFunction {
     public FREObject call(FREContext context, FREObject[] argv) {
         try {
             if (argv.length > 3) {
-                Teak.incrementEvent(argv[0].getAsString(), argv[1].getAsString(), argv[2].getAsString(), argv[3].getAsInt());
+                Teak.incrementEvent(Extension.nullOrString(argv[0]),
+                        Extension.nullOrString(argv[1]),
+                        Extension.nullOrString(argv[2]),
+                        Extension.zeroOrInt(argv[3]));
             } else {
-                Teak.trackEvent(argv[0].getAsString(), argv[1].getAsString(), argv[2].getAsString());
+                Teak.trackEvent(Extension.nullOrString(argv[0]),
+                        Extension.nullOrString(argv[1]),
+                        Extension.nullOrString(argv[2]));
             }
         } catch (Exception e) {
             Teak.log.exception(e);
