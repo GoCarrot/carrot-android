@@ -476,7 +476,10 @@ public class Request implements Runnable {
             for (String key : payloadKeys) {
                 Object value = payload.get(key);
                 if (value != null) {
-                    listOfThingsToJoin.add(formEncode(key, value, escape));
+                    final String encoded = formEncode(key, value, escape);
+                    if (encoded != null && encoded.length() > 0) {
+                        listOfThingsToJoin.add(encoded);
+                    }
                 } else {
                     Teak.log.e("request", "Value for key is null.", Helpers.mm.h("key", key));
                 }
