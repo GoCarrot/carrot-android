@@ -10,23 +10,14 @@ import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.json.JSONObject;
 
 import java.util.HashMap;
-import java.util.concurrent.FutureTask;
 
 import io.teak.sdk.Teak;
 
 public class TeakInterface implements Unobfuscable {
     private final ISDKWrapper sdkWrapper;
-    private final FutureTask<Void> deepLinksReadyTask;
 
     public TeakInterface(ISDKWrapper sdkWrapper) {
         this.sdkWrapper = sdkWrapper;
-        this.deepLinksReadyTask = new FutureTask<>(new Runnable() {
-            @Override
-            public void run() {
-                // None
-            }
-        }, null);
-        Teak.waitForDeepLink = deepLinksReadyTask;
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(Teak.REWARD_CLAIM_ATTEMPT);
@@ -35,10 +26,6 @@ public class TeakInterface implements Unobfuscable {
         if (Teak.Instance != null) {
             Teak.Instance.objectFactory.getTeakCore().registerLocalBroadcastReceiver(broadcastReceiver, filter);
         }
-    }
-
-    public void readyForDeepLinks() {
-        this.deepLinksReadyTask.run();
     }
 
     @SuppressWarnings("FieldCanBeLocal")
