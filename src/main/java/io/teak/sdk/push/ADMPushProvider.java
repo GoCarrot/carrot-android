@@ -167,7 +167,7 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
                             }
                         }
 
-                        if (!json.has("appsigSha256") || !json.has("appsig")){
+                        if (!json.has("appsigSha256") || !json.has("appsig")) {
                             String sigMd5 = Helpers.formatSig(sig, "MD5");
                             String sigSha256 = Helpers.formatSig(sig, "SHA-256");
                             Teak.log.w("amazon.adm.registration_error.debugging", "Couldn't find 'appsigSha256' or 'appsig' please ensure that your API key matches one of the included signatures.",
