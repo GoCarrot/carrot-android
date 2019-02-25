@@ -45,11 +45,6 @@ public class TeakUnity implements Unobfuscable {
         });
     }
 
-    @SuppressWarnings("unused")
-    public static void readyForDeepLinks() {
-        teakInterface.readyForDeepLinks();
-    }
-
     public static boolean isAvailable() {
         return TeakUnity.unitySendMessage != null;
     }
