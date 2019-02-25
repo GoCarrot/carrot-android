@@ -108,6 +108,7 @@ public class Request implements Runnable {
                 configurationPayload.put("sdk_version", Teak.Version);
                 configurationPayload.put("game_id", configuration.appConfiguration.appId);
                 configurationPayload.put("app_version", String.valueOf(configuration.appConfiguration.appVersion));
+                configurationPayload.put("app_version_name", String.valueOf(configuration.appConfiguration.appVersionName));
                 configurationPayload.put("bundle_id", configuration.appConfiguration.bundleId);
                 if (configuration.appConfiguration.installerPackage != null) {
                     configurationPayload.put("appstore_name", configuration.appConfiguration.installerPackage);

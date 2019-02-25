@@ -3,6 +3,7 @@ package io.teak.sdk.configuration;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -30,6 +31,8 @@ public class AppConfiguration {
     public final int jobId;
     @SuppressWarnings("WeakerAccess")
     public final int appVersion;
+    @SuppressWarnings("WeakerAccess")
+    public final String appVersionName;
     @SuppressWarnings("WeakerAccess")
     public final String bundleId;
     @SuppressWarnings("WeakerAccess")
@@ -193,12 +196,16 @@ public class AppConfiguration {
         // App Version
         {
             int tempAppVersion = 0;
+            String tempAppVersionName = null;
             try {
-                tempAppVersion = this.packageManager.getPackageInfo(this.bundleId, 0).versionCode;
+                final PackageInfo info = this.packageManager.getPackageInfo(this.bundleId, 0);
+                tempAppVersion = info.versionCode;
+                tempAppVersionName = info.versionName;
             } catch (Exception e) {
                 Teak.log.exception(e);
             } finally {
                 this.appVersion = tempAppVersion;
+                this.appVersionName = tempAppVersionName;
             }
         }
 

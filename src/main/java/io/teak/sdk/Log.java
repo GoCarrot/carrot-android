@@ -168,6 +168,7 @@ public class Log {
                     commonPayload.put("bundle_id", configuration.appConfiguration.bundleId);
                     commonPayload.put("app_id", configuration.appConfiguration.appId);
                     commonPayload.put("client_app_version", configuration.appConfiguration.appVersion);
+                    commonPayload.put("client_app_version_name", configuration.appConfiguration.appVersionName);
 
                     // Log data collection configuration
                     log(Level.Info, "configuration.data_collection", configuration.dataCollectionConfiguration.toMap());
