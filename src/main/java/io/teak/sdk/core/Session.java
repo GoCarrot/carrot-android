@@ -765,12 +765,12 @@ public class Session {
                     }
 
                     @Override
-                    public String get() throws InterruptedException, ExecutionException {
+                    public String get() {
                         return intentDataString;
                     }
 
                     @Override
-                    public String get(long l, @NonNull TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
+                    public String get(long l, @NonNull TimeUnit timeUnit) {
                         return get();
                     }
                 };
@@ -837,14 +837,14 @@ public class Session {
                     }
 
                     @Override
-                    public Map<String, Object> get() throws InterruptedException, ExecutionException {
+                    public Map<String, Object> get() {
                         Map<String, Object> returnValue = new HashMap<>();
                         returnValue.put("teak_notif_id", teakNotifId);
                         return returnValue;
                     }
 
                     @Override
-                    public Map<String, Object> get(long l, @NonNull TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
+                    public Map<String, Object> get(long l, @NonNull TimeUnit timeUnit) {
                         return get();
                     }
                 };
@@ -889,7 +889,7 @@ public class Session {
                             // Send reward broadcast
                             final String teakRewardId = attribution.containsKey("teak_reward_id") ? attribution.get("teak_reward_id").toString() : null;
                             final String teakRewardLinkName = attribution.containsKey("teak_rewardlink_name") ? attribution.get("teak_rewardlink_name").toString() : null;
-                            final String teakRewardLinkId = attribution.containsKey("teak_rewardlink_id") ? attribution.get("teak_rewardlink_id").toString() : null;
+                            //                            final String teakRewardLinkId = attribution.containsKey("teak_rewardlink_id") ? attribution.get("teak_rewardlink_id").toString() : null;
                             if (teakRewardId != null) {
                                 final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
                                 if (rewardFuture != null) {
@@ -961,7 +961,7 @@ public class Session {
 
         FutureTask<Map<String, Object>> returnTask = new FutureTask<>(new Callable<Map<String, Object>>() {
             @Override
-            public Map<String, Object> call() throws Exception {
+            public Map<String, Object> call() {
                 Map<String, Object> returnValue = new HashMap<>();
 
                 // Wait on the incoming Future
@@ -974,7 +974,7 @@ public class Session {
                 // If we have a URL, process it if needed
                 if (uri != null) {
                     // Try and resolve any Teak links
-                    if (uri.getScheme().equals("http") || uri.getScheme().equals("https")) {
+                    if (uri.getScheme() != null && (uri.getScheme().equals("http") || uri.getScheme().equals("https"))) {
                         HttpsURLConnection connection = null;
                         try {
                             Uri.Builder httpsUri = uri.buildUpon();

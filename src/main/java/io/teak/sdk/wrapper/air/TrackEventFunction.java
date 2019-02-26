@@ -12,13 +12,13 @@ public class TrackEventFunction implements FREFunction {
         try {
             if (argv.length > 3) {
                 Teak.incrementEvent(Extension.nullOrString(argv[0]),
-                        Extension.nullOrString(argv[1]),
-                        Extension.nullOrString(argv[2]),
-                        Extension.zeroOrInt(argv[3]));
+                    Extension.nullOrString(argv[1]),
+                    Extension.nullOrString(argv[2]),
+                    Extension.zeroOrInt(argv[3]));
             } else {
                 Teak.trackEvent(Extension.nullOrString(argv[0]),
-                        Extension.nullOrString(argv[1]),
-                        Extension.nullOrString(argv[2]));
+                    Extension.nullOrString(argv[1]),
+                    Extension.nullOrString(argv[2]));
             }
         } catch (Exception e) {
             Teak.log.exception(e);
