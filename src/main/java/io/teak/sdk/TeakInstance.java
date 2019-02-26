@@ -24,10 +24,8 @@ import java.io.File;
 import java.net.URLEncoder;
 import java.security.InvalidParameterException;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.FutureTask;
 
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.Session;
@@ -47,12 +45,6 @@ public class TeakInstance implements Unobfuscable {
     public final IObjectFactory objectFactory;
     private final Context context;
     public final FirebaseJobDispatcher dispatcher;
-    private final FutureTask<Void> deepLinksReadyTask = new FutureTask<>(new Runnable() {
-        @Override
-        public void run() {
-            // None
-        }
-    }, null);
 
     private static final String PREFERENCE_FIRST_RUN = "io.teak.sdk.Preferences.FirstRun";
 
@@ -119,15 +111,6 @@ public class TeakInstance implements Unobfuscable {
                 this.setState(State.Disabled);
             }
         }
-
-        // Wait for Deep Links
-        Teak.waitForDeepLink = deepLinksReadyTask;
-        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
-            @Override
-            public void run(Session session) {
-                TeakInstance.this.deepLinksReadyTask.run();
-            }
-        });
     }
 
     private void cleanup(Activity activity) {
@@ -171,7 +154,7 @@ public class TeakInstance implements Unobfuscable {
         }
 
         if ((objectInstanceId != null && !objectInstanceId.isEmpty()) &&
-                (objectTypeId == null || objectTypeId.isEmpty())) {
+            (objectTypeId == null || objectTypeId.isEmpty())) {
             Teak.log.e("track_event.error", "objectTypeId can not be null or empty if objectInstanceId is present, ignoring.");
             return;
         }

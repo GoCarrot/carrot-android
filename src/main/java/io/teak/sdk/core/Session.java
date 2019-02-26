@@ -860,10 +860,7 @@ public class Session {
                     @Override
                     public void run() {
                         try {
-                            // If we need to wait for Unity/Adobe Air, do it here
-                            if (Teak.waitForDeepLink != null) {
-                                Teak.waitForDeepLink.get();
-                            }
+                            Teak.waitUntilDeepLinksAreReady();
                         } catch (Exception ignored) {
                         }
 
