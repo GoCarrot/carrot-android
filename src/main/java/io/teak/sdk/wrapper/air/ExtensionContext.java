@@ -65,6 +65,7 @@ public class ExtensionContext extends FREContext implements Unobfuscable {
         functionMap.put("_testExceptionReporting", new ExceptionReportingTestFunction());
         functionMap.put("trackEvent", new TrackEventFunction());
         functionMap.put("incrementEvent", new TrackEventFunction());
+        functionMap.put("processDeepLinks", new ProcessDeepLinksFunction());
         return functionMap;
     }
 
