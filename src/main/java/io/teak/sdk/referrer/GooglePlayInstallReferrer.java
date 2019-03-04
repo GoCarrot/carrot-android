@@ -18,7 +18,7 @@ import io.teak.sdk.InstallReferrerReceiver;
 import io.teak.sdk.Teak;
 
 public class GooglePlayInstallReferrer implements InstallReferrerStateListener, Future<String> {
-    public GooglePlayInstallReferrer(@NonNull final Context context) {
+    GooglePlayInstallReferrer(@NonNull final Context context) {
         this.referrerClient = InstallReferrerClient.newBuilder(context).build();
         this.referrerClient.startConnection(this);
     }
