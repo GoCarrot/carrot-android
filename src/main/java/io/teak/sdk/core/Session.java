@@ -28,14 +28,12 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
@@ -43,7 +41,6 @@ import javax.net.ssl.SSLProtocolException;
 
 import io.teak.sdk.Helpers;
 import io.teak.sdk.Helpers.mm;
-import io.teak.sdk.InstallReferrerReceiver;
 import io.teak.sdk.Request;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakConfiguration;
@@ -58,6 +55,7 @@ import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.SessionStateEvent;
 import io.teak.sdk.event.UserIdEvent;
 import io.teak.sdk.push.PushState;
+import io.teak.sdk.referrer.InstallReferrerFuture;
 
 public class Session {
 
@@ -775,26 +773,7 @@ public class Session {
                     }
                 };
             } else if (isFirstLaunch) {
-                // Otherwise, if this is the first launch, see if the InstallReferrerReceiver has anything for us
-                FutureTask<String> referrerPollTask = new FutureTask<>(new Callable<String>() {
-                    @Override
-                    public String call() throws Exception {
-                        long startTime = System.nanoTime();
-                        String referralString = InstallReferrerReceiver.installReferrerQueue.poll();
-                        while (referralString == null) {
-                            Thread.sleep(100);
-                            referralString = InstallReferrerReceiver.installReferrerQueue.poll();
-                            long elapsedTime = System.nanoTime() - startTime;
-                            if (elapsedTime / 1000000000 > 10) break;
-                        }
-                        if (referralString != null) {
-                            Teak.log.i("session.attribution", Helpers.mm.h("install_referrer", referralString));
-                        }
-                        return referralString;
-                    }
-                });
-                new Thread(referrerPollTask).start();
-                deepLinkURL = referrerPollTask;
+                deepLinkURL = InstallReferrerFuture.get(teakConfiguration.appConfiguration.applicationContext);
             }
 
             //
