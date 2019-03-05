@@ -37,7 +37,7 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
 
         IntegrationChecker.requireDependency("com.google.android.gms.common.GooglePlayServicesUtil");
         if (isGooglePlayServicesAvailable()) {
-            IntegrationChecker.requireDependency("com.google.android.gms.ads.identifier.AdvertisingIdClient");
+            IntegrationChecker.suggestDependency("com.google.android.gms.ads.identifier.AdvertisingIdClient");
         }
     }
 

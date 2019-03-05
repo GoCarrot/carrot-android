@@ -65,6 +65,14 @@ public class IntegrationChecker {
         AppConfiguration.TEAK_APP_ID_RESOURCE};
 
     public static void requireDependency(@NonNull String fullyQualifiedClassName) throws MissingDependencyException {
+        addDependency(fullyQualifiedClassName, true);
+    }
+
+    public static void suggestDependency(@NonNull String fullyQualifiedClassName) throws MissingDependencyException {
+        addDependency(fullyQualifiedClassName, false);
+    }
+
+    private static void addDependency(@NonNull String fullyQualifiedClassName, boolean required) throws MissingDependencyException {
         // Protect against future-Pat adding/removing a dependency and forgetting to update the array
         if (BuildConfig.DEBUG) {
             boolean foundInDependencies = false;
@@ -82,7 +90,13 @@ public class IntegrationChecker {
         try {
             Class.forName(fullyQualifiedClassName);
         } catch (ClassNotFoundException e) {
-            throw new MissingDependencyException(e);
+            final String dependency = "Missing dependency: " + fullyQualifiedClassName;
+            if (required) {
+                addErrorToReport("dependency.required", dependency);
+                throw new MissingDependencyException(e);
+            } else {
+                addErrorToReport("dependency.optional", dependency);
+            }
         }
     }
 
@@ -127,7 +141,7 @@ public class IntegrationChecker {
     private static IntegrationChecker integrationChecker;
 
     static boolean init(@NonNull Activity activity) {
-        if (integrationChecker == null) {
+        if (integrationChecker == null || integrationChecker.activity != activity) {
             try {
                 integrationChecker = new IntegrationChecker(activity);
                 return true;
