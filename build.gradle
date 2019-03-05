@@ -1,5 +1,3 @@
-import com.android.builder.core.BuilderConstants
-
 import java.util.regex.Pattern
 
 buildscript {
@@ -8,8 +6,8 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.3'
-        classpath 'com.getkeepsafe.dexcount:dexcount-gradle-plugin:0.8.3'
+        classpath 'com.android.tools.build:gradle:3.3.2'
+        classpath 'com.getkeepsafe.dexcount:dexcount-gradle-plugin:0.8.6'
     }
 }
 
@@ -33,13 +31,13 @@ import static groovy.io.FileType.FILES
 
 gradle.projectsEvaluated {
     android.libraryVariants.all { variant ->
-        def variantName = variant.name.capitalize();
+        def variantName = variant.name.capitalize()
         def proguardTask = project.tasks.findByName(
                 "transformClassesAndResourcesWithProguardFor${variantName}")
         if (proguardTask) {
             // Compute UUID
             def sentry_debug_meta_properties = "${project.rootDir.toPath()}/build/intermediates/assets" +
-                    "/${variant.dirName}/sentry-debug-meta.properties";
+                    "/${variant.dirName}/sentry-debug-meta.properties"
             def sentryProguardTask = project.tasks.create(
                     name: "processSentryProguardFor${variantName}",
                     type: Exec) {
@@ -108,7 +106,7 @@ android.libraryVariants.all { variant ->
     // Jar task
     // https://docs.gradle.org/current/dsl/org.gradle.api.tasks.bundling.Jar.html
     // ${android.defaultConfig.versionName}
-    def variantName = variant.name.capitalize();
+    def variantName = variant.name.capitalize()
     def proguardTask = project.tasks.findByName(
             "transformClassesAndResourcesWithProguardFor${variantName}")
 
@@ -117,11 +115,7 @@ android.libraryVariants.all { variant ->
         dependsOn (proguardTask == null ? variant.javaCompile : proguardTask)
         from variant.javaCompile.destinationDir
         include 'io/teak/**'
-        if (variant.buildType.name.equals(BuilderConstants.DEBUG)) {
-            archiveName "${archivesBaseName}-${variant.name}.jar"
-        } else {
-            archiveName "${archivesBaseName}-${variant.name}.jar"
-        }
+        archiveName "${archivesBaseName}-${variant.name}.jar"
     }
     artifacts.add('archives', jarTask)
 
@@ -129,11 +123,7 @@ android.libraryVariants.all { variant ->
     artifacts.add('archives', task("zip${variant.name.capitalize()}", type: Zip) {
         description "Bundles .jar file and res/**.xml into a ZIP file for $variant.name."
         dependsOn jarTask
-        if (variant.buildType.name.equals(BuilderConstants.DEBUG)) {
-            archiveName "${archivesBaseName}-${variant.name}.zip"
-        } else {
-            archiveName "${archivesBaseName}-${variant.name}.zip"
-        }
+        archiveName "${archivesBaseName}-${variant.name}.zip"
 
         from(jarTask.archivePath) {
             into('teak')
@@ -142,7 +132,7 @@ android.libraryVariants.all { variant ->
 
         // Use 'filter' to insert the proguard uuid into zip archive
         def sentry_debug_meta_properties = "${project.rootDir.toPath()}/build/intermediates/assets" +
-                "/${variant.dirName}/sentry-debug-meta.properties";
+                "/${variant.dirName}/sentry-debug-meta.properties"
         def props = new Properties()
         try {
             file(sentry_debug_meta_properties).withInputStream { props.load(it) }
