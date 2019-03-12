@@ -32,8 +32,8 @@ public class Helpers {
     public static boolean isAmazonDevice(final @NonNull Context context) {
         final String bundleId = context.getPackageName();
         final PackageManager packageManager = context.getPackageManager();
-        final String installerPackage = packageManager.getInstallerPackageName(bundleId);
-        return Build.MANUFACTURER.equalsIgnoreCase("amazon") ||
+        final String installerPackage = packageManager == null ? null : packageManager.getInstallerPackageName(bundleId);
+        return "amazon".equalsIgnoreCase(Build.MANUFACTURER) ||
                 "com.amazon.venezia".equals(installerPackage);
     }
 
