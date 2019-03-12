@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -28,6 +29,14 @@ public class Helpers {
         return b.getBoolean(key);
     }
 
+    public static boolean isAmazonDevice(final @NonNull Context context) {
+        final String bundleId = context.getPackageName();
+        final PackageManager packageManager = context.getPackageManager();
+        final String installerPackage = packageManager.getInstallerPackageName(bundleId);
+        return Build.MANUFACTURER.equalsIgnoreCase("amazon") ||
+                "com.amazon.venezia".equals(installerPackage);
+    }
+
     public static class mm {
         public static Map<String, Object> h(@NonNull Object... args) {
             Map<String, Object> ret = new HashMap<>();
@@ -38,6 +47,10 @@ public class Helpers {
             }
             return ret;
         }
+    }
+
+    public static boolean nullOrEmpty(final @Nullable String string) {
+        return string == null || string.trim().isEmpty();
     }
 
     public static boolean is_equal(final @Nullable Object a, final @Nullable Object b) {

@@ -1,22 +1,26 @@
 package io.teak.sdk.configuration;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.os.Bundle;
 import android.support.annotation.NonNull;
 
+import io.teak.sdk.Helpers;
 import io.teak.sdk.IntegrationChecker;
+import io.teak.sdk.io.AndroidResources;
+import io.teak.sdk.io.IAndroidResources;
 import io.teak.sdk.json.JSONObject;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import io.teak.sdk.Teak;
-import io.teak.sdk.io.IAndroidResources;
 
 public class AppConfiguration {
     @SuppressWarnings("WeakerAccess")
@@ -38,6 +42,8 @@ public class AppConfiguration {
     @SuppressWarnings("WeakerAccess")
     public final String installerPackage;
     @SuppressWarnings("WeakerAccess")
+    public final String storeId;
+    @SuppressWarnings("WeakerAccess")
     public final PackageManager packageManager;
     @SuppressWarnings("WeakerAccess")
     public final Context applicationContext;
@@ -58,31 +64,42 @@ public class AppConfiguration {
     public static final String TEAK_JOB_ID_RESOURCE = "io_teak_job_id";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_ENABLE_CACHING_RESOURCE = "io_teak_enable_caching";
+    @SuppressWarnings("WeakerAccess")
+    public static final String TEAK_STORE_ID = "io_teak_store_id";
 
-    public AppConfiguration(@NonNull Context context, @NonNull IAndroidResources androidResources) throws IntegrationChecker.InvalidConfigurationException {
+    @SuppressWarnings("WeakerAccess")
+    public static final String GooglePlayStoreId = "google_play";
+    @SuppressWarnings("WeakerAccess")
+    public static final String AmazonStoreId = "amazon";
+    @SuppressWarnings("WeakerAccess")
+    public static final String SamsungStoreId = "samsung";
+    @SuppressWarnings("WeakerAccess")
+    public static final Set<String> KnownStoreIds = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            GooglePlayStoreId,
+            AmazonStoreId,
+            SamsungStoreId
+    )));
+
+    public AppConfiguration(@NonNull Context context, @NonNull IAndroidResources iAndroidResources) throws IntegrationChecker.InvalidConfigurationException {
         this.applicationContext = context.getApplicationContext();
 
-        Bundle metaData = null;
-        int tempTargetSdkVersion = 0;
-        try {
-            ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-            metaData = appInfo.metaData;
-            tempTargetSdkVersion = appInfo.targetSdkVersion;
-        } catch (Exception ignored) {
+        // Target SDK Version
+        {
+            int tempTargetSdkVersion = 0;
+            try {
+                ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+                tempTargetSdkVersion = appInfo.targetSdkVersion;
+            } catch (Exception ignored) {
+            }
+            this.targetSdkVersion = tempTargetSdkVersion;
         }
-        this.targetSdkVersion = tempTargetSdkVersion;
+
+        final AndroidResources androidResources = new AndroidResources(context, iAndroidResources);
 
         // Teak App Id
         {
-            String tempAppId = androidResources.getStringResource(TEAK_APP_ID_RESOURCE);
-            if (tempAppId == null && metaData != null) {
-                String appIdFromMetaData = metaData.getString(TEAK_APP_ID_RESOURCE);
-                if (appIdFromMetaData != null && appIdFromMetaData.startsWith("teak")) {
-                    tempAppId = appIdFromMetaData.substring(4);
-                }
-            }
+            this.appId = androidResources.getTeakStringResource(TEAK_APP_ID_RESOURCE);
 
-            this.appId = tempAppId;
             if (this.appId == null) {
                 throw new IntegrationChecker.InvalidConfigurationException("Failed to find R.string." + TEAK_APP_ID_RESOURCE);
             } else if (this.appId.trim().length() < 1) {
@@ -92,15 +109,8 @@ public class AppConfiguration {
 
         // Teak API Key
         {
-            String tempApiKey = androidResources.getStringResource(TEAK_API_KEY_RESOURCE);
-            if (tempApiKey == null && metaData != null) {
-                String apiKeyFromMetaData = metaData.getString(TEAK_API_KEY_RESOURCE);
-                if (apiKeyFromMetaData != null && apiKeyFromMetaData.startsWith("teak")) {
-                    tempApiKey = apiKeyFromMetaData.substring(4);
-                }
-            }
+            this.apiKey = androidResources.getTeakStringResource(TEAK_API_KEY_RESOURCE);
 
-            this.apiKey = tempApiKey;
             if (this.apiKey == null) {
                 throw new IntegrationChecker.InvalidConfigurationException("Failed to find R.string." + TEAK_API_KEY_RESOURCE);
             } else if (this.apiKey.trim().length() < 1) {
@@ -110,13 +120,7 @@ public class AppConfiguration {
 
         // Push Sender Id
         {
-            String tempPushSenderId = androidResources.getStringResource(TEAK_GCM_SENDER_ID_RESOURCE);
-            if (tempPushSenderId == null && metaData != null) {
-                String pushSenderIdFromMetaData = metaData.getString(TEAK_GCM_SENDER_ID_RESOURCE);
-                if (pushSenderIdFromMetaData != null && pushSenderIdFromMetaData.startsWith("teak")) {
-                    tempPushSenderId = pushSenderIdFromMetaData.substring(4);
-                }
-            }
+            String tempPushSenderId = androidResources.getTeakStringResource(TEAK_GCM_SENDER_ID_RESOURCE);
 
             // If the google-services.json file was included and processed, gcm_defaultSenderId will be present
             // https://developers.google.com/android/guides/google-services-plugin#processing_the_json_file
@@ -131,15 +135,8 @@ public class AppConfiguration {
         }
 
         // Firebase App Id
-        // Push Sender Id
         {
-            String tempFirebaseAppId = androidResources.getStringResource(TEAK_FIREBASE_APP_ID_RESOURCE);
-            if (tempFirebaseAppId == null && metaData != null) {
-                String firebaseAppIdFromMetaData = metaData.getString(TEAK_FIREBASE_APP_ID_RESOURCE);
-                if (firebaseAppIdFromMetaData != null && firebaseAppIdFromMetaData.startsWith("teak")) {
-                    tempFirebaseAppId = firebaseAppIdFromMetaData.substring(4);
-                }
-            }
+            String tempFirebaseAppId = androidResources.getTeakStringResource(TEAK_FIREBASE_APP_ID_RESOURCE);
 
             // If the google-services.json file was included and processed, google_app_id will be present
             // https://developers.google.com/android/guides/google-services-plugin#processing_the_json_file
@@ -155,13 +152,7 @@ public class AppConfiguration {
 
         // Job Id
         {
-            String tempJobId = androidResources.getStringResource(TEAK_JOB_ID_RESOURCE);
-            if (tempJobId == null && metaData != null) {
-                String jobIdFromMetaData = metaData.getString(TEAK_JOB_ID_RESOURCE);
-                if (jobIdFromMetaData != null && jobIdFromMetaData.startsWith("teak")) {
-                    tempJobId = jobIdFromMetaData.substring(4);
-                }
-            }
+            String tempJobId = androidResources.getTeakStringResource(TEAK_JOB_ID_RESOURCE);
 
             int jobIdAsInt = Teak.JOB_ID;
             if (tempJobId != null && tempJobId.trim().length() > 0) {
@@ -173,11 +164,25 @@ public class AppConfiguration {
 
         // Disable Cache?
         {
-            Boolean enableCaching = androidResources.getBooleanResource(TEAK_ENABLE_CACHING_RESOURCE);
-            if (enableCaching == null && metaData != null) {
-                enableCaching = metaData.getBoolean(TEAK_ENABLE_CACHING_RESOURCE, true);
+            this.enableCaching = androidResources.getTeakBoolResource(TEAK_ENABLE_CACHING_RESOURCE);
+        }
+
+        // Store
+        {
+            String tempStoreId = androidResources.getTeakStringResource(TEAK_STORE_ID);
+
+            // If Amazon store stuff is available, we must be on Amazon
+            if (Helpers.nullOrEmpty(tempStoreId)) {
+                tempStoreId = Helpers.isAmazonDevice(context) ? AppConfiguration.AmazonStoreId : AppConfiguration.GooglePlayStoreId;
             }
-            this.enableCaching = enableCaching == null ? false : enableCaching;
+            this.storeId = tempStoreId;
+
+            // Warn if we haven't seen this
+            if (!AppConfiguration.KnownStoreIds.contains(this.storeId)) {
+                android.util.Log.w(IntegrationChecker.LOG_TAG,
+                        "Store id '" + this.storeId + "' is not a known value for this version of the Teak SDK. " +
+                                "Ignore this warning if you are certain the value is correct.");
+            }
         }
 
         // Package Id

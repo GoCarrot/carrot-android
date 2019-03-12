@@ -110,8 +110,9 @@ public class Request implements Runnable {
                 configurationPayload.put("app_version", String.valueOf(configuration.appConfiguration.appVersion));
                 configurationPayload.put("app_version_name", String.valueOf(configuration.appConfiguration.appVersionName));
                 configurationPayload.put("bundle_id", configuration.appConfiguration.bundleId);
+                configurationPayload.put("appstore_name", configuration.appConfiguration.storeId);
                 if (configuration.appConfiguration.installerPackage != null) {
-                    configurationPayload.put("appstore_name", configuration.appConfiguration.installerPackage);
+                    configurationPayload.put("installer_package", configuration.appConfiguration.storeId);
                 }
 
                 configurationPayload.put("device_id", configuration.deviceConfiguration.deviceId);
