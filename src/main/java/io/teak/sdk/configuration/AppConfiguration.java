@@ -75,10 +75,9 @@ public class AppConfiguration {
     public static final String SamsungStoreId = "samsung";
     @SuppressWarnings("WeakerAccess")
     public static final Set<String> KnownStoreIds = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-            GooglePlayStoreId,
-            AmazonStoreId,
-            SamsungStoreId
-    )));
+        GooglePlayStoreId,
+        AmazonStoreId,
+        SamsungStoreId)));
 
     public AppConfiguration(@NonNull Context context, @NonNull IAndroidResources iAndroidResources) throws IntegrationChecker.InvalidConfigurationException {
         this.applicationContext = context.getApplicationContext();
@@ -180,8 +179,9 @@ public class AppConfiguration {
             // Warn if we haven't seen this
             if (!AppConfiguration.KnownStoreIds.contains(this.storeId)) {
                 android.util.Log.w(IntegrationChecker.LOG_TAG,
-                        "Store id '" + this.storeId + "' is not a known value for this version of the Teak SDK. " +
-                                "Ignore this warning if you are certain the value is correct.");
+                    "Store id '" + this.storeId + "' is not a known value for this version of the Teak SDK. "
+                        +
+                        "Ignore this warning if you are certain the value is correct.");
             }
         }
 

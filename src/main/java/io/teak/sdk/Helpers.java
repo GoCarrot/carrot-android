@@ -34,7 +34,7 @@ public class Helpers {
         final PackageManager packageManager = context.getPackageManager();
         final String installerPackage = packageManager == null ? null : packageManager.getInstallerPackageName(bundleId);
         return "amazon".equalsIgnoreCase(Build.MANUFACTURER) ||
-                "com.amazon.venezia".equals(installerPackage);
+            "com.amazon.venezia".equals(installerPackage);
     }
 
     public static class mm {

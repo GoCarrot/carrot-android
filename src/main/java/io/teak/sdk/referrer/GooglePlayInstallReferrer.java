@@ -47,8 +47,7 @@ public class GooglePlayInstallReferrer implements InstallReferrerStateListener, 
                     this.latch.countDown();
                 }
                 this.latch.countDown();
-            }
-            break;
+            } break;
 
             case InstallReferrerClient.InstallReferrerResponse.SERVICE_DISCONNECTED: {
                 /*
@@ -60,8 +59,7 @@ public class GooglePlayInstallReferrer implements InstallReferrerStateListener, 
                  * after you received this code.
                  */
                 retry = true;
-            }
-            break;
+            } break;
 
             case InstallReferrerClient.InstallReferrerResponse.DEVELOPER_ERROR:
             case InstallReferrerClient.InstallReferrerResponse.FEATURE_NOT_SUPPORTED:
@@ -69,8 +67,7 @@ public class GooglePlayInstallReferrer implements InstallReferrerStateListener, 
                 // Fall back to InstallReferrerReceiver
                 this.useInstallReferrerReceiverFallback = true;
                 this.latch.countDown();
-            }
-            break;
+            } break;
         }
 
         // Retry if SERVICE_DISCONNECTED and not canceled
