@@ -41,9 +41,9 @@ public class TrackEventEvent extends TeakEvent {
         if (objectInstanceId != null && objectInstanceId.trim().length() > 0) {
             payload.put(TrackEventEvent.ObjectInstanceIdKey, objectInstanceId);
         }
-        payload.put(TrackEventEvent.DurationKey, duration);
-        payload.put(TrackEventEvent.CountKey, 1);
-        payload.put(TrackEventEvent.SumOfSquaresKey, duration * duration);
+        payload.put(TrackEventEvent.DurationKey, new Long(duration));
+        payload.put(TrackEventEvent.CountKey, new Long(1));
+        payload.put(TrackEventEvent.SumOfSquaresKey, new Long(duration * duration));
         return payload;
     }
 }
