@@ -159,8 +159,8 @@ public class TeakInstance implements Unobfuscable {
             return;
         }
 
-        if (count < 1) {
-            Teak.log.e("track_event.error", "count can not be less than one, ignoring.");
+        if (count < 0) {
+            Teak.log.e("track_event.error", "count can not be less than zero, ignoring.");
             return;
         }
 
