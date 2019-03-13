@@ -274,7 +274,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * @param count            The amount by which to increment.
      */
     @SuppressWarnings("unused")
-    public static void incrementEvent(final String actionId, final String objectTypeId, final String objectInstanceId, final int count) {
+    public static void incrementEvent(final String actionId, final String objectTypeId, final String objectInstanceId, final long count) {
         if (Instance != null) {
             asyncExecutor.submit(new Runnable() {
                 @Override

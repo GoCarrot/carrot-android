@@ -14,7 +14,7 @@ public class TrackEventFunction implements FREFunction {
                 Teak.incrementEvent(Extension.nullOrString(argv[0]),
                     Extension.nullOrString(argv[1]),
                     Extension.nullOrString(argv[2]),
-                    Extension.zeroOrInt(argv[3]));
+                    Extension.zeroOrLong(argv[3]));
             } else {
                 Teak.trackEvent(Extension.nullOrString(argv[0]),
                     Extension.nullOrString(argv[1]),

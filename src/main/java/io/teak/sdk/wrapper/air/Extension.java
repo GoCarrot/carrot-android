@@ -32,7 +32,7 @@ public class Extension implements FREExtension, Unobfuscable {
         return obj == null ? null : obj.getAsString();
     }
 
-    static int zeroOrInt(FREObject obj) throws FREInvalidObjectException, FRETypeMismatchException, FREWrongThreadException {
-        return obj == null ? 0 : obj.getAsInt();
+    static long zeroOrLong(FREObject obj) throws FREInvalidObjectException, FRETypeMismatchException, FREWrongThreadException {
+        return obj == null ? 0 : (long) obj.getAsDouble();
     }
 }
