@@ -35,6 +35,70 @@ public class RemoteConfiguration {
     @SuppressWarnings("WeakerAccess")
     public final Map<String, Object> endpointConfigurations;
 
+    private static final String defaultEndpointJson = "{  \n"
+                                                      +
+                                                      "  \"gocarrot.com\":{  \n"
+                                                      +
+                                                      "    \"/me/events\":{  \n"
+                                                      +
+                                                      "      \"batch\":{  \n"
+                                                      +
+                                                      "        \"time\":5,\n"
+                                                      +
+                                                      "        \"count\":50\n"
+                                                      +
+                                                      "      },\n"
+                                                      +
+                                                      "      \"retry\":{  \n"
+                                                      +
+                                                      "        \"times\":[  \n"
+                                                      +
+                                                      "          10,\n"
+                                                      +
+                                                      "          20,\n"
+                                                      +
+                                                      "          30\n"
+                                                      +
+                                                      "        ],\n"
+                                                      +
+                                                      "        \"jitter\":6\n"
+                                                      +
+                                                      "      }\n"
+                                                      +
+                                                      "    },\n"
+                                                      +
+                                                      "    \"/me/profile\":{  \n"
+                                                      +
+                                                      "      \"batch\":{  \n"
+                                                      +
+                                                      "        \"time\":10,\n"
+                                                      +
+                                                      "        \"lww\":true\n"
+                                                      +
+                                                      "      }\n"
+                                                      +
+                                                      "    }\n"
+                                                      +
+                                                      "  },\n"
+                                                      +
+                                                      "  \"parsnip.gocarrot.com\":{  \n"
+                                                      +
+                                                      "    \"/batch\":{  \n"
+                                                      +
+                                                      "      \"batch\":{  \n"
+                                                      +
+                                                      "        \"time\":5,\n"
+                                                      +
+                                                      "        \"count\":100\n"
+                                                      +
+                                                      "      }\n"
+                                                      +
+                                                      "    }\n"
+                                                      +
+                                                      "  }\n"
+                                                      +
+                                                      "}";
+
     private RemoteConfiguration(@NonNull AppConfiguration appConfiguration, @NonNull String hostname,
         String sdkSentryDsn, String appSentryDsn, String gcmSenderId, String firebaseAppId,
         boolean enhancedIntegrationChecks, JSONObject endpointConfigurations) {
@@ -45,7 +109,8 @@ public class RemoteConfiguration {
         this.gcmSenderId = gcmSenderId;
         this.firebaseAppId = firebaseAppId;
         this.enhancedIntegrationChecks = enhancedIntegrationChecks;
-        this.endpointConfigurations = endpointConfigurations == null ? new HashMap<String, Object>() : endpointConfigurations.toMap();
+
+        this.endpointConfigurations = endpointConfigurations == null ? new JSONObject(defaultEndpointJson).toMap() : endpointConfigurations.toMap();
     }
 
     public static void registerStaticEventListeners() {
