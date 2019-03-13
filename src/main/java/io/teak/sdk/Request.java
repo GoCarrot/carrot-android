@@ -258,12 +258,17 @@ public class Request implements Runnable {
             while (itr.hasNext()) {
                 final Map<String, Object> current = itr.next();
                 try {
-                    if (TrackEventEvent.payloadEquals(current, payload) &&
-                        current.get(TrackEventEvent.DurationKey) instanceof Integer &&
-                        payload.get(TrackEventEvent.DurationKey) instanceof Integer) {
+                    if (TrackEventEvent.payloadEquals(current, payload)) {
                         current.put(TrackEventEvent.DurationKey,
-                            (Integer) current.get(TrackEventEvent.DurationKey) +
-                                (Integer) payload.get(TrackEventEvent.DurationKey));
+                                safeSumOrCurrent(current.get(TrackEventEvent.DurationKey),
+                                        payload.get(TrackEventEvent.DurationKey)));
+                        current.put(TrackEventEvent.CountKey,
+                                safeSumOrCurrent(current.get(TrackEventEvent.CountKey),
+                                        payload.get(TrackEventEvent.CountKey)));
+                        current.put(TrackEventEvent.SumOfSquaresKey,
+                                safeSumOrCurrent(current.get(TrackEventEvent.SumOfSquaresKey),
+                                        payload.get(TrackEventEvent.SumOfSquaresKey)));
+
                         itr.set(current);
                         return super.add(endpoint, null, callback);
                     }
@@ -272,6 +277,13 @@ public class Request implements Runnable {
             }
 
             return super.add(endpoint, payload, callback);
+        }
+
+        private static Object safeSumOrCurrent(Object current, Object addition) {
+            if (current instanceof Integer && addition instanceof Integer) {
+                return (Integer) current + (Integer) addition;
+            }
+            return current;
         }
 
         @Override

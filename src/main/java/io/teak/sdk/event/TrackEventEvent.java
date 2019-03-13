@@ -15,6 +15,8 @@ public class TrackEventEvent extends TeakEvent {
     public static final String ObjectIdKey = "object_type";
     public static final String ObjectInstanceIdKey = "object_instance_id";
     public static final String DurationKey = "duration";
+    public static final String CountKey = "count";
+    public static final String SumOfSquaresKey = "sum_of_squares";
 
     public final Map<String, Object> payload;
 
@@ -40,6 +42,8 @@ public class TrackEventEvent extends TeakEvent {
             payload.put(TrackEventEvent.ObjectInstanceIdKey, objectInstanceId);
         }
         payload.put(TrackEventEvent.DurationKey, duration);
+        payload.put(TrackEventEvent.CountKey, 1);
+        payload.put(TrackEventEvent.SumOfSquaresKey, duration * duration);
         return payload;
     }
 }
