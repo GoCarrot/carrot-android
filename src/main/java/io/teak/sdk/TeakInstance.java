@@ -147,7 +147,7 @@ public class TeakInstance implements Unobfuscable {
         trackEvent(actionId, objectTypeId, objectInstanceId, 1);
     }
 
-    void trackEvent(final String actionId, final String objectTypeId, final String objectInstanceId, final int count) {
+    void trackEvent(final String actionId, final String objectTypeId, final String objectInstanceId, final long count) {
         if (actionId == null || actionId.isEmpty()) {
             Teak.log.e("track_event.error", "actionId can not be null or empty, ignoring.");
             return;

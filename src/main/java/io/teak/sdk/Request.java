@@ -280,8 +280,8 @@ public class Request implements Runnable {
         }
 
         private static Object safeSumOrCurrent(Object current, Object addition) {
-            if (current instanceof Integer && addition instanceof Integer) {
-                return (Integer) current + (Integer) addition;
+            if (current instanceof Long && addition instanceof Long) {
+                return (Long) current + (Long) addition;
             }
             return current;
         }
