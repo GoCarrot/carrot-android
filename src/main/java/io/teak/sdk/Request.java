@@ -112,7 +112,7 @@ public class Request implements Runnable {
                 configurationPayload.put("bundle_id", configuration.appConfiguration.bundleId);
                 configurationPayload.put("appstore_name", configuration.appConfiguration.storeId);
                 if (configuration.appConfiguration.installerPackage != null) {
-                    configurationPayload.put("installer_package", configuration.appConfiguration.storeId);
+                    configurationPayload.put("installer_package", configuration.appConfiguration.installerPackage);
                 }
 
                 configurationPayload.put("device_id", configuration.deviceConfiguration.deviceId);
