@@ -230,6 +230,7 @@ public class AppConfiguration {
         ret.put("appVersion", this.appVersion);
         ret.put("bundleId", this.bundleId);
         ret.put("installerPackage", this.installerPackage);
+        ret.put("storeId", this.storeId);
         ret.put("targetSdkVersion", this.targetSdkVersion);
         return ret;
     }
