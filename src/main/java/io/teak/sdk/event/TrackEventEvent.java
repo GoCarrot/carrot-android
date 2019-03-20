@@ -3,6 +3,7 @@ package io.teak.sdk.event;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,9 +42,9 @@ public class TrackEventEvent extends TeakEvent {
         if (objectInstanceId != null && objectInstanceId.trim().length() > 0) {
             payload.put(TrackEventEvent.ObjectInstanceIdKey, objectInstanceId);
         }
-        payload.put(TrackEventEvent.DurationKey, new Long(duration));
-        payload.put(TrackEventEvent.CountKey, new Long(1));
-        payload.put(TrackEventEvent.SumOfSquaresKey, new Long(duration * duration));
+        payload.put(TrackEventEvent.DurationKey, duration);
+        payload.put(TrackEventEvent.CountKey, 1);
+        payload.put(TrackEventEvent.SumOfSquaresKey, BigInteger.valueOf(duration * duration));
         return payload;
     }
 }

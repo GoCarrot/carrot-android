@@ -10,6 +10,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import java.io.UnsupportedEncodingException;
 
+import java.math.BigInteger;
 import java.net.URL;
 import java.net.URLEncoder;
 
@@ -260,14 +261,14 @@ public class Request implements Runnable {
                 try {
                     if (TrackEventEvent.payloadEquals(current, payload)) {
                         current.put(TrackEventEvent.DurationKey,
-                                safeSumOrCurrent(current.get(TrackEventEvent.DurationKey),
-                                        payload.get(TrackEventEvent.DurationKey)));
+                            integerSafeSumOrCurrent(current.get(TrackEventEvent.DurationKey),
+                                payload.get(TrackEventEvent.DurationKey)));
                         current.put(TrackEventEvent.CountKey,
-                                safeSumOrCurrent(current.get(TrackEventEvent.CountKey),
-                                        payload.get(TrackEventEvent.CountKey)));
+                            integerSafeSumOrCurrent(current.get(TrackEventEvent.CountKey),
+                                payload.get(TrackEventEvent.CountKey)));
                         current.put(TrackEventEvent.SumOfSquaresKey,
-                                safeSumOrCurrent(current.get(TrackEventEvent.SumOfSquaresKey),
-                                        payload.get(TrackEventEvent.SumOfSquaresKey)));
+                            integerSafeSumOrCurrent(current.get(TrackEventEvent.SumOfSquaresKey),
+                                payload.get(TrackEventEvent.SumOfSquaresKey)));
 
                         itr.set(current);
                         return super.add(endpoint, null, callback);
@@ -279,9 +280,13 @@ public class Request implements Runnable {
             return super.add(endpoint, payload, callback);
         }
 
-        private static Object safeSumOrCurrent(Object current, Object addition) {
-            if (current instanceof Long && addition instanceof Long) {
-                return (Long) current + (Long) addition;
+        private static Object integerSafeSumOrCurrent(Object current, Object addition) {
+            if (current instanceof Number && addition instanceof Number) {
+                if (current instanceof BigInteger && addition instanceof BigInteger) {
+                    return ((BigInteger) current).add((BigInteger) addition);
+                } else {
+                    return (Long) current + (Long) addition;
+                }
             }
             return current;
         }
@@ -289,6 +294,22 @@ public class Request implements Runnable {
         @Override
         public void run() {
             synchronized (mutex) {
+                // Turn SumOfSquares BigInteger into a string
+                ListIterator<Map<String, Object>> itr = this.batchContents.listIterator();
+                while (itr.hasNext()) {
+                    final Map<String, Object> current = itr.next();
+                    try {
+                        if (current.containsKey(TrackEventEvent.SumOfSquaresKey)) {
+                            Object sumOfSquares = current.get(TrackEventEvent.SumOfSquaresKey);
+                            if (sumOfSquares instanceof BigInteger) {
+                                current.put(TrackEventEvent.SumOfSquaresKey, ((BigInteger) sumOfSquares).toString(10));
+                                itr.set(current);
+                            }
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+
                 // Add batch elements
                 this.payload.put("batch", this.batchContents);
                 super.run();
