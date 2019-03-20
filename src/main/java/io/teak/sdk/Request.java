@@ -480,10 +480,11 @@ public class Request implements Runnable {
                     listOfThingsToJoin.add(String.format("%s=%s", name, escape ? URLEncoder.encode(value.toString(), "UTF-8") : value.toString()));
                 }
             }
-            return TextUtils.join("&", listOfThingsToJoin);
+            return Helpers.join("&", listOfThingsToJoin);
         }
 
-        private static String payloadToString(Map<String, Object> payload, boolean escape) throws UnsupportedEncodingException {
+        @SuppressWarnings("WeakerAccess")
+        public static String payloadToString(Map<String, Object> payload, boolean escape) throws UnsupportedEncodingException {
             ArrayList<String> payloadKeys = new ArrayList<>(payload.keySet());
             Collections.sort(payloadKeys);
             List<String> listOfThingsToJoin = new ArrayList<>();
@@ -498,7 +499,7 @@ public class Request implements Runnable {
                     Teak.log.e("request", "Value for key is null.", Helpers.mm.h("key", key));
                 }
             }
-            return TextUtils.join("&", listOfThingsToJoin);
+            return Helpers.join("&", listOfThingsToJoin);
         }
     }
 

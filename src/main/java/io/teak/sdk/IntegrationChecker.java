@@ -131,7 +131,7 @@ public class IntegrationChecker {
             // Add to list that will get reported during debug
             if (this.missingDependency != null) {
                 addErrorToReport(this.missingDependency[0],
-                    "Missing dependencies: " + TextUtils.join(", ",
+                    "Missing dependencies: " + Helpers.join(", ",
                                                    Arrays.copyOfRange(this.missingDependency, 1, this.missingDependency.length)));
             }
         }

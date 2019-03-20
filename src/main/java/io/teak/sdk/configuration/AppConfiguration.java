@@ -171,7 +171,7 @@ public class AppConfiguration {
             String tempStoreId = androidResources.getTeakStringResource(TEAK_STORE_ID);
 
             // If Amazon store stuff is available, we must be on Amazon
-            if (Helpers.nullOrEmpty(tempStoreId)) {
+            if (Helpers.isNullOrEmpty(tempStoreId)) {
                 tempStoreId = Helpers.isAmazonDevice(context) ? AppConfiguration.AmazonStoreId : AppConfiguration.GooglePlayStoreId;
             }
             this.storeId = tempStoreId;

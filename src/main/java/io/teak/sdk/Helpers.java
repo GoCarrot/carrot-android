@@ -49,7 +49,34 @@ public class Helpers {
         }
     }
 
-    public static boolean nullOrEmpty(final @Nullable String string) {
+    public static String join(CharSequence delimiter, Iterable tokens) {
+        StringBuilder sb = new StringBuilder();
+        Iterator<?> it = tokens.iterator();
+        if (it.hasNext()) {
+            sb.append(it.next());
+            while (it.hasNext()) {
+                sb.append(delimiter);
+                sb.append(it.next());
+            }
+        }
+        return sb.toString();
+    }
+
+    public static String join(CharSequence delimiter, Object[] tokens) {
+        StringBuilder sb = new StringBuilder();
+        boolean firstTime = true;
+        for (Object token : tokens) {
+            if (firstTime) {
+                firstTime = false;
+            } else {
+                sb.append(delimiter);
+            }
+            sb.append(token);
+        }
+        return sb.toString();
+    }
+
+    public static boolean isNullOrEmpty(final @Nullable String string) {
         return string == null || string.trim().isEmpty();
     }
 
