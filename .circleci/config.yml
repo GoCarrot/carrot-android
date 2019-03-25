@@ -33,10 +33,10 @@ jobs:
           name: Build Teak SDK
           command: ./gradlew assemble
       - persist_to_workspace:
-          root: build/
+          root: .
           paths:
-            - distributions/teak-release.zip
-            - outputs/aar/teak-release.aar
+            - build/distributions/teak-release.zip
+            - build/outputs/aar/teak-release.aar
       - sentry_persist_proguard
       # - run:
       #     name: Check the added size of SDK in bytes and methods
@@ -61,7 +61,7 @@ jobs:
           name: Install AWS CLI
           command: sudo apt-get -y -qq install awscli
       - attach_workspace:
-          at: build/
+          at: .
       - sentry_upload_proguard
       - run:
           name: Upload SDK to S3
@@ -83,7 +83,7 @@ jobs:
           name: Install AWS CLI
           command: sudo apt-get -y -qq install awscli
       - attach_workspace:
-          at: build/
+          at: .
       - sentry_upload_proguard
       - run:
           name: Upload SDK to S3
