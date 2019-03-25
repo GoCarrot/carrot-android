@@ -185,14 +185,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static void identifyUser(final String userIdentifier) {
-        if (Instance != null) {
-            asyncExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Instance.identifyUser(userIdentifier, new String[] {});
-                }
-            });
-        }
+        Teak.identifyUser(userIdentifier, null);
     }
 
     /**
