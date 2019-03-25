@@ -284,7 +284,7 @@ public class Request implements Runnable {
                 if (current instanceof BigInteger && addition instanceof BigInteger) {
                     return ((BigInteger) current).add((BigInteger) addition);
                 } else {
-                    return (Long) current + (Long) addition;
+                    return ((Number) current).longValue() + ((Number) addition).longValue();
                 }
             }
             return current;
