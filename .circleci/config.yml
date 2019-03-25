@@ -1,4 +1,5 @@
-version: 2
+version: 2.1
+
 jobs:
   build:
     docker:
@@ -51,8 +52,6 @@ jobs:
       - image: circleci/android:api-26-alpha
         environment:
           ANDROID_HOME=/opt/android/sdk
-          PROGUARD_MAPPING=build/outputs/mapping/release/mapping.txt
-          MERGED_MANIFEST=build/intermediates/aapt_friendly_merged_manifests/release/processReleaseManifest/aapt/AndroidManifest.xml
     steps:
       - checkout
       - run: git fetch --tags
@@ -64,9 +63,7 @@ jobs:
           command: sudo apt-get -y -qq install awscli
       - attach_workspace:
           at: build/
-      - run:
-          name: Upload ProGuard Mappings to Sentry
-          command: sentry-cli upload-proguard --android-manifest $MERGED_MANIFEST $PROGUARD_MAPPING
+      - sentry_upload_proguard
       - run:
           name: Upload SDK to S3
           command: |
@@ -88,14 +85,13 @@ jobs:
           command: sudo apt-get -y -qq install awscli
       - attach_workspace:
           at: build/
-      - run:
-          name: Upload ProGuard Mappings to Sentry
-          command: sentry-cli upload-proguard --android-manifest build/intermediates/manifests/full/release/AndroidManifest.xml build/outputs/mapping/release/mapping.txt
+      - sentry_upload_proguard
       - run:
           name: Upload SDK to S3
           command: |
             aws s3 cp build/distributions/teak-release.zip s3://teak-build-artifacts/android/teak.zip --acl public-read
             aws s3 cp build/outputs/aar/teak-release.aar s3://teak-build-artifacts/android/teak.aar --acl public-read
+
 workflows:
   version: 2
   un-tagged-build:
@@ -137,3 +133,21 @@ workflows:
               ignore: /.*/
             tags:
               only: /.*/
+
+commands:
+  #
+  # Upload ProGuard mappings to Sentry
+  #
+  sentry_upload_proguard:
+    description: "Upload ProGuard Mappings to Sentry"
+    parameters:
+      android_manifest:
+        type: string
+        default: "build/intermediates/manifests/full/release/AndroidManifest.xml"
+      proguard_mapping:
+        type: string
+        default: "build/outputs/mapping/release/mapping.txt"
+    steps:
+      - run:
+          name: Upload ProGuard Mappings to Sentry
+          command: sentry-cli upload-proguard --android-manifest << parameters.android_manifest >> << parameters.proguard_mapping >>
