@@ -170,6 +170,12 @@ android {
         archivesBaseName = 'teak'
     }
 
+    // Dex cannot parse version 52 byte code
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+
     buildTypes {
         release {
             minifyEnabled true
