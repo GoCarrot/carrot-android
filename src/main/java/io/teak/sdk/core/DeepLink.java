@@ -47,7 +47,7 @@ public class DeepLink {
                 // return "(?<splat>.*?)";
             }
             groupNames.add(matcher.group().substring(1));
-            matcher.appendReplacement(patternString, "([^/?#]+)");
+            matcher.appendReplacement(patternString, "([^\\/]+)");
         }
         matcher.appendTail(patternString);
         pattern = patternString.toString();

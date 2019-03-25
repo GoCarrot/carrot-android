@@ -7,14 +7,16 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import io.teak.sdk.Helpers.mm;
 
 public class InstallReferrerReceiver extends BroadcastReceiver implements Unobfuscable {
 
-    public static final ConcurrentLinkedQueue<String> installReferrerQueue = new ConcurrentLinkedQueue<>();
+    public static final LinkedBlockingQueue<String> installReferrerQueue = new LinkedBlockingQueue<>();
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -38,6 +40,42 @@ public class InstallReferrerReceiver extends BroadcastReceiver implements Unobfu
             }
         } catch (Exception e) {
             Teak.log.exception(e);
+        }
+    }
+
+    public static class Future implements java.util.concurrent.Future<String> {
+        private boolean isCancelled = false;
+        private boolean isDone = false;
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            synchronized (this) {
+                if (!this.isDone()) {
+                    this.isCancelled = true;
+                    this.isDone = true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return this.isCancelled;
+        }
+
+        @Override
+        public boolean isDone() {
+            return this.isDone;
+        }
+
+        @Override
+        public String get() throws InterruptedException {
+            return InstallReferrerReceiver.installReferrerQueue.take();
+        }
+
+        @Override
+        public String get(long timeout, @NonNull TimeUnit unit) throws InterruptedException {
+            return InstallReferrerReceiver.installReferrerQueue.poll(timeout, unit);
         }
     }
 }

@@ -13,8 +13,7 @@ import io.teak.sdk.wrapper.ISDKWrapper;
 import io.teak.sdk.wrapper.TeakInterface;
 
 public class ExtensionContext extends FREContext implements Unobfuscable {
-    @SuppressWarnings("FieldCanBeLocal")
-    private final TeakInterface teakInterface;
+    final TeakInterface teakInterface;
     private final String initializationErrors;
 
     @SuppressWarnings("WeakerAccess")
@@ -43,11 +42,6 @@ public class ExtensionContext extends FREContext implements Unobfuscable {
             this.teakInterface = tempTeakInterface;
             this.initializationErrors = tempInitializationErrors;
         }
-
-        // TODO: Should this be delayed?
-        if (this.teakInterface != null) {
-            this.teakInterface.readyForDeepLinks();
-        }
     }
 
     @Override
@@ -69,6 +63,9 @@ public class ExtensionContext extends FREContext implements Unobfuscable {
         functionMap.put("getAppConfiguration", new GetConfigurationFunction(GetConfigurationFunction.ConfigurationType.AppConfiguration));
         functionMap.put("getDeviceConfiguration", new GetConfigurationFunction(GetConfigurationFunction.ConfigurationType.DeviceConfiguration));
         functionMap.put("_testExceptionReporting", new ExceptionReportingTestFunction());
+        functionMap.put("trackEvent", new TrackEventFunction());
+        functionMap.put("incrementEvent", new TrackEventFunction());
+        functionMap.put("processDeepLinks", new ProcessDeepLinksFunction());
         return functionMap;
     }
 

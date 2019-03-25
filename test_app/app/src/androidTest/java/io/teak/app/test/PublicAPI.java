@@ -103,7 +103,7 @@ public class PublicAPI extends TeakIntegrationTest {
         final Activity activity = launchActivity();
 
         // Notifications should be enabled at the start
-        assertFalse(Teak.userHasDisabledNotifications());
+        assertFalse(Teak.getNotificationStatus() == Teak.TEAK_NOTIFICATIONS_ENABLED);
 
         // Open settings
         assertTrue(Teak.openSettingsAppToThisAppsSettings());
@@ -140,7 +140,7 @@ public class PublicAPI extends TeakIntegrationTest {
             assertFalse(allowNotificationsCheckbox.isChecked());
 
             // Notifications should be disabled
-            final boolean shouldBeTrue = Teak.userHasDisabledNotifications();
+            final boolean shouldBeTrue = Teak.getNotificationStatus() == Teak.TEAK_NOTIFICATIONS_DISABLED;
 
             // Re-enable notifications
             allowNotificationsCheckbox.click();
@@ -165,7 +165,7 @@ public class PublicAPI extends TeakIntegrationTest {
             assertTrue(blockCheckbox.isChecked());
 
             // Notifications should be disabled
-            final boolean shouldBeTrue = Teak.userHasDisabledNotifications();
+            final boolean shouldBeTrue = Teak.getNotificationStatus() == Teak.TEAK_NOTIFICATIONS_DISABLED;
 
             // Un-block notifications
             blockCheckbox.click();

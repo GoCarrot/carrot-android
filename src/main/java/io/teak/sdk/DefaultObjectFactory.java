@@ -2,6 +2,7 @@ package io.teak.sdk;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -99,11 +100,9 @@ public class DefaultObjectFactory implements IObjectFactory {
             return null;
         }
 
-        final String installerPackage = packageManager.getInstallerPackageName(bundleId);
-
         // Applicable store, default to GooglePlay
         Class<?> clazz = io.teak.sdk.store.GooglePlay.class;
-        if ("com.amazon.venezia".equals(installerPackage)) {
+        if (Helpers.isAmazonDevice(context)) {
             try {
                 clazz = Class.forName("com.amazon.device.iap.PurchasingListener");
             } catch (Exception e) {

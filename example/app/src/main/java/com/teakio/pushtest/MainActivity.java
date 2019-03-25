@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 
 import javax.net.ssl.SSLException;
 
@@ -105,6 +106,15 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    // If this is not overridden, it will destroy the activity when the Back button is pressed.
+    //
+    // Unity: When back is pressed, nothing happens
+    // Air: When back pressed, it backgrounds the app but does not destroy activity
+    @Override
+    public void onBackPressed() {
+        moveTaskToBack(true);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -118,13 +128,6 @@ public class MainActivity extends AppCompatActivity {
         filter.addAction(Teak.REWARD_CLAIM_ATTEMPT);
         LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, filter);
 
-        // Identify user.
-        // In your game, you will want to use the same user id that you use in your database.
-        //
-        // These user ids should be unique, no two players should have the same user id.
-        final String userId = "native-" + Build.MODEL.toLowerCase();
-        Teak.identifyUser(userId);
-
         // Create a deep link route that opens the Google Play store to a specific SKU in your game
         Teak.registerDeepLink("/store/:sku", "Store", "Link directly to purchase an item", new Teak.DeepLink() {
             @Override
@@ -133,6 +136,35 @@ public class MainActivity extends AppCompatActivity {
                 showPurchaseDialogForSku(sku);
             }
         });
+
+        Teak.registerDeepLink("/slots/:slot_id", "Slots", "Link directly to a slot machine", new Teak.DeepLink() {
+            @Override
+            public void call(final Map<String, Object> parameters) {
+                Log.d("MainActivity", "/slots/" + parameters.get("slot_id").toString() + ": " + parameters.toString());
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        AlertDialog.Builder builder;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                            builder = new AlertDialog.Builder(MainActivity.this, android.R.style.Theme_Material_Dialog_Alert);
+                        } else {
+                            builder = new AlertDialog.Builder(MainActivity.this);
+                        }
+                        builder.setTitle("Slot!")
+                                .setMessage(parameters.get("slot_id").toString())
+                                .setPositiveButton(android.R.string.yes, null)
+                                .setIcon(android.R.drawable.ic_dialog_alert)
+                                .show();
+                    }
+                });
+            }
+        });
+
+        // Identify user.
+        // In your game, you will want to use the same user id that you use in your database.
+        //
+        // These user ids should be unique, no two players should have the same user id.
+        final String userId = "native-" + Build.MODEL.toLowerCase();
+        Teak.identifyUser(userId);
 
         // Binding the in app billing service
         Intent serviceIntent = new Intent("com.android.vending.billing.InAppBillingService.BIND");
@@ -143,8 +175,8 @@ public class MainActivity extends AppCompatActivity {
         Teak.setApplicationBadgeNumber(42);
 
         // HAX
-        Teak.setStringAttribute("last_slot", "some string value");
-        //Teak.trackEvent("some_boolean", null, null);
+        Teak.setStringAttribute("last_slot", "another string value");
+        Teak.trackEvent("Player_Level_Up", null, null);
     }
 
     @Override
@@ -264,8 +296,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showPurchaseDialogForSku(final String sku) {
-        new Thread(new Runnable() {
-            @Override
+        runOnUiThread(new Runnable() {
             public void run() {
                 try {
                     Bundle buyIntentBundle = mService.getBuyIntent(3, MainActivity.this.getPackageName(), sku, "inapp", "");
@@ -275,7 +306,7 @@ public class MainActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
             }
-        }).start();
+        });
     }
 
     @Override
@@ -311,7 +342,8 @@ public class MainActivity extends AppCompatActivity {
 
     public void crashApp(View view) {
 //        throw new RuntimeException("I crashed the app!");
-        Teak.log.exception(new Raven.ReportTestException(Teak.SDKVersion));
+//        Teak.log.exception(new Raven.ReportTestException(Teak.SDKVersion));
+        Teak.incrementEvent("debug_increment", null, null, 5);
     }
 
     public void integrationTestTimeout(String timeout) {

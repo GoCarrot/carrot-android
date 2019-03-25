@@ -24,7 +24,6 @@ import java.io.File;
 import java.net.URLEncoder;
 import java.security.InvalidParameterException;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -145,28 +144,30 @@ public class TeakInstance implements Unobfuscable {
     ///// trackEvent
 
     void trackEvent(final String actionId, final String objectTypeId, final String objectInstanceId) {
+        trackEvent(actionId, objectTypeId, objectInstanceId, 1);
+    }
+
+    void trackEvent(final String actionId, final String objectTypeId, final String objectInstanceId, final long count) {
         if (actionId == null || actionId.isEmpty()) {
-            Teak.log.e("track_event.error", "actionId can not be null or empty for trackEvent(), ignoring.");
+            Teak.log.e("track_event.error", "actionId can not be null or empty, ignoring.");
             return;
         }
 
         if ((objectInstanceId != null && !objectInstanceId.isEmpty()) &&
             (objectTypeId == null || objectTypeId.isEmpty())) {
-            Teak.log.e("track_event.error", "objectTypeId can not be null or empty if objectInstanceId is present for trackEvent(), ignoring.");
+            Teak.log.e("track_event.error", "objectTypeId can not be null or empty if objectInstanceId is present, ignoring.");
             return;
         }
 
-        Teak.log.i("track_event", Helpers.mm.h("actionId", actionId, "objectTypeId", objectTypeId, "objectInstanceId", objectInstanceId));
+        if (count < 0) {
+            Teak.log.e("track_event.error", "count can not be less than zero, ignoring.");
+            return;
+        }
+
+        Teak.log.i("track_event", Helpers.mm.h("actionId", actionId, "objectTypeId", objectTypeId, "objectInstanceId", objectInstanceId, "count", count));
 
         if (this.isEnabled()) {
-            Map<String, Object> payload = new HashMap<>();
-            payload.put("action_type", actionId);
-            if (objectTypeId != null && objectTypeId.trim().length() > 0) {
-                payload.put("object_type", objectTypeId);
-            }
-            if (objectInstanceId != null && objectInstanceId.trim().length() > 0) {
-                payload.put("object_instance_id", objectInstanceId);
-            }
+            final Map<String, Object> payload = TrackEventEvent.payloadForEvent(actionId, objectTypeId, objectInstanceId, count);
             TeakEvent.postEvent(new TrackEventEvent(payload));
         }
     }

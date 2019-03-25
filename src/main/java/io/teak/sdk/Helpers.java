@@ -4,8 +4,10 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.json.JSONArray;
@@ -27,6 +29,14 @@ public class Helpers {
         return b.getBoolean(key);
     }
 
+    public static boolean isAmazonDevice(final @NonNull Context context) {
+        final String bundleId = context.getPackageName();
+        final PackageManager packageManager = context.getPackageManager();
+        final String installerPackage = packageManager == null ? null : packageManager.getInstallerPackageName(bundleId);
+        return "amazon".equalsIgnoreCase(Build.MANUFACTURER) ||
+            "com.amazon.venezia".equals(installerPackage);
+    }
+
     public static class mm {
         public static Map<String, Object> h(@NonNull Object... args) {
             Map<String, Object> ret = new HashMap<>();
@@ -37,6 +47,43 @@ public class Helpers {
             }
             return ret;
         }
+    }
+
+    public static String join(CharSequence delimiter, Iterable tokens) {
+        StringBuilder sb = new StringBuilder();
+        Iterator<?> it = tokens.iterator();
+        if (it.hasNext()) {
+            sb.append(it.next());
+            while (it.hasNext()) {
+                sb.append(delimiter);
+                sb.append(it.next());
+            }
+        }
+        return sb.toString();
+    }
+
+    public static String join(CharSequence delimiter, Object[] tokens) {
+        StringBuilder sb = new StringBuilder();
+        boolean firstTime = true;
+        for (Object token : tokens) {
+            if (firstTime) {
+                firstTime = false;
+            } else {
+                sb.append(delimiter);
+            }
+            sb.append(token);
+        }
+        return sb.toString();
+    }
+
+    public static boolean isNullOrEmpty(final @Nullable String string) {
+        return string == null || string.trim().isEmpty();
+    }
+
+    public static boolean is_equal(final @Nullable Object a, final @Nullable Object b) {
+        return (a == b) ||
+            (a != null && a.equals(b)) ||
+            (b != null && b.equals(a));
     }
 
     public static JSONObject bundleToJson(Bundle bundle) {

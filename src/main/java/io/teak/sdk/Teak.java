@@ -12,16 +12,16 @@ import android.support.v4.content.LocalBroadcastManager;
 
 import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.PushNotificationEvent;
-import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.json.JSONException;
 import io.teak.sdk.json.JSONObject;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -185,14 +185,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static void identifyUser(final String userIdentifier) {
-        if (Instance != null) {
-            asyncExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Instance.identifyUser(userIdentifier, new String[] {});
-                }
-            });
-        }
+        Teak.identifyUser(userIdentifier, null);
     }
 
     /**
@@ -233,6 +226,9 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static void identifyUser(final String userIdentifier, final String[] optOut) {
+        // Always process deep links when identifyUser is called
+        Teak.processDeepLinks();
+
         if (Instance != null) {
             asyncExecutor.submit(new Runnable() {
                 @Override
@@ -257,6 +253,26 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
                 @Override
                 public void run() {
                     Instance.trackEvent(actionId, objectTypeId, objectInstanceId);
+                }
+            });
+        }
+    }
+
+    /**
+     * Increment the value an arbitrary event in Teak.
+     *
+     * @param actionId         The identifier for the action, e.g. 'complete'.
+     * @param objectTypeId     The type of object that is being posted, e.g. 'quest'.
+     * @param objectInstanceId The specific instance of the object, e.g. 'gather-quest-1'
+     * @param count            The amount by which to increment.
+     */
+    @SuppressWarnings("unused")
+    public static void incrementEvent(final String actionId, final String objectTypeId, final String objectInstanceId, final long count) {
+        if (Instance != null) {
+            asyncExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    Instance.trackEvent(actionId, objectTypeId, objectInstanceId, count);
                 }
             });
         }
@@ -560,36 +576,43 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         }
     }
 
-    ///// Give SDK wrappers the ability to delay deep link resolution
+    ///// Deep Links
 
-    public static Future<Void> waitForDeepLink;
-
-    static {
-        // TODO: This may not (shouldn't?) get called during unit tests, so make sure something else does it.
-        TeakEvent.addEventListener(new TeakEvent.EventListener() {
-            @Override
-            public void onNewEvent(@NonNull TeakEvent event) {
-                if (event.eventType.equals(SessionStateEvent.Type) && ((SessionStateEvent) event).state == Session.State.Created) {
-
-                    // Use thread instead of executor here, since this could block for a while
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                if (Teak.waitForDeepLink != null) {
-                                    Teak.waitForDeepLink.get();
-                                }
-                            } catch (Exception ignored) {
-                            }
-
-                            // TODO: Is there a more general event that should be used here?
-                            TeakEvent.postEvent(new DeepLinksReadyEvent());
-                        }
-                    })
-                        .start();
+    /**
+     * Indicate that your app is ready for deep links.
+     * <p/>
+     * Deep links will not be processed sooner than the earliest of:
+     * - {@link #identifyUser(String, String[])} is called
+     * - This method is called
+     */
+    @SuppressWarnings("unused")
+    public static void processDeepLinks() {
+        try {
+            synchronized (Teak.waitForDeepLink) {
+                if (!Teak.waitForDeepLink.isDone()) {
+                    Teak.asyncExecutor.execute(Teak.waitForDeepLink);
                 }
             }
-        });
+        } catch (Exception ignored) {
+        }
+    }
+
+    private static final FutureTask<Void> waitForDeepLink = new FutureTask<>(new Runnable() {
+        @Override
+        public void run() {
+            TeakEvent.postEvent(new DeepLinksReadyEvent());
+        }
+    }, null);
+
+    /**
+     * Block until deep links are ready for processing.
+     * <p/>
+     * For internal use.
+     * @throws ExecutionException
+     * @throws InterruptedException
+     */
+    public static void waitUntilDeepLinksAreReady() throws ExecutionException, InterruptedException {
+        Teak.waitForDeepLink.get();
     }
 
     ///// Configuration

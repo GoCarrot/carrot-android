@@ -2,15 +2,14 @@ package io.teak.sdk;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.text.TextUtils;
 import android.util.Base64;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Array;
 
+import java.math.BigInteger;
 import java.net.URL;
 import java.net.URLEncoder;
 
@@ -22,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
@@ -31,8 +31,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.json.JSONObject;
-import io.teak.sdk.json.JSONArray;
 
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.Session;
@@ -108,9 +108,11 @@ public class Request implements Runnable {
                 configurationPayload.put("sdk_version", Teak.Version);
                 configurationPayload.put("game_id", configuration.appConfiguration.appId);
                 configurationPayload.put("app_version", String.valueOf(configuration.appConfiguration.appVersion));
+                configurationPayload.put("app_version_name", String.valueOf(configuration.appConfiguration.appVersionName));
                 configurationPayload.put("bundle_id", configuration.appConfiguration.bundleId);
+                configurationPayload.put("appstore_name", configuration.appConfiguration.storeId);
                 if (configuration.appConfiguration.installerPackage != null) {
-                    configurationPayload.put("appstore_name", configuration.appConfiguration.installerPackage);
+                    configurationPayload.put("installer_package", configuration.appConfiguration.installerPackage);
                 }
 
                 configurationPayload.put("device_id", configuration.deviceConfiguration.deviceId);
@@ -147,13 +149,13 @@ public class Request implements Runnable {
     private static abstract class BatchedRequest extends Request {
         private ScheduledFuture<?> scheduledFuture;
         private final List<Callback> callbacks = new LinkedList<>();
-        final List<Object> batchContents = new LinkedList<>();
+        final List<Map<String, Object>> batchContents = new LinkedList<>();
 
         BatchedRequest(@Nullable String hostname, @NonNull String endpoint, @NonNull Session session, boolean addStandardAttributes) {
             super(hostname, endpoint, new HashMap<String, Object>(), session, null, addStandardAttributes);
         }
 
-        synchronized boolean add(@NonNull String endpoint, @NonNull Map<String, Object> payload, @Nullable Callback callback) {
+        synchronized boolean add(@NonNull String endpoint, @Nullable Map<String, Object> payload, @Nullable Callback callback) {
             if (this.sent) {
                 return false;
             }
@@ -170,7 +172,10 @@ public class Request implements Runnable {
             if (callback != null) {
                 this.callbacks.add(callback);
             }
-            this.batchContents.add(payload);
+
+            if (payload != null) {
+                this.batchContents.add(payload);
+            }
 
             if (this.batch.time == 0.0f) {
                 Request.requestExecutor.execute(this);
@@ -207,7 +212,7 @@ public class Request implements Runnable {
         }
 
         @Override
-        synchronized boolean add(@NonNull String endpoint, @NonNull Map<String, Object> payload, @Nullable Callback callback) {
+        synchronized boolean add(@NonNull String endpoint, @Nullable Map<String, Object> payload, @Nullable Callback callback) {
             final Map<String, Object> batchPayload = new HashMap<>(payload);
 
             // Parsnip needs the standard attributes in every event
@@ -247,13 +252,63 @@ public class Request implements Runnable {
         }
 
         @Override
-        synchronized boolean add(@NonNull String endpoint, @NonNull Map<String, Object> payload, @Nullable Callback callback) {
+        synchronized boolean add(@NonNull String endpoint, @Nullable Map<String, Object> payload, @Nullable Callback callback) {
+            // Check to see if current batchContents has action, and if so, sum the durations
+            ListIterator<Map<String, Object>> itr = this.batchContents.listIterator();
+            while (itr.hasNext()) {
+                final Map<String, Object> current = itr.next();
+                try {
+                    if (TrackEventEvent.payloadEquals(current, payload)) {
+                        current.put(TrackEventEvent.DurationKey,
+                            integerSafeSumOrCurrent(current.get(TrackEventEvent.DurationKey),
+                                payload.get(TrackEventEvent.DurationKey)));
+                        current.put(TrackEventEvent.CountKey,
+                            integerSafeSumOrCurrent(current.get(TrackEventEvent.CountKey),
+                                payload.get(TrackEventEvent.CountKey)));
+                        current.put(TrackEventEvent.SumOfSquaresKey,
+                            integerSafeSumOrCurrent(current.get(TrackEventEvent.SumOfSquaresKey),
+                                payload.get(TrackEventEvent.SumOfSquaresKey)));
+
+                        itr.set(current);
+                        return super.add(endpoint, null, callback);
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+
             return super.add(endpoint, payload, callback);
+        }
+
+        private static Object integerSafeSumOrCurrent(Object current, Object addition) {
+            if (current instanceof Number && addition instanceof Number) {
+                if (current instanceof BigInteger && addition instanceof BigInteger) {
+                    return ((BigInteger) current).add((BigInteger) addition);
+                } else {
+                    return ((Number) current).longValue() + ((Number) addition).longValue();
+                }
+            }
+            return current;
         }
 
         @Override
         public void run() {
             synchronized (mutex) {
+                // Turn SumOfSquares BigInteger into a string
+                ListIterator<Map<String, Object>> itr = this.batchContents.listIterator();
+                while (itr.hasNext()) {
+                    final Map<String, Object> current = itr.next();
+                    try {
+                        if (current.containsKey(TrackEventEvent.SumOfSquaresKey)) {
+                            Object sumOfSquares = current.get(TrackEventEvent.SumOfSquaresKey);
+                            if (sumOfSquares instanceof BigInteger) {
+                                current.put(TrackEventEvent.SumOfSquaresKey, ((BigInteger) sumOfSquares).toString(10));
+                                itr.set(current);
+                            }
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+
                 // Add batch elements
                 this.payload.put("batch", this.batchContents);
                 super.run();
@@ -445,22 +500,26 @@ public class Request implements Runnable {
                     listOfThingsToJoin.add(String.format("%s=%s", name, escape ? URLEncoder.encode(value.toString(), "UTF-8") : value.toString()));
                 }
             }
-            return TextUtils.join("&", listOfThingsToJoin);
+            return Helpers.join("&", listOfThingsToJoin);
         }
 
-        private static String payloadToString(Map<String, Object> payload, boolean escape) throws UnsupportedEncodingException {
+        @SuppressWarnings("WeakerAccess")
+        public static String payloadToString(Map<String, Object> payload, boolean escape) throws UnsupportedEncodingException {
             ArrayList<String> payloadKeys = new ArrayList<>(payload.keySet());
             Collections.sort(payloadKeys);
             List<String> listOfThingsToJoin = new ArrayList<>();
             for (String key : payloadKeys) {
                 Object value = payload.get(key);
                 if (value != null) {
-                    listOfThingsToJoin.add(formEncode(key, value, escape));
+                    final String encoded = formEncode(key, value, escape);
+                    if (encoded != null && encoded.length() > 0) {
+                        listOfThingsToJoin.add(encoded);
+                    }
                 } else {
                     Teak.log.e("request", "Value for key is null.", Helpers.mm.h("key", key));
                 }
             }
-            return TextUtils.join("&", listOfThingsToJoin);
+            return Helpers.join("&", listOfThingsToJoin);
         }
     }
 

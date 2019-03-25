@@ -44,7 +44,6 @@ import java.lang.reflect.Method;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Iterator;

@@ -23,6 +23,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
+import io.teak.sdk.Helpers;
 import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.RetriableTask;
 import io.teak.sdk.Teak;
@@ -37,7 +38,7 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
 
         IntegrationChecker.requireDependency("com.google.android.gms.common.GooglePlayServicesUtil");
         if (isGooglePlayServicesAvailable()) {
-            IntegrationChecker.requireDependency("com.google.android.gms.ads.identifier.AdvertisingIdClient");
+            IntegrationChecker.suggestDependency("com.google.android.gms.ads.identifier.AdvertisingIdClient");
         }
     }
 
@@ -196,7 +197,7 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
 
     // https://raw.githubusercontent.com/jaredrummler/AndroidDeviceNames/master/library/src/main/java/com/jaredrummler/android/device/DeviceName.java
     private static String capitalize(String str) {
-        if (TextUtils.isEmpty(str)) {
+        if (Helpers.isNullOrEmpty(str)) {
             return str;
         }
         char[] arr = str.toCharArray();
