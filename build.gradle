@@ -189,7 +189,7 @@ dependencies {
     implementation 'com.google.android.gms:play-services-base:16+'
     implementation 'com.google.android.gms:play-services-basement:16+'
 
-    implementation 'com.google.firebase:firebase-messaging:17+'
+    implementation 'com.google.firebase:firebase-messaging:17.3.+'
     implementation 'com.firebase:firebase-jobdispatcher:0.8.5'
 
     // Amazon, Air, Unity compile-time-only dependencies
