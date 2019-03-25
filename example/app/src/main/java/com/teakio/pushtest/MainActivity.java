@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 
 import javax.net.ssl.SSLException;
 
@@ -174,8 +175,8 @@ public class MainActivity extends AppCompatActivity {
         Teak.setApplicationBadgeNumber(42);
 
         // HAX
-        Teak.setStringAttribute("last_slot", "some string value");
-        //Teak.trackEvent("some_boolean", null, null);
+        Teak.setStringAttribute("last_slot", "another string value");
+        Teak.trackEvent("Player_Level_Up", null, null);
     }
 
     @Override
@@ -341,7 +342,8 @@ public class MainActivity extends AppCompatActivity {
 
     public void crashApp(View view) {
 //        throw new RuntimeException("I crashed the app!");
-        Teak.log.exception(new Raven.ReportTestException(Teak.SDKVersion));
+//        Teak.log.exception(new Raven.ReportTestException(Teak.SDKVersion));
+        Teak.incrementEvent("debug_increment", null, null, 5);
     }
 
     public void integrationTestTimeout(String timeout) {
