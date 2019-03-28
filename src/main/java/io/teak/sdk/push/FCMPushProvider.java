@@ -39,8 +39,18 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
         IntegrationChecker.requireDependency("com.google.firebase.messaging.FirebaseMessagingService");
 
         if (Instance == null) {
+            Teak.log.i("google.fcm.initialize", "Creating new FCMPushProvider instance.");
             Instance = new FCMPushProvider();
             Instance.context = context;
+        } else {
+            Teak.log.i("google.fcm.initialize", "FCMPushProvider already created.");
+
+            Instance.context = context;
+            if (Instance.getApplicationContext() != Instance.context) {
+                Teak.log.e("google.fcm.initialize.context_mismatch",
+                        Helpers.mm.h("getApplicationContext", Instance.getApplicationContext(),
+                        "Instance.context", Instance.context));
+            }
         }
 
         return Instance;
@@ -94,15 +104,24 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
             } catch (Exception ignored) {
             }
 
-            // Try and initialize our own, then, and name it just in case something else comes along
-            // and wants to use the [DEFAULT] app name.
             if (this.firebaseApp == null) {
                 try {
-                    Teak.log.i("google.fcm.intialization", pushConfiguration);
-                    FirebaseOptions.Builder builder = new FirebaseOptions.Builder()
-                                                          .setGcmSenderId((String) pushConfiguration.get("gcmSenderId"))
-                                                          .setApplicationId((String) pushConfiguration.get("firebaseAppId"));
-                    this.firebaseApp = FirebaseApp.initializeApp(this.context, builder.build(), "teak");
+                    // If FirebaseOptions.fromResource is not null, it's a good bet that someone is using
+                    // the gradle plugin or something. In this case, we can safely create the default
+                    // because subsequent calls to FirebaseApp.initializeApp will simply return the
+                    // existing default.
+                    if (FirebaseOptions.fromResource(context) != null) {
+                        Teak.log.i("google.fcm.intialization", "FirebaseOptions.fromResource");
+                        this.firebaseApp = FirebaseApp.initializeApp(this.context);
+                    } else {
+                        // No FirebaseOptions.fromResource means we're almost certainly responsible
+                        // for all Firebase use and initialization.
+                        Teak.log.i("google.fcm.intialization", pushConfiguration);
+                        FirebaseOptions.Builder builder = new FirebaseOptions.Builder()
+                                .setGcmSenderId((String) pushConfiguration.get("gcmSenderId"))
+                                .setApplicationId((String) pushConfiguration.get("firebaseAppId"));
+                        this.firebaseApp = FirebaseApp.initializeApp(this.context, builder.build());
+                    }
                 } catch (Exception e) {
                     Teak.log.exception(e);
                 }
@@ -114,7 +133,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
         } else {
             try {
                 final Task<InstanceIdResult> instanceIdTask = FirebaseInstanceId
-                                                                  .getInstance(this.firebaseApp)
+                                                                  .getInstance()
                                                                   .getInstanceId();
 
                 instanceIdTask.addOnSuccessListener(new OnSuccessListener<InstanceIdResult>() {
