@@ -1,4 +1,5 @@
-version: 2
+version: 2.1
+
 jobs:
   build:
     docker:
@@ -32,12 +33,11 @@ jobs:
           name: Build Teak SDK
           command: ./gradlew assemble
       - persist_to_workspace:
-          root: build/
+          root: .
           paths:
-            - distributions/teak-release.zip
-            - outputs/aar/teak-release.aar
-            - intermediates/manifests/full/release/AndroidManifest.xml
-            - outputs/mapping/release/mapping.txt
+            - build/distributions/teak-release.zip
+            - build/outputs/aar/teak-release.aar
+      - sentry_persist_proguard
       # - run:
       #     name: Check the added size of SDK in bytes and methods
       #     command: ./check_size
@@ -61,10 +61,8 @@ jobs:
           name: Install AWS CLI
           command: sudo apt-get -y -qq install awscli
       - attach_workspace:
-          at: build/
-      - run:
-          name: Upload ProGuard Mappings to Sentry
-          command: sentry-cli upload-proguard --android-manifest build/intermediates/manifests/full/release/AndroidManifest.xml build/outputs/mapping/release/mapping.txt
+          at: .
+      - sentry_upload_proguard
       - run:
           name: Upload SDK to S3
           command: |
@@ -85,15 +83,14 @@ jobs:
           name: Install AWS CLI
           command: sudo apt-get -y -qq install awscli
       - attach_workspace:
-          at: build/
-      - run:
-          name: Upload ProGuard Mappings to Sentry
-          command: sentry-cli upload-proguard --android-manifest build/intermediates/manifests/full/release/AndroidManifest.xml build/outputs/mapping/release/mapping.txt
+          at: .
+      - sentry_upload_proguard
       - run:
           name: Upload SDK to S3
           command: |
             aws s3 cp build/distributions/teak-release.zip s3://teak-build-artifacts/android/teak.zip --acl public-read
             aws s3 cp build/outputs/aar/teak-release.aar s3://teak-build-artifacts/android/teak.aar --acl public-read
+
 workflows:
   version: 2
   un-tagged-build:
@@ -135,3 +132,39 @@ workflows:
               ignore: /.*/
             tags:
               only: /.*/
+
+commands:
+  #
+  # Persist ProGuard mappings to workspace
+  #
+  sentry_persist_proguard:
+    description: "Persist ProGuard Mappings to Workspace"
+    parameters:
+      android_manifest:
+        type: string
+        default: "build/intermediates/aapt_friendly_merged_manifests/release/processReleaseManifest/aapt/AndroidManifest.xml"
+      proguard_mapping:
+        type: string
+        default: "build/outputs/mapping/release/mapping.txt"
+    steps:
+      - persist_to_workspace:
+          root: .
+          paths:
+            - << parameters.android_manifest >>
+            - << parameters.proguard_mapping >>
+  #
+  # Upload ProGuard mappings to Sentry
+  #
+  sentry_upload_proguard:
+    description: "Upload ProGuard Mappings to Sentry"
+    parameters:
+      android_manifest:
+        type: string
+        default: "build/intermediates/aapt_friendly_merged_manifests/release/processReleaseManifest/aapt/AndroidManifest.xml"
+      proguard_mapping:
+        type: string
+        default: "build/outputs/mapping/release/mapping.txt"
+    steps:
+      - run:
+          name: Upload ProGuard Mappings to Sentry
+          command: sentry-cli upload-proguard --android-manifest << parameters.android_manifest >> << parameters.proguard_mapping >>

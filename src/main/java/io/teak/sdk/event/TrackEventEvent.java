@@ -44,7 +44,7 @@ public class TrackEventEvent extends TeakEvent {
         }
         payload.put(TrackEventEvent.DurationKey, duration);
         payload.put(TrackEventEvent.CountKey, 1);
-        payload.put(TrackEventEvent.SumOfSquaresKey, BigInteger.valueOf(duration * duration));
+        payload.put(TrackEventEvent.SumOfSquaresKey, BigInteger.valueOf(duration).pow(2));
         return payload;
     }
 }
