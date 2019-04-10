@@ -353,32 +353,6 @@ public class TeakInstance implements Unobfuscable {
 
                 final Context context = activity.getApplicationContext();
 
-                // Turn on HTTPS caching
-                boolean cacheAlreadyEnabled = false;
-                try {
-                    cacheAlreadyEnabled = (Class.forName("android.net.http.HttpResponseCache")
-                                                  .getMethod("getInstalled")
-                                                  .invoke(null)) != null;
-                } catch (Exception ignored) {
-                }
-
-                TeakConfiguration teakConfiguration = TeakConfiguration.get();
-                if (!cacheAlreadyEnabled && teakConfiguration.appConfiguration.enableCaching) {
-                    try {
-                        long httpCacheSize = 20 * 1024 * 1024; // 20 MiB
-                        File httpCacheDir = new File(activity.getCacheDir(), "http");
-                        Class.forName("android.net.http.HttpResponseCache")
-                            .getMethod("install", File.class, long.class)
-                            .invoke(null, httpCacheDir, httpCacheSize);
-                        Teak.log.i("cache", "enabled");
-                    } catch (Exception ignored) {
-                    }
-                } else if (cacheAlreadyEnabled) {
-                    Teak.log.i("cache", "previously_enabled");
-                } else {
-                    Teak.log.i("cache", "disabled");
-                }
-
                 // Create IStore
                 appStore = objectFactory.getIStore();
                 if (appStore != null) {
