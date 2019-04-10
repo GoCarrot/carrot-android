@@ -49,8 +49,6 @@ public class AppConfiguration {
     public final Context applicationContext;
     @SuppressWarnings("WeakerAccess")
     public final int targetSdkVersion;
-    @SuppressWarnings("WeakerAccess")
-    public final boolean enableCaching;
 
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_API_KEY_RESOURCE = "io_teak_api_key";
@@ -62,8 +60,6 @@ public class AppConfiguration {
     public static final String TEAK_FIREBASE_APP_ID_RESOURCE = "io_teak_firebase_app_id";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_JOB_ID_RESOURCE = "io_teak_job_id";
-    @SuppressWarnings("WeakerAccess")
-    public static final String TEAK_ENABLE_CACHING_RESOURCE = "io_teak_enable_caching";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_STORE_ID = "io_teak_store_id";
 
@@ -159,11 +155,6 @@ public class AppConfiguration {
             }
 
             this.jobId = jobIdAsInt;
-        }
-
-        // Disable Cache?
-        {
-            this.enableCaching = androidResources.getTeakBoolResource(TEAK_ENABLE_CACHING_RESOURCE);
         }
 
         // Store
