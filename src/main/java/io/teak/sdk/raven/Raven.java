@@ -376,13 +376,12 @@ public class Raven implements Thread.UncaughtExceptionHandler {
             this.payload.putAll(Raven.this.payloadTemplate);
             try {
                 Bundle bundle = new Bundle();
-                bundle.putString("jobType", Raven.JOB_TYPE);
-                bundle.putString("appId", appId);
-                bundle.putLong("timestamp", this.timestamp.getTime() / 1000L);
-                bundle.putString("payload", new JSONObject(this.payload).toString());
-                bundle.putString("endpoint", Raven.this.endpoint.toString());
-                bundle.putString("SENTRY_KEY", Raven.this.SENTRY_KEY);
-                bundle.putString("SENTRY_SECRET", Raven.this.SENTRY_SECRET);
+                bundle.putString(JobService.JOB_TYPE_KEY, Raven.JOB_TYPE);
+                bundle.putLong(Sender.TIMESTAMP_KEY, this.timestamp.getTime() / 1000L);
+                bundle.putString(Sender.PAYLOAD_KEY, new JSONObject(this.payload).toString());
+                bundle.putString(Sender.ENDPOINT_KEY, Raven.this.endpoint.toString());
+                bundle.putString(Sender.SENTRY_KEY_KEY, Raven.this.SENTRY_KEY);
+                bundle.putString(Sender.SENTRY_SECRET_KEY, Raven.this.SENTRY_SECRET);
 
                 return bundle;
             } catch (Exception e) {

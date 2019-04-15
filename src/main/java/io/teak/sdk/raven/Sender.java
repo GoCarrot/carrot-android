@@ -29,12 +29,18 @@ public class Sender implements Callable<Boolean> {
     private final String SENTRY_SECRET;
     private final long timestamp;
 
+    public static final String ENDPOINT_KEY = "endpoint";
+    public static final String PAYLOAD_KEY = "payload";
+    public static final String SENTRY_KEY_KEY = "SENTRY_KEY";
+    public static final String SENTRY_SECRET_KEY = "SENTRY_SECRET";
+    public static final String TIMESTAMP_KEY = "timestamp";
+
     public Sender(@NonNull Bundle bundle) throws MalformedURLException {
-        this.endpoint = new URL(bundle.getString("endpoint"));
-        this.payload = bundle.getString("payload");
-        this.SENTRY_KEY = bundle.getString("SENTRY_KEY");
-        this.SENTRY_SECRET = bundle.getString("SENTRY_SECRET");
-        this.timestamp = bundle.getLong("timestamp", new Date().getTime() / 1000L);
+        this.endpoint = new URL(bundle.getString(ENDPOINT_KEY));
+        this.payload = bundle.getString(PAYLOAD_KEY);
+        this.SENTRY_KEY = bundle.getString(SENTRY_KEY_KEY);
+        this.SENTRY_SECRET = bundle.getString(SENTRY_SECRET_KEY);
+        this.timestamp = bundle.getLong(TIMESTAMP_KEY, new Date().getTime() / 1000L);
     }
 
     @Override
