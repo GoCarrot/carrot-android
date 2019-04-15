@@ -185,7 +185,9 @@ public class Raven implements Thread.UncaughtExceptionHandler {
 
     @Override
     public void uncaughtException(Thread thread, Throwable ex) {
-        reportException(ex, null);
+        if (!(ex instanceof OutOfMemoryError)) {
+            reportException(ex, null);
+        }
     }
 
     public void setDsn(@NonNull String dsn) {
