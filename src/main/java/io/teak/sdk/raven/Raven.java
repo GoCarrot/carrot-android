@@ -137,7 +137,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         final HashMap<String, Object> app = new HashMap<>();
         app.put("app_identifier", configuration.appConfiguration.bundleId);
         app.put("teak_app_identifier", configuration.appConfiguration.appId);
-        app.put("app_version", configuration.appConfiguration.appVersion);
+        app.put("app_version", String.valueOf(configuration.appConfiguration.appVersion));
         app.put("app_version_name", configuration.appConfiguration.appVersionName);
         app.put("build_type", configuration.debugConfiguration.isDebug() ? "debug" : "production");
         app.put("target_sdk_version", configuration.appConfiguration.targetSdkVersion);
