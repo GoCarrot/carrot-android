@@ -137,7 +137,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         final HashMap<String, Object> app = new HashMap<>();
         app.put("app_identifier", configuration.appConfiguration.bundleId);
         app.put("teak_app_identifier", configuration.appConfiguration.appId);
-        app.put("app_version", configuration.appConfiguration.appVersion);
+        app.put("app_version", String.valueOf(configuration.appConfiguration.appVersion));
         app.put("app_version_name", configuration.appConfiguration.appVersionName);
         app.put("build_type", configuration.debugConfiguration.isDebug() ? "debug" : "production");
         app.put("target_sdk_version", configuration.appConfiguration.targetSdkVersion);
@@ -185,7 +185,9 @@ public class Raven implements Thread.UncaughtExceptionHandler {
 
     @Override
     public void uncaughtException(Thread thread, Throwable ex) {
-        reportException(ex, null);
+        if (!(ex instanceof OutOfMemoryError)) {
+            reportException(ex, null);
+        }
     }
 
     public void setDsn(@NonNull String dsn) {
@@ -374,13 +376,12 @@ public class Raven implements Thread.UncaughtExceptionHandler {
             this.payload.putAll(Raven.this.payloadTemplate);
             try {
                 Bundle bundle = new Bundle();
-                bundle.putString("jobType", Raven.JOB_TYPE);
-                bundle.putString("appId", appId);
-                bundle.putLong("timestamp", this.timestamp.getTime() / 1000L);
-                bundle.putString("payload", new JSONObject(this.payload).toString());
-                bundle.putString("endpoint", Raven.this.endpoint.toString());
-                bundle.putString("SENTRY_KEY", Raven.this.SENTRY_KEY);
-                bundle.putString("SENTRY_SECRET", Raven.this.SENTRY_SECRET);
+                bundle.putString(JobService.JOB_TYPE_KEY, Raven.JOB_TYPE);
+                bundle.putLong(Sender.TIMESTAMP_KEY, this.timestamp.getTime() / 1000L);
+                bundle.putString(Sender.PAYLOAD_KEY, new JSONObject(this.payload).toString());
+                bundle.putString(Sender.ENDPOINT_KEY, Raven.this.endpoint.toString());
+                bundle.putString(Sender.SENTRY_KEY_KEY, Raven.this.SENTRY_KEY);
+                bundle.putString(Sender.SENTRY_SECRET_KEY, Raven.this.SENTRY_SECRET);
 
                 return bundle;
             } catch (Exception e) {

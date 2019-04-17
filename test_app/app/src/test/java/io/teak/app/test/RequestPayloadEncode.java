@@ -19,7 +19,7 @@ public class RequestPayloadEncode {
     }
 
     @Test
-    public void PayloadContainingNullValue() throws UnsupportedEncodingException {
+    public void PayloadContainingOnlyNullValue() throws UnsupportedEncodingException {
         final HashMap<String, Object> payloadContainingNull = new HashMap<>();
         payloadContainingNull.put("value_is_null", null);
         Assert.assertEquals("", Request.Payload.payloadToString(payloadContainingNull, false));

@@ -41,11 +41,12 @@ public class JobService extends com.firebase.jobdispatcher.JobService implements
 
         Callable<Boolean> jobCallable = null;
         try {
-            if (Raven.JOB_TYPE.equals(jobBundle.getString(JOB_TYPE_KEY))) {
+            final String jobType = jobBundle.getString(JOB_TYPE_KEY);
+            if (Raven.JOB_TYPE.equals(jobType)) {
                 jobCallable = new Sender(jobBundle);
-            } else if (IAndroidNotification.ANIMATED_NOTIFICATION_JOB_TYPE.equals(jobBundle.getString(JOB_TYPE_KEY))) {
+            } else if (IAndroidNotification.ANIMATED_NOTIFICATION_JOB_TYPE.equals(jobType)) {
                 DeviceScreenState.scheduleScreenStateJob(jobParameters);
-            } else if (DeviceScreenState.SCREEN_STATE_JOB_TAG.equals(jobBundle.getString(JOB_TYPE_KEY))) {
+            } else if (DeviceScreenState.SCREEN_STATE_JOB_TAG.equals(jobType)) {
                 jobCallable = DeviceScreenState.isDeviceScreenOn(this.getApplicationContext(), jobParameters);
             }
         } catch (Exception e) {
