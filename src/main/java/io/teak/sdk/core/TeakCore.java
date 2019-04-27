@@ -167,9 +167,32 @@ public class TeakCore implements ITeakCore {
                     }
                     Teak.log.i("notification.received", debugHash);
 
-                    // Foreground notification?
-                    boolean showInForeground = Helpers.getBooleanFromBundle(bundle, "teakShowInForeground");
-                    if (showInForeground || !Session.isExpiringOrExpired()) break;
+                    // If the session is not expiring or expired, we are in the foreground
+                    // If we're not supposed to show notifications in the foreground, trigger the
+                    //   broadcast for a foreground receipt of a notification.
+                    final boolean showInForeground = Helpers.getBooleanFromBundle(bundle, "teakShowInForeground");
+                    if (!Session.isExpiringOrExpired() && !showInForeground) {
+                        if (TeakCore.this.localBroadcastManager != null) {
+                            final String teakRewardId = bundle.getString("teakRewardId");
+
+                            final HashMap<String, Object> eventDataDict = new HashMap<>();
+                            eventDataDict.put("teakNotifId", bundle.getString("teakNotifId"));
+                            eventDataDict.put("teakRewardId", teakRewardId);
+                            eventDataDict.put("incentivized", teakRewardId != null);
+                            eventDataDict.put("teakScheduleName", bundle.getString("teakScheduleName"));
+                            eventDataDict.put("teakCreativeName", bundle.getString("teakCreativeName"));
+
+                            // Notification content
+                            eventDataDict.put("message", bundle.getString("message"));
+
+                            final Intent broadcastEvent = new Intent(Teak.FOREGROUND_NOTIFICATION_INTENT);
+                            broadcastEvent.putExtras(bundle);
+                            broadcastEvent.putExtra("eventData", eventDataDict);
+                            sendLocalBroadcast(broadcastEvent);
+                        }
+                        // Break out of this switch statement, we don't want to display the notification
+                        break;
+                    }
 
                     // Create Teak Notification
                     final TeakNotification teakNotification = new TeakNotification(bundle);

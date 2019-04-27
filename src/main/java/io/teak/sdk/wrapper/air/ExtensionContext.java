@@ -32,6 +32,9 @@ public class ExtensionContext extends FREContext implements Unobfuscable {
                         case RewardClaim: {
                             eventName = "ON_REWARD";
                         } break;
+                        case ForegroundNotification: {
+                            eventName = "FOREGROUND_NOTIFICATION";
+                        } break;
                     }
                     Extension.context.dispatchStatusEventAsync(eventName, eventData);
                 }

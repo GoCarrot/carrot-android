@@ -126,6 +126,7 @@ public class MainActivity extends AppCompatActivity {
         IntentFilter filter = new IntentFilter();
         filter.addAction(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
         filter.addAction(Teak.REWARD_CLAIM_ATTEMPT);
+        filter.addAction(Teak.FOREGROUND_NOTIFICATION_INTENT);
         LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, filter);
 
         // Create a deep link route that opens the Google Play store to a specific SKU in your game

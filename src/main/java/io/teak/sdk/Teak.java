@@ -489,6 +489,22 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     @SuppressWarnings("unused")
     public static final String REWARD_CLAIM_ATTEMPT = "io.teak.sdk.Teak.intent.REWARD_CLAIM_ATTEMPT";
 
+    /**
+     * Intent action used by Teak to notify you that a notification was received while the app is
+     * in the foreground.
+     * <p/>
+     * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
+     * <pre>
+     * {@code
+     *     IntentFilter filter = new IntentFilter();
+     *     filter.addAction(Teak.FOREGROUND_NOTIFICATION_INTENT);
+     *     LocalBroadcastManager.getInstance(context).registerReceiver(yourBroadcastListener, filter);
+     * }
+     * </pre>
+     */
+    @SuppressWarnings("unused")
+    public static final String FOREGROUND_NOTIFICATION_INTENT = "io.teak.sdk.Teak.intent.FOREGROUND_NOTIFICATION_INTENT";
+
     ///// BroadcastReceiver
 
     @Override

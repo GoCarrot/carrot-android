@@ -5,7 +5,8 @@ import android.support.annotation.NonNull;
 public interface ISDKWrapper {
     enum EventType {
         NotificationLaunch,
-        RewardClaim
+        RewardClaim,
+        ForegroundNotification
     }
     void sdkSendMessage(@NonNull EventType eventType, @NonNull String eventData);
 }
