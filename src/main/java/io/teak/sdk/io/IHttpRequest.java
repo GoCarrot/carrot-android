@@ -5,7 +5,7 @@ import android.support.annotation.Nullable;
 import java.io.IOException;
 import java.net.URL;
 
-public interface IHttpsRequest {
+public interface IHttpRequest {
     class Response {
         public final int statusCode;
         public final String body;
