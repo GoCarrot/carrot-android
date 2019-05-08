@@ -325,14 +325,18 @@ public class Request implements Runnable {
     }
 
     public static void submit(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback) {
-        submit(Request.remoteConfiguration.getHostnameForEndpoint(endpoint), endpoint, payload, session, callback);
+        submit(null, endpoint, payload, session, callback);
     }
 
     public static void submit(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
         submit(hostname, endpoint, payload, session, null);
     }
 
-    public static void submit(final @Nullable String hostname, final @NonNull String endpoint, final @NonNull Map<String, Object> payload, final @NonNull Session session, final @Nullable Callback callback) {
+    public static void submit(@Nullable String hostname, final @NonNull String endpoint, final @NonNull Map<String, Object> payload, final @NonNull Session session, final @Nullable Callback callback) {
+        if (hostname == null) {
+            hostname = Request.remoteConfiguration.getHostnameForEndpoint(endpoint);
+        }
+
         BatchedRequest batch = null;
 
         if ("parsnip.gocarrot.com".equals(hostname) &&
