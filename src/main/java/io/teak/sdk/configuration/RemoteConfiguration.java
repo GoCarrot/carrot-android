@@ -1,6 +1,7 @@
 package io.teak.sdk.configuration;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import io.teak.sdk.json.JSONObject;
 
@@ -34,6 +35,8 @@ public class RemoteConfiguration {
     public final boolean enhancedIntegrationChecks;
     @SuppressWarnings("WeakerAccess")
     public final Map<String, Object> endpointConfigurations;
+    @SuppressWarnings("WeakerAccess")
+    public final boolean isMocked;
 
     private static final String defaultEndpointJson = "{  \n"
                                                       +
@@ -99,9 +102,9 @@ public class RemoteConfiguration {
                                                       +
                                                       "}";
 
-    private RemoteConfiguration(@NonNull AppConfiguration appConfiguration, @NonNull String hostname,
+    public RemoteConfiguration(@NonNull AppConfiguration appConfiguration, @NonNull String hostname,
         String sdkSentryDsn, String appSentryDsn, String gcmSenderId, String firebaseAppId,
-        boolean enhancedIntegrationChecks, JSONObject endpointConfigurations) {
+        boolean enhancedIntegrationChecks, JSONObject endpointConfigurations, boolean isMocked) {
         this.appConfiguration = appConfiguration;
         this.hostname = hostname;
         this.appSentryDsn = appSentryDsn;
@@ -109,6 +112,7 @@ public class RemoteConfiguration {
         this.gcmSenderId = gcmSenderId;
         this.firebaseAppId = firebaseAppId;
         this.enhancedIntegrationChecks = enhancedIntegrationChecks;
+        this.isMocked = isMocked;
 
         this.endpointConfigurations = endpointConfigurations == null ? new JSONObject(defaultEndpointJson).toMap() : endpointConfigurations.toMap();
     }
@@ -139,7 +143,8 @@ public class RemoteConfiguration {
                                         nullInsteadOfEmpty(response.isNull("gcm_sender_id") ? null : response.getString("gcm_sender_id")),
                                         nullInsteadOfEmpty(response.isNull("firebase_app_id") ? null : response.getString("firebase_app_id")),
                                         response.optBoolean("enhanced_integration_checks", false),
-                                        response.has("endpoint_configurations") ? response.getJSONObject("endpoint_configurations") : null);
+                                        response.has("endpoint_configurations") ? response.getJSONObject("endpoint_configurations") : null,
+                                            false);
 
                                     Teak.log.i("configuration.remote", configuration.toHash());
                                     TeakEvent.postEvent(new RemoteConfigurationEvent(configuration));
@@ -148,16 +153,12 @@ public class RemoteConfiguration {
                                 }
                             }
                         });
+                } else if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
+                    RemoteConfiguration.activeRemoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
                 }
             }
         });
     }
-
-    // region Accessors
-    public String getHostnameForEndpoint(@NonNull String endpoint) {
-        return this.hostname;
-    }
-    // endregion
 
     // region Helpers
     private static String nullInsteadOfEmpty(String input) {
@@ -165,6 +166,25 @@ public class RemoteConfiguration {
             return input;
         }
         return null;
+    }
+    // endregion
+
+    // region Hostnames
+    private static RemoteConfiguration activeRemoteConfiguration;
+
+    public String getHostnameForEndpoint(@NonNull String endpoint) {
+        return RemoteConfiguration.getHostnameForEndpoint(endpoint, this);
+    }
+
+    private static String getHostnameForEndpoint(@NonNull String endpoint, @Nullable RemoteConfiguration remoteConfiguration) {
+        if (remoteConfiguration == null) remoteConfiguration = RemoteConfiguration.activeRemoteConfiguration;
+
+        if (remoteConfiguration != null) {
+            return remoteConfiguration.hostname;
+        }
+
+        // Defaults
+        return "gocarrot.com";
     }
     // endregion
 

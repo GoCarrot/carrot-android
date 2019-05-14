@@ -41,6 +41,8 @@ import io.teak.sdk.core.Session;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 
 public class Request implements Runnable {
+    public static final int DEFAULT_PORT = 80;
+    public static final int MOCKED_PORT = 8080;
     private final String endpoint;
     private final String hostname;
     protected final Map<String, Object> payload;
@@ -353,6 +355,7 @@ public class Request implements Runnable {
         if (hostname == null) {
             hostname = Request.remoteConfiguration.getHostnameForEndpoint(endpoint);
         }
+        final String finalHostname = hostname;
 
         BatchedRequest batch = null;
 
@@ -368,7 +371,7 @@ public class Request implements Runnable {
                 requestExecutor.execute(new Runnable() {
                     @Override
                     public void run() {
-                        submit(hostname, endpoint, payload, session, callback);
+                        submit(finalHostname, endpoint, payload, session, callback);
                     }
                 });
             }
@@ -561,13 +564,17 @@ public class Request implements Runnable {
         String requestBody;
 
         try {
-            final String stringToSign = "POST\n" + this.hostname + "\n" + this.endpoint + "\n" + Payload.toSigningString(this.payload);
-            final Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(keySpec);
-            final byte[] result = mac.doFinal(stringToSign.getBytes());
-            final String sig = Base64.encodeToString(result, Base64.NO_WRAP);
+            if (Request.remoteConfiguration.isMocked) {
+                requestBody = Payload.toRequestBody(this.payload, "unit_test_request_sig");
+            } else {
+                final String stringToSign = "POST\n" + this.hostname + "\n" + this.endpoint + "\n" + Payload.toSigningString(this.payload);
+                final Mac mac = Mac.getInstance("HmacSHA256");
+                mac.init(keySpec);
+                final byte[] result = mac.doFinal(stringToSign.getBytes());
+                final String sig = Base64.encodeToString(result, Base64.NO_WRAP);
 
-            requestBody = Payload.toRequestBody(this.payload, sig);
+                requestBody = Payload.toRequestBody(this.payload, sig);
+            }
         } catch (Exception e) {
             Teak.log.exception(e);
             return;
@@ -576,9 +583,12 @@ public class Request implements Runnable {
         try {
             Teak.log.i("request.send", this.toMap());
             final long startTime = System.nanoTime();
-            final URL url = new URL("https://" + this.hostname + this.endpoint);
-            final IHttpsRequest request = new DefaultHttpsRequest(); // TODO: Do this properly with a Factory
-            final IHttpsRequest.Response response = request.synchronousRequest(url, requestBody);
+            final URL url = new URL(Request.remoteConfiguration.isMocked ? "http" : "https",
+                    this.hostname,
+                    Request.remoteConfiguration.isMocked ? Request.MOCKED_PORT : Request.DEFAULT_PORT,
+                    this.endpoint);
+            final IHttpRequest request = new DefaultHttpRequest(); // TODO: Do this properly with a Factory
+            final IHttpRequest.Response response = request.synchronousRequest(url, requestBody);
 
             final int statusCode = response == null ? 0 : response.statusCode;
             final String body = response == null ? null : response.body;

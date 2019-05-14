@@ -22,7 +22,7 @@ public class UserProfile extends Request {
     private ScheduledFuture<?> scheduledSend;
 
     UserProfile(@NonNull Session session, @NonNull Map<String, Object> userProfile) {
-        super("gocarrot.com", "/me/profile", new HashMap<String, Object>(), session, null, true);
+        super(null,"/me/profile", new HashMap<String, Object>(), session, null, true);
 
         if (!(userProfile.get("context") instanceof String)) {
             throw new InvalidParameterException("User Profile value 'context' is not a String");
