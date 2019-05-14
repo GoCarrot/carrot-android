@@ -32,13 +32,13 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import io.teak.sdk.event.TrackEventEvent;
+import io.teak.sdk.io.DefaultHttpRequest;
+import io.teak.sdk.io.IHttpRequest;
 import io.teak.sdk.json.JSONObject;
 
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.Session;
 import io.teak.sdk.event.RemoteConfigurationEvent;
-import io.teak.sdk.io.DefaultHttpsRequest;
-import io.teak.sdk.io.IHttpsRequest;
 
 public class Request implements Runnable {
     private final String endpoint;
