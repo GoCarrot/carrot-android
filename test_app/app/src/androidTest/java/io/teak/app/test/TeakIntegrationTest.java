@@ -28,6 +28,7 @@ import java.util.Map;
 
 import io.teak.sdk.DefaultObjectFactory;
 import io.teak.sdk.IObjectFactory;
+import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.configuration.AppConfiguration;
@@ -69,14 +70,19 @@ class TeakIntegrationTest {
     }
 
     TeakIntegrationTest(boolean useDefaultTeakCore) {
-        final Context context = InstrumentationRegistry.getTargetContext();
-        this.androidDeviceInfo  = new DefaultAndroidDeviceInfo(context);
-        this.pushProvider = DefaultObjectFactory.createPushProvider(context);
-        this.androidNotification = new DefaultAndroidNotification(context);
+        try {
+            final Context context = InstrumentationRegistry.getTargetContext();
+            this.androidDeviceInfo = new DefaultAndroidDeviceInfo(context);
+            this.pushProvider = DefaultObjectFactory.createPushProvider(context);
+            this.androidNotification = new DefaultAndroidNotification(context);
 
-        this.useDefaultTeakCore = useDefaultTeakCore;
-        if (this.useDefaultTeakCore) {
-            this.teakCore = new TeakCore(context);
+            this.useDefaultTeakCore = useDefaultTeakCore;
+            if (this.useDefaultTeakCore) {
+                this.teakCore = new TeakCore(context);
+            }
+        } catch (IntegrationChecker.MissingDependencyException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
@@ -113,8 +119,8 @@ class TeakIntegrationTest {
 
             // Android Resources mock
             androidResources = mock(io.teak.sdk.io.IAndroidResources.class);
-            when(androidResources.getStringResource(AppConfiguration.TEAK_APP_ID)).thenReturn("1919749661621253");
-            when(androidResources.getStringResource(AppConfiguration.TEAK_API_KEY)).thenReturn("2cd84c8899833f08c48aca2e1909b6c5");
+            when(androidResources.getStringResource(AppConfiguration.TEAK_APP_ID_RESOURCE)).thenReturn("1919749661621253");
+            when(androidResources.getStringResource(AppConfiguration.TEAK_API_KEY_RESOURCE)).thenReturn("2cd84c8899833f08c48aca2e1909b6c5");
 
             // Create and add an easily mockable TeakEvent.EventListener
             if (eventListener != null) {

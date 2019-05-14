@@ -13,6 +13,7 @@ import android.support.test.uiautomator.UiDevice;
 import android.support.test.uiautomator.UiObject2;
 import android.support.test.uiautomator.Until;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -24,7 +25,9 @@ import io.teak.sdk.event.UserIdEvent;
 
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItemInArray;
+import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assume.assumeFalse;
@@ -54,7 +57,7 @@ public class PublicAPI extends TeakIntegrationTest {
         TestTeakEventListener listener = spy(TestTeakEventListener.class);
         TeakEvent.addEventListener(listener);
 
-        String userId = "test user id";
+        final String userId = "test user id";
         Teak.identifyUser(userId);
 
         verify(listener, timeout(5000).times(1)).eventRecieved(UserIdEvent.class, UserIdEvent.Type);
@@ -72,6 +75,7 @@ public class PublicAPI extends TeakIntegrationTest {
         verify(listener, timeout(5000).times(1)).eventRecieved(TrackEventEvent.class, TrackEventEvent.Type);
     }
 
+    @Ignore
     @Test
     @SdkSuppress(minSdkVersion = 19)
     public void openSettingsAppToThisAppsSettings() {
@@ -97,6 +101,7 @@ public class PublicAPI extends TeakIntegrationTest {
         assertNotNull(title);
     }
 
+    @Ignore
     @Test
     @SdkSuppress(minSdkVersion = 19)
     public void userHasDisabledNotifications() {
@@ -188,6 +193,8 @@ public class PublicAPI extends TeakIntegrationTest {
         final String thisDeviceModel = android.os.Build.MODEL;
         assumeThat("Teak.setApplicationBadgeNumber() does not support " + thisDeviceModel,
                 skipDeviceModels, not(hasItemInArray(thisDeviceModel)));
+        assumeThat( "Teak.setApplicationBadgeNumber() does not support Android O or higher",
+                android.os.Build.VERSION.SDK_INT, lessThan(Build.VERSION_CODES.O));
 
         launchActivity();
         assertTrue(Teak.setApplicationBadgeNumber(42));
