@@ -221,11 +221,14 @@ public class PushState {
     public int getNotificationStatus() {
         int ret = Teak.TEAK_NOTIFICATIONS_UNKNOWN;
         boolean notificationManagerCompatHas_areNotificationsEnabled = false;
-        try {
-            if (NotificationManagerCompat.class.getMethod("areNotificationsEnabled") != null) {
-                notificationManagerCompatHas_areNotificationsEnabled = true;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            try {
+                if (NotificationManagerCompat.class.getMethod("areNotificationsEnabled") != null) {
+                    notificationManagerCompatHas_areNotificationsEnabled = true;
+                }
+            } catch (Exception ignored) {
             }
-        } catch (Exception ignored) {
         }
 
         if (notificationManagerCompatHas_areNotificationsEnabled && this.notificationManagerCompat != null) {
