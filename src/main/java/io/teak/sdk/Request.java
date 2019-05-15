@@ -353,7 +353,7 @@ public class Request implements Runnable {
 
     public static void submit(@Nullable String hostname, final @NonNull String endpoint, final @NonNull Map<String, Object> payload, final @NonNull Session session, final @Nullable Callback callback) {
         if (hostname == null) {
-            hostname = Request.remoteConfiguration.getHostnameForEndpoint(endpoint);
+            hostname = RemoteConfiguration.getHostnameForEndpoint(endpoint, Request.remoteConfiguration);
         }
         final String finalHostname = hostname;
 

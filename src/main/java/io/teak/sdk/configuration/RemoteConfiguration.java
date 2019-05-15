@@ -176,7 +176,7 @@ public class RemoteConfiguration {
         return RemoteConfiguration.getHostnameForEndpoint(endpoint, this);
     }
 
-    private static String getHostnameForEndpoint(@NonNull String endpoint, @Nullable RemoteConfiguration remoteConfiguration) {
+    public static String getHostnameForEndpoint(@NonNull String endpoint, @Nullable RemoteConfiguration remoteConfiguration) {
         if (remoteConfiguration == null) remoteConfiguration = RemoteConfiguration.activeRemoteConfiguration;
 
         if (remoteConfiguration != null) {
