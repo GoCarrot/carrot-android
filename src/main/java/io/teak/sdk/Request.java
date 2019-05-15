@@ -587,7 +587,7 @@ public class Request implements Runnable {
                     this.hostname,
                     Request.remoteConfiguration.isMocked ? Request.MOCKED_PORT : Request.DEFAULT_PORT,
                     this.endpoint);
-            final IHttpRequest request = new DefaultHttpRequest(); // TODO: Do this properly with a Factory
+            final IHttpRequest request = new DefaultHttpRequest();
             final IHttpRequest.Response response = request.synchronousRequest(url, requestBody);
 
             final int statusCode = response == null ? 0 : response.statusCode;
