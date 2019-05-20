@@ -199,20 +199,20 @@ public class PushState {
         return currentEntry.state;
     }
 
-    private Future<Boolean> writeSerialzedStateChain(@NonNull final Context context, List<StateChainEntry> stateChain) {
+    private void writeSerialzedStateChain(@NonNull final Context context, List<StateChainEntry> stateChain) {
         final JSONArray jsonStateChain = new JSONArray();
         for (StateChainEntry entry : stateChain) {
             jsonStateChain.put(entry.toJson());
         }
 
-        return this.executionQueue.submit(new Callable<Boolean>() {
+        this.executionQueue.submit(new Runnable() {
             @Override
-            public Boolean call() throws Exception {
+            public void run() {
                 synchronized (Teak.PREFERENCES_FILE) {
                     SharedPreferences preferences = context.getSharedPreferences(Teak.PREFERENCES_FILE, Context.MODE_PRIVATE);
                     SharedPreferences.Editor editor = preferences.edit();
                     editor.putString(PUSH_STATE_CHAIN_KEY, jsonStateChain.toString());
-                    return editor.commit();
+                    editor.apply();
                 }
             }
         });
