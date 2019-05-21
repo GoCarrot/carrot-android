@@ -98,37 +98,7 @@ public class GooglePlay implements IStore {
                     return;
                 }
 
-                String packageName = mContext.getPackageName();
-                try {
-                    // check for in-app billing v3 support
-                    Class<?> cls = Class.forName("com.android.vending.billing.IInAppBillingService");
-                    Method m = cls.getMethod("isBillingSupported", int.class, String.class, String.class);
-                    int response = (Integer) m.invoke(mService, 3, packageName, ITEM_TYPE_INAPP);
-                    if (response != BILLING_RESPONSE_RESULT_OK) {
-                        Teak.log.e("google_play", "Error checking for Google Play billing v3 support.");
-                    }
 
-                    // Check for v5 subscriptions support. This is needed for
-                    // getBuyIntentToReplaceSku which allows for subscription update
-                    response = (Integer) m.invoke(mService, 5, packageName, ITEM_TYPE_SUBS);
-                    if (response != BILLING_RESPONSE_RESULT_OK) {
-                        // Subscription v5 not available
-
-                        // check for v3 subscriptions support
-                        response = (Integer) m.invoke(mService, 3, packageName, ITEM_TYPE_SUBS);
-                        //noinspection StatementWithEmptyBody
-                        if (response == BILLING_RESPONSE_RESULT_OK) {
-                            // Subscription v3 available
-                        }
-                    }
-                } catch (Exception e) {
-                    //noinspection ConstantConditions,StatementWithEmptyBody
-                    if (e instanceof DeadObjectException) {
-                        // ignored, Sentry bug TEAK-SDK-7T
-                    } else {
-                        Teak.log.exception(e);
-                    }
-                }
             }
         };
 
@@ -172,6 +142,43 @@ public class GooglePlay implements IStore {
             this.processPurchaseJson(new JSONObject(purchaseString), extras);
         } catch (Exception e) {
             Teak.log.exception(e);
+        }
+    }
+
+    // In case it is needed at a later point. It does get stripped out by ProGuard.
+    @SuppressWarnings("unused")
+    private void isBillingSupported() {
+        try {
+            final String packageName = mContext.getPackageName();
+
+            // check for in-app billing v3 support
+            Class<?> cls = Class.forName("com.android.vending.billing.IInAppBillingService");
+            Method m = cls.getMethod("isBillingSupported", int.class, String.class, String.class);
+            int response = (Integer) m.invoke(mService, 3, packageName, ITEM_TYPE_INAPP);
+            if (response != BILLING_RESPONSE_RESULT_OK) {
+                Teak.log.e("google_play", "Error checking for Google Play billing v3 support.");
+            }
+
+            // Check for v5 subscriptions support. This is needed for
+            // getBuyIntentToReplaceSku which allows for subscription update
+            response = (Integer) m.invoke(mService, 5, packageName, ITEM_TYPE_SUBS);
+            if (response != BILLING_RESPONSE_RESULT_OK) {
+                // Subscription v5 not available
+
+                // check for v3 subscriptions support
+                response = (Integer) m.invoke(mService, 3, packageName, ITEM_TYPE_SUBS);
+                //noinspection StatementWithEmptyBody
+                if (response == BILLING_RESPONSE_RESULT_OK) {
+                    // Subscription v3 available
+                }
+            }
+        } catch (Exception e) {
+            //noinspection ConstantConditions,StatementWithEmptyBody
+            if (e instanceof DeadObjectException) {
+                // ignored, Sentry bug TEAK-SDK-7T
+            } else {
+                Teak.log.exception(e);
+            }
         }
     }
 
