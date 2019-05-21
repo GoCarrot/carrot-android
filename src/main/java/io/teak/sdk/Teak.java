@@ -11,6 +11,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 
 import io.teak.sdk.core.TeakCore;
+import io.teak.sdk.core.ThreadFactory;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.json.JSONException;
 import io.teak.sdk.json.JSONObject;
@@ -639,5 +640,5 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     public static TeakInstance Instance;
 
-    private static ExecutorService asyncExecutor = Executors.newCachedThreadPool();
+    private static ExecutorService asyncExecutor = Executors.newCachedThreadPool(ThreadFactory.autonamed());
 }

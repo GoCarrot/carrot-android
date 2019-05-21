@@ -9,6 +9,7 @@ import java.util.concurrent.Future;
 
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakNotification;
+import io.teak.sdk.core.ThreadFactory;
 
 public class TeakNotificationFunction implements FREFunction {
     public enum CallType {
@@ -62,7 +63,7 @@ public class TeakNotificationFunction implements FREFunction {
 
             final Future<String> future = tempFuture;
             if (future != null) {
-                new Thread(new Runnable() {
+                ThreadFactory.autoStart(new Runnable() {
                     @Override
                     public void run() {
                         try {
@@ -72,8 +73,7 @@ public class TeakNotificationFunction implements FREFunction {
                             Teak.log.exception(e);
                         }
                     }
-                })
-                    .start();
+                });
             }
         } catch (Exception e) {
             Teak.log.exception(e);

@@ -24,6 +24,7 @@ import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.NotificationBuilder;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
+import io.teak.sdk.core.ThreadFactory;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONObject;
@@ -126,7 +127,7 @@ public class PushState {
 
     private List<StateChainEntry> stateChain = new ArrayList<>();
     private final NotificationManagerCompat notificationManagerCompat;
-    private final ExecutorService executionQueue = Executors.newSingleThreadExecutor();
+    private final ExecutorService executionQueue = Executors.newSingleThreadExecutor(ThreadFactory.autonamed());
 
     private static PushState Instance;
     public static void init(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {

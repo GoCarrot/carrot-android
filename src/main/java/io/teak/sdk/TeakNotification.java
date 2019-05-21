@@ -17,6 +17,7 @@ import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.teak.sdk.core.ThreadFactory;
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONException;
 import io.teak.sdk.json.JSONObject;
@@ -199,7 +200,7 @@ public class TeakNotification implements Unobfuscable {
                     return null;
                 }
             });
-            new Thread(ret).start();
+            ThreadFactory.autoStart(ret);
 
             Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
                 @Override

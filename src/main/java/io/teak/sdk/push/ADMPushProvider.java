@@ -16,6 +16,7 @@ import com.amazon.device.messaging.development.ADMManifest;
 
 import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.core.TeakCore;
+import io.teak.sdk.core.ThreadFactory;
 import io.teak.sdk.json.JSONObject;
 
 import java.io.IOException;
@@ -35,7 +36,7 @@ import io.teak.sdk.event.PushRegistrationEvent;
 
 public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvider, Unobfuscable {
     private ADM admInstance;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ExecutorService executor = Executors.newSingleThreadExecutor(ThreadFactory.autonamed());
 
     public ADMPushProvider() {
         super(ADMPushProvider.class.getName());

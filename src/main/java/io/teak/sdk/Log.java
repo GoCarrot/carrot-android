@@ -3,6 +3,7 @@ package io.teak.sdk;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import io.teak.sdk.core.ThreadFactory;
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.raven.Raven;
 
@@ -142,7 +143,7 @@ public class Log {
     private boolean sendToRapidIngestion;
     // endregion
 
-    private final ExecutorService remoteLogQueue = Executors.newSingleThreadExecutor();
+    private final ExecutorService remoteLogQueue = Executors.newSingleThreadExecutor(ThreadFactory.autonamed());
 
     public Log(String androidLogTag, int jsonIndentation) {
         this.androidLogTag = androidLogTag;

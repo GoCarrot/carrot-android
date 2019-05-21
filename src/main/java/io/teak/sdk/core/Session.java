@@ -106,7 +106,7 @@ public class Session {
     private State state = State.Allocated;
     private State previousState = null;
     private final InstrumentableReentrantLock stateLock = new InstrumentableReentrantLock();
-    private final ExecutorService executionQueue = Executors.newSingleThreadExecutor();
+    private final ExecutorService executionQueue = Executors.newSingleThreadExecutor(ThreadFactory.autonamed());
     // endregion
 
     // State: Created
@@ -309,7 +309,7 @@ public class Session {
         @SuppressWarnings("deprecation")
         final String teakSdkVersion = Teak.SDKVersion;
 
-        this.heartbeatService = Executors.newSingleThreadScheduledExecutor();
+        this.heartbeatService = Executors.newSingleThreadScheduledExecutor(ThreadFactory.autonamed());
         this.heartbeatService.scheduleAtFixedRate(new Runnable() {
             public void run() {
                 HttpsURLConnection connection = null;
@@ -835,7 +835,7 @@ public class Session {
 
             // If there is any deep link, see if we handle the link
             if (deepLinkAttribution != null) {
-                new Thread(new Runnable() {
+                ThreadFactory.autoStart(new Runnable() {
                     @Override
                     public void run() {
                         try {
@@ -872,7 +872,7 @@ public class Session {
                             if (teakRewardId != null) {
                                 final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
                                 if (rewardFuture != null) {
-                                    new Thread(new Runnable() {
+                                    ThreadFactory.autoStart(new Runnable() {
                                         @Override
                                         public void run() {
                                             try {
@@ -893,16 +893,14 @@ public class Session {
                                                 Teak.log.exception(e);
                                             }
                                         }
-                                    })
-                                        .start();
+                                    });
                                 }
                             }
                         } catch (Exception e) {
                             Teak.log.exception(e);
                         }
                     }
-                })
-                    .start();
+                });
             }
 
             // If the current session has a launch different attribution, it's a new session
@@ -1019,7 +1017,7 @@ public class Session {
         });
 
         // Start it running, and return the Future
-        new Thread(returnTask).start();
+        ThreadFactory.autoStart(returnTask);
         return returnTask;
     }
 

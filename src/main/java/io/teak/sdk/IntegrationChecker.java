@@ -199,7 +199,7 @@ public class IntegrationChecker {
         }
 
         // Run checks on a background thread
-        new Thread(new Runnable() {
+        ThreadFactory.autoStart(new Runnable() {
             @Override
             public void run() {
                 // If the target SDK version is 26+ the linked support-v4 lib must be 26.1.0+
@@ -211,8 +211,7 @@ public class IntegrationChecker {
                 // Manifest checks
                 checkAndroidManifest();
             }
-        })
-            .start();
+        });
 
         TeakEvent.addEventListener(new TeakEvent.EventListener() {
             @Override

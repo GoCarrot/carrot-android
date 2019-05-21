@@ -31,6 +31,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import io.teak.sdk.core.ThreadFactory;
 import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.io.DefaultHttpRequest;
 import io.teak.sdk.io.IHttpRequest;
@@ -337,7 +338,7 @@ public class Request implements Runnable {
 
     ///// SDK interface
 
-    static ScheduledExecutorService requestExecutor = Executors.newSingleThreadScheduledExecutor();
+    static ScheduledExecutorService requestExecutor = Executors.newSingleThreadScheduledExecutor(ThreadFactory.autonamed());
 
     public static void submit(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
         submit(endpoint, payload, session, null);

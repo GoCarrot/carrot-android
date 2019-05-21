@@ -348,8 +348,8 @@ public class TeakCore implements ITeakCore {
 
     ///// Data Members
 
-    private final ExecutorService asyncExecutor = Executors.newCachedThreadPool();
+    private final ExecutorService asyncExecutor = Executors.newCachedThreadPool(io.teak.sdk.core.ThreadFactory.autonamed());
     private final LocalBroadcastManager localBroadcastManager;
 
-    public static final ScheduledExecutorService operationQueue = Executors.newSingleThreadScheduledExecutor();
+    public static final ScheduledExecutorService operationQueue = Executors.newSingleThreadScheduledExecutor(ThreadFactory.autonamed());
 }

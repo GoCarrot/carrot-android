@@ -28,6 +28,7 @@ import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.RetriableTask;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
+import io.teak.sdk.core.ThreadFactory;
 import io.teak.sdk.event.AdvertisingInfoEvent;
 
 public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
@@ -153,7 +154,7 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
             }));
 
             if (isGooglePlayServicesAvailable()) {
-                new Thread(new Runnable() {
+                ThreadFactory.autoStart(new Runnable() {
                     @Override
                     public void run() {
                         try {
@@ -168,11 +169,10 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
                             Teak.log.exception(e);
                         }
                     }
-                })
-                    .start();
+                });
 
                 // Only start running the future if we get this far
-                new Thread(adInfoFuture).start();
+                ThreadFactory.autoStart(adInfoFuture);
 
                 // And we're good
                 usingGooglePlayForAdId = true;

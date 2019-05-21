@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import io.teak.sdk.core.ThreadFactory;
+
 public class TeakEvent {
     public final String eventType;
 
@@ -18,7 +20,7 @@ public class TeakEvent {
     public static boolean postEvent(@NonNull TeakEvent event) {
         synchronized (eventProcessingThreadMutex) {
             if (eventProcessingThread == null || !eventProcessingThread.isAlive()) {
-                eventProcessingThread = new Thread(new Runnable() {
+                eventProcessingThread = ThreadFactory.autoStart(new Runnable() {
                     @Override
                     public void run() {
                         try {
@@ -31,7 +33,6 @@ public class TeakEvent {
                         }
                     }
                 });
-                eventProcessingThread.start();
             }
         }
 
@@ -87,13 +88,12 @@ public class TeakEvent {
             for (EventListener e : eventListenersForEvent) {
                 // TODO: This seems...kind of horrible, but maybe the Java runtime will be fine with it
                 final EventListener currentListener = e;
-                Thread thread = new Thread(new Runnable() {
+                final Thread thread = ThreadFactory.autoStart(new Runnable() {
                     @Override
                     public void run() {
                         currentListener.onNewEvent(event);
                     }
                 });
-                thread.start();
                 try {
                     thread.join(5000);
                 } catch (Exception ignored) {

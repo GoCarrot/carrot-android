@@ -1,5 +1,7 @@
 package io.teak.sdk.core;
 
+import android.support.annotation.NonNull;
+
 import java.net.URI;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -155,7 +157,7 @@ public class DeepLink {
     }
 
     public static final Map<String, DeepLink> routes = new HashMap<>();
-    private static final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private static final ExecutorService executor = Executors.newSingleThreadExecutor(ThreadFactory.autonamed());
 
     private final String route;
     private final Teak.DeepLink call;
