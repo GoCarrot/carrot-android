@@ -203,6 +203,7 @@ public class Request implements Runnable {
         public synchronized void run() {
             final long elapsedSinceFirstAdd = System.nanoTime() - this.firstAddTime;
             this.payload.put("ms_since_first_event", TimeUnit.NANOSECONDS.toMillis(elapsedSinceFirstAdd));
+            super.run();
         }
 
         @Override
