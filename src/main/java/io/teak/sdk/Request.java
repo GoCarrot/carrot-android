@@ -42,7 +42,7 @@ import io.teak.sdk.core.Session;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 
 public class Request implements Runnable {
-    public static final int DEFAULT_PORT = 80;
+    public static final int DEFAULT_PORT = 443;
     public static final int MOCKED_PORT = 8080;
     private final String endpoint;
     private final String hostname;
@@ -561,11 +561,13 @@ public class Request implements Runnable {
 
         if (this.blackhole) return;
 
+        final boolean isMockedRequest = Request.remoteConfiguration != null && Request.remoteConfiguration.isMocked;
+
         final SecretKeySpec keySpec = new SecretKeySpec(Request.teakApiKey.getBytes(), "HmacSHA256");
         String requestBody;
 
         try {
-            if (Request.remoteConfiguration.isMocked) {
+            if (isMockedRequest) {
                 requestBody = Payload.toRequestBody(this.payload, "unit_test_request_sig");
             } else {
                 final String stringToSign = "POST\n" + this.hostname + "\n" + this.endpoint + "\n" + Payload.toSigningString(this.payload);
@@ -584,9 +586,9 @@ public class Request implements Runnable {
         try {
             Teak.log.i("request.send", this.toMap());
             final long startTime = System.nanoTime();
-            final URL url = new URL(Request.remoteConfiguration.isMocked ? "http" : "https",
+            final URL url = new URL(isMockedRequest ? "http" : "https",
                     this.hostname,
-                    Request.remoteConfiguration.isMocked ? Request.MOCKED_PORT : Request.DEFAULT_PORT,
+                    isMockedRequest ? Request.MOCKED_PORT : Request.DEFAULT_PORT,
                     this.endpoint);
             final IHttpRequest request = new DefaultHttpRequest();
             final IHttpRequest.Response response = request.synchronousRequest(url, requestBody);
