@@ -11,6 +11,7 @@ import android.support.test.uiautomator.UiDevice;
 import android.support.test.uiautomator.UiObject2;
 import android.support.test.uiautomator.Until;
 
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -32,6 +33,13 @@ import static org.mockito.Mockito.verify;
 public class NotificationIntents extends TeakIntegrationTest {
     public NotificationIntents() throws IntegrationChecker.MissingDependencyException {
         super(true);
+    }
+
+    @After
+    public void closeNotificationTray() {
+        final Context context = InstrumentationRegistry.getTargetContext();
+        Intent closeIntent = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
+        context.sendBroadcast(closeIntent);
     }
 
     @Test
