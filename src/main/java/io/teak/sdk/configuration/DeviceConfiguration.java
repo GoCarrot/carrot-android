@@ -25,6 +25,8 @@ public class DeviceConfiguration {
     public final String deviceManufacturer;
     public final String deviceModel;
     public final String deviceFallback;
+    public final String deviceBoard;
+    public final String deviceProduct;
     public final String platformString;
     public final int memoryClass;
 
@@ -57,6 +59,8 @@ public class DeviceConfiguration {
             this.deviceManufacturer = deviceInfo.get("deviceManufacturer");
             this.deviceModel = deviceInfo.get("deviceModel");
             this.deviceFallback = deviceInfo.get("deviceFallback");
+            this.deviceBoard = deviceInfo.get("deviceBoard");
+            this.deviceProduct = deviceInfo.get("deviceProduct");
         }
 
         // Device id
@@ -137,6 +141,8 @@ public class DeviceConfiguration {
         ret.put("deviceManufacturer", this.deviceManufacturer);
         ret.put("deviceModel", this.deviceModel);
         ret.put("deviceFallback", this.deviceFallback);
+        ret.put("deviceBoard", this.deviceBoard);
+        ret.put("deviceProduct", this.deviceProduct);
         ret.put("platformString", this.platformString);
         ret.put("memoryClass", this.memoryClass);
         return ret;

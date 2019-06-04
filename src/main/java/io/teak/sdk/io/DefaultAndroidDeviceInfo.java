@@ -68,6 +68,8 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
         info.put("deviceManufacturer", deviceManufacturer);
         info.put("deviceModel", deviceModel);
         info.put("deviceFallback", deviceFallback);
+        info.put("deviceBoard", Build.BOARD == null ? "" : Build.BOARD);
+        info.put("deviceProduct", Build.PRODUCT == null ? "" : Build.PRODUCT);
         return info;
     }
 
