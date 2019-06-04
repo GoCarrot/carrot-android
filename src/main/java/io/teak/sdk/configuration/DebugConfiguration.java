@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.support.annotation.NonNull;
-
 import io.teak.sdk.Teak;
 
 public class DebugConfiguration {

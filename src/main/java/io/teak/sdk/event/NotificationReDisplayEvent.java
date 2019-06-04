@@ -3,7 +3,6 @@ package io.teak.sdk.event;
 import android.app.Notification;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-
 import io.teak.sdk.TeakEvent;
 
 public class NotificationReDisplayEvent extends TeakEvent {

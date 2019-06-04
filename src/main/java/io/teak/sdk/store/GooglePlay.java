@@ -1,35 +1,28 @@
 package io.teak.sdk.store;
 
 import android.app.Activity;
-
 import android.app.PendingIntent;
-import android.content.Intent;
-import android.content.Context;
 import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
 import android.content.ServiceConnection;
-
 import android.content.pm.ResolveInfo;
-
 import android.os.Bundle;
 import android.os.DeadObjectException;
 import android.os.IBinder;
 import android.util.SparseArray;
-
-import java.io.InvalidObjectException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-
-import java.lang.reflect.Method;
-import java.util.Map;
-
-import io.teak.sdk.json.JSONObject;
-
 import io.teak.sdk.Helpers;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.event.PurchaseEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
+import io.teak.sdk.json.JSONObject;
+import java.io.InvalidObjectException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class GooglePlay implements IStore {
     private Object mService;
@@ -97,8 +90,6 @@ public class GooglePlay implements IStore {
                     Teak.log.exception(e);
                     return;
                 }
-
-
             }
         };
 

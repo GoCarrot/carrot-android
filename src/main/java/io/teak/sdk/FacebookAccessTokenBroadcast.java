@@ -1,14 +1,12 @@
 package io.teak.sdk;
 
-import java.lang.reflect.*;
-
-import android.content.Intent;
-import android.content.Context;
-import android.content.IntentFilter;
 import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
-
 import io.teak.sdk.event.FacebookAccessTokenEvent;
+import java.lang.reflect.*;
 
 class FacebookAccessTokenBroadcast {
     private LocalBroadcastManager broadcastManager;

@@ -2,16 +2,7 @@ package io.teak.sdk.service;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-
 import com.firebase.jobdispatcher.JobParameters;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
-
 import io.teak.sdk.Helpers;
 import io.teak.sdk.Teak;
 import io.teak.sdk.Unobfuscable;
@@ -20,6 +11,12 @@ import io.teak.sdk.core.ThreadFactory;
 import io.teak.sdk.io.IAndroidNotification;
 import io.teak.sdk.raven.Raven;
 import io.teak.sdk.raven.Sender;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
 
 public class JobService extends com.firebase.jobdispatcher.JobService implements Unobfuscable {
     public static final String JOB_TYPE_KEY = "JobService.JobType";

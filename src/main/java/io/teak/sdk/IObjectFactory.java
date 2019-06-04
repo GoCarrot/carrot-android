@@ -2,7 +2,6 @@ package io.teak.sdk;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-
 import io.teak.sdk.core.ITeakCore;
 import io.teak.sdk.io.IAndroidDeviceInfo;
 import io.teak.sdk.io.IAndroidNotification;

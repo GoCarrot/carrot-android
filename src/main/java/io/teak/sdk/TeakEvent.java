@@ -1,12 +1,10 @@
 package io.teak.sdk;
 
 import android.support.annotation.NonNull;
-
+import io.teak.sdk.core.ThreadFactory;
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-
-import io.teak.sdk.core.ThreadFactory;
 
 public class TeakEvent {
     public final String eventType;

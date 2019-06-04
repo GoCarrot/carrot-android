@@ -3,21 +3,22 @@ package io.teak.sdk;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Base64;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-
+import io.teak.sdk.configuration.RemoteConfiguration;
+import io.teak.sdk.core.Session;
+import io.teak.sdk.core.ThreadFactory;
+import io.teak.sdk.event.RemoteConfigurationEvent;
+import io.teak.sdk.event.TrackEventEvent;
+import io.teak.sdk.io.DefaultHttpRequest;
+import io.teak.sdk.io.IHttpRequest;
+import io.teak.sdk.json.JSONObject;
 import java.io.UnsupportedEncodingException;
-
 import java.math.BigInteger;
 import java.net.URL;
 import java.net.URLEncoder;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,16 +31,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
-import io.teak.sdk.core.ThreadFactory;
-import io.teak.sdk.event.TrackEventEvent;
-import io.teak.sdk.io.DefaultHttpRequest;
-import io.teak.sdk.io.IHttpRequest;
-import io.teak.sdk.json.JSONObject;
-
-import io.teak.sdk.configuration.RemoteConfiguration;
-import io.teak.sdk.core.Session;
-import io.teak.sdk.event.RemoteConfigurationEvent;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 public class Request implements Runnable {
     public static final int DEFAULT_PORT = 443;
@@ -472,8 +465,8 @@ public class Request implements Runnable {
 
                         try {
                             batch.maximumWaitTime = batchConfig.containsKey("maximum_wait_time") ? (batchConfig.get("maximum_wait_time") instanceof Number ? ((Number) batchConfig.get("maximum_wait_time")).floatValue()
-                                    : Float.parseFloat(batchConfig.get("maximum_wait_time").toString()))
-                                    : batch.maximumWaitTime;
+                                                                                                                                                           : Float.parseFloat(batchConfig.get("maximum_wait_time").toString()))
+                                                                                                 : batch.maximumWaitTime;
                         } catch (Exception ignored) {
                         }
 
@@ -588,9 +581,9 @@ public class Request implements Runnable {
             Teak.log.i("request.send", this.toMap());
             final long startTime = System.nanoTime();
             final URL url = new URL(isMockedRequest ? "http" : "https",
-                    this.hostname,
-                    isMockedRequest ? Request.MOCKED_PORT : Request.DEFAULT_PORT,
-                    this.endpoint);
+                this.hostname,
+                isMockedRequest ? Request.MOCKED_PORT : Request.DEFAULT_PORT,
+                this.endpoint);
             final IHttpRequest request = new DefaultHttpRequest();
             final IHttpRequest.Response response = request.synchronousRequest(url, requestBody);
 

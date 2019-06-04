@@ -2,11 +2,9 @@ package io.teak.sdk;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-
 import io.teak.sdk.core.ThreadFactory;
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.raven.Raven;
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -20,7 +18,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
-
 import javax.net.ssl.HttpsURLConnection;
 
 // Things I assume

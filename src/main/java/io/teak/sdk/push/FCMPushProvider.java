@@ -4,18 +4,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-
-import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
-
-import java.util.Map;
-
 import io.teak.sdk.Helpers;
 import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.Teak;
@@ -23,6 +19,7 @@ import io.teak.sdk.TeakEvent;
 import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.event.PushRegistrationEvent;
+import java.util.Map;
 
 public class FCMPushProvider extends FirebaseMessagingService implements IPushProvider {
     private static FCMPushProvider Instance = null;
@@ -48,7 +45,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
             Instance.context = context;
             if (Instance.getApplicationContext() != Instance.context) {
                 Teak.log.e("google.fcm.initialize.context_mismatch",
-                        Helpers.mm.h("getApplicationContext", Instance.getApplicationContext(),
+                    Helpers.mm.h("getApplicationContext", Instance.getApplicationContext(),
                         "Instance.context", Instance.context));
             }
         }
@@ -118,8 +115,8 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
                         // for all Firebase use and initialization.
                         Teak.log.i("google.fcm.intialization", pushConfiguration);
                         FirebaseOptions.Builder builder = new FirebaseOptions.Builder()
-                                .setGcmSenderId((String) pushConfiguration.get("gcmSenderId"))
-                                .setApplicationId((String) pushConfiguration.get("firebaseAppId"));
+                                                              .setGcmSenderId((String) pushConfiguration.get("gcmSenderId"))
+                                                              .setApplicationId((String) pushConfiguration.get("firebaseAppId"));
                         this.firebaseApp = FirebaseApp.initializeApp(this.context, builder.build());
                     }
                 } catch (Exception e) {

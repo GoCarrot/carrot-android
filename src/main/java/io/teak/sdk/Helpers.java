@@ -8,16 +8,14 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-
-import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONException;
-
+import io.teak.sdk.json.JSONObject;
 import java.security.InvalidParameterException;
 import java.security.MessageDigest;
-import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 public class Helpers {

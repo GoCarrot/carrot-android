@@ -1,16 +1,13 @@
 package io.teak.sdk.wrapper.air;
 
-import java.util.Map;
-import java.util.HashMap;
-
 import android.support.annotation.NonNull;
-
 import com.adobe.fre.FREContext;
 import com.adobe.fre.FREFunction;
-
 import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.wrapper.ISDKWrapper;
 import io.teak.sdk.wrapper.TeakInterface;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ExtensionContext extends FREContext implements Unobfuscable {
     final TeakInterface teakInterface;

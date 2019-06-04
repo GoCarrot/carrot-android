@@ -2,21 +2,18 @@ package io.teak.sdk.configuration;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-
-import io.teak.sdk.json.JSONObject;
-
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-
+import io.teak.sdk.Request;
+import io.teak.sdk.Teak;
 import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.core.DeepLink;
-import io.teak.sdk.Request;
-import io.teak.sdk.Teak;
 import io.teak.sdk.core.Session;
 import io.teak.sdk.event.DeepLinksReadyEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
+import io.teak.sdk.json.JSONObject;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 public class RemoteConfiguration {
     @SuppressWarnings("WeakerAccess")
@@ -144,7 +141,7 @@ public class RemoteConfiguration {
                                         nullInsteadOfEmpty(response.isNull("firebase_app_id") ? null : response.getString("firebase_app_id")),
                                         response.optBoolean("enhanced_integration_checks", false),
                                         response.has("endpoint_configurations") ? response.getJSONObject("endpoint_configurations") : null,
-                                            false);
+                                        false);
 
                                     Teak.log.i("configuration.remote", configuration.toHash());
                                     TeakEvent.postEvent(new RemoteConfigurationEvent(configuration));

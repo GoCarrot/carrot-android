@@ -1,9 +1,8 @@
 package io.teak.sdk.store;
 
-import android.content.Intent;
 import android.content.Context;
+import android.content.Intent;
 import android.support.annotation.NonNull;
-
 import com.amazon.device.iap.PurchasingListener;
 import com.amazon.device.iap.PurchasingService;
 import com.amazon.device.iap.model.Product;
@@ -13,20 +12,17 @@ import com.amazon.device.iap.model.PurchaseUpdatesResponse;
 import com.amazon.device.iap.model.RequestId;
 import com.amazon.device.iap.model.UserData;
 import com.amazon.device.iap.model.UserDataResponse;
-
-import java.util.Map;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.concurrent.ArrayBlockingQueue;
-
-import io.teak.sdk.json.JSONObject;
-
 import io.teak.sdk.Helpers.mm;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.PurchaseEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
+import io.teak.sdk.json.JSONObject;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
 
 public class Amazon implements IStore {
     private HashMap<RequestId, ArrayBlockingQueue<String>> skuDetailsRequestMap;

@@ -8,11 +8,9 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-
+import io.teak.sdk.Helpers.mm;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-
-import io.teak.sdk.Helpers.mm;
 
 public class InstallReferrerReceiver extends BroadcastReceiver implements Unobfuscable {
 

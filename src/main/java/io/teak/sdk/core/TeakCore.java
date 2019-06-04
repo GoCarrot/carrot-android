@@ -9,29 +9,15 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
-
-import io.teak.sdk.IntegrationChecker;
-import io.teak.sdk.RetriableTask;
-import io.teak.sdk.configuration.AppConfiguration;
-import io.teak.sdk.io.DefaultAndroidNotification;
-import io.teak.sdk.io.DefaultAndroidResources;
-import io.teak.sdk.json.JSONObject;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-
 import io.teak.sdk.Helpers;
+import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.NotificationBuilder;
 import io.teak.sdk.Request;
+import io.teak.sdk.RetriableTask;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
+import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.event.ExternalBroadcastEvent;
 import io.teak.sdk.event.LifecycleEvent;
@@ -40,6 +26,17 @@ import io.teak.sdk.event.PurchaseEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.event.TrackEventEvent;
+import io.teak.sdk.io.DefaultAndroidNotification;
+import io.teak.sdk.io.DefaultAndroidResources;
+import io.teak.sdk.json.JSONObject;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class TeakCore implements ITeakCore {
     private static TeakCore Instance = null;

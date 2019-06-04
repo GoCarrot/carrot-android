@@ -13,20 +13,11 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-
 import com.firebase.jobdispatcher.FirebaseJobDispatcher;
 import com.firebase.jobdispatcher.GooglePlayDriver;
 import com.firebase.jobdispatcher.Job;
 import com.firebase.jobdispatcher.RetryStrategy;
 import com.firebase.jobdispatcher.Trigger;
-
-import java.io.File;
-import java.net.URLEncoder;
-import java.security.InvalidParameterException;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.Session;
 import io.teak.sdk.event.LifecycleEvent;
@@ -40,6 +31,12 @@ import io.teak.sdk.raven.Raven;
 import io.teak.sdk.service.JobService;
 import io.teak.sdk.shortcutbadger.ShortcutBadger;
 import io.teak.sdk.store.IStore;
+import java.io.File;
+import java.net.URLEncoder;
+import java.security.InvalidParameterException;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class TeakInstance implements Unobfuscable {
     public final IObjectFactory objectFactory;

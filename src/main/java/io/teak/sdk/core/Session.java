@@ -7,9 +7,24 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-
+import io.teak.sdk.Helpers;
+import io.teak.sdk.Helpers.mm;
+import io.teak.sdk.Request;
+import io.teak.sdk.Teak;
+import io.teak.sdk.TeakConfiguration;
+import io.teak.sdk.TeakEvent;
+import io.teak.sdk.TeakNotification;
+import io.teak.sdk.event.AdvertisingInfoEvent;
+import io.teak.sdk.event.ExternalBroadcastEvent;
+import io.teak.sdk.event.FacebookAccessTokenEvent;
+import io.teak.sdk.event.LifecycleEvent;
+import io.teak.sdk.event.PushRegistrationEvent;
+import io.teak.sdk.event.RemoteConfigurationEvent;
+import io.teak.sdk.event.SessionStateEvent;
+import io.teak.sdk.event.UserIdEvent;
 import io.teak.sdk.json.JSONObject;
-
+import io.teak.sdk.push.PushState;
+import io.teak.sdk.referrer.InstallReferrerFuture;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -34,28 +49,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLProtocolException;
-
-import io.teak.sdk.Helpers;
-import io.teak.sdk.Helpers.mm;
-import io.teak.sdk.Request;
-import io.teak.sdk.Teak;
-import io.teak.sdk.TeakConfiguration;
-import io.teak.sdk.TeakEvent;
-import io.teak.sdk.TeakNotification;
-import io.teak.sdk.event.AdvertisingInfoEvent;
-import io.teak.sdk.event.ExternalBroadcastEvent;
-import io.teak.sdk.event.FacebookAccessTokenEvent;
-import io.teak.sdk.event.LifecycleEvent;
-import io.teak.sdk.event.PushRegistrationEvent;
-import io.teak.sdk.event.RemoteConfigurationEvent;
-import io.teak.sdk.event.SessionStateEvent;
-import io.teak.sdk.event.UserIdEvent;
-import io.teak.sdk.push.PushState;
-import io.teak.sdk.referrer.InstallReferrerFuture;
 
 public class Session {
 

@@ -1,12 +1,10 @@
 package io.teak.sdk.event;
 
 import android.support.annotation.NonNull;
-
+import io.teak.sdk.TeakEvent;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
-import io.teak.sdk.TeakEvent;
 
 public class PushRegistrationEvent extends TeakEvent {
     public static final String Registered = "PushRegistrationEvent.Registered";

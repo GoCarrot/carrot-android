@@ -5,13 +5,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-
+import io.teak.sdk.Teak;
 import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.json.JSONObject;
-
 import java.util.HashMap;
-
-import io.teak.sdk.Teak;
 
 public class TeakInterface implements Unobfuscable {
     private final ISDKWrapper sdkWrapper;

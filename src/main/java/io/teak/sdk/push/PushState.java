@@ -8,7 +8,14 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationManagerCompat;
-
+import io.teak.sdk.IntegrationChecker;
+import io.teak.sdk.NotificationBuilder;
+import io.teak.sdk.Teak;
+import io.teak.sdk.TeakEvent;
+import io.teak.sdk.core.ThreadFactory;
+import io.teak.sdk.event.LifecycleEvent;
+import io.teak.sdk.json.JSONArray;
+import io.teak.sdk.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -19,15 +26,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
-import io.teak.sdk.IntegrationChecker;
-import io.teak.sdk.NotificationBuilder;
-import io.teak.sdk.Teak;
-import io.teak.sdk.TeakEvent;
-import io.teak.sdk.core.ThreadFactory;
-import io.teak.sdk.event.LifecycleEvent;
-import io.teak.sdk.json.JSONArray;
-import io.teak.sdk.json.JSONObject;
 
 public class PushState {
     private static final String PUSH_STATE_CHAIN_KEY = "io.teak.sdk.Preferences.PushStateChain";

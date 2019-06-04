@@ -1,7 +1,6 @@
 package io.teak.sdk.event;
 
 import android.support.annotation.Nullable;
-
 import io.teak.sdk.TeakEvent;
 
 public class FacebookAccessTokenEvent extends TeakEvent {

@@ -3,19 +3,16 @@ package io.teak.sdk.referrer;
 import android.content.Context;
 import android.os.RemoteException;
 import android.support.annotation.NonNull;
-
 import com.android.installreferrer.api.InstallReferrerClient;
 import com.android.installreferrer.api.InstallReferrerStateListener;
 import com.android.installreferrer.api.ReferrerDetails;
-
+import io.teak.sdk.Helpers;
+import io.teak.sdk.InstallReferrerReceiver;
+import io.teak.sdk.Teak;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import io.teak.sdk.Helpers;
-import io.teak.sdk.InstallReferrerReceiver;
-import io.teak.sdk.Teak;
 
 public class GooglePlayInstallReferrer implements InstallReferrerStateListener, Future<String> {
     GooglePlayInstallReferrer(@NonNull final Context context) {

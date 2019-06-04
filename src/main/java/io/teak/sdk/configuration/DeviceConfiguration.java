@@ -3,23 +3,20 @@ package io.teak.sdk.configuration;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.support.annotation.NonNull;
-
-import io.teak.sdk.core.TeakCore;
-import io.teak.sdk.json.JSONObject;
-
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-
 import io.teak.sdk.IObjectFactory;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.TeakEvent;
+import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.AdvertisingInfoEvent;
 import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.io.IAndroidDeviceInfo;
+import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.push.IPushProvider;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 public class DeviceConfiguration {
     public Map<String, String> pushRegistration;

@@ -27,7 +27,7 @@ public class ThreadFactory implements java.util.concurrent.ThreadFactory {
     private static String getNameForThreadOrFactory() {
         final StackTraceElement[] stacktrace = Thread.currentThread().getStackTrace();
         final StackTraceElement e = stacktrace[4];
-        final String methodName =  e.getMethodName();
+        final String methodName = e.getMethodName();
         final String className = e.getClassName();
         return String.format("%s#%s", className, methodName == null ? "" : methodName);
     }

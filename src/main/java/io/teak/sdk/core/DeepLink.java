@@ -1,7 +1,7 @@
 package io.teak.sdk.core;
 
 import android.support.annotation.NonNull;
-
+import io.teak.sdk.Teak;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -14,8 +14,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import io.teak.sdk.Teak;
 
 public class DeepLink {
     /**

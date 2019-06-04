@@ -3,10 +3,8 @@ package io.teak.sdk.wrapper.air;
 import com.adobe.fre.FREContext;
 import com.adobe.fre.FREFunction;
 import com.adobe.fre.FREObject;
-
-import io.teak.sdk.json.JSONObject;
-
 import io.teak.sdk.Teak;
+import io.teak.sdk.json.JSONObject;
 
 public class GetVersionFunction implements FREFunction {
     @Override

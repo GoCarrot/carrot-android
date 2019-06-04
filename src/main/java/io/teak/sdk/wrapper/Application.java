@@ -3,7 +3,6 @@ package io.teak.sdk.wrapper;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
-
 import io.teak.sdk.Teak;
 import io.teak.sdk.Unobfuscable;
 

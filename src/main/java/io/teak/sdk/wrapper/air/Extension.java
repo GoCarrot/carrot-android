@@ -6,7 +6,6 @@ import com.adobe.fre.FREInvalidObjectException;
 import com.adobe.fre.FREObject;
 import com.adobe.fre.FRETypeMismatchException;
 import com.adobe.fre.FREWrongThreadException;
-
 import io.teak.sdk.Unobfuscable;
 
 public class Extension implements FREExtension, Unobfuscable {
