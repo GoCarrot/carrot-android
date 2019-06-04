@@ -18,6 +18,17 @@ public class TeakUnity implements Unobfuscable {
         try {
             Class<?> unityPlayerClass = Class.forName("com.unity3d.player.UnityPlayer");
             TeakUnity.unitySendMessage = unityPlayerClass.getMethod("UnitySendMessage", String.class, String.class, String.class);
+
+            Teak.setLogListener(new Teak.LogListener() {
+                @Override
+                public void logEvent(String logEvent, String logLevel, Map<String, Object> logData) {
+                    JSONObject payload = new JSONObject();
+                    payload.put("event", logEvent);
+                    payload.put("level", logLevel);
+                    payload.put("data", logData);
+                    unitySendMessage("LogEvent", payload.toString());
+                }
+            });
         } catch (Exception ignored) {
         }
     }

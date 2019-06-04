@@ -138,6 +138,8 @@ public class Log {
     private boolean logLocally;
     private boolean logRemotely;
     private boolean sendToRapidIngestion;
+
+    private Teak.LogListener logListener;
     // endregion
 
     private final ExecutorService remoteLogQueue = Executors.newSingleThreadExecutor(ThreadFactory.autonamed());
@@ -191,6 +193,10 @@ public class Log {
         this.logRemotely = logRemotely;
     }
 
+    public void setLogListener(Teak.LogListener logListener) {
+        this.logListener = logListener;
+    }
+
     protected class LogEvent {
         final Level logLevel;
         final String eventType;
@@ -229,6 +235,10 @@ public class Log {
         payload.put("event_type", logEvent.eventType);
         if (logEvent.eventData != null) {
             payload.put("event_data", logEvent.eventData);
+        }
+
+        if (this.logListener != null) {
+            this.logListener.logEvent(logEvent.eventType, logEvent.logLevel.name, payload);
         }
 
         // Remote logging

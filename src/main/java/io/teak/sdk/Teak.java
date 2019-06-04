@@ -499,6 +499,25 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     @SuppressWarnings("unused")
     public static final String FOREGROUND_NOTIFICATION_INTENT = "io.teak.sdk.Teak.intent.FOREGROUND_NOTIFICATION_INTENT";
 
+    ///// LogListener
+
+    /**
+     *
+     */
+    public static abstract class LogListener {
+        public abstract void logEvent(String logEvent, String logLevel, Map<String, Object> logData);
+    }
+
+    /**
+     * Listen for Teak SDK log events.
+     *<p/>
+     * @param logListener A {@link LogListener} that will be called each time Teak would log an internal SDK event.
+     */
+    @SuppressWarnings("unused")
+    public static void setLogListener(LogListener logListener) {
+        Teak.log.setLogListener(logListener);
+    }
+
     ///// BroadcastReceiver
 
     @Override
