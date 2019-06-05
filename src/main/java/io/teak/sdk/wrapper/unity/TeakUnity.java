@@ -22,11 +22,7 @@ public class TeakUnity implements Unobfuscable {
             Teak.setLogListener(new Teak.LogListener() {
                 @Override
                 public void logEvent(String logEvent, String logLevel, Map<String, Object> logData) {
-                    JSONObject payload = new JSONObject();
-                    payload.put("event", logEvent);
-                    payload.put("level", logLevel);
-                    payload.put("data", logData);
-                    unitySendMessage("LogEvent", payload.toString());
+                    unitySendMessage("LogEvent", new JSONObject(logData).toString());
                 }
             });
         } catch (Exception ignored) {
