@@ -43,12 +43,15 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLProtocolException;
@@ -219,7 +222,6 @@ public class Session {
                 } break;
 
                 case UserIdentified: {
-
                     // Start heartbeat, heartbeat service should be null right now
                     if (this.heartbeatService != null) {
                         invalidValuesForTransition.add(new Object[] {"heartbeatService", this.heartbeatService});
@@ -430,8 +432,16 @@ public class Session {
                                         teakConfiguration.deviceConfiguration.requestNewPushToken();
                                     }
 
+                                    // Assign country code from server if it sends it
                                     if (response.has("country_code")) {
                                         Session.this.countryCode = response.getString("country_code");
+                                    }
+
+                                    // Assign deep link to launch, if it is provided
+                                    if (response.has("deep_link")) {
+                                        Map<String, Object> merge = new HashMap<>();
+                                        merge.put("deep_link", response.get("deep_link"));
+                                        Session.this.launchAttribution = Session.attributionFutureMerging(Session.this.launchAttribution, merge);
                                     }
 
                                     // Prevent warning for 'do_not_track_event'
@@ -1022,6 +1032,39 @@ public class Session {
         // Start it running, and return the Future
         ThreadFactory.autoStart(returnTask);
         return returnTask;
+    }
+
+    private static Future<Map<String, Object>> attributionFutureMerging(@Nullable final Future<Map<String, Object>> previousAttribution, @NonNull final Map<String, Object> merging) {
+        return new Future<Map<String, Object>>() {
+            @Override
+            public boolean cancel(boolean mayInterruptIfRunning) {
+                return previousAttribution == null || previousAttribution.cancel(mayInterruptIfRunning);
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return previousAttribution != null && previousAttribution.isCancelled();
+            }
+
+            @Override
+            public boolean isDone() {
+                return previousAttribution == null || previousAttribution.isDone();
+            }
+
+            @Override
+            public Map<String, Object> get() throws InterruptedException, ExecutionException {
+                Map<String, Object> ret = previousAttribution == null ? new HashMap<String, Object>() : previousAttribution.get();
+                ret.putAll(merging);
+                return ret;
+            }
+
+            @Override
+            public Map<String, Object> get(long timeout, @NonNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+                Map<String, Object> ret = previousAttribution == null ? new HashMap<String, Object>() : previousAttribution.get(timeout, unit);
+                ret.putAll(merging);
+                return ret;
+            }
+        };
     }
 
     // region Accessors
