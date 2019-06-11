@@ -7,8 +7,10 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
+import java.util.Map;
 
 import io.teak.sdk.Request;
+import io.teak.sdk.core.Session;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RequestPayloadEncode {
