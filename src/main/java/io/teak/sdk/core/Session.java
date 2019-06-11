@@ -736,9 +736,21 @@ public class Session {
 
             final TeakConfiguration teakConfiguration = TeakConfiguration.get();
             final boolean isFirstLaunch = intent.getBooleanExtra("teakIsFirstLaunch", false);
-            Future<String> deepLinkURL = null;
+
+            // Check for launch via notification
+            String nonFinalTeakNotifId = null;
+            Bundle bundle = intent.getExtras();
+            if (bundle != null) {
+                String teakNotifId = bundle.getString("teakNotifId");
+                if (teakNotifId != null && !teakNotifId.isEmpty()) {
+                    nonFinalTeakNotifId = teakNotifId;
+                }
+            }
+            final String teakNotifId = nonFinalTeakNotifId;
+
 
             // See if there's a deep link in the intent
+            Future<String> deepLinkURL = null;
             final String intentDataString = intent.getDataString();
             if (intentDataString != null && !intentDataString.isEmpty()) {
                 Teak.log.i("session.attribution", Helpers.mm.h("deep_link", intentDataString));
@@ -780,16 +792,6 @@ public class Session {
                 deepLinkAttribution = null;
             }
 
-            // Check for launch via notification
-            String nonFinalTeakNotifId = null;
-            Bundle bundle = intent.getExtras();
-            if (bundle != null) {
-                String teakNotifId = bundle.getString("teakNotifId");
-                if (teakNotifId != null && !teakNotifId.isEmpty()) {
-                    nonFinalTeakNotifId = teakNotifId;
-                }
-            }
-            final String teakNotifId = nonFinalTeakNotifId;
 
             // Get the session attribution
             final Future<Map<String, Object>> sessionAttribution;
