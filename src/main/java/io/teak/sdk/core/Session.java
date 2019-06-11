@@ -784,18 +784,20 @@ public class Session {
                 deepLinkURL = InstallReferrerFuture.get(teakConfiguration.appConfiguration.applicationContext);
             }
 
-            //
+            // Get an attribution future for a deep link, and include teak_notif_id if it exists.
             final Future<Map<String, Object>> deepLinkAttribution;
             if (deepLinkURL != null) {
-                deepLinkAttribution = attributionForDeepLink(deepLinkURL);
+                deepLinkAttribution = attributionWithDeepLink(deepLinkURL, teakNotifId);
             } else {
                 deepLinkAttribution = null;
             }
 
-
             // Get the session attribution
             final Future<Map<String, Object>> sessionAttribution;
-            if (teakNotifId != null) {
+            if (deepLinkAttribution != null) {
+                // deepLinkAttribution contains teak_notif_id
+                sessionAttribution = deepLinkAttribution;
+            } else if (teakNotifId != null) {
                 Teak.log.i("session.attribution", Helpers.mm.h("teak_notif_id", teakNotifId));
                 sessionAttribution = new Future<Map<String, Object>>() {
                     @Override
@@ -825,8 +827,6 @@ public class Session {
                         return get();
                     }
                 };
-            } else if (deepLinkAttribution != null) {
-                sessionAttribution = deepLinkAttribution;
             } else {
                 sessionAttribution = null;
             }
@@ -931,13 +931,18 @@ public class Session {
         }
     }
 
-    private static Future<Map<String, Object>> attributionForDeepLink(final Future<String> urlFuture) {
+    private static Future<Map<String, Object>> attributionWithDeepLink(final Future<String> urlFuture, final String teakNotifId) {
         final TeakConfiguration teakConfiguration = TeakConfiguration.get();
 
         FutureTask<Map<String, Object>> returnTask = new FutureTask<>(new Callable<Map<String, Object>>() {
             @Override
             public Map<String, Object> call() {
                 Map<String, Object> returnValue = new HashMap<>();
+
+                // Make sure teak_notif_id is in the return value if provided
+                if (teakNotifId != null) {
+                    returnValue.put("teak_notif_id", teakNotifId);
+                }
 
                 // Wait on the incoming Future
                 Uri uri = null;
