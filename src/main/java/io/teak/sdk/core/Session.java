@@ -51,7 +51,6 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLProtocolException;
@@ -839,7 +838,6 @@ public class Session {
                 }
             }
             final String teakNotifId = nonFinalTeakNotifId;
-
 
             // See if there's a deep link in the intent
             Future<String> deepLinkURL = null;
