@@ -446,13 +446,6 @@ public class Session {
                                         Session.this.launchAttribution = Session.attributionFutureMerging(Session.this.launchAttribution, merge);
                                     }
 
-                                    // Prevent warning for 'do_not_track_event'
-                                    if (Session.this.state == State.Expiring) {
-                                        Session.this.previousState = State.UserIdentified;
-                                    } else if (Session.this.state != State.UserIdentified) {
-                                        Session.this.setState(State.UserIdentified);
-                                    }
-
                                     // Grab user profile
                                     JSONObject profile = response.optJSONObject("user_profile");
                                     if (profile != null) {
@@ -461,6 +454,15 @@ public class Session {
                                         } catch (Exception ignored) {
                                         }
                                     }
+
+                                    // Assign new state
+                                    // Prevent warning for 'do_not_track_event'
+                                    if (Session.this.state == State.Expiring) {
+                                        Session.this.previousState = State.UserIdentified;
+                                    } else if (Session.this.state != State.UserIdentified) {
+                                        Session.this.setState(State.UserIdentified);
+                                    }
+
                                 } catch (Exception ignored) {
                                 } finally {
                                     Session.this.stateLock.unlock();
