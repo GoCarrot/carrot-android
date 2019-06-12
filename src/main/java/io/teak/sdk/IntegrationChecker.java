@@ -320,31 +320,31 @@ public class IntegrationChecker {
                 if (teakSchemeOtherSchemes.size() > 0) {
                     addErrorToReport("activity.intent-filter.data.scheme", "the <intent-filter> with the \"teak\" data scheme *should not* contain any http or https schemes.\n\nPut the \"teak\" data scheme in its own <intent-filter>");
                 }
+            }
 
-                // Make sure per-feature permissions are included
-                final List<ManifestParser.XmlTag> usesPermissions = manifestParser.tags.find("$.uses-permission");
-                final Map<String, Boolean> permissionsAsMap = new HashMap<>();
-                for (ManifestParser.XmlTag permission : usesPermissions) {
-                    permissionsAsMap.put(permission.attributes.get("name"), true);
-                }
+            // Make sure per-feature permissions are included
+            final List<ManifestParser.XmlTag> usesPermissions = manifestParser.tags.find("$.uses-permission");
+            final Map<String, Boolean> permissionsAsMap = new HashMap<>();
+            for (ManifestParser.XmlTag permission : usesPermissions) {
+                permissionsAsMap.put(permission.attributes.get("name"), true);
+            }
 
-                for (int i = 0; i < IntegrationChecker.permissionFeatures.length; i++) {
-                    final String feature = IntegrationChecker.permissionFeatures[i];
-                    final List<Integer> missingPermissions = new ArrayList<>();
-                    for (int j = 0; j < IntegrationChecker.permissions[i].length; i++) {
-                        final String permission = IntegrationChecker.permissions[i][j];
-                        if (!permissionsAsMap.containsKey(permission)) {
-                            missingPermissions.add(j);
-                        }
-                    }
-
-                    for (int j = 0; j < missingPermissions.size(); j++) {
-                        addErrorToReport("permission." + feature, "missing permission '" + IntegrationChecker.permissions[i][missingPermissions.get(j)] + "'");
+            for (int i = 0; i < IntegrationChecker.permissionFeatures.length; i++) {
+                final String feature = IntegrationChecker.permissionFeatures[i];
+                final List<Integer> missingPermissions = new ArrayList<>();
+                for (int j = 0; j < IntegrationChecker.permissions[i].length; i++) {
+                    final String permission = IntegrationChecker.permissions[i][j];
+                    if (!permissionsAsMap.containsKey(permission)) {
+                        missingPermissions.add(j);
                     }
                 }
-                for (ManifestParser.XmlTag permission : usesPermissions) {
-                    Teak.log.i("permission", permission.toString());
+
+                for (int j = 0; j < missingPermissions.size(); j++) {
+                    addErrorToReport("permission." + feature, "missing permission '" + IntegrationChecker.permissions[i][missingPermissions.get(j)] + "'");
                 }
+            }
+            for (ManifestParser.XmlTag permission : usesPermissions) {
+                Teak.log.i("permission", permission.toString());
             }
         } catch (Exception ignored) {
         }
