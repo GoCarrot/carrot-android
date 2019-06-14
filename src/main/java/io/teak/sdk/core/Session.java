@@ -129,6 +129,7 @@ public class Session {
 
     // State Independent
     private Future<Map<String, Object>> launchAttribution = null;
+    private boolean launchAttributionProcessed = false;
 
     // For cases where setUserId() is called before a Session has been created
     private static String pendingUserId;
@@ -524,9 +525,10 @@ public class Session {
         });
     }
 
-    private void processAttributionAndDispatchEvents() {
+    private synchronized void processAttributionAndDispatchEvents() {
         // If there is no launch attribution, bail.
-        if (this.launchAttribution == null) return;
+        if (this.launchAttribution == null || this.launchAttributionProcessed) return;
+        this.launchAttributionProcessed = true;
 
         ThreadFactory.autoStart(new Runnable() {
             @Override
