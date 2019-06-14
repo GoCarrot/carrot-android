@@ -988,6 +988,7 @@ public class Session {
                             connection.setUseCaches(false);
                             connection.setRequestProperty("Accept-Charset", "UTF-8");
                             connection.setRequestProperty("X-Teak-DeviceType", "API");
+                            connection.setRequestProperty("X-Teak-SupportsTemplates", "TRUE");
 
                             // Get Response
                             InputStream is;
