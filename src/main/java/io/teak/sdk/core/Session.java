@@ -782,15 +782,7 @@ public class Session {
             final boolean isFirstLaunch = intent.getBooleanExtra("teakIsFirstLaunch", false);
 
             // Check for launch via notification
-            String nonFinalTeakNotifId = null;
-            Bundle bundle = intent.getExtras();
-            if (bundle != null) {
-                String teakNotifId = bundle.getString("teakNotifId");
-                if (teakNotifId != null && !teakNotifId.isEmpty()) {
-                    nonFinalTeakNotifId = teakNotifId;
-                }
-            }
-            final String teakNotifId = nonFinalTeakNotifId;
+            final String teakNotifId = Helpers.getStringFromIntentExtraOrNil(intent, "teakNotifId");
 
             // See if there's a deep link in the intent
             Future<String> deepLinkURL = null;
