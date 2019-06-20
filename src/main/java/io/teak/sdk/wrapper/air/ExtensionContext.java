@@ -3,7 +3,6 @@ package io.teak.sdk.wrapper.air;
 import android.support.annotation.NonNull;
 import com.adobe.fre.FREContext;
 import com.adobe.fre.FREFunction;
-
 import io.teak.sdk.Teak;
 import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.json.JSONObject;

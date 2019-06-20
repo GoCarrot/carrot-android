@@ -1,4 +1,4 @@
-package com.teakio.pushtest;
+package io.teak.app.java.dev;
 
 import android.app.ActivityManager;
 import android.app.AlertDialog;
@@ -14,7 +14,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
@@ -26,7 +25,6 @@ import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
 import io.teak.sdk.event.PushNotificationEvent;
-import io.teak.sdk.raven.Raven;
 
 import android.view.View;
 import android.view.WindowManager;
@@ -321,20 +319,20 @@ public class MainActivity extends AppCompatActivity {
 
     public void testNotification(View view) {
         // Schedule Notification
-        //scheduleTestNotification("Animated", "Default text", "5");
+        scheduleTestNotification("Animated", "Default text", "5");
 
-        // Simulate Notification
         final Intent i = new Intent(Intent.ACTION_MAIN);
         i.addCategory(Intent.CATEGORY_HOME);
         this.startActivity(i);
 
-        final Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                simulateNotification(MainActivity.this);
-            }
-        }, 1000);
+        // Simulate Notification
+//        final Handler handler = new Handler();
+//        handler.postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                simulateNotification(MainActivity.this);
+//            }
+//        }, 1000);
     }
 
     public void makePurchase(View view) {
@@ -345,6 +343,7 @@ public class MainActivity extends AppCompatActivity {
 //        throw new RuntimeException("I crashed the app!");
 //        Teak.log.exception(new Raven.ReportTestException(Teak.SDKVersion));
         Teak.incrementEvent("debug_increment", null, null, 5);
+//        android.os.Process.sendSignal(android.os.Process.myPid(), android.os.Process.SIGNAL_QUIT);
     }
 
     public void integrationTestTimeout(String timeout) {

@@ -35,6 +35,8 @@ public class RemoteConfiguration {
     @SuppressWarnings("WeakerAccess")
     public final boolean isMocked;
 
+    private static final String defaultHostname = "gocarrot.com";
+
     private static final String defaultEndpointJson = "{  \n"
                                                       +
                                                       "  \"gocarrot.com\":{  \n"
@@ -134,7 +136,7 @@ public class RemoteConfiguration {
                                     final JSONObject response = new JSONObject((responseBody == null || responseBody.trim().isEmpty()) ? "{}" : responseBody);
 
                                     final RemoteConfiguration configuration = new RemoteConfiguration(teakConfiguration.appConfiguration,
-                                        response.isNull("auth") ? "gocarrot.com" : response.getString("auth"),
+                                        response.isNull("auth") ? RemoteConfiguration.defaultHostname : response.getString("auth"),
                                         nullInsteadOfEmpty(response.isNull("sdk_sentry_dsn") ? null : response.getString("sdk_sentry_dsn")),
                                         nullInsteadOfEmpty(response.isNull("app_sentry_dsn") ? null : response.getString("app_sentry_dsn")),
                                         nullInsteadOfEmpty(response.isNull("gcm_sender_id") ? null : response.getString("gcm_sender_id")),
@@ -181,7 +183,7 @@ public class RemoteConfiguration {
         }
 
         // Defaults
-        return "gocarrot.com";
+        return RemoteConfiguration.defaultHostname;
     }
     // endregion
 
