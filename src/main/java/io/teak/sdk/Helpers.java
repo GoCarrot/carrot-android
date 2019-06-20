@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class Helpers {
-    public static String getStringFromIntentExtraOrNil(final @NonNull Intent intent, final @NonNull String key) {
+    public static String getStringOrNullFromIntentExtra(final @NonNull Intent intent, final @NonNull String key) {
         String ret = null;
         Bundle bundle = intent.getExtras();
         if (bundle != null) {
