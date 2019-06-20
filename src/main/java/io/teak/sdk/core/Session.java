@@ -950,7 +950,10 @@ public class Session {
                         public void run() {
                             try {
                                 final TeakNotification.Reward reward = rewardFuture.get();
-                                final HashMap<String, Object> rewardMap = new HashMap<>(reward.json.toMap());
+
+                                // Future-Pat, we can do this cast because we have vendored the JSONObject code
+                                // and it uses a HashMap.
+                                final HashMap<String, Object> rewardMap = (HashMap<String, Object>) reward.json.toMap();
 
                                 // This is to make sure the payloads match from a notification claim
                                 rewardMap.put("teakNotifId", teakNotifId);
