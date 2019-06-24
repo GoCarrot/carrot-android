@@ -1,9 +1,7 @@
 package io.teak.sdk.wrapper.unity;
 
-import android.util.Log;
-
 import android.os.Bundle;
-
+import android.util.Log;
 import io.teak.sdk.Unobfuscable;
 
 public class TeakUnityPlayerNativeActivity extends TeakUnityPlayerActivity implements Unobfuscable {

@@ -11,9 +11,11 @@ import android.support.test.uiautomator.UiDevice;
 import android.support.test.uiautomator.UiObject2;
 import android.support.test.uiautomator.Until;
 
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.PushNotificationEvent;
@@ -29,8 +31,15 @@ import static org.mockito.Mockito.verify;
 
 @RunWith(AndroidJUnit4.class)
 public class NotificationIntents extends TeakIntegrationTest {
-    public NotificationIntents() {
+    public NotificationIntents() throws IntegrationChecker.MissingDependencyException {
         super(true);
+    }
+
+    @After
+    public void closeNotificationTray() {
+        final Context context = InstrumentationRegistry.getTargetContext();
+        Intent closeIntent = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
+        context.sendBroadcast(closeIntent);
     }
 
     @Test

@@ -1,8 +1,7 @@
 package io.teak.sdk.store;
 
-import android.content.Intent;
 import android.content.Context;
-
+import android.content.Intent;
 import java.util.Map;
 
 public interface IStore {

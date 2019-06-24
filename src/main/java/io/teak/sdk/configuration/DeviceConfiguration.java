@@ -3,23 +3,20 @@ package io.teak.sdk.configuration;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.support.annotation.NonNull;
-
-import io.teak.sdk.core.TeakCore;
-import io.teak.sdk.json.JSONObject;
-
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-
 import io.teak.sdk.IObjectFactory;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.TeakEvent;
+import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.AdvertisingInfoEvent;
 import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.io.IAndroidDeviceInfo;
+import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.push.IPushProvider;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 public class DeviceConfiguration {
     public Map<String, String> pushRegistration;
@@ -28,6 +25,8 @@ public class DeviceConfiguration {
     public final String deviceManufacturer;
     public final String deviceModel;
     public final String deviceFallback;
+    public final String deviceBoard;
+    public final String deviceProduct;
     public final String platformString;
     public final int memoryClass;
 
@@ -60,6 +59,8 @@ public class DeviceConfiguration {
             this.deviceManufacturer = deviceInfo.get("deviceManufacturer");
             this.deviceModel = deviceInfo.get("deviceModel");
             this.deviceFallback = deviceInfo.get("deviceFallback");
+            this.deviceBoard = deviceInfo.get("deviceBoard");
+            this.deviceProduct = deviceInfo.get("deviceProduct");
         }
 
         // Device id
@@ -140,6 +141,8 @@ public class DeviceConfiguration {
         ret.put("deviceManufacturer", this.deviceManufacturer);
         ret.put("deviceModel", this.deviceModel);
         ret.put("deviceFallback", this.deviceFallback);
+        ret.put("deviceBoard", this.deviceBoard);
+        ret.put("deviceProduct", this.deviceProduct);
         ret.put("platformString", this.platformString);
         ret.put("memoryClass", this.memoryClass);
         return ret;

@@ -8,7 +8,14 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationManagerCompat;
-
+import io.teak.sdk.IntegrationChecker;
+import io.teak.sdk.NotificationBuilder;
+import io.teak.sdk.Teak;
+import io.teak.sdk.TeakEvent;
+import io.teak.sdk.core.ThreadFactory;
+import io.teak.sdk.event.LifecycleEvent;
+import io.teak.sdk.json.JSONArray;
+import io.teak.sdk.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -19,14 +26,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
-import io.teak.sdk.IntegrationChecker;
-import io.teak.sdk.NotificationBuilder;
-import io.teak.sdk.Teak;
-import io.teak.sdk.TeakEvent;
-import io.teak.sdk.event.LifecycleEvent;
-import io.teak.sdk.json.JSONArray;
-import io.teak.sdk.json.JSONObject;
 
 public class PushState {
     private static final String PUSH_STATE_CHAIN_KEY = "io.teak.sdk.Preferences.PushStateChain";
@@ -126,7 +125,7 @@ public class PushState {
 
     private List<StateChainEntry> stateChain = new ArrayList<>();
     private final NotificationManagerCompat notificationManagerCompat;
-    private final ExecutorService executionQueue = Executors.newSingleThreadExecutor();
+    private final ExecutorService executionQueue = Executors.newSingleThreadExecutor(ThreadFactory.autonamed());
 
     private static PushState Instance;
     public static void init(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
@@ -199,20 +198,20 @@ public class PushState {
         return currentEntry.state;
     }
 
-    private Future<Boolean> writeSerialzedStateChain(@NonNull final Context context, List<StateChainEntry> stateChain) {
+    private void writeSerialzedStateChain(@NonNull final Context context, List<StateChainEntry> stateChain) {
         final JSONArray jsonStateChain = new JSONArray();
         for (StateChainEntry entry : stateChain) {
             jsonStateChain.put(entry.toJson());
         }
 
-        return this.executionQueue.submit(new Callable<Boolean>() {
+        this.executionQueue.submit(new Runnable() {
             @Override
-            public Boolean call() throws Exception {
+            public void run() {
                 synchronized (Teak.PREFERENCES_FILE) {
                     SharedPreferences preferences = context.getSharedPreferences(Teak.PREFERENCES_FILE, Context.MODE_PRIVATE);
                     SharedPreferences.Editor editor = preferences.edit();
                     editor.putString(PUSH_STATE_CHAIN_KEY, jsonStateChain.toString());
-                    return editor.commit();
+                    editor.apply();
                 }
             }
         });
@@ -221,11 +220,14 @@ public class PushState {
     public int getNotificationStatus() {
         int ret = Teak.TEAK_NOTIFICATIONS_UNKNOWN;
         boolean notificationManagerCompatHas_areNotificationsEnabled = false;
-        try {
-            if (NotificationManagerCompat.class.getMethod("areNotificationsEnabled") != null) {
-                notificationManagerCompatHas_areNotificationsEnabled = true;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            try {
+                if (NotificationManagerCompat.class.getMethod("areNotificationsEnabled") != null) {
+                    notificationManagerCompatHas_areNotificationsEnabled = true;
+                }
+            } catch (Exception ignored) {
             }
-        } catch (Exception ignored) {
         }
 
         if (notificationManagerCompatHas_areNotificationsEnabled && this.notificationManagerCompat != null) {

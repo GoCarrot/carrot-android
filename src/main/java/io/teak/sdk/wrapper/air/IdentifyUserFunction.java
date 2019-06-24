@@ -3,11 +3,9 @@ package io.teak.sdk.wrapper.air;
 import com.adobe.fre.FREContext;
 import com.adobe.fre.FREFunction;
 import com.adobe.fre.FREObject;
-
-import java.util.Arrays;
-
 import io.teak.sdk.Teak;
 import io.teak.sdk.json.JSONArray;
+import java.util.Arrays;
 
 public class IdentifyUserFunction implements FREFunction {
     @Override

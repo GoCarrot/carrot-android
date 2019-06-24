@@ -1,12 +1,10 @@
 package io.teak.sdk.event;
 
 import android.support.annotation.NonNull;
-
+import io.teak.sdk.TeakEvent;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-
-import io.teak.sdk.TeakEvent;
 
 public class UserIdEvent extends TeakEvent {
     public static final String Type = "UserIdEvent";

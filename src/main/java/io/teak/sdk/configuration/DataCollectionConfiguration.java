@@ -6,17 +6,15 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.event.AdvertisingInfoEvent;
 import io.teak.sdk.io.IAndroidResources;
 import io.teak.sdk.json.JSONObject;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 public class DataCollectionConfiguration {
     private boolean enableIDFA;

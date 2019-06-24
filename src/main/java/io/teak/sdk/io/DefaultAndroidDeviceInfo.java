@@ -9,11 +9,16 @@ import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
-
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-
+import io.teak.sdk.Helpers;
+import io.teak.sdk.IntegrationChecker;
+import io.teak.sdk.RetriableTask;
+import io.teak.sdk.Teak;
+import io.teak.sdk.TeakEvent;
+import io.teak.sdk.core.ThreadFactory;
+import io.teak.sdk.event.AdvertisingInfoEvent;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -22,13 +27,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
-
-import io.teak.sdk.Helpers;
-import io.teak.sdk.IntegrationChecker;
-import io.teak.sdk.RetriableTask;
-import io.teak.sdk.Teak;
-import io.teak.sdk.TeakEvent;
-import io.teak.sdk.event.AdvertisingInfoEvent;
 
 public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
     private final Context context;
@@ -70,6 +68,8 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
         info.put("deviceManufacturer", deviceManufacturer);
         info.put("deviceModel", deviceModel);
         info.put("deviceFallback", deviceFallback);
+        info.put("deviceBoard", Build.BOARD == null ? "" : Build.BOARD);
+        info.put("deviceProduct", Build.PRODUCT == null ? "" : Build.PRODUCT);
         return info;
     }
 
@@ -153,7 +153,7 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
             }));
 
             if (isGooglePlayServicesAvailable()) {
-                new Thread(new Runnable() {
+                ThreadFactory.autoStart(new Runnable() {
                     @Override
                     public void run() {
                         try {
@@ -168,11 +168,10 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
                             Teak.log.exception(e);
                         }
                     }
-                })
-                    .start();
+                });
 
                 // Only start running the future if we get this far
-                new Thread(adInfoFuture).start();
+                ThreadFactory.autoStart(adInfoFuture);
 
                 // And we're good
                 usingGooglePlayForAdId = true;

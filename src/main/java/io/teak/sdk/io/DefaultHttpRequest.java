@@ -8,25 +8,29 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.ConnectException;
 import java.net.HttpRetryException;
+import java.net.HttpURLConnection;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.UnknownHostException;
-
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
 
-public class DefaultHttpsRequest implements IHttpsRequest {
+public class DefaultHttpRequest implements IHttpRequest {
     @Override
     @SuppressWarnings("TryWithIdenticalCatches")
     public Response synchronousRequest(URL url, String requestBody) throws IOException {
         Response ret = Response.ERROR_RESPONSE;
 
-        HttpsURLConnection connection = null;
+        HttpURLConnection connection = null;
         BufferedReader rd = null;
 
         try {
-            connection = (HttpsURLConnection) url.openConnection();
+            if ("https".equalsIgnoreCase(url.getProtocol())) {
+                connection = (HttpsURLConnection) url.openConnection();
+            } else if ("http".equalsIgnoreCase(url.getProtocol())) {
+                connection = (HttpURLConnection) url.openConnection();
+            }
 
             connection.setRequestProperty("Accept-Charset", "UTF-8");
             connection.setUseCaches(false);

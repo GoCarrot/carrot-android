@@ -2,10 +2,8 @@ package io.teak.sdk.referrer;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-
-import java.util.concurrent.Future;
-
 import io.teak.sdk.InstallReferrerReceiver;
+import java.util.concurrent.Future;
 
 public class InstallReferrerFuture {
     public static Future<String> get(@NonNull final Context context) {

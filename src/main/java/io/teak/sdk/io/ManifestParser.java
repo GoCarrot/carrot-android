@@ -6,17 +6,14 @@ import android.content.res.AssetManager;
 import android.content.res.XmlResourceParser;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-
-import org.xmlpull.v1.XmlPullParser;
-
+import io.teak.sdk.Teak;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
-
-import io.teak.sdk.Teak;
+import org.xmlpull.v1.XmlPullParser;
 
 public class ManifestParser {
     public final XmlTag tags;

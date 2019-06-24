@@ -1,16 +1,15 @@
 package io.teak.sdk.wrapper.air;
 
-import java.util.Map;
-import java.util.HashMap;
-
 import android.support.annotation.NonNull;
-
 import com.adobe.fre.FREContext;
 import com.adobe.fre.FREFunction;
-
+import io.teak.sdk.Teak;
 import io.teak.sdk.Unobfuscable;
+import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.wrapper.ISDKWrapper;
 import io.teak.sdk.wrapper.TeakInterface;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ExtensionContext extends FREContext implements Unobfuscable {
     final TeakInterface teakInterface;
@@ -32,6 +31,9 @@ public class ExtensionContext extends FREContext implements Unobfuscable {
                         case RewardClaim: {
                             eventName = "ON_REWARD";
                         } break;
+                        case ForegroundNotification: {
+                            eventName = "ON_FOREGROUND_NOTIFICATION";
+                        } break;
                     }
                     Extension.context.dispatchStatusEventAsync(eventName, eventData);
                 }
@@ -42,6 +44,13 @@ public class ExtensionContext extends FREContext implements Unobfuscable {
             this.teakInterface = tempTeakInterface;
             this.initializationErrors = tempInitializationErrors;
         }
+
+        Teak.setLogListener(new Teak.LogListener() {
+            @Override
+            public void logEvent(String logEvent, String logLevel, Map<String, Object> logData) {
+                Extension.context.dispatchStatusEventAsync("ON_LOG_EVENT", new JSONObject(logData).toString());
+            }
+        });
     }
 
     @Override

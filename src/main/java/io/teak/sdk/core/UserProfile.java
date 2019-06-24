@@ -1,18 +1,16 @@
 package io.teak.sdk.core;
 
 import android.support.annotation.NonNull;
-
-import java.security.InvalidParameterException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-
 import io.teak.sdk.Request;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.json.JSONObject;
+import java.security.InvalidParameterException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 public class UserProfile extends Request {
     private final Map<String, Object> stringAttributes;
@@ -22,7 +20,7 @@ public class UserProfile extends Request {
     private ScheduledFuture<?> scheduledSend;
 
     UserProfile(@NonNull Session session, @NonNull Map<String, Object> userProfile) {
-        super("gocarrot.com", "/me/profile", new HashMap<String, Object>(), session, null, true);
+        super(null, "/me/profile", new HashMap<String, Object>(), session, null, true);
 
         if (!(userProfile.get("context") instanceof String)) {
             throw new InvalidParameterException("User Profile value 'context' is not a String");

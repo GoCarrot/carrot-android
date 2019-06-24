@@ -4,11 +4,10 @@ import com.adobe.fre.FREArray;
 import com.adobe.fre.FREContext;
 import com.adobe.fre.FREFunction;
 import com.adobe.fre.FREObject;
-
-import java.util.concurrent.Future;
-
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakNotification;
+import io.teak.sdk.core.ThreadFactory;
+import java.util.concurrent.Future;
 
 public class TeakNotificationFunction implements FREFunction {
     public enum CallType {
@@ -62,7 +61,7 @@ public class TeakNotificationFunction implements FREFunction {
 
             final Future<String> future = tempFuture;
             if (future != null) {
-                new Thread(new Runnable() {
+                ThreadFactory.autoStart(new Runnable() {
                     @Override
                     public void run() {
                         try {
@@ -72,8 +71,7 @@ public class TeakNotificationFunction implements FREFunction {
                             Teak.log.exception(e);
                         }
                     }
-                })
-                    .start();
+                });
             }
         } catch (Exception e) {
             Teak.log.exception(e);

@@ -6,17 +6,16 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.util.Log;
-
 import com.firebase.jobdispatcher.Job;
 import com.firebase.jobdispatcher.RetryStrategy;
 import com.firebase.jobdispatcher.Trigger;
-
 import io.teak.sdk.IObjectFactory;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.TeakEvent;
+import io.teak.sdk.event.UserIdEvent;
 import io.teak.sdk.json.JSONObject;
-
+import io.teak.sdk.service.JobService;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -28,9 +27,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
-
-import io.teak.sdk.event.UserIdEvent;
-import io.teak.sdk.service.JobService;
 
 public class Raven implements Thread.UncaughtExceptionHandler {
     public static final String JOB_TYPE = "Teak.Raven";

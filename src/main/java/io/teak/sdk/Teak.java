@@ -1,20 +1,19 @@
 package io.teak.sdk;
 
 import android.app.Activity;
-
-import android.content.Intent;
-import android.content.Context;
 import android.content.BroadcastReceiver;
-
+import android.content.Context;
+import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
-
 import io.teak.sdk.core.TeakCore;
+import io.teak.sdk.core.ThreadFactory;
+import io.teak.sdk.event.DeepLinksReadyEvent;
 import io.teak.sdk.event.PushNotificationEvent;
+import io.teak.sdk.io.IAndroidResources;
 import io.teak.sdk.json.JSONException;
 import io.teak.sdk.json.JSONObject;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,11 +23,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import io.teak.sdk.core.Session;
-import io.teak.sdk.event.DeepLinksReadyEvent;
-import io.teak.sdk.event.SessionStateEvent;
-import io.teak.sdk.io.IAndroidResources;
 
 /**
  * Teak
@@ -489,6 +483,41 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     @SuppressWarnings("unused")
     public static final String REWARD_CLAIM_ATTEMPT = "io.teak.sdk.Teak.intent.REWARD_CLAIM_ATTEMPT";
 
+    /**
+     * Intent action used by Teak to notify you that a notification was received while the app is
+     * in the foreground.
+     * <p/>
+     * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
+     * <pre>
+     * {@code
+     *     IntentFilter filter = new IntentFilter();
+     *     filter.addAction(Teak.FOREGROUND_NOTIFICATION_INTENT);
+     *     LocalBroadcastManager.getInstance(context).registerReceiver(yourBroadcastListener, filter);
+     * }
+     * </pre>
+     */
+    @SuppressWarnings("unused")
+    public static final String FOREGROUND_NOTIFICATION_INTENT = "io.teak.sdk.Teak.intent.FOREGROUND_NOTIFICATION_INTENT";
+
+    ///// LogListener
+
+    /**
+     *
+     */
+    public static abstract class LogListener {
+        public abstract void logEvent(String logEvent, String logLevel, Map<String, Object> logData);
+    }
+
+    /**
+     * Listen for Teak SDK log events.
+     *<p/>
+     * @param logListener A {@link LogListener} that will be called each time Teak would log an internal SDK event.
+     */
+    @SuppressWarnings("unused")
+    public static void setLogListener(LogListener logListener) {
+        Teak.log.setLogListener(logListener);
+    }
+
     ///// BroadcastReceiver
 
     @Override
@@ -623,5 +652,5 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     public static TeakInstance Instance;
 
-    private static ExecutorService asyncExecutor = Executors.newCachedThreadPool();
+    private static ExecutorService asyncExecutor = Executors.newCachedThreadPool(ThreadFactory.autonamed());
 }

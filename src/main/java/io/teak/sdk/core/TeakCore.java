@@ -9,29 +9,15 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
-
-import io.teak.sdk.IntegrationChecker;
-import io.teak.sdk.RetriableTask;
-import io.teak.sdk.configuration.AppConfiguration;
-import io.teak.sdk.io.DefaultAndroidNotification;
-import io.teak.sdk.io.DefaultAndroidResources;
-import io.teak.sdk.json.JSONObject;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-
 import io.teak.sdk.Helpers;
+import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.NotificationBuilder;
 import io.teak.sdk.Request;
+import io.teak.sdk.RetriableTask;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
+import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.event.ExternalBroadcastEvent;
 import io.teak.sdk.event.LifecycleEvent;
@@ -40,6 +26,17 @@ import io.teak.sdk.event.PurchaseEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.event.TrackEventEvent;
+import io.teak.sdk.io.DefaultAndroidNotification;
+import io.teak.sdk.io.DefaultAndroidResources;
+import io.teak.sdk.json.JSONObject;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class TeakCore implements ITeakCore {
     private static TeakCore Instance = null;
@@ -167,9 +164,32 @@ public class TeakCore implements ITeakCore {
                     }
                     Teak.log.i("notification.received", debugHash);
 
-                    // Foreground notification?
-                    boolean showInForeground = Helpers.getBooleanFromBundle(bundle, "teakShowInForeground");
-                    if (showInForeground || !Session.isExpiringOrExpired()) break;
+                    // If the session is not expiring or expired, we are in the foreground
+                    // If we're not supposed to show notifications in the foreground, trigger the
+                    //   broadcast for a foreground receipt of a notification.
+                    final boolean showInForeground = Helpers.getBooleanFromBundle(bundle, "teakShowInForeground");
+                    if (!Session.isExpiringOrExpired() && !showInForeground) {
+                        if (TeakCore.this.localBroadcastManager != null) {
+                            final String teakRewardId = bundle.getString("teakRewardId");
+
+                            final HashMap<String, Object> eventDataDict = new HashMap<>();
+                            eventDataDict.put("teakNotifId", bundle.getString("teakNotifId"));
+                            eventDataDict.put("teakRewardId", teakRewardId);
+                            eventDataDict.put("incentivized", teakRewardId != null);
+                            eventDataDict.put("teakScheduleName", bundle.getString("teakScheduleName"));
+                            eventDataDict.put("teakCreativeName", bundle.getString("teakCreativeName"));
+
+                            // Notification content
+                            eventDataDict.put("message", bundle.getString("message"));
+
+                            final Intent broadcastEvent = new Intent(Teak.FOREGROUND_NOTIFICATION_INTENT);
+                            broadcastEvent.putExtras(bundle);
+                            broadcastEvent.putExtra("eventData", eventDataDict);
+                            sendLocalBroadcast(broadcastEvent);
+                        }
+                        // Break out of this switch statement, we don't want to display the notification
+                        break;
+                    }
 
                     // Create Teak Notification
                     final TeakNotification teakNotification = new TeakNotification(bundle);
@@ -325,8 +345,8 @@ public class TeakCore implements ITeakCore {
 
     ///// Data Members
 
-    private final ExecutorService asyncExecutor = Executors.newCachedThreadPool();
+    private final ExecutorService asyncExecutor = Executors.newCachedThreadPool(io.teak.sdk.core.ThreadFactory.autonamed());
     private final LocalBroadcastManager localBroadcastManager;
 
-    public static final ScheduledExecutorService operationQueue = Executors.newSingleThreadScheduledExecutor();
+    public static final ScheduledExecutorService operationQueue = Executors.newSingleThreadScheduledExecutor(ThreadFactory.autonamed());
 }

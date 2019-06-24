@@ -1,28 +1,24 @@
 package io.teak.sdk;
 
-import android.os.Bundle;
-
 import android.content.Intent;
-
+import android.os.Bundle;
+import io.teak.sdk.Helpers.mm;
+import io.teak.sdk.core.Session;
+import io.teak.sdk.core.ThreadFactory;
+import io.teak.sdk.json.JSONArray;
+import io.teak.sdk.json.JSONException;
+import io.teak.sdk.json.JSONObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
-
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import io.teak.sdk.json.JSONArray;
-import io.teak.sdk.json.JSONException;
-import io.teak.sdk.json.JSONObject;
-
-import io.teak.sdk.Helpers.mm;
-import io.teak.sdk.core.Session;
 
 /**
  * An app-to-user notification received from Teak via GCM.
@@ -199,7 +195,7 @@ public class TeakNotification implements Unobfuscable {
                     return null;
                 }
             });
-            new Thread(ret).start();
+            ThreadFactory.autoStart(ret);
 
             Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
                 @Override

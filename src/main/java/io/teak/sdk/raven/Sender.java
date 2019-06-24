@@ -3,7 +3,7 @@ package io.teak.sdk.raven;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.util.Log;
-
+import io.teak.sdk.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -13,10 +13,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.Callable;
 import java.util.zip.GZIPOutputStream;
-
 import javax.net.ssl.HttpsURLConnection;
-
-import io.teak.sdk.json.JSONObject;
 
 public class Sender implements Callable<Boolean> {
     public static final int SENTRY_VERSION = 7;

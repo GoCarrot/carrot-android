@@ -1,6 +1,7 @@
 package io.teak.sdk;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
@@ -8,19 +9,29 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-
-import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONException;
-
+import io.teak.sdk.json.JSONObject;
 import java.security.InvalidParameterException;
 import java.security.MessageDigest;
-import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 public class Helpers {
+    public static String getStringOrNullFromIntentExtra(final @NonNull Intent intent, final @NonNull String key) {
+        String ret = null;
+        Bundle bundle = intent.getExtras();
+        if (bundle != null) {
+            String value = bundle.getString(key);
+            if (value != null && !value.isEmpty()) {
+                ret = value;
+            }
+        }
+        return ret;
+    }
+
     public static boolean getBooleanFromBundle(Bundle b, String key) {
         String boolAsStringMaybe = b.getString(key);
         if (boolAsStringMaybe != null) {

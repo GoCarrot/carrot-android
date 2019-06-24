@@ -4,26 +4,34 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
-import android.text.TextUtils;
-
+import io.teak.sdk.configuration.AppConfiguration;
+import io.teak.sdk.configuration.RemoteConfiguration;
+import io.teak.sdk.core.ThreadFactory;
+import io.teak.sdk.event.RemoteConfigurationEvent;
+import io.teak.sdk.io.ManifestParser;
+import io.teak.sdk.json.JSONArray;
+import io.teak.sdk.json.JSONObject;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import io.teak.sdk.configuration.AppConfiguration;
-import io.teak.sdk.configuration.RemoteConfiguration;
-import io.teak.sdk.event.RemoteConfigurationEvent;
-import io.teak.sdk.io.ManifestParser;
+import javax.net.ssl.HttpsURLConnection;
 
 public class IntegrationChecker {
     public static final String LOG_TAG = "Teak.Integration";
@@ -199,7 +207,7 @@ public class IntegrationChecker {
         }
 
         // Run checks on a background thread
-        new Thread(new Runnable() {
+        ThreadFactory.autoStart(new Runnable() {
             @Override
             public void run() {
                 // If the target SDK version is 26+ the linked support-v4 lib must be 26.1.0+
@@ -211,8 +219,7 @@ public class IntegrationChecker {
                 // Manifest checks
                 checkAndroidManifest();
             }
-        })
-            .start();
+        });
 
         TeakEvent.addEventListener(new TeakEvent.EventListener() {
             @Override
@@ -233,6 +240,7 @@ public class IntegrationChecker {
     private void checkActivityLaunchMode() {
         // Check the launch mode of the activity for debugging purposes
         try {
+            Teak.log.i("integration.launchMode", "Checking android:launchMode for main <activity>.");
             ComponentName cn = new ComponentName(this.activity, this.activity.getClass());
             ActivityInfo ai = this.activity.getPackageManager().getActivityInfo(cn, PackageManager.GET_META_DATA);
             // (LAUNCH_SINGLE_INSTANCE == LAUNCH_SINGLE_TASK | LAUNCH_SINGLE_TOP) but let's not
@@ -247,6 +255,7 @@ public class IntegrationChecker {
     }
 
     private void checkAndroidManifest() {
+        Teak.log.i("integration.manifest", "Checking AndroidManifest.xml for integration issues.");
         try {
             final TeakConfiguration teakConfiguration = TeakConfiguration.get();
             final ManifestParser manifestParser = new ManifestParser(this.activity);
@@ -258,63 +267,74 @@ public class IntegrationChecker {
             }
 
             // Make sure the Teak FCM service is present
-            final List<ManifestParser.XmlTag> fcmServices = applications.get(0).find("service.intent-filter.action",
-                new HashMap.SimpleEntry<>("name", "com.google.firebase.MESSAGING_EVENT"));
-            ManifestParser.XmlTag teakFcmService = null;
-            for (ManifestParser.XmlTag tag : fcmServices) {
-                final String checkServiceClass = tag.attributes.get("name");
-                try {
-                    Class.forName(checkServiceClass);
-                } catch (Exception ignored) {
-                    addErrorToReport(checkServiceClass, "Push notifications will crash because \"" + checkServiceClass + "\" is in your AndroidManifest.xml, but the corresponding SDK has been removed.\n\nTo fix this, remove the <service> for \"" + checkServiceClass + "\"");
+            {
+                Teak.log.i("integration.manifest.fcm", "Checking AndroidManifest.xml for push notification integration issues.");
+                final List<ManifestParser.XmlTag> fcmServices = applications.get(0).find("service.intent-filter.action",
+                    new HashMap.SimpleEntry<>("name", "com.google.firebase.MESSAGING_EVENT"));
+                ManifestParser.XmlTag teakFcmService = null;
+                for (ManifestParser.XmlTag tag : fcmServices) {
+                    final String checkServiceClass = tag.attributes.get("name");
+                    try {
+                        Class.forName(checkServiceClass);
+                    } catch (Exception ignored) {
+                        addErrorToReport(checkServiceClass, "Push notifications will crash because \"" + checkServiceClass + "\" is in your AndroidManifest.xml, but the corresponding SDK has been removed.\n\nTo fix this, remove the <service> for \"" + checkServiceClass + "\"");
+                    }
+
+                    // Check to make sure Teak GCM receiver is present
+                    if ("io.teak.sdk.push.FCMPushProvider".equals(checkServiceClass)) {
+                        teakFcmService = tag;
+                    }
                 }
 
-                // Check to make sure Teak GCM receiver is present
-                if ("io.teak.sdk.push.FCMPushProvider".equals(checkServiceClass)) {
-                    teakFcmService = tag;
+                // Error if no Teak GCM receiver
+                if (teakFcmService == null) {
+                    addErrorToReport("io.teak.sdk.push.FCMPushProvider", "Push notifications will not work because there is no \"io.teak.sdk.push.FCMPushProvider\" <service> in your AndroidManifest.xml.\n\nTo fix this, add the io.teak.sdk.push.FCMPushProvider <service>");
                 }
-            }
-
-            // Error if no Teak GCM receiver
-            if (teakFcmService == null) {
-                addErrorToReport("io.teak.sdk.push.FCMPushProvider", "Push notifications will not work because there is no \"io.teak.sdk.push.FCMPushProvider\" <service> in your AndroidManifest.xml.\n\nTo fix this, add the io.teak.sdk.push.FCMPushProvider <service>");
             }
 
             // Check to make sure the Teak job service is present
-            final List<ManifestParser.XmlTag> teakDeviceStateService = applications.get(0).find("service",
-                new HashMap.SimpleEntry<>("name", "io.teak.sdk.service.JobService"));
-            if (teakDeviceStateService.size() < 1) {
-                addErrorToReport("io.teak.sdk.service.JobService", "Animated notifications will not work on Android 8+ because there is no \"io.teak.sdk.service.DeviceStateService\" <service> in your AndroidManifest.xml.\n\nTo fix this, add the \"io.teak.sdk.service.DeviceStateService\" <service>");
+            {
+                Teak.log.i("integration.manifest.JobService", "Checking AndroidManifest.xml for Teak Job Service.");
+                final List<ManifestParser.XmlTag> teakDeviceStateService = applications.get(0).find("service",
+                    new HashMap.SimpleEntry<>("name", "io.teak.sdk.service.JobService"));
+                if (teakDeviceStateService.size() < 1) {
+                    addErrorToReport("io.teak.sdk.service.JobService", "Animated notifications will not work on Android 8+ because there is no \"io.teak.sdk.service.DeviceStateService\" <service> in your AndroidManifest.xml.\n\nTo fix this, add the \"io.teak.sdk.service.DeviceStateService\" <service>");
+                }
             }
 
             // Find the teakXXXX:// scheme
-            final List<ManifestParser.XmlTag> teakScheme = applications.get(0).find("(activity|activity\\-alias).intent\\-filter.data",
-                new HashMap.SimpleEntry<>("scheme", "teak\\d+"));
-            if (teakScheme.size() < 1) {
-                addErrorToReport("activity.intent-filter.data.scheme", "Deep linking will not work because there is no <intent-filter> in any <activity> or <activity-alias> has the \"teak\" data scheme.\n\nAdd <data android:scheme=\"teak" + teakConfiguration.appConfiguration.appId + "\" android:host=\"*\" /> to the <intent-filter> for your main activity.");
-            } else {
-                // Make sure the <intent-filter> for the teakXXXX:// scheme has <action android:name="android.intent.action.VIEW" />
-                final List<ManifestParser.XmlTag> teakSchemeAction = teakScheme.get(0).find("intent\\-filter.action",
-                    new HashMap.SimpleEntry<>("name", "android.intent.action.VIEW"));
-                if (teakSchemeAction.size() < 1) {
-                    addErrorToReport("activity.intent-filter.data.scheme", "the <intent-filter> with the \"teak\" data scheme should have <action android:name=\"android.intent.action.VIEW\" />");
-                }
+            {
+                Teak.log.i("integration.manifest.teak_scheme", "Checking AndroidManifest.xml for teakXXX:// scheme");
+                final List<ManifestParser.XmlTag> teakScheme = applications.get(0).find("(activity|activity\\-alias).intent\\-filter.data",
+                    new HashMap.SimpleEntry<>("scheme", "teak\\d+"));
+                if (teakScheme.size() < 1) {
+                    addErrorToReport("activity.intent-filter.data.scheme", "Deep linking will not work because there is no <intent-filter> in any <activity> or <activity-alias> has the \"teak\" data scheme.\n\nAdd <data android:scheme=\"teak" + teakConfiguration.appConfiguration.appId + "\" android:host=\"*\" /> to the <intent-filter> for your main activity.");
+                } else {
+                    // Make sure the <intent-filter> for the teakXXXX:// scheme has <action android:name="android.intent.action.VIEW" />
+                    final List<ManifestParser.XmlTag> teakSchemeAction = teakScheme.get(0).find("intent\\-filter.action",
+                        new HashMap.SimpleEntry<>("name", "android.intent.action.VIEW"));
+                    if (teakSchemeAction.size() < 1) {
+                        addErrorToReport("activity.intent-filter.data.scheme", "the <intent-filter> with the \"teak\" data scheme should have <action android:name=\"android.intent.action.VIEW\" />");
+                    }
 
-                // Make sure the <intent-filter> for the teakXXXX:// scheme has <category android:name="android.intent.category.DEFAULT" /> and <category android:name="android.intent.category.BROWSABLE" />
-                final List<ManifestParser.XmlTag> teakSchemeCategories = teakScheme.get(0).find("intent\\-filter.category",
-                    new HashMap.SimpleEntry<>("name", "android.intent.category.(DEFAULT|BROWSABLE)"));
-                if (teakSchemeCategories.size() < 2) {
-                    addErrorToReport("activity.intent-filter.data.scheme", "the <intent-filter> with the \"teak\" data scheme should have <category android:name=\"android.intent.category.DEFAULT\" /> and <category android:name=\"android.intent.category.BROWSABLE\" />");
-                }
+                    // Make sure the <intent-filter> for the teakXXXX:// scheme has <category android:name="android.intent.category.DEFAULT" /> and <category android:name="android.intent.category.BROWSABLE" />
+                    final List<ManifestParser.XmlTag> teakSchemeCategories = teakScheme.get(0).find("intent\\-filter.category",
+                        new HashMap.SimpleEntry<>("name", "android.intent.category.(DEFAULT|BROWSABLE)"));
+                    if (teakSchemeCategories.size() < 2) {
+                        addErrorToReport("activity.intent-filter.data.scheme", "the <intent-filter> with the \"teak\" data scheme should have <category android:name=\"android.intent.category.DEFAULT\" /> and <category android:name=\"android.intent.category.BROWSABLE\" />");
+                    }
 
-                // Make sure the <intent-filter> for the teakXXXX:// scheme does *not* also contain any http(s) schemes
-                final List<ManifestParser.XmlTag> teakSchemeOtherSchemes = teakSchemeCategories.get(0).find("data",
-                    new HashMap.SimpleEntry<>("scheme", "(http|https)"));
-                if (teakSchemeOtherSchemes.size() > 0) {
-                    addErrorToReport("activity.intent-filter.data.scheme", "the <intent-filter> with the \"teak\" data scheme *should not* contain any http or https schemes.\n\nPut the \"teak\" data scheme in its own <intent-filter>");
+                    // Make sure the <intent-filter> for the teakXXXX:// scheme does *not* also contain any http(s) schemes
+                    final List<ManifestParser.XmlTag> teakSchemeOtherSchemes = teakSchemeCategories.get(0).find("data",
+                        new HashMap.SimpleEntry<>("scheme", "(http|https)"));
+                    if (teakSchemeOtherSchemes.size() > 0) {
+                        addErrorToReport("activity.intent-filter.data.scheme", "the <intent-filter> with the \"teak\" data scheme *should not* contain any http or https schemes.\n\nPut the \"teak\" data scheme in its own <intent-filter>");
+                    }
                 }
+            }
 
-                // Make sure per-feature permissions are included
+            // Make sure per-feature permissions are included
+            {
                 final List<ManifestParser.XmlTag> usesPermissions = manifestParser.tags.find("$.uses-permission");
                 final Map<String, Boolean> permissionsAsMap = new HashMap<>();
                 for (ManifestParser.XmlTag permission : usesPermissions) {

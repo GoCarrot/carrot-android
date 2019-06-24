@@ -1,17 +1,14 @@
 package io.teak.sdk.wrapper.unity;
 
-import io.teak.sdk.raven.Raven;
+import android.support.annotation.NonNull;
+import io.teak.sdk.Teak;
 import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.json.JSONObject;
-
-import android.support.annotation.NonNull;
-
-import java.lang.reflect.Method;
-import java.util.Map;
-
-import io.teak.sdk.Teak;
+import io.teak.sdk.raven.Raven;
 import io.teak.sdk.wrapper.ISDKWrapper;
 import io.teak.sdk.wrapper.TeakInterface;
+import java.lang.reflect.Method;
+import java.util.Map;
 
 public class TeakUnity implements Unobfuscable {
     private static Method unitySendMessage;
@@ -21,6 +18,13 @@ public class TeakUnity implements Unobfuscable {
         try {
             Class<?> unityPlayerClass = Class.forName("com.unity3d.player.UnityPlayer");
             TeakUnity.unitySendMessage = unityPlayerClass.getMethod("UnitySendMessage", String.class, String.class, String.class);
+
+            Teak.setLogListener(new Teak.LogListener() {
+                @Override
+                public void logEvent(String logEvent, String logLevel, Map<String, Object> logData) {
+                    unitySendMessage("LogEvent", new JSONObject(logData).toString());
+                }
+            });
         } catch (Exception ignored) {
         }
     }
@@ -37,6 +41,9 @@ public class TeakUnity implements Unobfuscable {
                     } break;
                     case RewardClaim: {
                         eventName = "RewardClaimAttempt";
+                    } break;
+                    case ForegroundNotification: {
+                        eventName = "ForegroundNotification";
                     } break;
                 }
 

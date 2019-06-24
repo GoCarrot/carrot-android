@@ -5,13 +5,12 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
-
 import io.teak.sdk.Helpers;
 import io.teak.sdk.IntegrationChecker;
+import io.teak.sdk.Teak;
 import io.teak.sdk.io.AndroidResources;
 import io.teak.sdk.io.IAndroidResources;
 import io.teak.sdk.json.JSONObject;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -19,8 +18,6 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-
-import io.teak.sdk.Teak;
 
 public class AppConfiguration {
     @SuppressWarnings("WeakerAccess")

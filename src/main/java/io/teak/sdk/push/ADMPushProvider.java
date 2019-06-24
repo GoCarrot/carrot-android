@@ -2,22 +2,24 @@ package io.teak.sdk.push;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 import android.support.annotation.NonNull;
 import android.util.Base64;
-
-import android.content.Intent;
-
 import com.amazon.device.messaging.ADM;
 import com.amazon.device.messaging.ADMMessageHandlerBase;
 import com.amazon.device.messaging.ADMMessageReceiver;
 import com.amazon.device.messaging.development.ADMManifest;
-
+import io.teak.sdk.Helpers;
+import io.teak.sdk.Teak;
+import io.teak.sdk.TeakEvent;
 import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.core.TeakCore;
+import io.teak.sdk.core.ThreadFactory;
+import io.teak.sdk.event.PushNotificationEvent;
+import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.json.JSONObject;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
@@ -27,15 +29,9 @@ import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.teak.sdk.Helpers;
-import io.teak.sdk.Teak;
-import io.teak.sdk.TeakEvent;
-import io.teak.sdk.event.PushNotificationEvent;
-import io.teak.sdk.event.PushRegistrationEvent;
-
 public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvider, Unobfuscable {
     private ADM admInstance;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ExecutorService executor = Executors.newSingleThreadExecutor(ThreadFactory.autonamed());
 
     public ADMPushProvider() {
         super(ADMPushProvider.class.getName());

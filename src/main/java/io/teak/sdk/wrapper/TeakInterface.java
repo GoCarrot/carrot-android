@@ -5,13 +5,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-
+import io.teak.sdk.Teak;
 import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.json.JSONObject;
-
 import java.util.HashMap;
-
-import io.teak.sdk.Teak;
 
 public class TeakInterface implements Unobfuscable {
     private final ISDKWrapper sdkWrapper;
@@ -22,6 +19,7 @@ public class TeakInterface implements Unobfuscable {
         IntentFilter filter = new IntentFilter();
         filter.addAction(Teak.REWARD_CLAIM_ATTEMPT);
         filter.addAction(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
+        filter.addAction(Teak.FOREGROUND_NOTIFICATION_INTENT);
 
         if (Teak.Instance != null) {
             Teak.Instance.objectFactory.getTeakCore().registerLocalBroadcastReceiver(broadcastReceiver, filter);
@@ -56,6 +54,17 @@ public class TeakInterface implements Unobfuscable {
                     sdkWrapper.sdkSendMessage(ISDKWrapper.EventType.RewardClaim, eventData);
                 } catch (Exception e) {
                     Teak.log.exception(e);
+                }
+            } else if (Teak.FOREGROUND_NOTIFICATION_INTENT.equals(action)) {
+                String eventData = "{}";
+                try {
+                    @SuppressWarnings("unchecked")
+                    HashMap<String, Object> eventDataDict = (HashMap<String, Object>) bundle.getSerializable("eventData");
+                    eventData = new JSONObject(eventDataDict).toString();
+                } catch (Exception e) {
+                    Teak.log.exception(e);
+                } finally {
+                    sdkWrapper.sdkSendMessage(ISDKWrapper.EventType.ForegroundNotification, eventData);
                 }
             }
         }

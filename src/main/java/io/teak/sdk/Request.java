@@ -3,21 +3,22 @@ package io.teak.sdk;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Base64;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-
+import io.teak.sdk.configuration.RemoteConfiguration;
+import io.teak.sdk.core.Session;
+import io.teak.sdk.core.ThreadFactory;
+import io.teak.sdk.event.RemoteConfigurationEvent;
+import io.teak.sdk.event.TrackEventEvent;
+import io.teak.sdk.io.DefaultHttpRequest;
+import io.teak.sdk.io.IHttpRequest;
+import io.teak.sdk.json.JSONObject;
 import java.io.UnsupportedEncodingException;
-
 import java.math.BigInteger;
 import java.net.URL;
 import java.net.URLEncoder;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,17 +31,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
-import io.teak.sdk.event.TrackEventEvent;
-import io.teak.sdk.json.JSONObject;
-
-import io.teak.sdk.configuration.RemoteConfiguration;
-import io.teak.sdk.core.Session;
-import io.teak.sdk.event.RemoteConfigurationEvent;
-import io.teak.sdk.io.DefaultHttpsRequest;
-import io.teak.sdk.io.IHttpsRequest;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 public class Request implements Runnable {
+    public static final int DEFAULT_PORT = 443;
+    public static final int MOCKED_PORT = 8080;
     private final String endpoint;
     private final String hostname;
     protected final Map<String, Object> payload;
@@ -73,10 +69,12 @@ public class Request implements Runnable {
     public class BatchConfiguration {
         public long count;
         public float time;
+        public float maximumWaitTime;
 
         BatchConfiguration() {
             this.count = 1;
             this.time = 0.0f;
+            this.maximumWaitTime = 0.0f;
         }
     }
 
@@ -150,6 +148,7 @@ public class Request implements Runnable {
         private ScheduledFuture<?> scheduledFuture;
         private final List<Callback> callbacks = new LinkedList<>();
         final List<Map<String, Object>> batchContents = new LinkedList<>();
+        long firstAddTime = 0L;
 
         BatchedRequest(@Nullable String hostname, @NonNull String endpoint, @NonNull Session session, boolean addStandardAttributes) {
             super(hostname, endpoint, new HashMap<String, Object>(), session, null, addStandardAttributes);
@@ -169,6 +168,14 @@ public class Request implements Runnable {
                 return false;
             }
 
+            if (this.firstAddTime == 0) {
+                this.firstAddTime = System.nanoTime();
+
+                if (this.batch.maximumWaitTime > 0.0f) {
+                    Request.requestExecutor.schedule(this, (long) (this.batch.maximumWaitTime * 1000.0f), TimeUnit.MILLISECONDS);
+                }
+            }
+
             if (callback != null) {
                 this.callbacks.add(callback);
             }
@@ -183,6 +190,13 @@ public class Request implements Runnable {
                 this.scheduledFuture = Request.requestExecutor.schedule(this, (long) (this.batch.time * 1000.0f), TimeUnit.MILLISECONDS);
             }
             return true;
+        }
+
+        @Override
+        public synchronized void run() {
+            final long elapsedSinceFirstAdd = System.nanoTime() - this.firstAddTime;
+            this.payload.put("ms_since_first_event", TimeUnit.NANOSECONDS.toMillis(elapsedSinceFirstAdd));
+            super.run();
         }
 
         @Override
@@ -225,7 +239,7 @@ public class Request implements Runnable {
         }
 
         @Override
-        public void run() {
+        public synchronized void run() {
             synchronized (mutex) {
                 // Add batch elements
                 this.payload.put("events", this.batchContents);
@@ -291,7 +305,7 @@ public class Request implements Runnable {
         }
 
         @Override
-        public void run() {
+        public synchronized void run() {
             synchronized (mutex) {
                 // Turn SumOfSquares BigInteger into a string
                 ListIterator<Map<String, Object>> itr = this.batchContents.listIterator();
@@ -318,21 +332,26 @@ public class Request implements Runnable {
 
     ///// SDK interface
 
-    static ScheduledExecutorService requestExecutor = Executors.newSingleThreadScheduledExecutor();
+    static ScheduledExecutorService requestExecutor = Executors.newSingleThreadScheduledExecutor(ThreadFactory.autonamed());
 
     public static void submit(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
         submit(endpoint, payload, session, null);
     }
 
     public static void submit(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback) {
-        submit(Request.remoteConfiguration.getHostnameForEndpoint(endpoint), endpoint, payload, session, callback);
+        submit(null, endpoint, payload, session, callback);
     }
 
     public static void submit(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
         submit(hostname, endpoint, payload, session, null);
     }
 
-    public static void submit(final @Nullable String hostname, final @NonNull String endpoint, final @NonNull Map<String, Object> payload, final @NonNull Session session, final @Nullable Callback callback) {
+    public static void submit(@Nullable String hostname, final @NonNull String endpoint, final @NonNull Map<String, Object> payload, final @NonNull Session session, final @Nullable Callback callback) {
+        if (hostname == null) {
+            hostname = RemoteConfiguration.getHostnameForEndpoint(endpoint, Request.remoteConfiguration);
+        }
+        final String finalHostname = hostname;
+
         BatchedRequest batch = null;
 
         if ("parsnip.gocarrot.com".equals(hostname) &&
@@ -347,7 +366,7 @@ public class Request implements Runnable {
                 requestExecutor.execute(new Runnable() {
                     @Override
                     public void run() {
-                        submit(hostname, endpoint, payload, session, callback);
+                        submit(finalHostname, endpoint, payload, session, callback);
                     }
                 });
             }
@@ -444,6 +463,13 @@ public class Request implements Runnable {
                         } catch (Exception ignored) {
                         }
 
+                        try {
+                            batch.maximumWaitTime = batchConfig.containsKey("maximum_wait_time") ? (batchConfig.get("maximum_wait_time") instanceof Number ? ((Number) batchConfig.get("maximum_wait_time")).floatValue()
+                                                                                                                                                           : Float.parseFloat(batchConfig.get("maximum_wait_time").toString()))
+                                                                                                 : batch.maximumWaitTime;
+                        } catch (Exception ignored) {
+                        }
+
                         if (batchConfig.containsKey("lww")) {
                             boolean lww = false;
                             try {
@@ -529,17 +555,23 @@ public class Request implements Runnable {
 
         if (this.blackhole) return;
 
+        final boolean isMockedRequest = Request.remoteConfiguration != null && Request.remoteConfiguration.isMocked;
+
         final SecretKeySpec keySpec = new SecretKeySpec(Request.teakApiKey.getBytes(), "HmacSHA256");
         String requestBody;
 
         try {
-            final String stringToSign = "POST\n" + this.hostname + "\n" + this.endpoint + "\n" + Payload.toSigningString(this.payload);
-            final Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(keySpec);
-            final byte[] result = mac.doFinal(stringToSign.getBytes());
-            final String sig = Base64.encodeToString(result, Base64.NO_WRAP);
+            if (isMockedRequest) {
+                requestBody = Payload.toRequestBody(this.payload, "unit_test_request_sig");
+            } else {
+                final String stringToSign = "POST\n" + this.hostname + "\n" + this.endpoint + "\n" + Payload.toSigningString(this.payload);
+                final Mac mac = Mac.getInstance("HmacSHA256");
+                mac.init(keySpec);
+                final byte[] result = mac.doFinal(stringToSign.getBytes());
+                final String sig = Base64.encodeToString(result, Base64.NO_WRAP);
 
-            requestBody = Payload.toRequestBody(this.payload, sig);
+                requestBody = Payload.toRequestBody(this.payload, sig);
+            }
         } catch (Exception e) {
             Teak.log.exception(e);
             return;
@@ -548,9 +580,12 @@ public class Request implements Runnable {
         try {
             Teak.log.i("request.send", this.toMap());
             final long startTime = System.nanoTime();
-            final URL url = new URL("https://" + this.hostname + this.endpoint);
-            final IHttpsRequest request = new DefaultHttpsRequest(); // TODO: Do this properly with a Factory
-            final IHttpsRequest.Response response = request.synchronousRequest(url, requestBody);
+            final URL url = new URL(isMockedRequest ? "http" : "https",
+                this.hostname,
+                isMockedRequest ? Request.MOCKED_PORT : Request.DEFAULT_PORT,
+                this.endpoint);
+            final IHttpRequest request = new DefaultHttpRequest();
+            final IHttpRequest.Response response = request.synchronousRequest(url, requestBody);
 
             final int statusCode = response == null ? 0 : response.statusCode;
             final String body = response == null ? null : response.body;

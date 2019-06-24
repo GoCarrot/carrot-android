@@ -1,11 +1,9 @@
 package io.teak.sdk.event;
 
 import android.support.annotation.Nullable;
-
+import io.teak.sdk.TeakEvent;
 import java.util.HashMap;
 import java.util.Map;
-
-import io.teak.sdk.TeakEvent;
 
 public class PurchaseFailedEvent extends TeakEvent {
     public static final String Type = "PurchaseFailedEvent";

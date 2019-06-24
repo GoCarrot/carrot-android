@@ -2,10 +2,9 @@ package io.teak.sdk;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-
+import io.teak.sdk.core.ThreadFactory;
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.raven.Raven;
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -19,7 +18,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
-
 import javax.net.ssl.HttpsURLConnection;
 
 // Things I assume
@@ -140,9 +138,11 @@ public class Log {
     private boolean logLocally;
     private boolean logRemotely;
     private boolean sendToRapidIngestion;
+
+    private Teak.LogListener logListener;
     // endregion
 
-    private final ExecutorService remoteLogQueue = Executors.newSingleThreadExecutor();
+    private final ExecutorService remoteLogQueue = Executors.newSingleThreadExecutor(ThreadFactory.autonamed());
 
     public Log(String androidLogTag, int jsonIndentation) {
         this.androidLogTag = androidLogTag;
@@ -193,6 +193,10 @@ public class Log {
         this.logRemotely = logRemotely;
     }
 
+    public void setLogListener(Teak.LogListener logListener) {
+        this.logListener = logListener;
+    }
+
     protected class LogEvent {
         final Level logLevel;
         final String eventType;
@@ -231,6 +235,10 @@ public class Log {
         payload.put("event_type", logEvent.eventType);
         if (logEvent.eventData != null) {
             payload.put("event_data", logEvent.eventData);
+        }
+
+        if (this.logListener != null) {
+            this.logListener.logEvent(logEvent.eventType, logEvent.logLevel.name, payload);
         }
 
         // Remote logging

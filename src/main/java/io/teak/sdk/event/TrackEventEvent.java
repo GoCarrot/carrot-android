@@ -2,13 +2,11 @@ package io.teak.sdk.event;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-
+import io.teak.sdk.Helpers;
+import io.teak.sdk.TeakEvent;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
-
-import io.teak.sdk.Helpers;
-import io.teak.sdk.TeakEvent;
 
 public class TrackEventEvent extends TeakEvent {
     public static final String Type = "TrackEventEvent";

@@ -2,15 +2,13 @@ package io.teak.sdk;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-
-import java.util.ArrayList;
-
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.configuration.DataCollectionConfiguration;
 import io.teak.sdk.configuration.DebugConfiguration;
 import io.teak.sdk.configuration.DeviceConfiguration;
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.event.RemoteConfigurationEvent;
+import java.util.ArrayList;
 
 public class TeakConfiguration {
     public static boolean initialize(@NonNull Context context, @NonNull IObjectFactory objectFactory) {
