@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import io.teak.sdk.Teak;
+import io.teak.sdk.core.DeepLink;
 
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
@@ -35,6 +36,8 @@ public class DeepLinkRoutes extends TeakUnitTest {
         final Map<String, Object> arg = new HashMap<>();
         arg.put("bar", "1234");
         arg.put("baz", "abcd");
+        arg.put(DeepLink.INCOMING_URL_PATH_KEY, uri.getPath());
+        arg.put(DeepLink.INCOMING_URL_KEY, uri.toString());
         verify(callback, timeout(100)).call(arg);
     }
 
@@ -55,6 +58,8 @@ public class DeepLinkRoutes extends TeakUnitTest {
         arg.put("bar", "1234");
         arg.put("baz", "abcd");
         arg.put("foo", "bar");
+        arg.put(DeepLink.INCOMING_URL_PATH_KEY, uri.getPath());
+        arg.put(DeepLink.INCOMING_URL_KEY, uri.toString());
         verify(callback, timeout(100)).call(arg);
     }
 
@@ -74,6 +79,8 @@ public class DeepLinkRoutes extends TeakUnitTest {
         final Map<String, Object> arg = new HashMap<>();
         arg.put("bar", "barbar");
         arg.put("baz", "abcd");
+        arg.put(DeepLink.INCOMING_URL_PATH_KEY, uri.getPath());
+        arg.put(DeepLink.INCOMING_URL_KEY, uri.toString());
         verify(callback, timeout(100)).call(arg);
     }
 }
