@@ -129,7 +129,7 @@ public class Request implements Runnable {
 
     ///// Remote Configuration
 
-    private static RemoteConfiguration remoteConfiguration;
+    protected static RemoteConfiguration remoteConfiguration;
 
     public static void registerStaticEventListeners() {
         TeakEvent.addEventListener(new TeakEvent.EventListener() {
@@ -561,6 +561,10 @@ public class Request implements Runnable {
         String requestBody;
 
         try {
+            if (this.hostname == null) {
+                throw new IllegalArgumentException("Hostname is NULL for " + this.endpoint);
+            }
+
             if (isMockedRequest) {
                 requestBody = Payload.toRequestBody(this.payload, "unit_test_request_sig");
             } else {
