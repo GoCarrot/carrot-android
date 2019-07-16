@@ -179,7 +179,20 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static void identifyUser(final String userIdentifier) {
-        Teak.identifyUser(userIdentifier, null);
+        Teak.identifyUser(userIdentifier, null, null);
+    }
+
+    /**
+     * Tell Teak how it should identify the current user.
+     * <p/>
+     * <p>This should be the same way you identify the user in your backend.</p>
+     *
+     * @param userIdentifier An identifier which is unique for the current user.
+     * @param email          The email address for the user.
+     */
+    @SuppressWarnings("unused")
+    public static void identifyUser(final String userIdentifier, final String email) {
+        Teak.identifyUser(userIdentifier, null, email);
     }
 
     /**
@@ -220,6 +233,21 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static void identifyUser(final String userIdentifier, final String[] optOut) {
+        identifyUser(userIdentifier, optOut, null);
+    }
+
+    /**
+     * Tell Teak how it should identify the current user, with data collection opt-out and email.
+     * <p/>
+     * <p>This should be the same way you identify the user in your backend.</p>
+     *
+     * @param userIdentifier An identifier which is unique for the current user.
+     * @param optOut         A list containing zero or more of:
+     *                          {@link #OPT_OUT_IDFA}, {@link #OPT_OUT_FACEBOOK}, {@link #OPT_OUT_PUSH_KEY}
+     * @param email          The email address for the user.
+     */
+    @SuppressWarnings("unused")
+    public static void identifyUser(final String userIdentifier, final String[] optOut, final String email) {
         // Always process deep links when identifyUser is called
         Teak.processDeepLinks();
 
@@ -227,7 +255,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             asyncExecutor.submit(new Runnable() {
                 @Override
                 public void run() {
-                    Instance.identifyUser(userIdentifier, optOut != null ? optOut : new String[] {});
+                    Instance.identifyUser(userIdentifier, optOut != null ? optOut : new String[] {}, email);
                 }
             });
         }
