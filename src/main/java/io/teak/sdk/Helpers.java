@@ -20,6 +20,14 @@ import java.util.Map;
 import java.util.Set;
 
 public class Helpers {
+    public static boolean stringsAreEqual(final @Nullable String a, final @Nullable String b) {
+        if (a == b) return true;
+
+        final String notNullString = (a == null ? b : a);
+        final String possiblyNullString = (a == null ? a : b);
+        return notNullString.equals(possiblyNullString);
+    }
+
     public static String getStringOrNullFromIntentExtra(final @NonNull Intent intent, final @NonNull String key) {
         String ret = null;
         Bundle bundle = intent.getExtras();

@@ -117,6 +117,7 @@ public class Session {
 
     // State: UserIdentified
     private String userId;
+    private String email;
 
     private ScheduledExecutorService heartbeatService;
     private String countryCode;
@@ -133,6 +134,7 @@ public class Session {
 
     // For cases where setUserId() is called before a Session has been created
     private static String pendingUserId;
+    private static String pendingEmail;
 
     // Used specifically for creating the "null session" which is just used for code-intent clarity
     private Session(@NonNull String nullSessionId) {
@@ -369,6 +371,10 @@ public class Session {
                         payload.put("do_not_track_event", Boolean.TRUE);
                     }
 
+                    if (Session.this.email != null) {
+                        payload.put("email", Session.this.email);
+                    }
+
                     // "true", "false" or "unknown" (if API < 19)
                     payload.put("notifications_enabled",
                         Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ? String.valueOf(Teak.getNotificationStatus() == Teak.TEAK_NOTIFICATIONS_ENABLED) : "unknown");
@@ -584,18 +590,17 @@ public class Session {
         public void onNewEvent(@NonNull TeakEvent event) {
             switch (event.eventType) {
                 case UserIdEvent.Type:
-                    final String userId = ((UserIdEvent) event).userId;
-                    final Set<String> optOut = ((UserIdEvent) event).optOut;
+                    final UserIdEvent userIdEvent = (UserIdEvent) event;
                     final TeakConfiguration teakConfiguration = TeakConfiguration.get();
 
                     // Data-collection opt-out
                     //noinspection ConstantConditions
                     if (teakConfiguration != null) {
-                        teakConfiguration.dataCollectionConfiguration.addConfigurationFromDeveloper(optOut);
+                        teakConfiguration.dataCollectionConfiguration.addConfigurationFromDeveloper(userIdEvent.optOut);
                     }
 
                     // Assign user id
-                    setUserId(userId);
+                    setUserId(userIdEvent.userId, userIdEvent.email);
                     break;
                 case LifecycleEvent.Paused:
                     // Set state to 'Expiring'
@@ -630,12 +635,13 @@ public class Session {
         }
     }
 
-    private static void setUserId(@NonNull String userId) {
+    private static void setUserId(@NonNull String userId, @Nullable String email) {
         // If the user id has changed, create a new session
         currentSessionLock.lock();
         try {
             if (currentSession == null) {
                 Session.pendingUserId = userId;
+                Session.pendingEmail = email;
             } else {
                 final Session _lockedSession = currentSession;
                 _lockedSession.stateLock.lock();
@@ -649,9 +655,15 @@ public class Session {
                         currentSession = newSession;
                     }
 
-                    currentSession.userId = userId;
+                    boolean needsIdentifyUser = (currentSession.state == State.Configured);
+                    if (!Helpers.stringsAreEqual(currentSession.email, email)) {
+                        needsIdentifyUser = true;
+                    }
 
-                    if (currentSession.state == State.Configured) {
+                    currentSession.userId = userId;
+                    currentSession.email = email;
+
+                    if (needsIdentifyUser) {
                         currentSession.identifyUser();
                     }
                 } finally {
@@ -1117,11 +1129,12 @@ public class Session {
                     // If the old session had a user id assigned, it needs to be passed to the newly created
                     // session. When setState(State.Configured) happens, it will call identifyUser()
                     if (oldSession.userId != null) {
-                        setUserId(oldSession.userId);
+                        setUserId(oldSession.userId, oldSession.email);
                     }
                 } else if (Session.pendingUserId != null) {
-                    setUserId(Session.pendingUserId);
+                    setUserId(Session.pendingUserId, Session.pendingEmail);
                     Session.pendingUserId = null;
+                    Session.pendingEmail = null;
                 }
             }
         } finally {

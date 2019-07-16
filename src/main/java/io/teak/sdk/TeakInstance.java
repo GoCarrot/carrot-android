@@ -31,7 +31,6 @@ import io.teak.sdk.raven.Raven;
 import io.teak.sdk.service.JobService;
 import io.teak.sdk.shortcutbadger.ShortcutBadger;
 import io.teak.sdk.store.IStore;
-import java.io.File;
 import java.net.URLEncoder;
 import java.security.InvalidParameterException;
 import java.util.Date;
@@ -125,16 +124,16 @@ public class TeakInstance implements Unobfuscable {
 
     ///// identifyUser
 
-    void identifyUser(String userIdentifier, String[] optOut) {
+    void identifyUser(String userIdentifier, String[] optOut, String email) {
         if (userIdentifier == null || userIdentifier.isEmpty()) {
             Teak.log.e("identify_user.error", "User identifier can not be null or empty.");
             return;
         }
 
-        Teak.log.i("identify_user", Helpers.mm.h("userId", userIdentifier, "optOut", optOut));
+        Teak.log.i("identify_user", Helpers.mm.h("userId", userIdentifier, "optOut", optOut, "email", email));
 
         if (this.isEnabled()) {
-            TeakEvent.postEvent(new UserIdEvent(userIdentifier, optOut));
+            TeakEvent.postEvent(new UserIdEvent(userIdentifier, optOut, email));
         }
     }
 

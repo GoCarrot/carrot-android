@@ -17,6 +17,16 @@ import java.util.regex.Pattern;
 
 public class DeepLink {
     /**
+     * The name of the key used to store the incoming path which was used to parse a deep link.
+     */
+    public static final String INCOMING_URL_PATH_KEY = "__incoming_path";
+
+    /**
+     * The name of the key used to store the incoming url which was used to parse a deep link.
+     */
+    public static final String INCOMING_URL_KEY = "__incoming_url";
+
+    /**
      * @deprecated Use the {@link Teak#registerDeepLink(String, String, String, Teak.DeepLink)} instead.
      */
     @Deprecated
@@ -88,7 +98,8 @@ public class DeepLink {
                 }
                 if (pattern == null) continue;
 
-                Matcher matcher = pattern.matcher(uri.getPath());
+                final String uriPath = uri.getPath();
+                Matcher matcher = pattern.matcher(uriPath);
                 if (matcher.matches()) {
                     final Map<String, Object> parameterDict = new HashMap<>();
                     int idx = 1; // Index 0 = full match
@@ -120,6 +131,15 @@ public class DeepLink {
                         parameterDict.put(name, query.get(name));
                     }
 
+                    // Add in the original path, but do not overwrite an existing parameter
+                    if (!parameterDict.containsKey(INCOMING_URL_PATH_KEY)) {
+                        parameterDict.put(INCOMING_URL_PATH_KEY, uriPath);
+                    }
+
+                    // Add in the original, full, url, but do not overwrite an existing parameter
+                    if (!parameterDict.containsKey(INCOMING_URL_KEY)) {
+                        parameterDict.put(INCOMING_URL_KEY, uri.toString());
+                    }
                     executor.execute(new Runnable() {
                         @Override
                         public void run() {

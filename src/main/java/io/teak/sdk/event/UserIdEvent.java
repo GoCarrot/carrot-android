@@ -1,6 +1,7 @@
 package io.teak.sdk.event;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import io.teak.sdk.TeakEvent;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -11,10 +12,12 @@ public class UserIdEvent extends TeakEvent {
 
     public final String userId;
     public final Set<String> optOut;
+    public final String email;
 
-    public UserIdEvent(@NonNull String userId, @NonNull String[] optOut) {
+    public UserIdEvent(@NonNull String userId, @NonNull String[] optOut, @Nullable String email) {
         super(Type);
         this.userId = userId;
         this.optOut = new HashSet<String>(Arrays.asList(optOut));
+        this.email = email;
     }
 }
