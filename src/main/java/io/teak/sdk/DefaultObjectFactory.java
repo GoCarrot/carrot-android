@@ -102,18 +102,16 @@ public class DefaultObjectFactory implements IObjectFactory {
         Class<?> clazz = io.teak.sdk.store.GooglePlay.class;
         if (Helpers.isAmazonDevice(context)) {
             try {
-                clazz = Class.forName("com.amazon.device.iap.PurchasingListener");
+                if (Class.forName("com.amazon.device.iap.PurchasingListener") != null) {
+                    clazz = io.teak.sdk.store.Amazon.class;
+                }
             } catch (Exception e) {
                 Teak.log.exception(e);
-            }
-
-            if (clazz != null) {
-                clazz = io.teak.sdk.store.Amazon.class;
             }
         }
 
         try {
-            return (IStore) (clazz != null ? clazz.newInstance() : null);
+            return (IStore) clazz.newInstance();
         } catch (Exception e) {
             Teak.log.exception(e);
         }

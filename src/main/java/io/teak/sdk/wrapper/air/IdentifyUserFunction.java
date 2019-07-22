@@ -19,7 +19,7 @@ public class IdentifyUserFunction implements FREFunction {
         }
 
         try {
-            Teak.identifyUser(argv[0].getAsString(), optOut);
+            Teak.identifyUser(argv[0].getAsString(), optOut, argv[2] == null ? null : argv[2].getAsString());
         } catch (Exception e) {
             Teak.log.exception(e);
         }

@@ -29,18 +29,22 @@ public class Amazon implements IStore {
 
     public void init(Context context) {
         this.skuDetailsRequestMap = new HashMap<>();
-        PurchasingService.registerListener(context, new TeakPurchasingListener());
+        try {
+            PurchasingService.registerListener(context, new TeakPurchasingListener());
 
-        Teak.log.i("amazon.iap", "Amazon In-App Purchasing 2.0 registered.", mm.h("sandboxMode", PurchasingService.IS_SANDBOX_MODE));
+            Teak.log.i("amazon.iap", "Amazon In-App Purchasing 2.0 registered.", mm.h("sandboxMode", PurchasingService.IS_SANDBOX_MODE));
 
-        TeakEvent.addEventListener(new TeakEvent.EventListener() {
-            @Override
-            public void onNewEvent(@NonNull TeakEvent event) {
-                if (event.eventType.equals(LifecycleEvent.Resumed)) {
-                    PurchasingService.getUserData();
+            TeakEvent.addEventListener(new TeakEvent.EventListener() {
+                @Override
+                public void onNewEvent(@NonNull TeakEvent event) {
+                    if (event.eventType.equals(LifecycleEvent.Resumed)) {
+                        PurchasingService.getUserData();
+                    }
                 }
-            }
-        });
+            });
+        } catch (Exception e) {
+            Teak.log.exception(e);
+        }
     }
 
     public void dispose() {

@@ -77,3 +77,8 @@
 ### Teak ###
 -keep interface io.teak.sdk.Unobfuscable
 -keep class * implements io.teak.sdk.Unobfuscable { *; }
+
+### Clark reported an issue with this getting Proguarded ###
+-keep public class android.support.v4.app.NotificationCompat$Builder {
+   public  *;
+}
