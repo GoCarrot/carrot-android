@@ -165,8 +165,8 @@ public class IntegrationChecker {
         this.activity = activity;
 
         // Teak 2.0+ requires targeting Android 26+
-        if (Helpers.getTargetSDKVersion(activity) < Build.VERSION_CODES.O) {
-            throw new UnsupportedVersionException("Teak only supports targetSdkVersion 26 or higher.");
+        if (Helpers.getTargetSDKVersion(activity) < Build.VERSION_CODES.P) {
+            throw new UnsupportedVersionException("Teak only supports targetSdkVersion 28 or higher.");
         }
 
         // Check for configuration strings
