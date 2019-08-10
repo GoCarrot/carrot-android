@@ -1,6 +1,6 @@
 package io.teak.sdk.wrapper.air;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.adobe.fre.FREContext;
 import com.adobe.fre.FREFunction;
 import io.teak.sdk.Teak;

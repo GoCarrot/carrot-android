@@ -1,13 +1,12 @@
 package io.teak.sdk.push;
 
-import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
-import android.support.annotation.NonNull;
-import android.support.v4.app.NotificationManagerCompat;
+import androidx.annotation.NonNull;
+import androidx.core.app.NotificationManagerCompat;
 import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.NotificationBuilder;
 import io.teak.sdk.Teak;
@@ -139,7 +138,7 @@ public class PushState {
     }
 
     private PushState(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
-        IntegrationChecker.requireDependency("android.support.v4.app.NotificationManagerCompat");
+//        IntegrationChecker.requireDependency("android.support.v4.app.NotificationManagerCompat");
         this.notificationManagerCompat = NotificationManagerCompat.from(context);
 
         // Try and load serialized state chain

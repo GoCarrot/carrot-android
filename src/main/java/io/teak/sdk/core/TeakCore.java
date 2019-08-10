@@ -7,8 +7,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v4.content.LocalBroadcastManager;
+import androidx.annotation.NonNull;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.NotificationBuilder;
@@ -56,7 +56,7 @@ public class TeakCore implements ITeakCore {
     }
 
     public TeakCore(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
-        IntegrationChecker.requireDependency("android.support.v4.content.LocalBroadcastManager");
+//        IntegrationChecker.requireDependency("android.support.v4.content.LocalBroadcastManager");
 
         this.localBroadcastManager = LocalBroadcastManager.getInstance(context);
 

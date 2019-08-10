@@ -1,6 +1,6 @@
 package io.teak.sdk.event;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import io.teak.sdk.TeakEvent;
 import java.util.Collections;
 import java.util.HashMap;

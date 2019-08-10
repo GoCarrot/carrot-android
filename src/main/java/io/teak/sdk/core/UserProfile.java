@@ -1,6 +1,6 @@
 package io.teak.sdk.core;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import io.teak.sdk.Request;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.configuration.RemoteConfiguration;

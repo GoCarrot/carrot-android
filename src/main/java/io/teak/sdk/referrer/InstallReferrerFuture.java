@@ -1,7 +1,7 @@
 package io.teak.sdk.referrer;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import io.teak.sdk.InstallReferrerReceiver;
 import java.util.concurrent.Future;
 

@@ -1,6 +1,6 @@
 package io.teak.sdk.core;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 public class ThreadFactory implements java.util.concurrent.ThreadFactory {
     public final String threadNamePrefix;

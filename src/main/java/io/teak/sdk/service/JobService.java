@@ -1,7 +1,7 @@
 package io.teak.sdk.service;
 
 import android.os.Bundle;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.firebase.jobdispatcher.JobParameters;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.Teak;

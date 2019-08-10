@@ -1,7 +1,7 @@
 package io.teak.sdk.configuration;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.teak.sdk.Request;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakConfiguration;

@@ -2,12 +2,11 @@ package io.teak.sdk.configuration;
 
 import android.app.ActivityManager;
 import android.content.Context;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import io.teak.sdk.IObjectFactory;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.TeakEvent;
-import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.AdvertisingInfoEvent;
 import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;

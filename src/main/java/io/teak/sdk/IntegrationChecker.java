@@ -13,7 +13,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.ThreadFactory;
@@ -41,8 +41,8 @@ public class IntegrationChecker {
     private static final Map<String, String> errorsToReport = new HashMap<>();
 
     public static final String[][] dependencies = new String[][] {
-        new String[] {"android.support.v4.content.LocalBroadcastManager", "com.android.support:support-core-utils:26+"},
-        new String[] {"android.support.v4.app.NotificationManagerCompat", "com.android.support:support-compat:26+"},
+//        new String[] {"android.support.v4.content.LocalBroadcastManager", "com.android.support:support-core-utils:26+"},
+//        new String[] {"android.support.v4.app.NotificationManagerCompat", "com.android.support:support-compat:26+"},
         new String[] {"com.google.android.gms.common.GooglePlayServicesUtil", "com.google.android.gms:play-services-base:16+", "com.google.android.gms:play-services-basement:16+"},
         new String[] {"com.google.firebase.messaging.FirebaseMessagingService", "com.google.firebase:firebase-messaging:17+"},
         new String[] {"com.google.android.gms.ads.identifier.AdvertisingIdClient", "com.google.android.gms:play-services-ads:16+"}};
@@ -108,19 +108,19 @@ public class IntegrationChecker {
         }
     }
 
-    public static class InvalidConfigurationException extends Exception {
+    public static class InvalidConfigurationException extends Exception implements Unobfuscable {
         public InvalidConfigurationException(@NonNull String message) {
             super(message);
         }
     }
 
-    public static class UnsupportedVersionException extends Exception {
+    public static class UnsupportedVersionException extends Exception implements Unobfuscable {
         public UnsupportedVersionException(@NonNull String message) {
             super(message);
         }
     }
 
-    public static class MissingDependencyException extends ClassNotFoundException {
+    public static class MissingDependencyException extends ClassNotFoundException implements Unobfuscable {
         public final String[] missingDependency;
 
         public MissingDependencyException(@NonNull ClassNotFoundException e) {

@@ -1,6 +1,6 @@
 package io.teak.sdk.wrapper.unity;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import io.teak.sdk.Teak;
 import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.json.JSONObject;
