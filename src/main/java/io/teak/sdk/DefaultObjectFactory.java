@@ -19,6 +19,7 @@ import io.teak.sdk.push.FCMPushProvider;
 import io.teak.sdk.push.IPushProvider;
 import io.teak.sdk.store.IStore;
 import io.teak.sdk.support.ILocalBroadcastManager;
+import io.teak.sdk.support.INotificationBuilder;
 
 public class DefaultObjectFactory implements IObjectFactory {
     private final IAndroidResources androidResources;
@@ -124,6 +125,18 @@ public class DefaultObjectFactory implements IObjectFactory {
         try {
             if (Class.forName("androidx.localbroadcastmanager.content.LocalBroadcastManager") != null) {
                 return new io.teak.sdk.support.androidx.LocalBroadcastManager(context);
+            }
+        } catch (Exception ignored) {
+        }
+
+        // TODO: Integration checker things here.
+        return null;
+    }
+
+    public static INotificationBuilder getNotificationBuilder(@NonNull Context context, @NonNull String notificationChannelId) {
+        try {
+            if (Class.forName("androidx.core.app.NotificationCompat") != null) {
+                return new io.teak.sdk.support.androidx.NotificationBuilder(context, notificationChannelId);
             }
         } catch (Exception ignored) {
         }

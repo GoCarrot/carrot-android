@@ -34,6 +34,8 @@ import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.ViewFlipper;
 import io.teak.sdk.json.JSONObject;
+import io.teak.sdk.support.INotificationBuilder;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -126,20 +128,6 @@ public class NotificationBuilder {
         return quietNotificationChannelId;
     }
 
-    private static NotificationCompat.Builder getNotificationCompatBuilder(Context context) {
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
-        builder.setGroup(UUID.randomUUID().toString());
-
-        // Set visibility of our notifications to public
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
-            try {
-                builder.setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
-            } catch (Exception ignored) {
-            }
-        }
-        return builder;
-    }
-
     @SuppressWarnings("deprecation")
     private static Spanned fromHtml(String string) {
         return Html.fromHtml(string);
@@ -196,7 +184,7 @@ public class NotificationBuilder {
         }
         final IdHelper R = new IdHelper(); // Declaring local as 'R' ensures we don't accidentally use the other R
 
-        NotificationCompat.Builder builder = getNotificationCompatBuilder(context);
+        INotificationBuilder builder = DefaultObjectFactory.getNotificationBuilder(context, getNotificationChannelId(context));
 
         // Rich text message
         Spanned richMessageText = new SpannedString(teakNotificaton.message);
@@ -208,11 +196,6 @@ public class NotificationBuilder {
             }
         }
 
-        // Configure notification behavior
-        builder.setPriority(NotificationCompat.PRIORITY_MAX);
-        builder.setDefaults(NotificationCompat.DEFAULT_ALL);
-        builder.setOnlyAlertOnce(true);
-        builder.setAutoCancel(true);
         try {
             builder.setTicker(richMessageText);
         } catch (Exception e) {
