@@ -116,7 +116,7 @@ public class TeakInstance implements Unobfuscable {
         }
 
         if (this.facebookAccessTokenBroadcast != null) {
-            this.facebookAccessTokenBroadcast.unregister(activity.getApplicationContext());
+            this.facebookAccessTokenBroadcast.unregister();
         }
 
         activity.getApplication().unregisterActivityLifecycleCallbacks(this.lifecycleCallbacks);
