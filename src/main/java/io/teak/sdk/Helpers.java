@@ -1,5 +1,6 @@
 package io.teak.sdk;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -20,6 +21,16 @@ import java.util.Map;
 import java.util.Set;
 
 public class Helpers {
+    @SuppressWarnings("deprecation")
+    @SuppressLint("PackageManagerGetSignatures")
+    public static Signature[] getAppSignatures(@NonNull Context appContext) {
+        try {
+            return appContext.getPackageManager().getPackageInfo(appContext.getPackageName(), PackageManager.GET_SIGNATURES).signatures;
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
     public static boolean stringsAreEqual(final @Nullable String a, final @Nullable String b) {
         if (a == b) return true;
 

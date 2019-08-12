@@ -144,8 +144,7 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
                     Teak.log.i("amazon.adm.registration_error.debugging", "[✓] App package name matches package name inside 'api_key.txt'");
 
                     // Make sure the signature matches
-                    @SuppressLint("PackageManagerGetSignatures")
-                    Signature[] sigs = getApplicationContext().getPackageManager().getPackageInfo(getApplicationContext().getPackageName(), PackageManager.GET_SIGNATURES).signatures;
+                    Signature[] sigs = Helpers.getAppSignatures(getApplicationContext());
                     for (Signature sig : sigs) {
                         if (json.has("appsigSha256")) {
                             String sigSha256 = Helpers.formatSig(sig, "SHA-256");
