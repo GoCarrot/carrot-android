@@ -466,7 +466,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     /**
      * Interface for running code when a deep link is received
      */
-    public static abstract class DeepLink {
+    public static abstract class DeepLink implements Unobfuscable {
         public abstract void call(Map<String, Object> parameters);
     }
 
