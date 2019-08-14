@@ -6,7 +6,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
 import androidx.annotation.NonNull;
-import androidx.core.app.NotificationManagerCompat;
+import io.teak.sdk.DefaultObjectFactory;
 import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.NotificationBuilder;
 import io.teak.sdk.Teak;
@@ -15,6 +15,8 @@ import io.teak.sdk.core.ThreadFactory;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONObject;
+import io.teak.sdk.support.INotificationManager;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -123,11 +125,11 @@ public class PushState {
     }
 
     private List<StateChainEntry> stateChain = new ArrayList<>();
-    private final NotificationManagerCompat notificationManagerCompat;
+    private final INotificationManager notificationManager;
     private final ExecutorService executionQueue = Executors.newSingleThreadExecutor(ThreadFactory.autonamed());
 
     private static PushState Instance;
-    public static void init(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
+    public static void init(@NonNull Context context) {
         if (Instance == null) {
             Instance = new PushState(context);
         }
@@ -137,9 +139,8 @@ public class PushState {
         return Instance;
     }
 
-    private PushState(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
-//        IntegrationChecker.requireDependency("android.support.v4.app.NotificationManagerCompat");
-        this.notificationManagerCompat = NotificationManagerCompat.from(context);
+    private PushState(@NonNull Context context) {
+        this.notificationManager = DefaultObjectFactory.createNotificationManager(context);
 
         // Try and load serialized state chain
         final SharedPreferences preferences = context.getSharedPreferences(Teak.PREFERENCES_FILE, Context.MODE_PRIVATE);
@@ -217,26 +218,10 @@ public class PushState {
     }
 
     public int getNotificationStatus() {
-        int ret = Teak.TEAK_NOTIFICATIONS_UNKNOWN;
-        boolean notificationManagerCompatHas_areNotificationsEnabled = false;
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            try {
-                if (NotificationManagerCompat.class.getMethod("areNotificationsEnabled") != null) {
-                    notificationManagerCompatHas_areNotificationsEnabled = true;
-                }
-            } catch (Exception ignored) {
-            }
+        if (this.notificationManager.hasNotificationsEnabled()) {
+            return this.notificationManager.areNotificationsEnabled() ? Teak.TEAK_NOTIFICATIONS_ENABLED : Teak.TEAK_NOTIFICATIONS_DISABLED;
         }
-
-        if (notificationManagerCompatHas_areNotificationsEnabled && this.notificationManagerCompat != null) {
-            try {
-                ret = this.notificationManagerCompat.areNotificationsEnabled() ? Teak.TEAK_NOTIFICATIONS_ENABLED : Teak.TEAK_NOTIFICATIONS_DISABLED;
-            } catch (Exception e) {
-                Teak.log.exception(e);
-            }
-        }
-        return ret;
+        return Teak.TEAK_NOTIFICATIONS_UNKNOWN;
     }
 
     private StateChainEntry determineStateFromSystem(@NonNull Context context) {

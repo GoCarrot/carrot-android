@@ -13,7 +13,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import androidx.annotation.NonNull;
-import androidx.core.app.NotificationCompat;
 import com.firebase.jobdispatcher.Job;
 
 import io.teak.sdk.Helpers;
@@ -47,9 +46,6 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
         }
     }
 
-    /**
-     * The 'tag' specified by Teak to the {@link NotificationCompat}
-     */
     private static final String NOTIFICATION_TAG = "io.teak.sdk.TeakNotification";
 
     private static final Object InstanceMutex = new Object();

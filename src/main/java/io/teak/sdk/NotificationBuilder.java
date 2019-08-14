@@ -19,7 +19,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import androidx.core.app.NotificationCompat;
 import android.text.Html;
 import android.text.Spanned;
 import android.text.SpannedString;
@@ -49,7 +48,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Random;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import javax.net.ssl.HttpsURLConnection;
@@ -184,7 +182,7 @@ public class NotificationBuilder {
         }
         final IdHelper R = new IdHelper(); // Declaring local as 'R' ensures we don't accidentally use the other R
 
-        INotificationBuilder builder = DefaultObjectFactory.getNotificationBuilder(context, getNotificationChannelId(context));
+        INotificationBuilder builder = DefaultObjectFactory.createNotificationBuilder(context, getNotificationChannelId(context));
 
         // Rich text message
         Spanned richMessageText = new SpannedString(teakNotificaton.message);

@@ -20,6 +20,7 @@ import io.teak.sdk.push.IPushProvider;
 import io.teak.sdk.store.IStore;
 import io.teak.sdk.support.ILocalBroadcastManager;
 import io.teak.sdk.support.INotificationBuilder;
+import io.teak.sdk.support.INotificationManager;
 
 public class DefaultObjectFactory implements IObjectFactory {
     private final IAndroidResources androidResources;
@@ -30,6 +31,14 @@ public class DefaultObjectFactory implements IObjectFactory {
     private final ITeakCore teakCore;
 
     DefaultObjectFactory(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
+        // Suggest AndroidX, require support-v4
+        IntegrationChecker.suggestButRequireDependency("androidx.localbroadcastmanager.content.LocalBroadcastManager",
+                "android.support.v4.content.LocalBroadcastManager");
+        IntegrationChecker.suggestButRequireDependency("androidx.core.app.NotificationCompat",
+                "android.support.v4.app.NotificationManagerCompat");
+        IntegrationChecker.suggestButRequireDependency("androidx.core.app.NotificationManagerCompat",
+                "android.support.v4.app.NotificationManagerCompat");
+
         this.androidResources = new DefaultAndroidResources(context);
         this.store = createStore(context);
         this.androidDeviceInfo = new DefaultAndroidDeviceInfo(context);
@@ -104,9 +113,8 @@ public class DefaultObjectFactory implements IObjectFactory {
         Class<?> clazz = io.teak.sdk.store.GooglePlay.class;
         if (Helpers.isAmazonDevice(context)) {
             try {
-                if (Class.forName("com.amazon.device.iap.PurchasingListener") != null) {
-                    clazz = io.teak.sdk.store.Amazon.class;
-                }
+                Class.forName("com.amazon.device.iap.PurchasingListener");
+                clazz = io.teak.sdk.store.Amazon.class;
             } catch (Exception e) {
                 Teak.log.exception(e);
             }
@@ -121,23 +129,48 @@ public class DefaultObjectFactory implements IObjectFactory {
         return null;
     }
 
-    public static ILocalBroadcastManager createLocalBroadcastManager(@NonNull Context context) {
+    public static INotificationManager createNotificationManager(@NonNull Context context) {
         try {
-            if (Class.forName("androidx.localbroadcastmanager.content.LocalBroadcastManager") != null) {
-                return new io.teak.sdk.support.androidx.LocalBroadcastManager(context);
-            }
+            Class.forName("androidx.core.app.NotificationManagerCompat");
+            return new io.teak.sdk.support.androidx.NotificationManager(context);
         } catch (Exception ignored) {
         }
 
-        // TODO: Integration checker things here.
+        try {
+            Class.forName("android.support.v4.app.NotificationManagerCompat");
+            return new io.teak.sdk.support.v4.NotificationManager(context);
+        } catch (Exception ignored) {
+        }
+
         return null;
     }
 
-    public static INotificationBuilder getNotificationBuilder(@NonNull Context context, @NonNull String notificationChannelId) {
+    public static ILocalBroadcastManager createLocalBroadcastManager(@NonNull Context context) {
         try {
-            if (Class.forName("androidx.core.app.NotificationCompat") != null) {
-                return new io.teak.sdk.support.androidx.NotificationBuilder(context, notificationChannelId);
-            }
+            Class.forName("androidx.localbroadcastmanager.content.LocalBroadcastManager");
+            return new io.teak.sdk.support.androidx.LocalBroadcastManager(context);
+        } catch (Exception ignored) {
+        }
+
+        try {
+            Class.forName("android.support.v4.content.LocalBroadcastManager");
+            return new io.teak.sdk.support.v4.LocalBroadcastManager(context);
+        } catch (Exception ignored) {
+        }
+
+        return null;
+    }
+
+    public static INotificationBuilder createNotificationBuilder(@NonNull Context context, @NonNull String notificationChannelId) {
+        try {
+            Class.forName("androidx.core.app.NotificationCompat");
+            return new io.teak.sdk.support.androidx.NotificationBuilder(context, notificationChannelId);
+        } catch (Exception ignored) {
+        }
+
+        try {
+            Class.forName("android.support.v4.app.NotificationManagerCompat");
+            return new io.teak.sdk.support.v4.NotificationBuilder(context, notificationChannelId);
         } catch (Exception ignored) {
         }
 

@@ -41,8 +41,11 @@ public class IntegrationChecker {
     private static final Map<String, String> errorsToReport = new HashMap<>();
 
     public static final String[][] dependencies = new String[][] {
-//        new String[] {"android.support.v4.content.LocalBroadcastManager", "com.android.support:support-core-utils:26+"},
-//        new String[] {"android.support.v4.app.NotificationManagerCompat", "com.android.support:support-compat:26+"},
+        new String[] {"android.support.v4.content.LocalBroadcastManager", "com.android.support:support-core-utils:28+"},
+        new String[] {"android.support.v4.app.NotificationManagerCompat", "com.android.support:support-compat:28+"},
+        new String[] {"androidx.localbroadcastmanager.content.LocalBroadcastManager", "androidx.core:core:1.0.+"},
+        new String[] {"androidx.core.app.NotificationCompat", "androidx.core:core:1.0.+"},
+        new String[] {"androidx.core.app.NotificationManagerCompat", "androidx.core:core:1.0.+"},
         new String[] {"com.google.android.gms.common.GooglePlayServicesUtil", "com.google.android.gms:play-services-base:16+", "com.google.android.gms:play-services-basement:16+"},
         new String[] {"com.google.firebase.messaging.FirebaseMessagingService", "com.google.firebase:firebase-messaging:17+"},
         new String[] {"com.google.android.gms.ads.identifier.AdvertisingIdClient", "com.google.android.gms:play-services-ads:16+"}};
@@ -80,6 +83,18 @@ public class IntegrationChecker {
         addDependency(fullyQualifiedClassName, false);
     }
 
+    public static void suggestButRequireDependency(@NonNull String suggested, @NonNull String required) throws MissingDependencyException {
+        try {
+            Class.forName(suggested);
+        } catch (Exception ignored) {
+            try {
+                Class.forName(required);
+            } catch (Exception ignored2) {
+                IntegrationChecker.requireDependency(required);
+            }
+        }
+    }
+
     private static void addDependency(@NonNull String fullyQualifiedClassName, boolean required) throws MissingDependencyException {
         // Protect against future-Pat adding/removing a dependency and forgetting to update the array
         if (BuildConfig.DEBUG) {
@@ -91,7 +106,9 @@ public class IntegrationChecker {
                 }
             }
             if (!foundInDependencies) {
-                throw new NoClassDefFoundError("Missing '" + fullyQualifiedClassName + "' in dependencies list.");
+                final String errorText = "Missing '" + fullyQualifiedClassName + "' in dependencies list.";
+                Teak.log.e("dependency.missing_source", errorText);
+                throw new NoClassDefFoundError(errorText);
             }
         }
 
@@ -196,14 +213,6 @@ public class IntegrationChecker {
                 }
             }
         } catch (Exception ignored) {
-        }
-
-        // Check all dependencies, they'll add themselves to the missing list
-        for (String[] dependency : dependencies) {
-            try {
-                IntegrationChecker.requireDependency(dependency[0]);
-            } catch (Exception ignored) {
-            }
         }
 
         // Run checks on a background thread
