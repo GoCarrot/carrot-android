@@ -4,7 +4,9 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.support.annotation.NonNull;
+import android.os.Build;
+
+import androidx.annotation.NonNull;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.Teak;
@@ -31,7 +33,7 @@ public class AppConfiguration {
     @SuppressWarnings("WeakerAccess")
     public final int jobId;
     @SuppressWarnings("WeakerAccess")
-    public final int appVersion;
+    public final long appVersion;
     @SuppressWarnings("WeakerAccess")
     public final String appVersionName;
     @SuppressWarnings("WeakerAccess")
@@ -188,11 +190,11 @@ public class AppConfiguration {
 
         // App Version
         {
-            int tempAppVersion = 0;
+            long tempAppVersion = 0;
             String tempAppVersionName = null;
             try {
                 final PackageInfo info = this.packageManager.getPackageInfo(this.bundleId, 0);
-                tempAppVersion = info.versionCode;
+                tempAppVersion = getVersionCodeFromPackageInfo(info);
                 tempAppVersionName = info.versionName;
             } catch (Exception e) {
                 Teak.log.exception(e);
@@ -205,6 +207,15 @@ public class AppConfiguration {
         // Get the installer package
         {
             this.installerPackage = this.packageManager.getInstallerPackageName(this.bundleId);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static long getVersionCodeFromPackageInfo(PackageInfo info) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+             return info.getLongVersionCode();
+        } else {
+            return info.versionCode;
         }
     }
 

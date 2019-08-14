@@ -1,8 +1,7 @@
 package io.teak.sdk.raven;
 
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.util.Log;
+import androidx.annotation.NonNull;
 import io.teak.sdk.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.InputStream;

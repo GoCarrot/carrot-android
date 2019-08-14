@@ -1,6 +1,6 @@
 package io.teak.sdk;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import io.teak.sdk.core.ThreadFactory;
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;

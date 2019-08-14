@@ -1,12 +1,12 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 28
     buildToolsVersion '28.0.3'
     defaultConfig {
         applicationId "io.teak.app.test"
         minSdkVersion 15
-        targetSdkVersion 26
+        targetSdkVersion 28
         multiDexEnabled true
         versionCode 1
         versionName "1.0"

@@ -1,6 +1,6 @@
 package io.teak.app.test;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import io.teak.sdk.TeakEvent;
 

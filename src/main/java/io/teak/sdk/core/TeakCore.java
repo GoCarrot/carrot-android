@@ -7,8 +7,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v4.content.LocalBroadcastManager;
+import androidx.annotation.NonNull;
+import io.teak.sdk.DefaultObjectFactory;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.NotificationBuilder;
@@ -29,6 +29,8 @@ import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.io.DefaultAndroidNotification;
 import io.teak.sdk.io.DefaultAndroidResources;
 import io.teak.sdk.json.JSONObject;
+import io.teak.sdk.support.ILocalBroadcastManager;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -56,9 +58,7 @@ public class TeakCore implements ITeakCore {
     }
 
     public TeakCore(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
-        IntegrationChecker.requireDependency("android.support.v4.content.LocalBroadcastManager");
-
-        this.localBroadcastManager = LocalBroadcastManager.getInstance(context);
+        this.localBroadcastManager = DefaultObjectFactory.createLocalBroadcastManager(context);
 
         TeakEvent.addEventListener(this.teakEventListener);
 
@@ -346,7 +346,7 @@ public class TeakCore implements ITeakCore {
     ///// Data Members
 
     private final ExecutorService asyncExecutor = Executors.newCachedThreadPool(io.teak.sdk.core.ThreadFactory.autonamed());
-    private final LocalBroadcastManager localBroadcastManager;
+    private final ILocalBroadcastManager localBroadcastManager;
 
     public static final ScheduledExecutorService operationQueue = Executors.newSingleThreadScheduledExecutor(ThreadFactory.autonamed());
 }

@@ -1,6 +1,6 @@
 package io.teak.sdk.io;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import java.io.IOException;
 import java.net.URL;
 

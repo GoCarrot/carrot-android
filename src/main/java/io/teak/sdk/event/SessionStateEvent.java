@@ -1,6 +1,6 @@
 package io.teak.sdk.event;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.core.Session;
 

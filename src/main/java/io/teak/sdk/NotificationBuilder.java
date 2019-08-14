@@ -19,7 +19,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.v4.app.NotificationCompat;
 import android.text.Html;
 import android.text.Spanned;
 import android.text.SpannedString;
@@ -34,6 +33,8 @@ import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.ViewFlipper;
 import io.teak.sdk.json.JSONObject;
+import io.teak.sdk.support.INotificationBuilder;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,7 +48,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Random;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import javax.net.ssl.HttpsURLConnection;
@@ -126,20 +126,6 @@ public class NotificationBuilder {
         return quietNotificationChannelId;
     }
 
-    private static NotificationCompat.Builder getNotificationCompatBuilder(Context context) {
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
-        builder.setGroup(UUID.randomUUID().toString());
-
-        // Set visibility of our notifications to public
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
-            try {
-                builder.setVisibility(Notification.VISIBILITY_PUBLIC);
-            } catch (Exception ignored) {
-            }
-        }
-        return builder;
-    }
-
     @SuppressWarnings("deprecation")
     private static Spanned fromHtml(String string) {
         return Html.fromHtml(string);
@@ -196,7 +182,7 @@ public class NotificationBuilder {
         }
         final IdHelper R = new IdHelper(); // Declaring local as 'R' ensures we don't accidentally use the other R
 
-        NotificationCompat.Builder builder = getNotificationCompatBuilder(context);
+        INotificationBuilder builder = DefaultObjectFactory.createNotificationBuilder(context, getNotificationChannelId(context));
 
         // Rich text message
         Spanned richMessageText = new SpannedString(teakNotificaton.message);
@@ -208,11 +194,6 @@ public class NotificationBuilder {
             }
         }
 
-        // Configure notification behavior
-        builder.setPriority(NotificationCompat.PRIORITY_MAX);
-        builder.setDefaults(NotificationCompat.DEFAULT_ALL);
-        builder.setOnlyAlertOnce(true);
-        builder.setAutoCancel(true);
         try {
             builder.setTicker(richMessageText);
         } catch (Exception e) {

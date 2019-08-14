@@ -4,12 +4,13 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.support.v4.content.LocalBroadcastManager;
 import io.teak.sdk.event.FacebookAccessTokenEvent;
+import io.teak.sdk.support.ILocalBroadcastManager;
+
 import java.lang.reflect.*;
 
 class FacebookAccessTokenBroadcast {
-    private LocalBroadcastManager broadcastManager;
+    private ILocalBroadcastManager broadcastManager;
 
     private Method com_facebook_Session_getActiveSession;
     private Method com_facebook_Session_getAccessToken;
@@ -60,7 +61,7 @@ class FacebookAccessTokenBroadcast {
     private static final String FACEBOOK_4_x_NEW_ACCESS_TOKEN_KEY = "com.facebook.sdk.EXTRA_NEW_ACCESS_TOKEN";
 
     FacebookAccessTokenBroadcast(Context context) {
-        this.broadcastManager = LocalBroadcastManager.getInstance(context);
+        this.broadcastManager = DefaultObjectFactory.createLocalBroadcastManager(context);
 
         // Get the Facebook SDK Version string
         Class<?> com_facebook_FacebookSdkVersion = null;
@@ -163,7 +164,9 @@ class FacebookAccessTokenBroadcast {
         }
     }
 
-    void unregister(Context context) {
-        LocalBroadcastManager.getInstance(context).unregisterReceiver(this.broadcastReceiver);
+    void unregister() {
+        if (this.broadcastManager != null) {
+            this.broadcastManager.unregisterReceiver(this.broadcastReceiver);
+        }
     }
 }
