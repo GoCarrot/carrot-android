@@ -173,7 +173,7 @@ public class MainActivity extends AppCompatActivity {
         Teak.setApplicationBadgeNumber(42);
 
         // HAX
-        Teak.setStringAttribute("last_slot", "another string value");
+        Teak.setStringAttribute("automated_test_string", "asdfasdfasdf");
         Teak.trackEvent("Player_Level_Up", null, null);
     }
 
