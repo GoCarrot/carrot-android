@@ -18,6 +18,7 @@ import io.teak.sdk.event.PurchaseEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
 import io.teak.sdk.json.JSONObject;
 import java.io.InvalidObjectException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -165,7 +166,7 @@ public class GooglePlay implements IStore {
             }
         } catch (Exception e) {
             //noinspection ConstantConditions,StatementWithEmptyBody
-            if (e instanceof DeadObjectException) {
+            if (e instanceof InvocationTargetException && e.getCause() instanceof DeadObjectException) {
                 // ignored, Sentry bug TEAK-SDK-7T
             } else {
                 Teak.log.exception(e);
