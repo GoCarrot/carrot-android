@@ -224,9 +224,6 @@ public class IntegrationChecker {
 
                 // Activity launch mode should be 'singleTask', 'singleTop' or 'singleInstance'
                 checkActivityLaunchMode();
-
-                // Manifest checks
-                checkAndroidManifest();
             }
         });
 
@@ -244,6 +241,21 @@ public class IntegrationChecker {
                 }
             }
         });
+
+        // If < API 26, the manifest checker will work properly, otherwise it will not
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
+                @Override
+                public void onConfigurationReady(@NonNull TeakConfiguration configuration) {
+                    ThreadFactory.autoStart(new Runnable() {
+                        @Override
+                        public void run() {
+                            checkAndroidManifest();
+                        }
+                    });
+                }
+            });
+        }
     }
 
     private void checkActivityLaunchMode() {
@@ -368,7 +380,8 @@ public class IntegrationChecker {
                     Teak.log.i("permission", permission.toString());
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            Teak.log.exception(e);
         }
     }
 
