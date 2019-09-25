@@ -1,10 +1,8 @@
 package io.teak.sdk.support.androidx;
 
 import android.content.Context;
-
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationManagerCompat;
-
 import io.teak.sdk.support.INotificationManager;
 
 public class NotificationManager implements INotificationManager {

@@ -1,8 +1,8 @@
 package io.teak.sdk;
 
+import android.util.Base64;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.util.Base64;
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.Session;
 import io.teak.sdk.core.ThreadFactory;

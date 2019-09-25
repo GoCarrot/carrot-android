@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import io.teak.sdk.event.FacebookAccessTokenEvent;
 import io.teak.sdk.support.ILocalBroadcastManager;
-
 import java.lang.reflect.*;
 
 class FacebookAccessTokenBroadcast {

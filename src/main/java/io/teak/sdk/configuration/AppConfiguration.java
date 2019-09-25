@@ -5,7 +5,6 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
-
 import androidx.annotation.NonNull;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.IntegrationChecker;
@@ -213,7 +212,7 @@ public class AppConfiguration {
     @SuppressWarnings("deprecation")
     private static long getVersionCodeFromPackageInfo(PackageInfo info) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-             return info.getLongVersionCode();
+            return info.getLongVersionCode();
         } else {
             return info.versionCode;
         }

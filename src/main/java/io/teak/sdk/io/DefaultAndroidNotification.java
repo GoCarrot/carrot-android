@@ -14,7 +14,6 @@ import android.os.Handler;
 import android.os.Looper;
 import androidx.annotation.NonNull;
 import com.firebase.jobdispatcher.Job;
-
 import io.teak.sdk.Helpers;
 import io.teak.sdk.NotificationBuilder;
 import io.teak.sdk.Teak;

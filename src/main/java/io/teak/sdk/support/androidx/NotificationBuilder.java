@@ -5,12 +5,10 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Build;
-
-import java.util.UUID;
-
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import io.teak.sdk.support.INotificationBuilder;
+import java.util.UUID;
 
 public class NotificationBuilder implements INotificationBuilder {
     private final NotificationCompat.Builder builder;

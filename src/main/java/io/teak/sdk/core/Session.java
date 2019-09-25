@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.teak.sdk.Helpers;

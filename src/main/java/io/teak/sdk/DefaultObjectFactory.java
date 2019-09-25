@@ -2,7 +2,6 @@ package io.teak.sdk;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.amazon.device.messaging.ADM;
@@ -33,11 +32,11 @@ public class DefaultObjectFactory implements IObjectFactory {
     DefaultObjectFactory(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
         // Suggest AndroidX, require support-v4
         IntegrationChecker.suggestButRequireDependency("androidx.localbroadcastmanager.content.LocalBroadcastManager",
-                "android.support.v4.content.LocalBroadcastManager");
+            "android.support.v4.content.LocalBroadcastManager");
         IntegrationChecker.suggestButRequireDependency("androidx.core.app.NotificationCompat",
-                "android.support.v4.app.NotificationManagerCompat");
+            "android.support.v4.app.NotificationManagerCompat");
         IntegrationChecker.suggestButRequireDependency("androidx.core.app.NotificationManagerCompat",
-                "android.support.v4.app.NotificationManagerCompat");
+            "android.support.v4.app.NotificationManagerCompat");
 
         this.androidResources = new DefaultAndroidResources(context);
         this.store = createStore(context);

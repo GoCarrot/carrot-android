@@ -34,7 +34,6 @@ import android.widget.TextView;
 import android.widget.ViewFlipper;
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.support.INotificationBuilder;
-
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;

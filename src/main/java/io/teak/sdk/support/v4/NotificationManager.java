@@ -3,9 +3,7 @@ package io.teak.sdk.support.v4;
 import android.content.Context;
 import android.os.Build;
 import android.support.v4.app.NotificationManagerCompat;
-
 import androidx.annotation.NonNull;
-
 import io.teak.sdk.support.INotificationManager;
 
 public class NotificationManager implements INotificationManager {

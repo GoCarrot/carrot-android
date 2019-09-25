@@ -4,10 +4,9 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
 import android.util.Log;
+import androidx.annotation.NonNull;
 import com.firebase.jobdispatcher.Job;
-
 import io.teak.sdk.IObjectFactory;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakConfiguration;

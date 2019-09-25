@@ -16,7 +16,6 @@ import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.support.INotificationManager;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
