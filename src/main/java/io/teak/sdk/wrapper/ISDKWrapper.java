@@ -6,7 +6,8 @@ public interface ISDKWrapper {
     enum EventType {
         NotificationLaunch,
         RewardClaim,
-        ForegroundNotification
+        ForegroundNotification,
+        AdditionalData
     }
     void sdkSendMessage(@NonNull EventType eventType, @NonNull String eventData);
 }

@@ -20,6 +20,7 @@ public class TeakInterface implements Unobfuscable {
         filter.addAction(Teak.REWARD_CLAIM_ATTEMPT);
         filter.addAction(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
         filter.addAction(Teak.FOREGROUND_NOTIFICATION_INTENT);
+        filter.addAction(Teak.ADDITIONAL_DATA_INTENT);
 
         if (Teak.Instance != null) {
             Teak.Instance.objectFactory.getTeakCore().registerLocalBroadcastReceiver(broadcastReceiver, filter);
@@ -30,10 +31,10 @@ public class TeakInterface implements Unobfuscable {
     private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Bundle bundle = intent.getExtras();
+            final String action = intent.getAction();
+            final Bundle bundle = intent.getExtras();
             if (bundle == null) return;
 
-            String action = intent.getAction();
             if (Teak.LAUNCHED_FROM_NOTIFICATION_INTENT.equals(action)) {
                 String eventData = "{}";
                 try {
@@ -65,6 +66,15 @@ public class TeakInterface implements Unobfuscable {
                     Teak.log.exception(e);
                 } finally {
                     sdkWrapper.sdkSendMessage(ISDKWrapper.EventType.ForegroundNotification, eventData);
+                }
+            } else if (Teak.ADDITIONAL_DATA_INTENT.equals(action)) {
+                String eventData = "{}";
+                try {
+                    eventData = bundle.getString("additional_data");
+                } catch (Exception e) {
+                    Teak.log.exception(e);
+                } finally {
+                    sdkWrapper.sdkSendMessage(ISDKWrapper.EventType.AdditionalData, eventData);
                 }
             }
         }

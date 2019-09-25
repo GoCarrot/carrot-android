@@ -20,6 +20,7 @@ import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.SessionStateEvent;
+import io.teak.sdk.event.UserAdditionalDataEvent;
 import io.teak.sdk.event.UserIdEvent;
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.push.PushState;
@@ -458,6 +459,12 @@ public class Session {
                                             Session.this.userProfile = new UserProfile(Session.this, profile.toMap());
                                         } catch (Exception ignored) {
                                         }
+                                    }
+
+                                    // Grab additional data
+                                    final JSONObject additionalData = response.optJSONObject("additional_data");
+                                    if (additionalData != null) {
+                                        TeakEvent.postEvent(new UserAdditionalDataEvent(additionalData));
                                     }
 
                                     // Assign new state

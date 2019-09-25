@@ -6,9 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
 import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.core.ThreadFactory;
 import io.teak.sdk.event.DeepLinksReadyEvent;
@@ -528,6 +526,20 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static final String FOREGROUND_NOTIFICATION_INTENT = "io.teak.sdk.Teak.intent.FOREGROUND_NOTIFICATION_INTENT";
+
+    /**
+     * Intent action used by Teak to notify you that "additional data" is available for the user.
+     * <p/>
+     * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
+     * <pre>
+     * {@code
+     *     IntentFilter filter = new IntentFilter();
+     *     filter.addAction(Teak.ADDITIONAL_DATA_INTENT);
+     *     LocalBroadcastManager.getInstance(context).registerReceiver(yourBroadcastListener, filter);
+     * }
+     * </pre>
+     */
+    public static final String ADDITIONAL_DATA_INTENT = "io.teak.sdk.Teak.intent.ADDITIONAL_DATA_INTENT";
 
     ///// LogListener
 
