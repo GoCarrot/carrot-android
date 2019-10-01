@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/android:api-26-alpha
+      - image: circleci/android:api-28
         environment:
           ANDROID_HOME=/opt/android/sdk
     steps:
@@ -48,7 +48,7 @@ jobs:
           path: test_app/app/build/test-results/
   deploy_versioned:
     docker:
-      - image: circleci/android:api-26-alpha
+      - image: circleci/android:api-28
         environment:
           ANDROID_HOME=/opt/android/sdk
     steps:
@@ -70,7 +70,7 @@ jobs:
             aws s3 cp build/outputs/aar/teak-release.aar s3://teak-build-artifacts/android/teak-$(git describe --tags --always).aar --acl public-read
   deploy_latest:
     docker:
-      - image: circleci/android:api-26-alpha
+      - image: circleci/android:api-28
         environment:
           ANDROID_HOME=/opt/android/sdk
     steps:

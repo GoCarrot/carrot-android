@@ -1,12 +1,13 @@
 package io.teak.sdk.wrapper;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 public interface ISDKWrapper {
     enum EventType {
         NotificationLaunch,
         RewardClaim,
-        ForegroundNotification
+        ForegroundNotification,
+        AdditionalData
     }
     void sdkSendMessage(@NonNull EventType eventType, @NonNull String eventData);
 }

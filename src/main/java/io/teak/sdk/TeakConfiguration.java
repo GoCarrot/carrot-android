@@ -1,7 +1,7 @@
 package io.teak.sdk;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.configuration.DataCollectionConfiguration;
 import io.teak.sdk.configuration.DebugConfiguration;

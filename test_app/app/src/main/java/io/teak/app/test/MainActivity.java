@@ -1,9 +1,9 @@
 package io.teak.app.test;
 
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
+import androidx.appcompat.app.AppCompatActivity;
 import io.teak.sdk.Teak;
 import io.teak.sdk.IObjectFactory;
 

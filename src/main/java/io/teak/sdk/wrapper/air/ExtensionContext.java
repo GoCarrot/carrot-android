@@ -1,6 +1,6 @@
 package io.teak.sdk.wrapper.air;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.adobe.fre.FREContext;
 import com.adobe.fre.FREFunction;
 import io.teak.sdk.Teak;
@@ -33,6 +33,9 @@ public class ExtensionContext extends FREContext implements Unobfuscable {
                         } break;
                         case ForegroundNotification: {
                             eventName = "ON_FOREGROUND_NOTIFICATION";
+                        } break;
+                        case AdditionalData: {
+                            eventName = "ON_ADDITIONAL_DATA";
                         } break;
                     }
                     Extension.context.dispatchStatusEventAsync(eventName, eventData);

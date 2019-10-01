@@ -2,7 +2,7 @@ package io.teak.sdk.event;
 
 import android.content.Context;
 import android.content.Intent;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import io.teak.sdk.TeakEvent;
 
 public class PushNotificationEvent extends TeakEvent {

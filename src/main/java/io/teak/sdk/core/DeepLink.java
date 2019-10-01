@@ -1,6 +1,5 @@
 package io.teak.sdk.core;
 
-import android.support.annotation.NonNull;
 import io.teak.sdk.Teak;
 import java.net.URI;
 import java.net.URLDecoder;

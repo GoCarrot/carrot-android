@@ -1,6 +1,6 @@
 package io.teak.sdk.push;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import java.util.Map;
 
 public interface IPushProvider {

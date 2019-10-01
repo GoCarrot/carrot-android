@@ -5,8 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
-import android.support.annotation.NonNull;
 import android.util.Base64;
+import androidx.annotation.NonNull;
 import com.amazon.device.messaging.ADM;
 import com.amazon.device.messaging.ADMMessageHandlerBase;
 import com.amazon.device.messaging.ADMMessageReceiver;
@@ -144,8 +144,7 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
                     Teak.log.i("amazon.adm.registration_error.debugging", "[✓] App package name matches package name inside 'api_key.txt'");
 
                     // Make sure the signature matches
-                    @SuppressLint("PackageManagerGetSignatures")
-                    Signature[] sigs = getApplicationContext().getPackageManager().getPackageInfo(getApplicationContext().getPackageName(), PackageManager.GET_SIGNATURES).signatures;
+                    Signature[] sigs = Helpers.getAppSignatures(getApplicationContext());
                     for (Signature sig : sigs) {
                         if (json.has("appsigSha256")) {
                             String sigSha256 = Helpers.formatSig(sig, "SHA-256");

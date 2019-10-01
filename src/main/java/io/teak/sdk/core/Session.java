@@ -4,9 +4,8 @@ import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.Helpers.mm;
 import io.teak.sdk.Request;
@@ -21,6 +20,7 @@ import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.SessionStateEvent;
+import io.teak.sdk.event.UserAdditionalDataEvent;
 import io.teak.sdk.event.UserIdEvent;
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.push.PushState;
@@ -39,7 +39,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -460,6 +459,12 @@ public class Session {
                                             Session.this.userProfile = new UserProfile(Session.this, profile.toMap());
                                         } catch (Exception ignored) {
                                         }
+                                    }
+
+                                    // Grab additional data
+                                    final JSONObject additionalData = response.optJSONObject("additional_data");
+                                    if (additionalData != null) {
+                                        TeakEvent.postEvent(new UserAdditionalDataEvent(additionalData));
                                     }
 
                                     // Assign new state
