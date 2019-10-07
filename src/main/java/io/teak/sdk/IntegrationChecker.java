@@ -346,7 +346,7 @@ public class IntegrationChecker {
                     }
 
                     // Make sure the <intent-filter> for the teakXXXX:// scheme does *not* also contain any http(s) schemes
-                    final List<ManifestParser.XmlTag> teakSchemeOtherSchemes = teakSchemeCategories.get(0).find("data",
+                    final List<ManifestParser.XmlTag> teakSchemeOtherSchemes = teakScheme.get(0).find("data",
                         new HashMap.SimpleEntry<>("scheme", "(http|https)"));
                     if (teakSchemeOtherSchemes.size() > 0) {
                         addErrorToReport("activity.intent-filter.data.scheme", "the <intent-filter> with the \"teak\" data scheme *should not* contain any http or https schemes.\n\nPut the \"teak\" data scheme in its own <intent-filter>");
