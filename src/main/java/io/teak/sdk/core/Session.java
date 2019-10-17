@@ -447,9 +447,11 @@ public class Session {
 
                                     // Assign deep link to launch, if it is provided
                                     if (response.has("deep_link")) {
+                                        final String deepLink = response.getString("deep_link");
                                         Map<String, Object> merge = new HashMap<>();
-                                        merge.put("deep_link", response.get("deep_link"));
+                                        merge.put("deep_link", deepLink);
                                         Session.this.launchAttribution = Session.attributionFutureMerging(Session.this.launchAttribution, merge);
+                                        Teak.log.i("deep_link.processed", deepLink);
                                     }
 
                                     // Grab user profile
@@ -1015,6 +1017,9 @@ public class Session {
                             Uri.Builder httpsUri = uri.buildUpon();
                             httpsUri.scheme("https");
                             URL url = new URL(httpsUri.build().toString());
+
+                            Teak.log.i("deep_link.request.send", url.toString());
+
                             connection = (HttpsURLConnection) url.openConnection();
                             connection.setUseCaches(false);
                             connection.setRequestProperty("Accept-Charset", "UTF-8");
@@ -1037,12 +1042,17 @@ public class Session {
                             }
                             rd.close();
 
+                            Teak.log.i("deep_link.request.reply", response.toString());
+
                             try {
                                 JSONObject teakData = new JSONObject(response.toString());
                                 if (teakData.getString("AndroidPath") != null) {
                                     uri = Uri.parse(String.format(Locale.US, "teak%s://%s", teakConfiguration.appConfiguration.appId, teakData.getString("AndroidPath")));
                                 }
-                            } catch (Exception ignored) {
+
+                                Teak.log.i("deep_link.request.resolve", uri.toString());
+                            } catch (Exception e) {
+                                Teak.log.exception(e);
                             }
                         } catch (SSLProtocolException ssl_e) {
                             // Ignored, Sentry issue 'TEAK-SDK-Z'
