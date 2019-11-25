@@ -214,6 +214,13 @@ public class TeakNotification implements Unobfuscable {
                                 public void onRequestCompleted(int responseCode, String responseBody) {
                                     try {
                                         JSONObject responseJson = new JSONObject(responseBody);
+
+                                        // https://sentry.io/organizations/teak/issues/1354507192/?project=141792&referrer=alert_email
+                                        if (responseBody == null) {
+                                            q.offer(null);
+                                            return;
+                                        }
+
                                         JSONObject rewardResponse = responseJson.optJSONObject("response");
 
                                         JSONObject fullParsedResponse = new JSONObject();
