@@ -82,3 +82,9 @@
 -keep public class android.support.v4.app.NotificationCompat$Builder {
    public  *;
 }
+
+### Possible AIDL Issue after AndroidX with com.android.installreferrer ###
+-keep class com.google.android.aidl.BaseStub { *; }
+
+### Keep the Teak classes for Unity dynamic invocation ###
+-keep class io.teak.sdk.** { *; }

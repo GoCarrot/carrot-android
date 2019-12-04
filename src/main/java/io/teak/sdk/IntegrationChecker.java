@@ -365,7 +365,7 @@ public class IntegrationChecker {
                 for (int i = 0; i < IntegrationChecker.permissionFeatures.length; i++) {
                     final String feature = IntegrationChecker.permissionFeatures[i];
                     final List<Integer> missingPermissions = new ArrayList<>();
-                    for (int j = 0; j < IntegrationChecker.permissions[i].length; i++) {
+                    for (int j = 0; j < IntegrationChecker.permissions[i].length; j++) {
                         final String permission = IntegrationChecker.permissions[i][j];
                         if (!permissionsAsMap.containsKey(permission)) {
                             missingPermissions.add(j);
