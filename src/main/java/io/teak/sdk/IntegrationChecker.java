@@ -410,6 +410,13 @@ public class IntegrationChecker {
     }
 
     private void checkSupportv4Version() {
+        // Skip if AndroidX is present, we'll use that
+        try {
+            final Class<?> androidXNotificationCompat = Class.forName("androidx.core.app.NotificationCompat");
+            if (androidXNotificationCompat != null) return;
+        } catch (Exception ignored) {
+        }
+
         try {
             final ApplicationInfo appInfo = this.activity.getPackageManager().getApplicationInfo(this.activity.getPackageName(), PackageManager.GET_META_DATA);
             final int targetSdkVersion = appInfo.targetSdkVersion;
