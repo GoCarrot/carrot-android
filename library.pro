@@ -83,8 +83,13 @@
    public  *;
 }
 
-### Possible AIDL Issue after AndroidX with com.android.installreferrer ###
--keep class com.google.android.aidl.BaseStub { *; }
+### AndroidX invoke via reflection ###
+-keep class androidx.localbroadcastmanager.** { public *; }
+-keep class androidx.core.app.NotificationManagerCompat { public *; }
 
-### Keep the Teak classes for Unity dynamic invocation ###
--keep class io.teak.sdk.** { *; }
+### Reported by tango @ PS ###
+-keep class com.google.android.gms.common.GooglePlayServicesUtil { public *; }
+-keep class com.google.android.gms.ads.identifier.AdvertisingIdClient { public *; }
+
+#### Keep the Teak classes for Unity dynamic invocation ###
+#-keep class io.teak.sdk.** { *; }
