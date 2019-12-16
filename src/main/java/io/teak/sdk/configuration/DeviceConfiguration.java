@@ -93,6 +93,7 @@ public class DeviceConfiguration {
             public void onConfigurationReady(@NonNull TeakConfiguration configuration) {
                 DeviceConfiguration.this.pushConfiguration.put("gcmSenderId", configuration.appConfiguration.gcmSenderId);
                 DeviceConfiguration.this.pushConfiguration.put("firebaseAppId", configuration.appConfiguration.firebaseAppId);
+                DeviceConfiguration.this.pushConfiguration.put("ignoreDefaultFirebaseConfiguration", configuration.appConfiguration.ignoreDefaultFirebaseConfiguration);
             }
         });
 
@@ -113,6 +114,11 @@ public class DeviceConfiguration {
                     // Override the provided Firebase App Id with one from Teak, if applicable
                     if (remoteConfiguration.firebaseAppId != null) {
                         DeviceConfiguration.this.pushConfiguration.put("firebaseAppId", remoteConfiguration.firebaseAppId);
+                    }
+
+                    // Override ignoring the default Firebase configuration
+                    if (remoteConfiguration.firebaseAppId != null) {
+                        DeviceConfiguration.this.pushConfiguration.put("ignoreDefaultFirebaseConfiguration", remoteConfiguration.firebaseAppId);
                     }
 
                     requestNewPushToken();
