@@ -98,9 +98,11 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
 
         if (this.firebaseApp == null) {
             // First try and get a Firebase App if it's already initialized
-            try {
-                this.firebaseApp = FirebaseApp.getInstance();
-            } catch (Exception ignored) {
+            if (!ignoreDefaultFirebaseConfiguration) {
+                try {
+                    this.firebaseApp = FirebaseApp.getInstance();
+                } catch (Exception ignored) {
+                }
             }
 
             if (this.firebaseApp == null) {
@@ -109,7 +111,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
                     // the gradle plugin or something. In this case, we can safely create the default
                     // because subsequent calls to FirebaseApp.initializeApp will simply return the
                     // existing default.
-                    if (FirebaseOptions.fromResource(context) != null) {
+                    if (!ignoreDefaultFirebaseConfiguration && FirebaseOptions.fromResource(context) != null) {
                         Teak.log.i("google.fcm.intialization", "FirebaseOptions.fromResource");
                         this.firebaseApp = FirebaseApp.initializeApp(this.context);
                     } else {
