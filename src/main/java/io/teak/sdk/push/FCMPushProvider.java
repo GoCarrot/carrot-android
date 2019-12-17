@@ -121,7 +121,18 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
                         FirebaseOptions.Builder builder = new FirebaseOptions.Builder()
                                                               .setGcmSenderId((String) pushConfiguration.get("gcmSenderId"))
                                                               .setApplicationId((String) pushConfiguration.get("firebaseAppId"));
-                        this.firebaseApp = FirebaseApp.initializeApp(this.context, builder.build());
+
+                        // If there is no default Firebase instance, then we still need to have that
+                        try {
+                            // Because exceptions for control flow are awesome!
+                            FirebaseApp.getInstance();
+
+                            // Create with name TEAK, because [DEFAULT] already exists
+                            this.firebaseApp = FirebaseApp.initializeApp(this.context, builder.build(), "TEAK");
+                        } catch (Exception ignored) {
+                            // Create with name [DEFAULT], because one named [DEFAULT] must exist
+                            FirebaseApp.initializeApp(this.context, builder.build());
+                        }
                     }
                 } catch (Exception e) {
                     Teak.log.exception(e);
@@ -134,7 +145,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
         } else {
             try {
                 final Task<InstanceIdResult> instanceIdTask = FirebaseInstanceId
-                                                                  .getInstance()
+                                                                  .getInstance(this.firebaseApp)
                                                                   .getInstanceId();
 
                 instanceIdTask.addOnSuccessListener(new OnSuccessListener<InstanceIdResult>() {
