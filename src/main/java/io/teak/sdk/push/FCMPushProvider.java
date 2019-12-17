@@ -131,7 +131,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
                             this.firebaseApp = FirebaseApp.initializeApp(this.context, builder.build(), "TEAK");
                         } catch (Exception ignored) {
                             // Create with name [DEFAULT], because one named [DEFAULT] must exist
-                            FirebaseApp.initializeApp(this.context, builder.build());
+                            this.firebaseApp = FirebaseApp.initializeApp(this.context, builder.build());
                         }
                     }
                 } catch (Exception e) {
