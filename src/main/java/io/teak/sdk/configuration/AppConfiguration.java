@@ -239,6 +239,7 @@ public class AppConfiguration {
         ret.put("apiKey", this.apiKey);
         ret.put("gcmSenderId", this.gcmSenderId);
         ret.put("firebaseAppId", this.firebaseAppId);
+        ret.put("ignoreDefaultFirebaseConfiguration", this.ignoreDefaultFirebaseConfiguration);
         ret.put("jobId", this.jobId);
         ret.put("appVersion", this.appVersion);
         ret.put("bundleId", this.bundleId);
