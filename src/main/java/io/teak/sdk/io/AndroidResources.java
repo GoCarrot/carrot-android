@@ -35,10 +35,10 @@ public class AndroidResources implements IAndroidResources {
         return ret;
     }
 
-    public Boolean getTeakBoolResource(@NonNull String name) {
+    public Boolean getTeakBoolResource(@NonNull String name, boolean defaultValue) {
         Boolean ret = androidResources.getBooleanResource(name);
         if (ret == null && metaData != null) {
-            ret = metaData.getBoolean(name, true);
+            ret = metaData.getBoolean(name, defaultValue);
         }
         return ret;
     }

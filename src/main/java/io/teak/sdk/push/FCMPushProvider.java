@@ -94,7 +94,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
     public void requestPushKey(@NonNull Map<String, Object> pushConfiguration) {
         // Future-Pat, this method will only be invoked via Teak SDK, so getApplicationContext()
         // will not work.
-        final boolean ignoreDefaultFirebaseConfiguration = (boolean) pushConfiguration.getOrDefault("ignoreDefaultFirebaseConfiguration", false);
+        final boolean ignoreDefaultFirebaseConfiguration = (boolean) pushConfiguration.get("ignoreDefaultFirebaseConfiguration");
 
         if (this.firebaseApp == null) {
             // First try and get a Firebase App if it's already initialized

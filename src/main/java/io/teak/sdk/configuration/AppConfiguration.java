@@ -149,12 +149,7 @@ public class AppConfiguration {
 
         // Ignore the default Firebase configuration?
         {
-            Boolean ignoreDefaultFirebaseConfiguration = androidResources.getTeakBoolResource(TEAK_IGNORE_DEFAULT_FIREBASE_CONFIGURATION_RESOURCE);
-
-            if (ignoreDefaultFirebaseConfiguration == null) {
-                ignoreDefaultFirebaseConfiguration = androidResources.getBooleanResource(TEAK_IGNORE_DEFAULT_FIREBASE_CONFIGURATION_RESOURCE);
-            }
-
+            final Boolean ignoreDefaultFirebaseConfiguration = androidResources.getTeakBoolResource(TEAK_IGNORE_DEFAULT_FIREBASE_CONFIGURATION_RESOURCE, false);
             this.ignoreDefaultFirebaseConfiguration = ignoreDefaultFirebaseConfiguration == null ? false : ignoreDefaultFirebaseConfiguration;
         }
 
