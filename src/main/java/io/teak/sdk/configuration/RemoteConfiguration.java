@@ -29,6 +29,8 @@ public class RemoteConfiguration {
     @SuppressWarnings("WeakerAccess")
     public final String firebaseAppId;
     @SuppressWarnings("WeakerAccess")
+    public final boolean ignoreDefaultFirebaseConfiguration;
+    @SuppressWarnings("WeakerAccess")
     public final boolean enhancedIntegrationChecks;
     @SuppressWarnings("WeakerAccess")
     public final Map<String, Object> endpointConfigurations;
@@ -103,13 +105,15 @@ public class RemoteConfiguration {
 
     public RemoteConfiguration(@NonNull AppConfiguration appConfiguration, @NonNull String hostname,
         String sdkSentryDsn, String appSentryDsn, String gcmSenderId, String firebaseAppId,
-        boolean enhancedIntegrationChecks, JSONObject endpointConfigurations, boolean isMocked) {
+        boolean ignoreDefaultFirebaseConfiguration, boolean enhancedIntegrationChecks,
+        JSONObject endpointConfigurations, boolean isMocked) {
         this.appConfiguration = appConfiguration;
         this.hostname = hostname;
         this.appSentryDsn = appSentryDsn;
         this.sdkSentryDsn = sdkSentryDsn;
         this.gcmSenderId = gcmSenderId;
         this.firebaseAppId = firebaseAppId;
+        this.ignoreDefaultFirebaseConfiguration = ignoreDefaultFirebaseConfiguration;
         this.enhancedIntegrationChecks = enhancedIntegrationChecks;
         this.isMocked = isMocked;
 
@@ -141,6 +145,7 @@ public class RemoteConfiguration {
                                         nullInsteadOfEmpty(response.isNull("app_sentry_dsn") ? null : response.getString("app_sentry_dsn")),
                                         nullInsteadOfEmpty(response.isNull("gcm_sender_id") ? null : response.getString("gcm_sender_id")),
                                         nullInsteadOfEmpty(response.isNull("firebase_app_id") ? null : response.getString("firebase_app_id")),
+                                        response.optBoolean("ignore_default_firebase_configuration", false),
                                         response.optBoolean("enhanced_integration_checks", false),
                                         response.has("endpoint_configurations") ? response.getJSONObject("endpoint_configurations") : null,
                                         false);

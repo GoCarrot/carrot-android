@@ -30,6 +30,8 @@ public class AppConfiguration {
     @SuppressWarnings("WeakerAccess")
     public final String firebaseAppId;
     @SuppressWarnings("WeakerAccess")
+    public final boolean ignoreDefaultFirebaseConfiguration;
+    @SuppressWarnings("WeakerAccess")
     public final int jobId;
     @SuppressWarnings("WeakerAccess")
     public final long appVersion;
@@ -56,6 +58,8 @@ public class AppConfiguration {
     public static final String TEAK_GCM_SENDER_ID_RESOURCE = "io_teak_gcm_sender_id";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_FIREBASE_APP_ID_RESOURCE = "io_teak_firebase_app_id";
+    @SuppressWarnings("WeakerAccess")
+    public static final String TEAK_IGNORE_DEFAULT_FIREBASE_CONFIGURATION_RESOURCE = "io_teak_ignore_default_firebase_configuration";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_JOB_ID_RESOURCE = "io_teak_job_id";
     @SuppressWarnings("WeakerAccess")
@@ -143,6 +147,12 @@ public class AppConfiguration {
             }
         }
 
+        // Ignore the default Firebase configuration?
+        {
+            final Boolean ignoreDefaultFirebaseConfiguration = androidResources.getTeakBoolResource(TEAK_IGNORE_DEFAULT_FIREBASE_CONFIGURATION_RESOURCE, false);
+            this.ignoreDefaultFirebaseConfiguration = ignoreDefaultFirebaseConfiguration == null ? false : ignoreDefaultFirebaseConfiguration;
+        }
+
         // Job Id
         {
             String tempJobId = androidResources.getTeakStringResource(TEAK_JOB_ID_RESOURCE);
@@ -224,6 +234,7 @@ public class AppConfiguration {
         ret.put("apiKey", this.apiKey);
         ret.put("gcmSenderId", this.gcmSenderId);
         ret.put("firebaseAppId", this.firebaseAppId);
+        ret.put("ignoreDefaultFirebaseConfiguration", this.ignoreDefaultFirebaseConfiguration);
         ret.put("jobId", this.jobId);
         ret.put("appVersion", this.appVersion);
         ret.put("bundleId", this.bundleId);

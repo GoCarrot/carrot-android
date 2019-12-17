@@ -46,6 +46,7 @@ public class TeakHttpUnitTest extends TeakUnitTest {
                         "mock_gcm_sender_id",
                         "mock_firebase_app_id",
                         false,
+                        false,
                         null,
                         true);
         TeakEvent.postEvent(new RemoteConfigurationEvent(remoteConfiguration));
