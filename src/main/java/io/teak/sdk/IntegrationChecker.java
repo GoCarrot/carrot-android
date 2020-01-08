@@ -365,7 +365,7 @@ public class IntegrationChecker {
                 for (int i = 0; i < IntegrationChecker.permissionFeatures.length; i++) {
                     final String feature = IntegrationChecker.permissionFeatures[i];
                     final List<Integer> missingPermissions = new ArrayList<>();
-                    for (int j = 0; j < IntegrationChecker.permissions[i].length; i++) {
+                    for (int j = 0; j < IntegrationChecker.permissions[i].length; j++) {
                         final String permission = IntegrationChecker.permissions[i][j];
                         if (!permissionsAsMap.containsKey(permission)) {
                             missingPermissions.add(j);
@@ -410,6 +410,13 @@ public class IntegrationChecker {
     }
 
     private void checkSupportv4Version() {
+        // Skip if AndroidX is present, we'll use that
+        try {
+            final Class<?> androidXNotificationCompat = Class.forName("androidx.core.app.NotificationCompat");
+            if (androidXNotificationCompat != null) return;
+        } catch (Exception ignored) {
+        }
+
         try {
             final ApplicationInfo appInfo = this.activity.getPackageManager().getApplicationInfo(this.activity.getPackageName(), PackageManager.GET_META_DATA);
             final int targetSdkVersion = appInfo.targetSdkVersion;

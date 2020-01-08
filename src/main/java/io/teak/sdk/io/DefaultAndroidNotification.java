@@ -143,6 +143,9 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
         this.handler.post(new Runnable() {
             @Override
             public void run() {
+                // Run the GC
+                Helpers.runAndLogGC("display_notification.gc");
+
                 try {
                     DefaultAndroidNotification.this.notificationManager.notify(NOTIFICATION_TAG, teakNotification.platformId, nativeNotification);
 
@@ -155,6 +158,8 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                 } catch (SecurityException ignored) {
                     // This likely means that they need the VIBRATE permission on old versions of Android
                     Teak.log.e("notification.permission_needed.vibrate", "Please add this to your AndroidManifest.xml: <uses-permission android:name=\"android.permission.VIBRATE\" />");
+                } catch (OutOfMemoryError e) {
+                    Teak.log.exception(e);
                 } catch (Exception e) {
                     // Unit testing case
                     if (nativeNotification.flags != Integer.MAX_VALUE) {

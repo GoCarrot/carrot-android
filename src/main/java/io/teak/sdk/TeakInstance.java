@@ -493,6 +493,15 @@ public class TeakInstance implements Unobfuscable {
                 });
             }
         });
+
+        Teak.registerDeepLink("/teak_internal/app_settings", "", "", new Teak.DeepLink() {
+            @Override
+            public void call(Map<String, Object> params) {
+                if (TeakInstance.this.getNotificationStatus() == Teak.TEAK_NOTIFICATIONS_DISABLED) {
+                    TeakInstance.this.openSettingsAppToThisAppsSettings();
+                }
+            }
+        });
     }
 
     ///// JobService

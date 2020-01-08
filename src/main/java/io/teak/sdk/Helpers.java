@@ -17,6 +17,7 @@ import java.security.InvalidParameterException;
 import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,6 +30,16 @@ public class Helpers {
         } catch (Exception ignored) {
         }
         return null;
+    }
+
+    public static void runAndLogGC(final @NonNull String logEvent) {
+        long preGc = Runtime.getRuntime().freeMemory();
+        Runtime.getRuntime().gc();
+        long postGc = Runtime.getRuntime().freeMemory();
+        Teak.log.i(logEvent, Helpers.mm.h(
+                "pre_gc", String.format(Locale.US, "%dk", preGc / 1024L),
+                "post_gc", String.format(Locale.US, "%dk", postGc / 1024L),
+                "delta_gc", String.format(Locale.US, "%dk", (postGc - preGc) / 1024L)));
     }
 
     public static boolean stringsAreEqual(final @Nullable String a, final @Nullable String b) {

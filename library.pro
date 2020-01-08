@@ -82,3 +82,14 @@
 -keep public class android.support.v4.app.NotificationCompat$Builder {
    public  *;
 }
+
+### AndroidX invoke via reflection ###
+-keep class androidx.localbroadcastmanager.** { public *; }
+-keep class androidx.core.app.NotificationManagerCompat { public *; }
+
+### Reported by tango @ PS ###
+-keep class com.google.android.gms.common.GooglePlayServicesUtil { public *; }
+-keep class com.google.android.gms.ads.identifier.AdvertisingIdClient { public *; }
+
+#### Keep the Teak classes for Unity dynamic invocation ###
+#-keep class io.teak.sdk.** { *; }

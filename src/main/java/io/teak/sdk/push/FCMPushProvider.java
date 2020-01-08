@@ -94,11 +94,15 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
     public void requestPushKey(@NonNull Map<String, Object> pushConfiguration) {
         // Future-Pat, this method will only be invoked via Teak SDK, so getApplicationContext()
         // will not work.
+        final boolean ignoreDefaultFirebaseConfiguration = (boolean) pushConfiguration.get("ignoreDefaultFirebaseConfiguration");
+
         if (this.firebaseApp == null) {
             // First try and get a Firebase App if it's already initialized
-            try {
-                this.firebaseApp = FirebaseApp.getInstance();
-            } catch (Exception ignored) {
+            if (!ignoreDefaultFirebaseConfiguration) {
+                try {
+                    this.firebaseApp = FirebaseApp.getInstance();
+                } catch (Exception ignored) {
+                }
             }
 
             if (this.firebaseApp == null) {
@@ -107,7 +111,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
                     // the gradle plugin or something. In this case, we can safely create the default
                     // because subsequent calls to FirebaseApp.initializeApp will simply return the
                     // existing default.
-                    if (FirebaseOptions.fromResource(context) != null) {
+                    if (!ignoreDefaultFirebaseConfiguration && FirebaseOptions.fromResource(context) != null) {
                         Teak.log.i("google.fcm.intialization", "FirebaseOptions.fromResource");
                         this.firebaseApp = FirebaseApp.initializeApp(this.context);
                     } else {
@@ -117,7 +121,18 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
                         FirebaseOptions.Builder builder = new FirebaseOptions.Builder()
                                                               .setGcmSenderId((String) pushConfiguration.get("gcmSenderId"))
                                                               .setApplicationId((String) pushConfiguration.get("firebaseAppId"));
-                        this.firebaseApp = FirebaseApp.initializeApp(this.context, builder.build());
+
+                        // If there is no default Firebase instance, then we still need to have that
+                        try {
+                            // Because exceptions for control flow are awesome!
+                            FirebaseApp.getInstance();
+
+                            // Create with name TEAK, because [DEFAULT] already exists
+                            this.firebaseApp = FirebaseApp.initializeApp(this.context, builder.build(), "TEAK");
+                        } catch (Exception ignored) {
+                            // Create with name [DEFAULT], because one named [DEFAULT] must exist
+                            this.firebaseApp = FirebaseApp.initializeApp(this.context, builder.build());
+                        }
                     }
                 } catch (Exception e) {
                     Teak.log.exception(e);
@@ -130,7 +145,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
         } else {
             try {
                 final Task<InstanceIdResult> instanceIdTask = FirebaseInstanceId
-                                                                  .getInstance()
+                                                                  .getInstance(this.firebaseApp)
                                                                   .getInstanceId();
 
                 instanceIdTask.addOnSuccessListener(new OnSuccessListener<InstanceIdResult>() {
