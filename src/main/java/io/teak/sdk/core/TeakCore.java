@@ -169,7 +169,7 @@ public class TeakCore implements ITeakCore {
                     //   broadcast for a foreground receipt of a notification.
                     final boolean gameIsInForeground = !Session.isExpiringOrExpired();
                     final boolean showInForeground = Helpers.getBooleanFromBundle(bundle, "teakShowInForeground");
-                    if (gameIsInForeground && !showInForeground) {
+                    if (gameIsInForeground) {
                         if (TeakCore.this.localBroadcastManager != null) {
                             final String teakRewardId = bundle.getString("teakRewardId");
 
@@ -179,6 +179,7 @@ public class TeakCore implements ITeakCore {
                             eventDataDict.put("incentivized", teakRewardId != null);
                             eventDataDict.put("teakScheduleName", bundle.getString("teakScheduleName"));
                             eventDataDict.put("teakCreativeName", bundle.getString("teakCreativeName"));
+                            eventDataDict.put("teakDeepLink", bundle.getString("teakDeepLink"));
 
                             // Notification content
                             eventDataDict.put("message", bundle.getString("message"));
@@ -188,8 +189,6 @@ public class TeakCore implements ITeakCore {
                             broadcastEvent.putExtra("eventData", eventDataDict);
                             sendLocalBroadcast(broadcastEvent);
                         }
-                        // Break out of this switch statement, we don't want to display the notification
-                        break;
                     }
 
                     // Create Teak Notification
@@ -203,13 +202,6 @@ public class TeakCore implements ITeakCore {
                     asyncExecutor.submit(new RetriableTask<>(3, 2000L, 2, new Callable<Object>() {
                         @Override
                         public Object call() throws NotificationBuilder.AssetLoadException {
-                            // Create native notification
-                            Notification nativeNotification = NotificationBuilder.createNativeNotification(context, bundle, teakNotification);
-                            if (nativeNotification == null) return null;
-
-                            // Ensure that DefaultAndroidNotification instance exists.
-                            if (DefaultAndroidNotification.get(context) == null) return null;
-
                             // Send metric
                             final String teakUserId = bundle.getString("teakUserId", null);
                             final String teakAppId = bundle.getString("teakAppId", null);
@@ -240,8 +232,18 @@ public class TeakCore implements ITeakCore {
                                 }
                             }
 
-                            // Send display event
-                            TeakEvent.postEvent(new NotificationDisplayEvent(teakNotification, nativeNotification));
+                            // If the game is backgrounded, or we can show in foreground, display notification
+                            if (!gameIsInForeground || showInForeground) {
+                                // Create native notification
+                                Notification nativeNotification = NotificationBuilder.createNativeNotification(context, bundle, teakNotification);
+                                if (nativeNotification == null) return null;
+
+                                // Ensure that DefaultAndroidNotification instance exists.
+                                if (DefaultAndroidNotification.get(context) == null) return null;
+
+                                // Send display event
+                                TeakEvent.postEvent(new NotificationDisplayEvent(teakNotification, nativeNotification));
+                            }
                             return null;
                         }
                     }));
