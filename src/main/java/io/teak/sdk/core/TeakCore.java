@@ -167,8 +167,9 @@ public class TeakCore implements ITeakCore {
                     // If the session is not expiring or expired, we are in the foreground
                     // If we're not supposed to show notifications in the foreground, trigger the
                     //   broadcast for a foreground receipt of a notification.
+                    final boolean gameIsInForeground = !Session.isExpiringOrExpired();
                     final boolean showInForeground = Helpers.getBooleanFromBundle(bundle, "teakShowInForeground");
-                    if (!Session.isExpiringOrExpired() && !showInForeground) {
+                    if (gameIsInForeground && !showInForeground) {
                         if (TeakCore.this.localBroadcastManager != null) {
                             final String teakRewardId = bundle.getString("teakRewardId");
 
@@ -217,6 +218,11 @@ public class TeakCore implements ITeakCore {
                                 payload.put("app_id", teakAppId);
                                 payload.put("user_id", teakUserId);
                                 payload.put("platform_id", teakNotification.teakNotifId);
+
+                                if (gameIsInForeground) {
+                                    payload.put("notification_placement", "foreground");
+                                }
+
                                 if (teakNotification.teakNotifId == 0) {
                                     payload.put("impression", false);
                                 }
