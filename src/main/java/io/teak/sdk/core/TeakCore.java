@@ -192,7 +192,7 @@ public class TeakCore implements ITeakCore {
                     }
 
                     // Create Teak Notification
-                    final TeakNotification teakNotification = new TeakNotification(bundle);
+                    final TeakNotification teakNotification = new TeakNotification(bundle, gameIsInForeground);
 
                     // Add platformId to bundle
                     bundle.putInt("platformId", teakNotification.platformId);
@@ -321,6 +321,7 @@ public class TeakCore implements ITeakCore {
                 eventDataDict.put("incentivized", teakRewardId != null);
                 eventDataDict.put("teakScheduleName", bundle.getString("teakScheduleName"));
                 eventDataDict.put("teakCreativeName", bundle.getString("teakCreativeName"));
+                eventDataDict.put("teakNotificationPlacement", bundle.getString("teakNotificationPlacement"));
 
                 if (teakRewardId != null) {
                     final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
