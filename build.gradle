@@ -97,9 +97,8 @@ android.libraryVariants.all { variant ->
     // Javadoc task
     task("generate${variant.name.capitalize()}Javadoc", type: Javadoc) {
         description "Generates Javadoc for $variant.name."
-        source = variant.javaCompile.source
         ext.androidJar = "${android.sdkDirectory}/platforms/${android.compileSdkVersion}/android.jar"
-        doFirst { classpath = files(variant.javaCompile.classpath.files) + files(ext.androidJar) }
+        doFirst { classpath = files(variant.getJavaCompileProvider.classpath.files) + files(ext.androidJar) }
         exclude '**/BuildConfig.java', '**/R.java'
     }
 
@@ -112,8 +111,8 @@ android.libraryVariants.all { variant ->
 
     def jarTask = task("jar${variant.name.capitalize()}", type: Jar) {
         description "Bundles compiled .class files into a JAR file for $variant.name."
-        dependsOn (proguardTask == null ? variant.javaCompile : proguardTask)
-        from variant.javaCompile.destinationDir
+        dependsOn (proguardTask == null ? variant.getJavaCompileProvider() : proguardTask)
+        from variant.javaCompileProvider.get().destinationDir
         include 'io/teak/**'
         archiveName "${archivesBaseName}-${variant.name}.jar"
     }

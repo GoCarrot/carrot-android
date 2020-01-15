@@ -731,7 +731,19 @@ public class TeakNotification implements Unobfuscable {
 
     public final Bundle bundle;
 
-    public TeakNotification(Bundle bundle) {
+    public enum NotificationPlacement {
+        Background("background"),
+        Foreground("foreground");
+
+        public final String name;
+
+        NotificationPlacement(String name) {
+            this.name = name;
+        }
+    }
+    public final NotificationPlacement notificationPlacement;
+
+    public TeakNotification(Bundle bundle, boolean appInForeground) {
         this.message = bundle.getString("message");
         this.longText = bundle.getString("longText");
         this.teakRewardId = bundle.getString("teakRewardId");
@@ -740,6 +752,7 @@ public class TeakNotification implements Unobfuscable {
         this.teakCreativeName = bundle.getString("teakCreativeName");
         this.isAnimated = false;
         this.bundle = bundle;
+        this.notificationPlacement = appInForeground ? NotificationPlacement.Foreground : NotificationPlacement.Background;
 
         JSONObject tempExtras = null;
         try {

@@ -873,6 +873,7 @@ public class Session {
                     public Map<String, Object> get() {
                         Map<String, Object> returnValue = new HashMap<>();
                         returnValue.put("teak_notif_id", teakNotifId);
+                        returnValue.put("notification_placement", Helpers.getStringOrNullFromIntentExtra(intent, "teakNotificationPlacement"));
                         return returnValue;
                     }
 

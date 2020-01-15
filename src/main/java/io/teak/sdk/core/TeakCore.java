@@ -167,8 +167,9 @@ public class TeakCore implements ITeakCore {
                     // If the session is not expiring or expired, we are in the foreground
                     // If we're not supposed to show notifications in the foreground, trigger the
                     //   broadcast for a foreground receipt of a notification.
+                    final boolean gameIsInForeground = !Session.isExpiringOrExpired();
                     final boolean showInForeground = Helpers.getBooleanFromBundle(bundle, "teakShowInForeground");
-                    if (!Session.isExpiringOrExpired() && !showInForeground) {
+                    if (gameIsInForeground) {
                         if (TeakCore.this.localBroadcastManager != null) {
                             final String teakRewardId = bundle.getString("teakRewardId");
 
@@ -178,6 +179,7 @@ public class TeakCore implements ITeakCore {
                             eventDataDict.put("incentivized", teakRewardId != null);
                             eventDataDict.put("teakScheduleName", bundle.getString("teakScheduleName"));
                             eventDataDict.put("teakCreativeName", bundle.getString("teakCreativeName"));
+                            eventDataDict.put("teakDeepLink", bundle.getString("teakDeepLink"));
 
                             // Notification content
                             eventDataDict.put("message", bundle.getString("message"));
@@ -187,28 +189,22 @@ public class TeakCore implements ITeakCore {
                             broadcastEvent.putExtra("eventData", eventDataDict);
                             sendLocalBroadcast(broadcastEvent);
                         }
-                        // Break out of this switch statement, we don't want to display the notification
-                        break;
                     }
 
                     // Create Teak Notification
-                    final TeakNotification teakNotification = new TeakNotification(bundle);
+                    final TeakNotification teakNotification = new TeakNotification(bundle, gameIsInForeground);
 
                     // Add platformId to bundle
                     bundle.putInt("platformId", teakNotification.platformId);
+
+                    // Add notification placement to bundle
+                    bundle.putString("teakNotificationPlacement", teakNotification.notificationPlacement.name);
 
                     // Create & display native notification asynchronously, image downloads etc
                     final Context context = ((PushNotificationEvent) event).context;
                     asyncExecutor.submit(new RetriableTask<>(3, 2000L, 2, new Callable<Object>() {
                         @Override
                         public Object call() throws NotificationBuilder.AssetLoadException {
-                            // Create native notification
-                            Notification nativeNotification = NotificationBuilder.createNativeNotification(context, bundle, teakNotification);
-                            if (nativeNotification == null) return null;
-
-                            // Ensure that DefaultAndroidNotification instance exists.
-                            if (DefaultAndroidNotification.get(context) == null) return null;
-
                             // Send metric
                             final String teakUserId = bundle.getString("teakUserId", null);
                             final String teakAppId = bundle.getString("teakAppId", null);
@@ -217,6 +213,11 @@ public class TeakCore implements ITeakCore {
                                 payload.put("app_id", teakAppId);
                                 payload.put("user_id", teakUserId);
                                 payload.put("platform_id", teakNotification.teakNotifId);
+
+                                if (gameIsInForeground) {
+                                    payload.put("notification_placement", "foreground");
+                                }
+
                                 if (teakNotification.teakNotifId == 0) {
                                     payload.put("impression", false);
                                 }
@@ -234,8 +235,18 @@ public class TeakCore implements ITeakCore {
                                 }
                             }
 
-                            // Send display event
-                            TeakEvent.postEvent(new NotificationDisplayEvent(teakNotification, nativeNotification));
+                            // If the game is backgrounded, or we can show in foreground, display notification
+                            if (!gameIsInForeground || showInForeground) {
+                                // Create native notification
+                                Notification nativeNotification = NotificationBuilder.createNativeNotification(context, bundle, teakNotification);
+                                if (nativeNotification == null) return null;
+
+                                // Ensure that DefaultAndroidNotification instance exists.
+                                if (DefaultAndroidNotification.get(context) == null) return null;
+
+                                // Send display event
+                                TeakEvent.postEvent(new NotificationDisplayEvent(teakNotification, nativeNotification));
+                            }
                             return null;
                         }
                     }));
@@ -250,7 +261,10 @@ public class TeakCore implements ITeakCore {
                     if (bundle == null) break;
 
                     final boolean autoLaunch = !Helpers.getBooleanFromBundle(bundle, "noAutolaunch");
-                    Teak.log.i("notification.opened", Helpers.mm.h("teakNotifId", bundle.getString("teakNotifId"), "autoLaunch", autoLaunch));
+                    Teak.log.i("notification.opened",
+                            Helpers.mm.h("teakNotifId", bundle.getString("teakNotifId"),
+                                    "autoLaunch", autoLaunch,
+                                    "teakNotificationPlacement", bundle.getString("teakNotificationPlacement")));
 
                     // Launch the app
                     final Context context = ((PushNotificationEvent) event).context;
@@ -313,6 +327,7 @@ public class TeakCore implements ITeakCore {
                 eventDataDict.put("incentivized", teakRewardId != null);
                 eventDataDict.put("teakScheduleName", bundle.getString("teakScheduleName"));
                 eventDataDict.put("teakCreativeName", bundle.getString("teakCreativeName"));
+                eventDataDict.put("teakNotificationPlacement", bundle.getString("teakNotificationPlacement"));
 
                 if (teakRewardId != null) {
                     final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
