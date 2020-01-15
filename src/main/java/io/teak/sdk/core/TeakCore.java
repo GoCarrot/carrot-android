@@ -197,6 +197,9 @@ public class TeakCore implements ITeakCore {
                     // Add platformId to bundle
                     bundle.putInt("platformId", teakNotification.platformId);
 
+                    // Add notification placement to bundle
+                    bundle.putString("teakNotificationPlacement", teakNotification.notificationPlacement.name);
+
                     // Create & display native notification asynchronously, image downloads etc
                     final Context context = ((PushNotificationEvent) event).context;
                     asyncExecutor.submit(new RetriableTask<>(3, 2000L, 2, new Callable<Object>() {
@@ -258,7 +261,10 @@ public class TeakCore implements ITeakCore {
                     if (bundle == null) break;
 
                     final boolean autoLaunch = !Helpers.getBooleanFromBundle(bundle, "noAutolaunch");
-                    Teak.log.i("notification.opened", Helpers.mm.h("teakNotifId", bundle.getString("teakNotifId"), "autoLaunch", autoLaunch));
+                    Teak.log.i("notification.opened",
+                            Helpers.mm.h("teakNotifId", bundle.getString("teakNotifId"),
+                                    "autoLaunch", autoLaunch,
+                                    "teakNotificationPlacement", bundle.getString("teakNotificationPlacement")));
 
                     // Launch the app
                     final Context context = ((PushNotificationEvent) event).context;
