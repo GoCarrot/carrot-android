@@ -17,6 +17,7 @@ public class UserProfile extends Request {
     private final Map<String, Object> numberAttributes;
     private final String context;
 
+    private long firstSetTime = 0L;
     private ScheduledFuture<?> scheduledSend;
 
     UserProfile(@NonNull Session session, @NonNull Map<String, Object> userProfile) {
@@ -65,6 +66,9 @@ public class UserProfile extends Request {
             this.payload.put("string_attributes", this.stringAttributes);
             this.payload.put("number_attributes", this.numberAttributes);
 
+            final long msElapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - this.firstSetTime);
+            this.payload.put("ms_since_first_event", msElapsed);
+
             super.run();
         }
     }
@@ -79,6 +83,10 @@ public class UserProfile extends Request {
 
     private void setAttribute(@NonNull final Map<String, Object> map, @NonNull final String key, @NonNull final Object value) {
         if (map.containsKey(key)) {
+            if (this.firstSetTime == 0) {
+                this.firstSetTime = System.nanoTime();
+            }
+
             TeakCore.operationQueue.execute(new Runnable() {
                 @Override
                 public void run() {
