@@ -477,7 +477,8 @@ public class Session {
                                         Session.this.setState(State.UserIdentified);
                                     }
 
-                                } catch (Exception ignored) {
+                                } catch (Exception e) {
+                                    Teak.log.exception(e);
                                 } finally {
                                     Session.this.stateLock.unlock();
                                 }
