@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import io.teak.sdk.FacebookAccessTokenBroadcast;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.Helpers.mm;
 import io.teak.sdk.Request;
@@ -398,9 +399,14 @@ public class Session {
                         payload.put("android_ad_id", "");
                     }
 
-                    if (Session.this.facebookAccessToken != null &&
-                        teakConfiguration.dataCollectionConfiguration.enableFacebookAccessToken()) {
-                        payload.put("access_token", Session.this.facebookAccessToken);
+                    if (teakConfiguration.dataCollectionConfiguration.enableFacebookAccessToken()) {
+                        if (Session.this.facebookAccessToken == null) {
+                            Session.this.facebookAccessToken = FacebookAccessTokenBroadcast.getCurrentAccessToken();
+                        }
+
+                        if (Session.this.facebookAccessToken != null) {
+                            payload.put("access_token", Session.this.facebookAccessToken);
+                        }
                     }
 
                     Map<String, Object> attribution = new HashMap<>();
