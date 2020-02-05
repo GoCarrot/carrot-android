@@ -447,12 +447,12 @@ public class Session {
                                     }
 
                                     // Assign country code from server if it sends it
-                                    if (response.has("country_code")) {
+                                    if (!response.isNull("country_code")) {
                                         Session.this.countryCode = response.getString("country_code");
                                     }
 
                                     // Assign deep link to launch, if it is provided
-                                    if (response.has("deep_link")) {
+                                    if (!response.isNull("deep_link")) {
                                         final String deepLink = response.getString("deep_link");
                                         Map<String, Object> merge = new HashMap<>();
                                         merge.put("deep_link", deepLink);
