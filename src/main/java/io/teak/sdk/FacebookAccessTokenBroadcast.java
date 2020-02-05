@@ -128,9 +128,10 @@ class FacebookAccessTokenBroadcast {
                     }
                 } break;
 
-                // Facebook SDK versions 4.x and 5.x use the same methods
+                // Facebook SDK versions 4.x, 5.x, and 6.x use the same methods
                 case 4:
-                case 5: {
+                case 5:
+                case 6: {
                     Class<?> com_facebook_AccessToken;
                     try {
                         com_facebook_AccessToken = Class.forName(FACEBOOK_4_x_ACCESS_TOKEN_CLASS_NAME);
