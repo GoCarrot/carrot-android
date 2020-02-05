@@ -496,9 +496,9 @@ public class Session {
             switch (event.eventType) {
                 case FacebookAccessTokenEvent.Type: {
                     String newAccessToken = ((FacebookAccessTokenEvent) event).accessToken;
-                    if (newAccessToken != null && !newAccessToken.equals(facebookAccessToken)) {
-                        facebookAccessToken = newAccessToken;
-                        Teak.log.i("session.fb_access_token", Helpers.mm.h("access_token", facebookAccessToken, "session_id", sessionId));
+                    if (newAccessToken != null && !newAccessToken.equals(Session.this.facebookAccessToken)) {
+                        Session.this.facebookAccessToken = newAccessToken;
+                        Teak.log.i("session.fb_access_token", Helpers.mm.h("access_token", Session.this.facebookAccessToken, "session_id", Session.this.sessionId));
                         userInfoWasUpdated();
                     }
                 } break;
