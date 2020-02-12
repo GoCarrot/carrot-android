@@ -64,6 +64,23 @@ public class Log {
     private final Map<String, Object> commonPayload = new HashMap<>();
 
     // region Public API
+    public void trace(@NonNull String method, Object ...va) {
+        if (!this.logTrace) {
+            return;
+        }
+
+        final Map<String, Object> eventData = new HashMap<>();
+        eventData.put("method", method);
+
+        for (int i = 0; i < va.length; i += 2) {
+            eventData.put(va[i].toString(), va[i + 1]);
+        }
+
+        // This is info, because the default minimum level is info for Android isLoggable
+        // https://developer.android.com/reference/android/util/Log.html#isLoggable(java.lang.String,%20int)
+        this.log(Level.Info, "trace", eventData);
+    }
+
     public void e(@NonNull String eventType, @NonNull String message) {
         Map<String, Object> eventData = new HashMap<>();
         eventData.put("message", message);
@@ -136,6 +153,7 @@ public class Log {
 
     private boolean logLocally;
     private boolean logRemotely;
+    private boolean logTrace = false;
     private boolean sendToRapidIngestion;
 
     private Teak.LogListener logListener;
@@ -190,6 +208,10 @@ public class Log {
     public void setLoggingEnabled(boolean logLocally, boolean logRemotely) {
         this.logLocally = logLocally;
         this.logRemotely = logRemotely;
+    }
+
+    public void setLogTrace(boolean logTrace) {
+        this.logTrace = logTrace;
     }
 
     public void setLogListener(Teak.LogListener logListener) {

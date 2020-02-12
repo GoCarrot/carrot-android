@@ -120,14 +120,20 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             }
         }
 
-        // Add version info for Unity/Air
         IAndroidResources androidResources = objectFactory.getAndroidResources();
         //noinspection ConstantConditions
         if (androidResources != null) {
+            // Add version info for Unity/Air
             String wrapperSDKName = androidResources.getStringResource("io_teak_wrapper_sdk_name");
             String wrapperSDKVersion = androidResources.getStringResource("io_teak_wrapper_sdk_version");
             if (wrapperSDKName != null && wrapperSDKVersion != null) {
                 Teak.sdkMap.put(wrapperSDKName, wrapperSDKVersion);
+            }
+
+            // Check for 'trace' log mode
+            final Boolean traceLog = androidResources.getBooleanResource("io_teak_log_trace");
+            if (traceLog != null) {
+                Teak.log.setLogTrace(traceLog);
             }
         }
 
@@ -248,6 +254,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static void identifyUser(final String userIdentifier, final String[] optOut, final String email) {
+        Teak.log.trace("Teak.identifyUser", "userIdentifier", userIdentifier, "optOut", optOut.toString(), "email", email);
+
         // Always process deep links when identifyUser is called
         Teak.processDeepLinks();
 
@@ -270,6 +278,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static void trackEvent(final String actionId, final String objectTypeId, final String objectInstanceId) {
+        Teak.log.trace("Teak.trackEvent", "actionId", actionId, "objectTypeId", objectTypeId, "objectInstanceId", objectInstanceId);
+
         if (Instance != null) {
             asyncExecutor.submit(new Runnable() {
                 @Override
@@ -290,6 +300,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static void incrementEvent(final String actionId, final String objectTypeId, final String objectInstanceId, final long count) {
+        Teak.log.trace("Teak.incrementEvent", "actionId", actionId, "objectTypeId", objectTypeId, "objectInstanceId", objectInstanceId);
+
         if (Instance != null) {
             asyncExecutor.submit(new Runnable() {
                 @Override
@@ -324,6 +336,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static int getNotificationStatus() {
+        Teak.log.trace("Teak.getNotificationStatus");
+
         if (Instance == null) {
             Teak.log.e("error.getNotificationStatus", "getNotificationStatus() should not be called before onCreate()");
             return TEAK_NOTIFICATIONS_UNKNOWN;
@@ -342,6 +356,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static boolean openSettingsAppToThisAppsSettings() {
+        Teak.log.trace("Teak.openSettingsAppToThisAppsSettings");
+
         if (Instance == null) {
             Teak.log.e("error.openSettingsAppToThisAppsSettings", "openSettingsAppToThisAppsSettings() should not be called before onCreate()");
             return false;
@@ -359,6 +375,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings({"unused", "UnusedReturnValue", "SameParameterValue"})
     public static boolean setApplicationBadgeNumber(int count) {
+        Teak.log.trace("Teak.setApplicationBadgeNumber", "count", count);
+
         if (Instance == null) {
             Teak.log.e("error.setApplicationBadgeNumber", "setApplicationBadgeNumber() should not be called before onCreate()");
             return false;
@@ -375,6 +393,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static void setNumericAttribute(final String attributeName, final double attributeValue) {
+        Teak.log.trace("Teak.setNumericAttribute", "attributeName", attributeName, "attributeValue", attributeValue);
+
         if (Instance != null) {
             asyncExecutor.submit(new Runnable() {
                 @Override
@@ -393,6 +413,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static void setStringAttribute(final String attributeName, final String attributeValue) {
+        Teak.log.trace("Teak.setStringAttribute", "attributeName", attributeName, "attributeValue", attributeValue);
+
         if (Instance != null) {
             asyncExecutor.submit(new Runnable() {
                 @Override
@@ -410,6 +432,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static String getDeviceConfiguration() {
+        Teak.log.trace("Teak.getDeviceConfiguration");
+
         return getConfiguration("deviceConfiguration", new String[] {
                                                            "deviceId",
                                                            "deviceManufacturer",
@@ -428,6 +452,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static String getAppConfiguration() {
+        Teak.log.trace("Teak.getAppConfiguration");
+
         return getConfiguration("appConfiguration", new String[] {
                                                         "appId",
                                                         "apiKey",
@@ -478,6 +504,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static void registerDeepLink(@NonNull String route, @NonNull String name, @NonNull String description, @NonNull Teak.DeepLink call) {
+        Teak.log.trace("Teak.registerDeepLink", "route", route, "name", name, "description", description, "call", call.toString());
         io.teak.sdk.core.DeepLink.internalRegisterRoute(route, name, description, call);
     }
 

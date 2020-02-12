@@ -174,6 +174,8 @@ public class TeakNotification implements Unobfuscable {
          */
         @SuppressWarnings("unused")
         public static Future<Reward> rewardFromRewardId(final String teakRewardId) {
+            Teak.log.trace("TeakNotification.Reward.rewardFromRewardId", "teakRewardId", teakRewardId);
+
             if (Teak.Instance == null || !Teak.Instance.isEnabled()) {
                 Teak.log.e("reward", "Teak is disabled, ignoring rewardFromRewardId().");
                 return null;
@@ -266,6 +268,8 @@ public class TeakNotification implements Unobfuscable {
      */
     @SuppressWarnings({"unused", "WeakerAccess"})
     public static FutureTask<String> scheduleNotification(final String creativeId, final String defaultMessage, final long delayInSeconds) {
+        Teak.log.trace("TeakNotification.scheduleNotification", "creativeId", creativeId, "defaultMessage", defaultMessage, "delayInSeconds", delayInSeconds);
+
         if (Teak.Instance == null || !Teak.Instance.isEnabled()) {
             Teak.log.e("notification.schedule.disabled", "Teak is disabled, ignoring scheduleNotification().");
 
@@ -399,6 +403,8 @@ public class TeakNotification implements Unobfuscable {
      */
     @SuppressWarnings({"unused", "WeakerAccess"})
     public static FutureTask<String> scheduleNotification(final String creativeId, final long delayInSeconds, final String[] userIds) {
+        Teak.log.trace("TeakNotification.scheduleNotification", "creativeId", creativeId, "delayInSeconds", delayInSeconds, "userIds", userIds.toString());
+
         if (Teak.Instance == null || !Teak.Instance.isEnabled()) {
             Teak.log.e("notification.schedule.disabled", "Teak is disabled, ignoring scheduleNotification().");
 
@@ -530,6 +536,8 @@ public class TeakNotification implements Unobfuscable {
      */
     @SuppressWarnings({"unused", "WeakerAccess"})
     public static FutureTask<String> cancelNotification(final String scheduleId) {
+        Teak.log.trace("TeakNotification.cancelNotification", "scheduleId", scheduleId);
+
         if (Teak.Instance == null || !Teak.Instance.isEnabled()) {
             Teak.log.e("notification.cancel.disabled", "Teak is disabled, ignoring cancelNotification().");
 
@@ -620,6 +628,8 @@ public class TeakNotification implements Unobfuscable {
 
     @SuppressWarnings("unused")
     public static FutureTask<String> cancelAll() {
+        Teak.log.trace("TeakNotification.cancelAll");
+
         if (!Teak.isEnabled()) {
             Teak.log.e("notification.cancel_all.disabled", "Teak is disabled, ignoring cancelAll().");
 
