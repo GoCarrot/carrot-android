@@ -47,7 +47,6 @@ import javax.net.ssl.HttpsURLConnection;
 public class Log {
     // region Log Level enum
     private enum Level {
-        Verbose("VERBOSE", android.util.Log.VERBOSE),
         Info("INFO", android.util.Log.INFO),
         Warn("WARN", android.util.Log.WARN),
         Error("ERROR", android.util.Log.ERROR);
