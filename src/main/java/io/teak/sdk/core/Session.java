@@ -654,7 +654,10 @@ public class Session {
                 _lockedSession.stateLock.lock();
                 try {
                     if (currentSession.userId != null && !currentSession.userId.equals(userId)) {
-                        Session newSession = new Session(currentSession, currentSession.launchAttribution);
+                        // Do *not* copy the launch attribution. Prevent the server from
+                        // double-counting attributions, and prevent the client from
+                        // double-processing deep links and rewards.
+                        Session newSession = new Session(currentSession, null);
 
                         currentSession.setState(State.Expiring);
                         currentSession.setState(State.Expired);
