@@ -176,6 +176,17 @@ public class Session {
         }
     }
 
+    private boolean isCurrentSession() {
+        this.stateLock.lock();
+        Session.currentSessionLock.lock();
+        try {
+            return (Session.currentSession == this);
+        } finally {
+            Session.currentSessionLock.unlock();
+            this.stateLock.unlock();
+        }
+    }
+
     private boolean setState(@NonNull State newState) {
         this.stateLock.lock();
         try {
@@ -549,6 +560,11 @@ public class Session {
                 try {
                     Teak.waitUntilDeepLinksAreReady();
                 } catch (Exception ignored) {
+                }
+
+                // If this is no longer the current session, do not continue processing
+                if (!Session.this.isCurrentSession()) {
+                    return;
                 }
 
                 try {
