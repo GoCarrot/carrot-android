@@ -130,9 +130,11 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
 
                             // Create with name TEAK, because [DEFAULT] already exists
                             this.firebaseApp = FirebaseApp.initializeApp(this.context, builder.build(), "TEAK");
+                            Teak.log.i("google.fcm.initialized", "TEAK");
                         } catch (Exception ignored) {
                             // Create with name [DEFAULT], because one named [DEFAULT] must exist
                             this.firebaseApp = FirebaseApp.initializeApp(this.context, builder.build());
+                            Teak.log.i("google.fcm.initialized", "[DEFAULT]");
                         }
                     }
                 } catch (Exception e) {
