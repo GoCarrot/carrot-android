@@ -177,6 +177,17 @@ public class Session {
         }
     }
 
+    private boolean isCurrentSession() {
+        this.stateLock.lock();
+        Session.currentSessionLock.lock();
+        try {
+            return (Session.currentSession == this);
+        } finally {
+            Session.currentSessionLock.unlock();
+            this.stateLock.unlock();
+        }
+    }
+
     private boolean setState(@NonNull State newState) {
         this.stateLock.lock();
         try {
@@ -558,6 +569,11 @@ public class Session {
                 } catch (Exception ignored) {
                 }
 
+                // If this is no longer the current session, do not continue processing
+                if (!Session.this.isCurrentSession()) {
+                    return;
+                }
+
                 try {
                     // Resolve attribution Future
                     final Map<String, Object> attribution = Session.this.launchAttribution.get(15, TimeUnit.SECONDS);
@@ -661,7 +677,10 @@ public class Session {
                 _lockedSession.stateLock.lock();
                 try {
                     if (currentSession.userId != null && !currentSession.userId.equals(userId)) {
-                        Session newSession = new Session(currentSession, currentSession.launchAttribution);
+                        // Do *not* copy the launch attribution. Prevent the server from
+                        // double-counting attributions, and prevent the client from
+                        // double-processing deep links and rewards.
+                        Session newSession = new Session(currentSession, null);
 
                         currentSession.setState(State.Expiring);
                         currentSession.setState(State.Expired);
