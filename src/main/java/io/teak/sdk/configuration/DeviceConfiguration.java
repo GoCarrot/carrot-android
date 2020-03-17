@@ -93,6 +93,7 @@ public class DeviceConfiguration {
             public void onConfigurationReady(@NonNull TeakConfiguration configuration) {
                 DeviceConfiguration.this.pushConfiguration.put("gcmSenderId", configuration.appConfiguration.gcmSenderId);
                 DeviceConfiguration.this.pushConfiguration.put("firebaseAppId", configuration.appConfiguration.firebaseAppId);
+                DeviceConfiguration.this.pushConfiguration.put("firebaseApiKey", configuration.appConfiguration.firebaseApiKey);
                 DeviceConfiguration.this.pushConfiguration.put("ignoreDefaultFirebaseConfiguration", configuration.appConfiguration.ignoreDefaultFirebaseConfiguration);
             }
         });

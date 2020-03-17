@@ -121,7 +121,8 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
                         Teak.log.i("google.fcm.intialization", pushConfiguration);
                         FirebaseOptions.Builder builder = new FirebaseOptions.Builder()
                                                               .setGcmSenderId((String) pushConfiguration.get("gcmSenderId"))
-                                                              .setApplicationId((String) pushConfiguration.get("firebaseAppId"));
+                                                              .setApplicationId((String) pushConfiguration.get("firebaseAppId"))
+                                                              .setApiKey((String) pushConfiguration.get("firebaseApiKey"));
 
                         // If there is no default Firebase instance, then we still need to have that
                         try {

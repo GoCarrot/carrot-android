@@ -30,6 +30,8 @@ public class AppConfiguration {
     @SuppressWarnings("WeakerAccess")
     public final String firebaseAppId;
     @SuppressWarnings("WeakerAccess")
+    public final String firebaseApiKey;
+    @SuppressWarnings("WeakerAccess")
     public final boolean ignoreDefaultFirebaseConfiguration;
     @SuppressWarnings("WeakerAccess")
     public final int jobId;
@@ -58,6 +60,8 @@ public class AppConfiguration {
     public static final String TEAK_GCM_SENDER_ID_RESOURCE = "io_teak_gcm_sender_id";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_FIREBASE_APP_ID_RESOURCE = "io_teak_firebase_app_id";
+    @SuppressWarnings("WeakerAccess")
+    public static final String TEAK_FIREBASE_API_KEY_RESOURCE = "io_teak_firebase_api_key";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_IGNORE_DEFAULT_FIREBASE_CONFIGURATION_RESOURCE = "io_teak_ignore_default_firebase_configuration";
     @SuppressWarnings("WeakerAccess")
@@ -144,6 +148,22 @@ public class AppConfiguration {
             this.firebaseAppId = tempFirebaseAppId;
             if (this.firebaseAppId == null || this.firebaseAppId.trim().length() < 1) {
                 android.util.Log.e(IntegrationChecker.LOG_TAG, "R.string." + TEAK_FIREBASE_APP_ID_RESOURCE + " not present or empty, push notifications disabled");
+            }
+        }
+
+        // Firebase API Key
+        {
+            String tempFirebaseApiKey = androidResources.getTeakStringResource(TEAK_FIREBASE_API_KEY_RESOURCE);
+
+            // If the google-services.json file was included and processed, google_api_key will be present
+            // https://developers.google.com/android/guides/google-services-plugin#processing_the_json_file
+            if (tempFirebaseApiKey == null) {
+                tempFirebaseApiKey = androidResources.getStringResource("google_api_key");
+            }
+
+            this.firebaseApiKey = tempFirebaseApiKey;
+            if (this.firebaseApiKey == null || this.firebaseApiKey.trim().length() < 1) {
+                android.util.Log.e(IntegrationChecker.LOG_TAG, "R.string." + TEAK_FIREBASE_API_KEY_RESOURCE + " not present or empty, push notifications disabled");
             }
         }
 
@@ -234,6 +254,7 @@ public class AppConfiguration {
         ret.put("apiKey", this.apiKey);
         ret.put("gcmSenderId", this.gcmSenderId);
         ret.put("firebaseAppId", this.firebaseAppId);
+        ret.put("firebaseApiKey", this.firebaseApiKey);
         ret.put("ignoreDefaultFirebaseConfiguration", this.ignoreDefaultFirebaseConfiguration);
         ret.put("jobId", this.jobId);
         ret.put("appVersion", this.appVersion);
