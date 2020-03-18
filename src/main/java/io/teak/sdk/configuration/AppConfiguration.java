@@ -51,6 +51,9 @@ public class AppConfiguration {
     public final Context applicationContext;
     @SuppressWarnings("WeakerAccess")
     public final int targetSdkVersion;
+    @SuppressWarnings("WeakerAccess")
+    public final boolean traceLog;
+
 
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_API_KEY_RESOURCE = "io_teak_api_key";
@@ -68,6 +71,8 @@ public class AppConfiguration {
     public static final String TEAK_JOB_ID_RESOURCE = "io_teak_job_id";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_STORE_ID = "io_teak_store_id";
+    @SuppressWarnings("WeakerAccess")
+    public static final String TEAK_TRACE_LOG_RESOURCE = "io_teak_log_trace";
 
     @SuppressWarnings("WeakerAccess")
     public static final String GooglePlayStoreId = "google_play";
@@ -237,6 +242,12 @@ public class AppConfiguration {
         {
             this.installerPackage = this.packageManager.getInstallerPackageName(this.bundleId);
         }
+
+        // Trace log mode
+        {
+            final Boolean traceLog =  androidResources.getTeakBoolResource(TEAK_TRACE_LOG_RESOURCE, false);
+            this.traceLog = traceLog != null ? traceLog : false;
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -262,6 +273,7 @@ public class AppConfiguration {
         ret.put("installerPackage", this.installerPackage);
         ret.put("storeId", this.storeId);
         ret.put("targetSdkVersion", this.targetSdkVersion);
+        ret.put("traceLog", this.traceLog);
         return ret;
     }
 

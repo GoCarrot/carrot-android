@@ -462,7 +462,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
                                                         "appVersion",
                                                         "bundleId",
                                                         "installerPackage",
-                                                        "targetSdkVersion"});
+                                                        "targetSdkVersion",
+                                                        "traceLog"});
     }
 
     private static String getConfiguration(String subConfiguration, String[] configurationElements) {
