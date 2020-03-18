@@ -7,10 +7,12 @@ import android.content.Intent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.core.ThreadFactory;
 import io.teak.sdk.event.DeepLinksReadyEvent;
 import io.teak.sdk.event.PushNotificationEvent;
+import io.teak.sdk.io.AndroidResources;
 import io.teak.sdk.io.IAndroidResources;
 import io.teak.sdk.json.JSONException;
 import io.teak.sdk.json.JSONObject;
@@ -120,7 +122,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             }
         }
 
-        IAndroidResources androidResources = objectFactory.getAndroidResources();
+        final AndroidResources androidResources = new AndroidResources(activity.getApplicationContext(), objectFactory.getAndroidResources());
         //noinspection ConstantConditions
         if (androidResources != null) {
             // Add version info for Unity/Air
@@ -131,7 +133,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             }
 
             // Check for 'trace' log mode
-            final Boolean traceLog = androidResources.getBooleanResource("io_teak_log_trace");
+            final Boolean traceLog = androidResources.getTeakBoolResource(AppConfiguration.TEAK_TRACE_LOG_RESOURCE, false);
             if (traceLog != null) {
                 Teak.log.setLogTrace(traceLog);
             }
