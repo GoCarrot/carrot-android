@@ -1,5 +1,6 @@
 package io.teak.sdk.core;
 
+import io.teak.sdk.Helpers;
 import io.teak.sdk.Teak;
 import java.net.URI;
 import java.net.URLDecoder;
@@ -139,6 +140,13 @@ public class DeepLink {
                     if (!parameterDict.containsKey(INCOMING_URL_KEY)) {
                         parameterDict.put(INCOMING_URL_KEY, uri.toString());
                     }
+
+                    Teak.log.i("deep_link.handled", Helpers.mm.h(
+                            "url", uri.toString(),
+                            "params", parameterDict,
+                            "route", value.route
+                    ));
+
                     executor.execute(new Runnable() {
                         @Override
                         public void run() {
@@ -153,6 +161,8 @@ public class DeepLink {
                 }
             }
         }
+
+        Teak.log.i("deep_link.ignored", Helpers.mm.h("url", uri.toString()));
         return false;
     }
 
