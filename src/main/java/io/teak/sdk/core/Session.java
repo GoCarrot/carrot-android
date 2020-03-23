@@ -18,6 +18,7 @@ import io.teak.sdk.event.AdvertisingInfoEvent;
 import io.teak.sdk.event.ExternalBroadcastEvent;
 import io.teak.sdk.event.FacebookAccessTokenEvent;
 import io.teak.sdk.event.LifecycleEvent;
+import io.teak.sdk.event.LogoutEvent;
 import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.SessionStateEvent;
@@ -619,6 +620,9 @@ public class Session {
         @Override
         public void onNewEvent(@NonNull TeakEvent event) {
             switch (event.eventType) {
+                case LogoutEvent.Type:
+                    logout();
+                    break;
                 case UserIdEvent.Type:
                     final UserIdEvent userIdEvent = (UserIdEvent) event;
                     final TeakConfiguration teakConfiguration = TeakConfiguration.get();
@@ -673,35 +677,44 @@ public class Session {
                 Session.pendingUserId = userId;
                 Session.pendingEmail = email;
             } else {
-                final Session _lockedSession = currentSession;
-                _lockedSession.stateLock.lock();
-                try {
-                    if (currentSession.userId != null && !currentSession.userId.equals(userId)) {
-                        // Do *not* copy the launch attribution. Prevent the server from
-                        // double-counting attributions, and prevent the client from
-                        // double-processing deep links and rewards.
-                        Session newSession = new Session(currentSession, null);
-
-                        currentSession.setState(State.Expiring);
-                        currentSession.setState(State.Expired);
-
-                        currentSession = newSession;
-                    }
-
-                    boolean needsIdentifyUser = (currentSession.state == State.Configured);
-                    if (!Helpers.stringsAreEqual(currentSession.email, email)) {
-                        needsIdentifyUser = true;
-                    }
-
-                    currentSession.userId = userId;
-                    currentSession.email = email;
-
-                    if (needsIdentifyUser) {
-                        currentSession.identifyUser();
-                    }
-                } finally {
-                    _lockedSession.stateLock.unlock();
+                if (currentSession.userId != null && !currentSession.userId.equals(userId)) {
+                    Session.logout();
                 }
+
+                boolean needsIdentifyUser = (currentSession.state == State.Configured);
+                if (!Helpers.stringsAreEqual(currentSession.email, email)) {
+                    needsIdentifyUser = true;
+                }
+
+                currentSession.userId = userId;
+                currentSession.email = email;
+
+                if (needsIdentifyUser) {
+                    currentSession.identifyUser();
+                }
+            }
+        } finally {
+            currentSessionLock.unlock();
+        }
+    }
+
+    private static void logout() {
+        currentSessionLock.lock();
+        try {
+            final Session _lockedSession = currentSession;
+            _lockedSession.stateLock.lock();
+            try {
+                // Do *not* copy the launch attribution. Prevent the server from
+                // double-counting attributions, and prevent the client from
+                // double-processing deep links and rewards.
+                Session newSession = new Session(currentSession, null);
+
+                currentSession.setState(State.Expiring);
+                currentSession.setState(State.Expired);
+
+                currentSession = newSession;
+            } finally {
+                _lockedSession.stateLock.unlock();
             }
         } finally {
             currentSessionLock.unlock();

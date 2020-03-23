@@ -272,6 +272,23 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     }
 
     /**
+     * Logout the current user.
+     */
+    @SuppressWarnings("unused")
+    public static void logout() {
+        Teak.log.trace("Teak.logout");
+
+        if (Instance != null) {
+            asyncExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    Instance.logout();
+                }
+            });
+        }
+    }
+
+    /**
      * Track an arbitrary event in Teak.
      *
      * @param actionId         The identifier for the action, e.g. 'complete'.
