@@ -53,13 +53,16 @@ jobs:
           ANDROID_HOME=/opt/android/sdk
     steps:
       - checkout
+      - add_ssh_keys:
+          fingerprints:
+            - "31:0a:6a:16:60:51:96:90:df:b9:52:86:a9:88:ce:18"
       - run:
           name: Auto Tag Orb Thing
           command: |
             git config user.email "team@teak.io"
             git config user.name "Teak CI"
             PVERSION=`git log -1 --pretty=%B | perl -wne '/[Pp]romote( to)?: ([\w\.]+)/i and print $2'`
-            [ ! -z "$PVERSION" ] && git tag -a $PVERSION && git push --tags
+            [ ! -z "$PVERSION" ] && (git tag -a $PVERSION -m "Promoted by CI" && git push --tags) || echo "No tag needed"
   deploy_versioned:
     docker:
       - image: circleci/android:api-28
