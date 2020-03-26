@@ -52,6 +52,7 @@ jobs:
         environment:
           ANDROID_HOME=/opt/android/sdk
     steps:
+      - checkout
       - run:
           name: Auto Tag Orb Thing
           command: |
