@@ -46,6 +46,19 @@ jobs:
           command: (cd test_app; ./gradlew test --continue)
       - store_test_results:
           path: test_app/app/build/test-results/
+  tag_build:
+    docker:
+      - image: circleci/android:api-28
+        environment:
+          ANDROID_HOME=/opt/android/sdk
+    steps:
+      - run:
+          name: Auto Tag Orb Thing
+          command: |
+            git config user.email "team@teak.io"
+            git config user.name "Teak CI"
+            PVERSION=`git log -1 --pretty=%B | perl -wne '/[Pp]romote( to)?: ([\w\.]+)/i and print $2'`
+            [ ! -z "$PVERSION" ] && git tag -a $PVERSION && git push --tags
   deploy_versioned:
     docker:
       - image: circleci/android:api-28
@@ -96,6 +109,12 @@ workflows:
   un-tagged-build:
     jobs:
       - build:
+          filters:
+            tags:
+              ignore: /.*/
+      - tag_build:
+          requires:
+            - build
           filters:
             tags:
               ignore: /.*/
