@@ -991,6 +991,7 @@ public class Session {
             final String teakNotifId = (String) attribution.get("teak_notif_id");
             final String teakRewardId = attribution.containsKey("teak_reward_id") ? attribution.get("teak_reward_id").toString() : null;
             final String teakRewardLinkName = attribution.containsKey("teak_rewardlink_name") ? attribution.get("teak_rewardlink_name").toString() : null;
+            final String teakChannelName = attribution.containsKey("teak_channel_name") ? attribution.get("teak_channel_name").toString() : null;
             // Future-Pat: Attribution can also contain 'teak_rewardlink_id' if we ever need it
 
             if (teakRewardId != null) {
@@ -1012,6 +1013,7 @@ public class Session {
                                 rewardMap.put("teakRewardId", teakRewardId);
                                 rewardMap.put("teakScheduleName", null);
                                 rewardMap.put("teakCreativeName", teakRewardLinkName);
+                                rewardMap.put("teakChannelName", teakChannelName);
 
                                 final Intent rewardIntent = new Intent(Teak.REWARD_CLAIM_ATTEMPT);
                                 rewardIntent.putExtra("reward", rewardMap);

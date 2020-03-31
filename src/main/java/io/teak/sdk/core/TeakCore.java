@@ -179,6 +179,7 @@ public class TeakCore implements ITeakCore {
                             eventDataDict.put("incentivized", teakRewardId != null);
                             eventDataDict.put("teakScheduleName", bundle.getString("teakScheduleName"));
                             eventDataDict.put("teakCreativeName", bundle.getString("teakCreativeName"));
+                            eventDataDict.put("teakChannelName", bundle.getString("teakChannelName"));
                             eventDataDict.put("teakDeepLink", bundle.getString("teakDeepLink"));
 
                             // Notification content
@@ -327,6 +328,7 @@ public class TeakCore implements ITeakCore {
                 eventDataDict.put("incentivized", teakRewardId != null);
                 eventDataDict.put("teakScheduleName", bundle.getString("teakScheduleName"));
                 eventDataDict.put("teakCreativeName", bundle.getString("teakCreativeName"));
+                eventDataDict.put("teakChannelName", bundle.getString("teakChannelName"));
                 eventDataDict.put("teakNotificationPlacement", bundle.getString("teakNotificationPlacement"));
 
                 if (teakRewardId != null) {
