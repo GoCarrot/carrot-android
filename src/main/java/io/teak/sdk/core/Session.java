@@ -158,6 +158,7 @@ public class Session {
         this.launchAttribution = launchAttribution;
         if (session != null) {
             this.userId = session.userId;
+            this.email = session.email;
             this.facebookAccessToken = session.facebookAccessToken;
         }
         TeakEvent.addEventListener(this.teakEventListener);
