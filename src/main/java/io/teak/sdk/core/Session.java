@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import io.teak.sdk.FacebookAccessTokenBroadcast;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.Helpers.mm;
 import io.teak.sdk.Request;
@@ -17,6 +18,7 @@ import io.teak.sdk.event.AdvertisingInfoEvent;
 import io.teak.sdk.event.ExternalBroadcastEvent;
 import io.teak.sdk.event.FacebookAccessTokenEvent;
 import io.teak.sdk.event.LifecycleEvent;
+import io.teak.sdk.event.LogoutEvent;
 import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.SessionStateEvent;
@@ -172,6 +174,17 @@ public class Session {
             }
             return (this.state == State.Expired);
         } finally {
+            this.stateLock.unlock();
+        }
+    }
+
+    private boolean isCurrentSession() {
+        this.stateLock.lock();
+        Session.currentSessionLock.lock();
+        try {
+            return (Session.currentSession == this);
+        } finally {
+            Session.currentSessionLock.unlock();
             this.stateLock.unlock();
         }
     }
@@ -398,9 +411,14 @@ public class Session {
                         payload.put("android_ad_id", "");
                     }
 
-                    if (Session.this.facebookAccessToken != null &&
-                        teakConfiguration.dataCollectionConfiguration.enableFacebookAccessToken()) {
-                        payload.put("access_token", Session.this.facebookAccessToken);
+                    if (teakConfiguration.dataCollectionConfiguration.enableFacebookAccessToken()) {
+                        if (Session.this.facebookAccessToken == null) {
+                            Session.this.facebookAccessToken = FacebookAccessTokenBroadcast.getCurrentAccessToken();
+                        }
+
+                        if (Session.this.facebookAccessToken != null) {
+                            payload.put("access_token", Session.this.facebookAccessToken);
+                        }
                     }
 
                     Map<String, Object> attribution = new HashMap<>();
@@ -441,12 +459,12 @@ public class Session {
                                     }
 
                                     // Assign country code from server if it sends it
-                                    if (response.has("country_code")) {
+                                    if (!response.isNull("country_code")) {
                                         Session.this.countryCode = response.getString("country_code");
                                     }
 
                                     // Assign deep link to launch, if it is provided
-                                    if (response.has("deep_link")) {
+                                    if (!response.isNull("deep_link")) {
                                         final String deepLink = response.getString("deep_link");
                                         Map<String, Object> merge = new HashMap<>();
                                         merge.put("deep_link", deepLink);
@@ -477,7 +495,8 @@ public class Session {
                                         Session.this.setState(State.UserIdentified);
                                     }
 
-                                } catch (Exception ignored) {
+                                } catch (Exception e) {
+                                    Teak.log.exception(e);
                                 } finally {
                                     Session.this.stateLock.unlock();
                                 }
@@ -496,9 +515,9 @@ public class Session {
             switch (event.eventType) {
                 case FacebookAccessTokenEvent.Type: {
                     String newAccessToken = ((FacebookAccessTokenEvent) event).accessToken;
-                    if (newAccessToken != null && !newAccessToken.equals(facebookAccessToken)) {
-                        facebookAccessToken = newAccessToken;
-                        Teak.log.i("session.fb_access_token", Helpers.mm.h("access_token", facebookAccessToken, "session_id", sessionId));
+                    if (newAccessToken != null && !newAccessToken.equals(Session.this.facebookAccessToken)) {
+                        Session.this.facebookAccessToken = newAccessToken;
+                        Teak.log.i("session.fb_access_token", Helpers.mm.h("access_token", Session.this.facebookAccessToken, "session_id", Session.this.sessionId));
                         userInfoWasUpdated();
                     }
                 } break;
@@ -551,6 +570,11 @@ public class Session {
                 } catch (Exception ignored) {
                 }
 
+                // If this is no longer the current session, do not continue processing
+                if (!Session.this.isCurrentSession()) {
+                    return;
+                }
+
                 try {
                     // Resolve attribution Future
                     final Map<String, Object> attribution = Session.this.launchAttribution.get(15, TimeUnit.SECONDS);
@@ -596,6 +620,9 @@ public class Session {
         @Override
         public void onNewEvent(@NonNull TeakEvent event) {
             switch (event.eventType) {
+                case LogoutEvent.Type:
+                    logout();
+                    break;
                 case UserIdEvent.Type:
                     final UserIdEvent userIdEvent = (UserIdEvent) event;
                     final TeakConfiguration teakConfiguration = TeakConfiguration.get();
@@ -650,32 +677,44 @@ public class Session {
                 Session.pendingUserId = userId;
                 Session.pendingEmail = email;
             } else {
-                final Session _lockedSession = currentSession;
-                _lockedSession.stateLock.lock();
-                try {
-                    if (currentSession.userId != null && !currentSession.userId.equals(userId)) {
-                        Session newSession = new Session(currentSession, currentSession.launchAttribution);
-
-                        currentSession.setState(State.Expiring);
-                        currentSession.setState(State.Expired);
-
-                        currentSession = newSession;
-                    }
-
-                    boolean needsIdentifyUser = (currentSession.state == State.Configured);
-                    if (!Helpers.stringsAreEqual(currentSession.email, email)) {
-                        needsIdentifyUser = true;
-                    }
-
-                    currentSession.userId = userId;
-                    currentSession.email = email;
-
-                    if (needsIdentifyUser) {
-                        currentSession.identifyUser();
-                    }
-                } finally {
-                    _lockedSession.stateLock.unlock();
+                if (currentSession.userId != null && !currentSession.userId.equals(userId)) {
+                    Session.logout();
                 }
+
+                boolean needsIdentifyUser = (currentSession.state == State.Configured);
+                if (!Helpers.stringsAreEqual(currentSession.email, email)) {
+                    needsIdentifyUser = true;
+                }
+
+                currentSession.userId = userId;
+                currentSession.email = email;
+
+                if (needsIdentifyUser) {
+                    currentSession.identifyUser();
+                }
+            }
+        } finally {
+            currentSessionLock.unlock();
+        }
+    }
+
+    private static void logout() {
+        currentSessionLock.lock();
+        try {
+            final Session _lockedSession = currentSession;
+            _lockedSession.stateLock.lock();
+            try {
+                // Do *not* copy the launch attribution. Prevent the server from
+                // double-counting attributions, and prevent the client from
+                // double-processing deep links and rewards.
+                Session newSession = new Session(currentSession, null);
+
+                currentSession.setState(State.Expiring);
+                currentSession.setState(State.Expired);
+
+                currentSession = newSession;
+            } finally {
+                _lockedSession.stateLock.unlock();
             }
         } finally {
             currentSessionLock.unlock();
@@ -952,6 +991,7 @@ public class Session {
             final String teakNotifId = (String) attribution.get("teak_notif_id");
             final String teakRewardId = attribution.containsKey("teak_reward_id") ? attribution.get("teak_reward_id").toString() : null;
             final String teakRewardLinkName = attribution.containsKey("teak_rewardlink_name") ? attribution.get("teak_rewardlink_name").toString() : null;
+            final String teakChannelName = attribution.containsKey("teak_channel_name") ? attribution.get("teak_channel_name").toString() : null;
             // Future-Pat: Attribution can also contain 'teak_rewardlink_id' if we ever need it
 
             if (teakRewardId != null) {
@@ -973,6 +1013,7 @@ public class Session {
                                 rewardMap.put("teakRewardId", teakRewardId);
                                 rewardMap.put("teakScheduleName", null);
                                 rewardMap.put("teakCreativeName", teakRewardLinkName);
+                                rewardMap.put("teakChannelName", teakChannelName);
 
                                 final Intent rewardIntent = new Intent(Teak.REWARD_CLAIM_ATTEMPT);
                                 rewardIntent.putExtra("reward", rewardMap);

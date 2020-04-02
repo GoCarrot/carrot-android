@@ -21,6 +21,7 @@ import com.firebase.jobdispatcher.Trigger;
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.Session;
 import io.teak.sdk.event.LifecycleEvent;
+import io.teak.sdk.event.LogoutEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.TrackEventEvent;
@@ -34,6 +35,7 @@ import io.teak.sdk.store.IStore;
 import java.net.URLEncoder;
 import java.security.InvalidParameterException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -134,6 +136,16 @@ public class TeakInstance implements Unobfuscable {
 
         if (this.isEnabled()) {
             TeakEvent.postEvent(new UserIdEvent(userIdentifier, optOut, email));
+        }
+    }
+
+    ///// logout
+
+    void logout() {
+        Teak.log.i("logout", new HashMap<String, Object>());
+
+        if (this.isEnabled()) {
+            TeakEvent.postEvent(new LogoutEvent());
         }
     }
 

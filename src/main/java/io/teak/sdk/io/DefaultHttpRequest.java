@@ -13,6 +13,9 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.List;
+import java.util.Map;
+
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
 
@@ -60,7 +63,7 @@ public class DefaultHttpRequest implements IHttpRequest {
                 response.append('\r');
             }
             rd.close();
-            ret = new Response(connection.getResponseCode(), response.toString());
+            ret = new Response(connection.getResponseCode(), response.toString(), connection.getHeaderFields());
         } catch (UnknownHostException uh_e) {
             // Ignored, Sentry issue 'TEAK-SDK-F', 'TEAK-SDK-M', 'TEAK-SDK-X'
         } catch (SocketTimeoutException st_e) {

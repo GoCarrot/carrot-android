@@ -597,6 +597,9 @@ public class Request implements Runnable {
             final Map<String, Object> h = this.toMap();
             h.remove("payload");
             h.put("response_time", (System.nanoTime() - startTime) / 1000000.0);
+            if (response != null && response.headers != null) {
+                h.put("response_headers", response.headers);
+            }
 
             if (response != null) {
                 try {

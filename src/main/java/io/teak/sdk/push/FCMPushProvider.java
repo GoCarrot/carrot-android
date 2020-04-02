@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -120,7 +121,8 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
                         Teak.log.i("google.fcm.intialization", pushConfiguration);
                         FirebaseOptions.Builder builder = new FirebaseOptions.Builder()
                                                               .setGcmSenderId((String) pushConfiguration.get("gcmSenderId"))
-                                                              .setApplicationId((String) pushConfiguration.get("firebaseAppId"));
+                                                              .setApplicationId((String) pushConfiguration.get("firebaseAppId"))
+                                                              .setApiKey((String) pushConfiguration.get("firebaseApiKey"));
 
                         // If there is no default Firebase instance, then we still need to have that
                         try {
@@ -129,9 +131,11 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
 
                             // Create with name TEAK, because [DEFAULT] already exists
                             this.firebaseApp = FirebaseApp.initializeApp(this.context, builder.build(), "TEAK");
+                            Teak.log.i("google.fcm.initialized", "TEAK");
                         } catch (Exception ignored) {
                             // Create with name [DEFAULT], because one named [DEFAULT] must exist
                             this.firebaseApp = FirebaseApp.initializeApp(this.context, builder.build());
+                            Teak.log.i("google.fcm.initialized", "[DEFAULT]");
                         }
                     }
                 } catch (Exception e) {
@@ -156,6 +160,13 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
                         if (Teak.isEnabled()) {
                             TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", registrationId));
                         }
+                    }
+                });
+
+                instanceIdTask.addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Teak.log.exception(e);
                     }
                 });
             } catch (Exception e) {

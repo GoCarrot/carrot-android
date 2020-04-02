@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs:
+  teak: teak/sdk-utils@0.0.3
+
 jobs:
   build:
     docker:
@@ -46,6 +49,17 @@ jobs:
           command: (cd test_app; ./gradlew test --continue)
       - store_test_results:
           path: test_app/app/build/test-results/
+
+  tag_build:
+    docker:
+      - image: circleci/android:api-28
+        environment:
+          ANDROID_HOME=/opt/android/sdk
+    steps:
+      - checkout
+      - teak/tag-promote:
+          fingerprint: "31:0a:6a:16:60:51:96:90:df:b9:52:86:a9:88:ce:18"
+
   deploy_versioned:
     docker:
       - image: circleci/android:api-28
@@ -68,6 +82,7 @@ jobs:
           command: |
             aws s3 cp build/distributions/teak-release.zip s3://teak-build-artifacts/android/teak-$(git describe --tags --always).zip --acl public-read
             aws s3 cp build/outputs/aar/teak-release.aar s3://teak-build-artifacts/android/teak-$(git describe --tags --always).aar --acl public-read
+
   deploy_latest:
     docker:
       - image: circleci/android:api-28
@@ -96,6 +111,12 @@ workflows:
   un-tagged-build:
     jobs:
       - build:
+          filters:
+            tags:
+              ignore: /.*/
+      - tag_build:
+          requires:
+            - build
           filters:
             tags:
               ignore: /.*/

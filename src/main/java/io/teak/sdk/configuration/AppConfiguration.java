@@ -30,6 +30,8 @@ public class AppConfiguration {
     @SuppressWarnings("WeakerAccess")
     public final String firebaseAppId;
     @SuppressWarnings("WeakerAccess")
+    public final String firebaseApiKey;
+    @SuppressWarnings("WeakerAccess")
     public final boolean ignoreDefaultFirebaseConfiguration;
     @SuppressWarnings("WeakerAccess")
     public final int jobId;
@@ -49,6 +51,9 @@ public class AppConfiguration {
     public final Context applicationContext;
     @SuppressWarnings("WeakerAccess")
     public final int targetSdkVersion;
+    @SuppressWarnings("WeakerAccess")
+    public final boolean traceLog;
+
 
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_API_KEY_RESOURCE = "io_teak_api_key";
@@ -59,11 +64,15 @@ public class AppConfiguration {
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_FIREBASE_APP_ID_RESOURCE = "io_teak_firebase_app_id";
     @SuppressWarnings("WeakerAccess")
+    public static final String TEAK_FIREBASE_API_KEY_RESOURCE = "io_teak_firebase_api_key";
+    @SuppressWarnings("WeakerAccess")
     public static final String TEAK_IGNORE_DEFAULT_FIREBASE_CONFIGURATION_RESOURCE = "io_teak_ignore_default_firebase_configuration";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_JOB_ID_RESOURCE = "io_teak_job_id";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_STORE_ID = "io_teak_store_id";
+    @SuppressWarnings("WeakerAccess")
+    public static final String TEAK_TRACE_LOG_RESOURCE = "io_teak_log_trace";
 
     @SuppressWarnings("WeakerAccess")
     public static final String GooglePlayStoreId = "google_play";
@@ -147,6 +156,22 @@ public class AppConfiguration {
             }
         }
 
+        // Firebase API Key
+        {
+            String tempFirebaseApiKey = androidResources.getTeakStringResource(TEAK_FIREBASE_API_KEY_RESOURCE);
+
+            // If the google-services.json file was included and processed, google_api_key will be present
+            // https://developers.google.com/android/guides/google-services-plugin#processing_the_json_file
+            if (tempFirebaseApiKey == null) {
+                tempFirebaseApiKey = androidResources.getStringResource("google_api_key");
+            }
+
+            this.firebaseApiKey = tempFirebaseApiKey;
+            if (this.firebaseApiKey == null || this.firebaseApiKey.trim().length() < 1) {
+                android.util.Log.e(IntegrationChecker.LOG_TAG, "R.string." + TEAK_FIREBASE_API_KEY_RESOURCE + " not present or empty, push notifications disabled");
+            }
+        }
+
         // Ignore the default Firebase configuration?
         {
             final Boolean ignoreDefaultFirebaseConfiguration = androidResources.getTeakBoolResource(TEAK_IGNORE_DEFAULT_FIREBASE_CONFIGURATION_RESOURCE, false);
@@ -217,6 +242,12 @@ public class AppConfiguration {
         {
             this.installerPackage = this.packageManager.getInstallerPackageName(this.bundleId);
         }
+
+        // Trace log mode
+        {
+            final Boolean traceLog =  androidResources.getTeakBoolResource(TEAK_TRACE_LOG_RESOURCE, false);
+            this.traceLog = traceLog != null ? traceLog : false;
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -234,6 +265,7 @@ public class AppConfiguration {
         ret.put("apiKey", this.apiKey);
         ret.put("gcmSenderId", this.gcmSenderId);
         ret.put("firebaseAppId", this.firebaseAppId);
+        ret.put("firebaseApiKey", this.firebaseApiKey);
         ret.put("ignoreDefaultFirebaseConfiguration", this.ignoreDefaultFirebaseConfiguration);
         ret.put("jobId", this.jobId);
         ret.put("appVersion", this.appVersion);
@@ -241,6 +273,7 @@ public class AppConfiguration {
         ret.put("installerPackage", this.installerPackage);
         ret.put("storeId", this.storeId);
         ret.put("targetSdkVersion", this.targetSdkVersion);
+        ret.put("traceLog", this.traceLog);
         return ret;
     }
 

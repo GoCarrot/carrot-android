@@ -8,7 +8,7 @@ import io.teak.sdk.event.FacebookAccessTokenEvent;
 import io.teak.sdk.support.ILocalBroadcastManager;
 import java.lang.reflect.*;
 
-class FacebookAccessTokenBroadcast {
+public class FacebookAccessTokenBroadcast {
     private ILocalBroadcastManager broadcastManager;
 
     private Method com_facebook_Session_getActiveSession;
@@ -128,9 +128,10 @@ class FacebookAccessTokenBroadcast {
                     }
                 } break;
 
-                // Facebook SDK versions 4.x and 5.x use the same methods
+                // Facebook SDK versions 4.x, 5.x, and 6.x use the same methods
                 case 4:
-                case 5: {
+                case 5:
+                case 6: {
                     Class<?> com_facebook_AccessToken;
                     try {
                         com_facebook_AccessToken = Class.forName(FACEBOOK_4_x_ACCESS_TOKEN_CLASS_NAME);
@@ -169,5 +170,23 @@ class FacebookAccessTokenBroadcast {
         if (this.broadcastManager != null) {
             this.broadcastManager.unregisterReceiver(this.broadcastReceiver);
         }
+    }
+
+    public static String getCurrentAccessToken() {
+        try {
+            Class<?> com_facebook_AccessToken = Class.forName(FACEBOOK_4_x_ACCESS_TOKEN_CLASS_NAME);
+            Method com_facebook_AccessToken_getCurrentAccessToken = com_facebook_AccessToken.getMethod("getCurrentAccessToken");
+            Method com_facebook_AccessToken_getToken = com_facebook_AccessToken.getMethod("getToken");
+
+            Object currentAccessToken = com_facebook_AccessToken_getCurrentAccessToken.invoke(null);
+            if (currentAccessToken != null) {
+                Object accessTokenString = com_facebook_AccessToken_getToken.invoke(currentAccessToken);
+                if (accessTokenString != null) {
+                    return accessTokenString.toString();
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
     }
 }
