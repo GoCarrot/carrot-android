@@ -681,10 +681,15 @@ public class Session {
                     Session.logout();
                 }
 
+                currentSession.stateLock.lock();
+
                 boolean needsIdentifyUser = (currentSession.state == State.Configured);
-                if (!Helpers.stringsAreEqual(currentSession.email, email)) {
+                if (!Helpers.stringsAreEqual(currentSession.email, email) &&
+                        (currentSession.state == State.UserIdentified || currentSession.state == State.IdentifyingUser)) {
                     needsIdentifyUser = true;
                 }
+
+                currentSession.stateLock.unlock();
 
                 currentSession.userId = userId;
                 currentSession.email = email;
