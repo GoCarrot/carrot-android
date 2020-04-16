@@ -601,14 +601,28 @@ public class Request implements Runnable {
                 h.put("response_headers", response.headers);
             }
 
+            Map<String, Object> responseAsMap = null;
             if (response != null) {
                 try {
-                    h.put("payload", new JSONObject(response.body).toMap());
+                    responseAsMap = new JSONObject(response.body).toMap();
+                    h.put("payload", responseAsMap);
                 } catch (Exception ignored) {
                 }
             }
 
             Teak.log.i("request.reply", h);
+
+            // The server can reply with a 'report_client_error' key and then we will display it
+            // in a dialog box, if enhanced integration checks are enabled
+            if (responseAsMap != null &&
+                    responseAsMap.containsKey("report_client_error")) {
+                final Map<String, Object> clientError = (Map<String, Object>) responseAsMap.get("report_client_error");
+                final String title = clientError.containsKey("title") ? (String) clientError.get("title") : "client.error";
+                final String message = clientError.containsKey("message") ? (String) clientError.get("message") : null;
+                if (message != null) {
+                    IntegrationChecker.addErrorToReport(title, message);
+                }
+            }
 
             this.onRequestCompleted(statusCode, body);
         } catch (Exception e) {
