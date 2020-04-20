@@ -181,6 +181,12 @@ public class PushState {
                     (currentState.equals(newStateEntry.state) && !newStateEntry.equalsIgnoreDate(currentEntry))) {
                     List<StateChainEntry> newChain = new ArrayList<>(PushState.this.stateChain);
                     newChain.add(newStateEntry);
+
+                    // Trim state chain to 50 max
+                    while(newChain.size() > 50) {
+                        newChain.remove(0);
+                    }
+
                     PushState.this.stateChain = Collections.unmodifiableList(newChain);
                     PushState.this.writeSerialzedStateChain(context, PushState.this.stateChain);
                     return newStateEntry.state;
