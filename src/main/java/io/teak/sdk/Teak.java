@@ -187,7 +187,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static void identifyUser(final String userIdentifier) {
-        Teak.identifyUser(userIdentifier, null, null);
+        Teak.identifyUser(userIdentifier, new String[0], null);
     }
 
     /**
@@ -200,7 +200,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static void identifyUser(final String userIdentifier, final String email) {
-        Teak.identifyUser(userIdentifier, null, email);
+        Teak.identifyUser(userIdentifier, new String[0], email);
     }
 
     /**
