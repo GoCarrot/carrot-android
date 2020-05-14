@@ -64,7 +64,7 @@ public class Log {
     private final Map<String, Object> commonPayload = new HashMap<>();
 
     // region Public API
-    public void trace(@NonNull String method, Object ...va) {
+    public void trace(@NonNull String method, Object... va) {
         if (!this.logTrace) {
             return;
         }

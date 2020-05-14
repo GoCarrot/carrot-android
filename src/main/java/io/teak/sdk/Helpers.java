@@ -37,9 +37,9 @@ public class Helpers {
         Runtime.getRuntime().gc();
         long postGc = Runtime.getRuntime().freeMemory();
         Teak.log.i(logEvent, Helpers.mm.h(
-                "pre_gc", String.format(Locale.US, "%dk", preGc / 1024L),
-                "post_gc", String.format(Locale.US, "%dk", postGc / 1024L),
-                "delta_gc", String.format(Locale.US, "%dk", (postGc - preGc) / 1024L)));
+                                 "pre_gc", String.format(Locale.US, "%dk", preGc / 1024L),
+                                 "post_gc", String.format(Locale.US, "%dk", postGc / 1024L),
+                                 "delta_gc", String.format(Locale.US, "%dk", (postGc - preGc) / 1024L)));
     }
 
     public static boolean stringsAreEqual(final @Nullable String a, final @Nullable String b) {

@@ -263,9 +263,9 @@ public class TeakCore implements ITeakCore {
 
                     final boolean autoLaunch = !Helpers.getBooleanFromBundle(bundle, "noAutolaunch");
                     Teak.log.i("notification.opened",
-                            Helpers.mm.h("teakNotifId", bundle.getString("teakNotifId"),
-                                    "autoLaunch", autoLaunch,
-                                    "teakNotificationPlacement", bundle.getString("teakNotificationPlacement")));
+                        Helpers.mm.h("teakNotifId", bundle.getString("teakNotifId"),
+                            "autoLaunch", autoLaunch,
+                            "teakNotificationPlacement", bundle.getString("teakNotificationPlacement")));
 
                     // Launch the app
                     final Context context = ((PushNotificationEvent) event).context;

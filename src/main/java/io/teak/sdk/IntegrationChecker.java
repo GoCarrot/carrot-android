@@ -413,10 +413,10 @@ public class IntegrationChecker {
                 }
 
                 builder.setTitle(title == null ? "Human, your assistance is needed" : title)
-                        .setMessage(description)
-                        .setPositiveButton(android.R.string.yes, null)
-                        .setIcon(android.R.drawable.ic_dialog_alert)
-                        .show();
+                    .setMessage(description)
+                    .setPositiveButton(android.R.string.yes, null)
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .show();
             }
         });
     }

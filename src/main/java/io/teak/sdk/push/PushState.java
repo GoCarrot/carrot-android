@@ -183,7 +183,7 @@ public class PushState {
                     newChain.add(newStateEntry);
 
                     // Trim state chain to 50 max
-                    while(newChain.size() > 50) {
+                    while (newChain.size() > 50) {
                         newChain.remove(0);
                     }
 
