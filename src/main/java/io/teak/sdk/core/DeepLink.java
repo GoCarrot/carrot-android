@@ -1,7 +1,9 @@
 package io.teak.sdk.core;
 
+import android.net.Uri;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.Teak;
+import io.teak.sdk.TeakConfiguration;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -81,9 +83,18 @@ public class DeepLink {
         });
     }
 
-    public static boolean processUri(URI uri) {
+    public static boolean willProcessUri(Uri uri) {
         if (uri == null) return false;
-        // TODO: Check uri.getAuthority(), and if it exists, make sure it matches one we care about
+        return TeakConfiguration.get().appConfiguration.urlSchemes.contains(uri.getScheme());
+    }
+
+    public static boolean willProcessUri(URI uri) {
+        if (uri == null) return false;
+        return TeakConfiguration.get().appConfiguration.urlSchemes.contains(uri.getScheme());
+    }
+
+    public static boolean processUri(URI uri) {
+        if (!DeepLink.willProcessUri(uri)) return false;
 
         synchronized (routes) {
             for (Map.Entry<String, DeepLink> entry : routes.entrySet()) {
@@ -142,10 +153,9 @@ public class DeepLink {
                     }
 
                     Teak.log.i("deep_link.handled", Helpers.mm.h(
-                            "url", uri.toString(),
-                            "params", parameterDict,
-                            "route", value.route
-                    ));
+                                                        "url", uri.toString(),
+                                                        "params", parameterDict,
+                                                        "route", value.route));
 
                     executor.execute(new Runnable() {
                         @Override
@@ -162,7 +172,7 @@ public class DeepLink {
             }
         }
 
-        Teak.log.i("deep_link.ignored", Helpers.mm.h("url", uri.toString()));
+        Teak.log.i("deep_link.ignored", Helpers.mm.h("url", uri == null ? "null" : uri.toString()));
         return false;
     }
 

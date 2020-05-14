@@ -53,7 +53,8 @@ public class AppConfiguration {
     public final int targetSdkVersion;
     @SuppressWarnings("WeakerAccess")
     public final boolean traceLog;
-
+    @SuppressWarnings("WeakerAccess")
+    public final Set<String> urlSchemes;
 
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_API_KEY_RESOURCE = "io_teak_api_key";
@@ -245,8 +246,15 @@ public class AppConfiguration {
 
         // Trace log mode
         {
-            final Boolean traceLog =  androidResources.getTeakBoolResource(TEAK_TRACE_LOG_RESOURCE, false);
+            final Boolean traceLog = androidResources.getTeakBoolResource(TEAK_TRACE_LOG_RESOURCE, false);
             this.traceLog = traceLog != null ? traceLog : false;
+        }
+
+        // URL Schemes we care about for deep links
+        {
+            HashSet<String> urlSchemeSet = new HashSet<>();
+            urlSchemeSet.add("teak" + this.appId);
+            this.urlSchemes = Collections.unmodifiableSet(urlSchemeSet);
         }
     }
 

@@ -30,6 +30,8 @@ public class TeakUnitTest {
     IAndroidNotification androidNotification;
     ITeakCore teakCore;
 
+    protected static final String TestAppId = "1136371193060244";
+
     @Before
     public void setupMocksAndTeakConfiguration() throws NoSuchFieldException, IllegalAccessException {
         // Enable lock contention timeout/checks
@@ -59,7 +61,7 @@ public class TeakUnitTest {
 
         // Android Resources mock
         androidResources = mock(io.teak.sdk.io.IAndroidResources.class);
-        when(androidResources.getStringResource(AppConfiguration.TEAK_APP_ID_RESOURCE)).thenReturn("1136371193060244");
+        when(androidResources.getStringResource(AppConfiguration.TEAK_APP_ID_RESOURCE)).thenReturn(TestAppId);
         when(androidResources.getStringResource(AppConfiguration.TEAK_API_KEY_RESOURCE)).thenReturn("1f3850f794b9093864a0778009744d03");
         when(androidResources.getStringResource(AppConfiguration.TEAK_GCM_SENDER_ID_RESOURCE)).thenReturn("12126273415");
         when(androidResources.getStringResource(AppConfiguration.TEAK_FIREBASE_APP_ID_RESOURCE)).thenReturn("1:12126273415:android:102329156b15bf0c");
