@@ -32,6 +32,8 @@ public class AppConfiguration {
     @SuppressWarnings("WeakerAccess")
     public final String firebaseApiKey;
     @SuppressWarnings("WeakerAccess")
+    public final String firebaseProjectId;
+    @SuppressWarnings("WeakerAccess")
     public final boolean ignoreDefaultFirebaseConfiguration;
     @SuppressWarnings("WeakerAccess")
     public final int jobId;
@@ -66,6 +68,8 @@ public class AppConfiguration {
     public static final String TEAK_FIREBASE_APP_ID_RESOURCE = "io_teak_firebase_app_id";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_FIREBASE_API_KEY_RESOURCE = "io_teak_firebase_api_key";
+    @SuppressWarnings("WeakerAccess")
+    public static final String TEAK_FIREBASE_PROJECT_ID_RESOURCE = "io_teak_firebase_project_id";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_IGNORE_DEFAULT_FIREBASE_CONFIGURATION_RESOURCE = "io_teak_ignore_default_firebase_configuration";
     @SuppressWarnings("WeakerAccess")
@@ -173,6 +177,22 @@ public class AppConfiguration {
             }
         }
 
+        // Firebase Project Id
+        {
+            String tempFirebaseProjectId = androidResources.getTeakStringResource(TEAK_FIREBASE_PROJECT_ID_RESOURCE);
+
+            // If the google-services.json file was included and processed, project_id will be present
+            // https://developers.google.com/android/guides/google-services-plugin#processing_the_json_file
+            if (tempFirebaseProjectId == null) {
+                tempFirebaseProjectId = androidResources.getStringResource("project_id");
+            }
+
+            this.firebaseProjectId = tempFirebaseProjectId;
+            if (this.firebaseProjectId == null || this.firebaseProjectId.trim().length() < 1) {
+                android.util.Log.e(IntegrationChecker.LOG_TAG, "R.string." + TEAK_FIREBASE_PROJECT_ID_RESOURCE + " not present or empty, push notifications disabled");
+            }
+        }
+
         // Ignore the default Firebase configuration?
         {
             final Boolean ignoreDefaultFirebaseConfiguration = androidResources.getTeakBoolResource(TEAK_IGNORE_DEFAULT_FIREBASE_CONFIGURATION_RESOURCE, false);
@@ -274,6 +294,7 @@ public class AppConfiguration {
         ret.put("gcmSenderId", this.gcmSenderId);
         ret.put("firebaseAppId", this.firebaseAppId);
         ret.put("firebaseApiKey", this.firebaseApiKey);
+        ret.put("firebaseProjectId", this.firebaseProjectId);
         ret.put("ignoreDefaultFirebaseConfiguration", this.ignoreDefaultFirebaseConfiguration);
         ret.put("jobId", this.jobId);
         ret.put("appVersion", this.appVersion);

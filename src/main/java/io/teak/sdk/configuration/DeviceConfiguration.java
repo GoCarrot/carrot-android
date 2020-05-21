@@ -94,6 +94,7 @@ public class DeviceConfiguration {
                 DeviceConfiguration.this.pushConfiguration.put("gcmSenderId", configuration.appConfiguration.gcmSenderId);
                 DeviceConfiguration.this.pushConfiguration.put("firebaseAppId", configuration.appConfiguration.firebaseAppId);
                 DeviceConfiguration.this.pushConfiguration.put("firebaseApiKey", configuration.appConfiguration.firebaseApiKey);
+                DeviceConfiguration.this.pushConfiguration.put("firebaseProjectId", configuration.appConfiguration.firebaseProjectId);
                 DeviceConfiguration.this.pushConfiguration.put("ignoreDefaultFirebaseConfiguration", configuration.appConfiguration.ignoreDefaultFirebaseConfiguration);
             }
         });

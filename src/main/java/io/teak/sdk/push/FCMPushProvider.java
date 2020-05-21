@@ -120,6 +120,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
                         // for all Firebase use and initialization.
                         Teak.log.i("google.fcm.intialization", pushConfiguration);
                         FirebaseOptions.Builder builder = new FirebaseOptions.Builder()
+                                                              .setProjectId((String) pushConfiguration.get("firebaseProjectId"))
                                                               .setGcmSenderId((String) pushConfiguration.get("gcmSenderId"))
                                                               .setApplicationId((String) pushConfiguration.get("firebaseAppId"))
                                                               .setApiKey((String) pushConfiguration.get("firebaseApiKey"));
