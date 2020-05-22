@@ -71,7 +71,8 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
         } else {
             Teak.log.i("google.fcm.registered", Helpers.mm.h("fcmId", token));
             if (Teak.isEnabled()) {
-                TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", token));
+                final String senderId = this.firebaseApp == null ? null : this.firebaseApp.getOptions().getGcmSenderId();
+                TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", token, senderId));
             }
         }
     }
@@ -159,7 +160,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
                         final String registrationId = instanceIdResult.getToken();
                         Teak.log.i("google.fcm.registered", Helpers.mm.h("fcmId", registrationId));
                         if (Teak.isEnabled()) {
-                            TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", registrationId));
+                            TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", registrationId, FCMPushProvider.this.firebaseApp.getOptions().getGcmSenderId()));
                         }
                     }
                 });

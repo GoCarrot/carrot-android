@@ -77,7 +77,7 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
     private void sendRegistrationEvent(@NonNull String registrationId) {
         Teak.log.i("amazon.adm.registered", Helpers.mm.h("admId", registrationId));
         if (Teak.isEnabled()) {
-            TeakEvent.postEvent(new PushRegistrationEvent("adm_push_key", registrationId));
+            TeakEvent.postEvent(new PushRegistrationEvent("adm_push_key", registrationId, null));
         }
     }
 
