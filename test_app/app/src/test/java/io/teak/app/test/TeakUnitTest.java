@@ -66,6 +66,7 @@ public class TeakUnitTest {
         when(androidResources.getStringResource(AppConfiguration.TEAK_GCM_SENDER_ID_RESOURCE)).thenReturn("12126273415");
         when(androidResources.getStringResource(AppConfiguration.TEAK_FIREBASE_APP_ID_RESOURCE)).thenReturn("1:12126273415:android:102329156b15bf0c");
         when(androidResources.getStringResource(AppConfiguration.TEAK_FIREBASE_API_KEY_RESOURCE)).thenReturn("AIzaSyA_lmYrQPyGS8QQtCKk05-YRU92zWcIZbQ");
+        when(androidResources.getStringResource(AppConfiguration.TEAK_FIREBASE_PROJECT_ID_RESOURCE)).thenReturn("teak-sdk-test");
 
         // Android Device Info mock
         final IAndroidDeviceInfo androidDeviceInfo = mock(IAndroidDeviceInfo.class);
