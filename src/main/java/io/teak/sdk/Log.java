@@ -2,7 +2,7 @@ package io.teak.sdk;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import io.teak.sdk.core.ThreadFactory;
+import io.teak.sdk.core.Executors;
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.raven.Raven;
 import java.io.BufferedReader;
@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.net.ssl.HttpsURLConnection;
 
@@ -159,7 +158,7 @@ public class Log {
     private Teak.LogListener logListener;
     // endregion
 
-    private final ExecutorService remoteLogQueue = Executors.newSingleThreadExecutor(ThreadFactory.autonamed());
+    private final ExecutorService remoteLogQueue = Executors.newSingleThreadExecutor();
 
     public Log(String androidLogTag, int jsonIndentation) {
         this.androidLogTag = androidLogTag;

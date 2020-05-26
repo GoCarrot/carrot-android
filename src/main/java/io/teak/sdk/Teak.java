@@ -9,11 +9,10 @@ import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.core.TeakCore;
-import io.teak.sdk.core.ThreadFactory;
+import io.teak.sdk.core.Executors;
 import io.teak.sdk.event.DeepLinksReadyEvent;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.io.AndroidResources;
-import io.teak.sdk.io.IAndroidResources;
 import io.teak.sdk.json.JSONException;
 import io.teak.sdk.json.JSONObject;
 import java.util.Collections;
@@ -21,7 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -741,5 +739,5 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     public static TeakInstance Instance;
 
-    private static ExecutorService asyncExecutor = Executors.newCachedThreadPool(ThreadFactory.autonamed());
+    private static ExecutorService asyncExecutor = Executors.newCachedThreadPool();
 }

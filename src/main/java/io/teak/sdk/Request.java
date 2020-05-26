@@ -5,7 +5,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.Session;
-import io.teak.sdk.core.ThreadFactory;
+import io.teak.sdk.core.Executors;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.io.DefaultHttpRequest;
@@ -27,7 +27,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -332,7 +331,7 @@ public class Request implements Runnable {
 
     ///// SDK interface
 
-    static ScheduledExecutorService requestExecutor = Executors.newSingleThreadScheduledExecutor(ThreadFactory.autonamed());
+    static ScheduledExecutorService requestExecutor = Executors.newSingleThreadScheduledExecutor();
 
     public static void submit(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
         submit(endpoint, payload, session, null);
