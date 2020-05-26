@@ -20,6 +20,7 @@ import io.teak.sdk.store.IStore;
 import io.teak.sdk.support.ILocalBroadcastManager;
 import io.teak.sdk.support.INotificationBuilder;
 import io.teak.sdk.support.INotificationManager;
+import java.util.concurrent.Executors; // HAX!!
 
 public class DefaultObjectFactory implements IObjectFactory {
     private final IAndroidResources androidResources;

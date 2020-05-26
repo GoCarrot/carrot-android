@@ -27,7 +27,6 @@ import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.concurrent.Executors; // HAX!!
 
 public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvider, Unobfuscable {
     private ADM admInstance;
