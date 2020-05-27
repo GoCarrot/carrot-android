@@ -331,7 +331,7 @@ public class Request implements Runnable {
 
     ///// SDK interface
 
-    static ScheduledExecutorService requestExecutor = Executors.newSingleThreadScheduledExecutor();
+    static final ScheduledExecutorService requestExecutor = Executors.newSingleThreadScheduledExecutor();
 
     public static void submit(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
         submit(endpoint, payload, session, null);

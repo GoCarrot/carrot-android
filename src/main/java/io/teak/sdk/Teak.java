@@ -739,5 +739,5 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     public static TeakInstance Instance;
 
-    private static ExecutorService asyncExecutor = Executors.newCachedThreadPool();
+    private static final ExecutorService asyncExecutor = Executors.newCachedThreadPool();
 }
