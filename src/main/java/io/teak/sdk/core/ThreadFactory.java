@@ -19,10 +19,13 @@ public class ThreadFactory implements java.util.concurrent.ThreadFactory {
         final int currentThreadsCreated = ++ThreadFactory.totalThreadsCreated;
 
         if (BuildConfig.DEBUG) {
-            final String logOut = String.format("%s :: Total Created %d",
-                    name,
-                    currentThreadsCreated);
-            android.util.Log.e("TeakThreadFactory", logOut);
+            try {
+                final String logOut = String.format("%s :: Total Created %d",
+                        name,
+                        currentThreadsCreated);
+                android.util.Log.e("TeakThreadFactory", logOut);
+            } catch (Exception ignored) {
+            }
         }
 
         return createdThread;
