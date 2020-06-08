@@ -23,7 +23,7 @@ public class ThreadFactory implements java.util.concurrent.ThreadFactory {
                 final String logOut = String.format("%s :: Total Created %d",
                         name,
                         currentThreadsCreated);
-                android.util.Log.e("TeakThreadFactory", logOut);
+                android.util.Log.e("Teak#ThreadFactory", logOut);
             } catch (Exception ignored) {
             }
         }
