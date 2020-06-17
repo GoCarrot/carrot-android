@@ -257,10 +257,6 @@ public class Log {
             payload.put("event_data", logEvent.eventData);
         }
 
-        if (this.logListener != null) {
-            this.logListener.logEvent(logEvent.eventType, logEvent.logLevel.name, payload);
-        }
-
         // Remote logging
         if (this.logRemotely) {
             this.remoteLogQueue.execute(new Runnable() {
@@ -306,6 +302,11 @@ public class Log {
                     }
                 }
             });
+        }
+
+        // Log to listeners
+        if (this.logListener != null) {
+            this.logListener.logEvent(logEvent.eventType, logEvent.logLevel.name, payload);
         }
 
         // Log to Android log
