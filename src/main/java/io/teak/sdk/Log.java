@@ -257,6 +257,20 @@ public class Log {
             payload.put("event_data", logEvent.eventData);
         }
 
+        // Log to Android log
+        if (this.logLocally && android.util.Log.isLoggable(this.androidLogTag, logEvent.logLevel.androidLogPriority)) {
+            String jsonStringForAndroidLog = "{}";
+            try {
+                if (this.jsonIndentation > 0) {
+                    jsonStringForAndroidLog = new JSONObject(payload).toString(this.jsonIndentation);
+                } else {
+                    jsonStringForAndroidLog = new JSONObject(payload).toString();
+                }
+            } catch (Exception ignored) {
+            }
+            android.util.Log.println(logEvent.logLevel.androidLogPriority, this.androidLogTag, jsonStringForAndroidLog);
+        }
+
         // Remote logging
         if (this.logRemotely) {
             this.remoteLogQueue.execute(new Runnable() {
@@ -307,20 +321,6 @@ public class Log {
         // Log to listeners
         if (this.logListener != null) {
             this.logListener.logEvent(logEvent.eventType, logEvent.logLevel.name, payload);
-        }
-
-        // Log to Android log
-        if (this.logLocally && android.util.Log.isLoggable(this.androidLogTag, logEvent.logLevel.androidLogPriority)) {
-            String jsonStringForAndroidLog = "{}";
-            try {
-                if (this.jsonIndentation > 0) {
-                    jsonStringForAndroidLog = new JSONObject(payload).toString(this.jsonIndentation);
-                } else {
-                    jsonStringForAndroidLog = new JSONObject(payload).toString();
-                }
-            } catch (Exception ignored) {
-            }
-            android.util.Log.println(logEvent.logLevel.androidLogPriority, this.androidLogTag, jsonStringForAndroidLog);
         }
     }
 }
