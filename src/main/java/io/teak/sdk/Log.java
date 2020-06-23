@@ -61,6 +61,7 @@ public class Log {
     // endregion
 
     private final Map<String, Object> commonPayload = new HashMap<>();
+    private ThreadLocal<Integer> exceptionDepth = new ThreadLocal<>();
 
     // region Public API
     public void trace(@NonNull String method, Object... va) {
@@ -134,12 +135,35 @@ public class Log {
     }
 
     public void exception(@NonNull Throwable t, @Nullable Map<String, Object> extras, boolean reportToRaven) {
-        // Send to Raven
-        if (reportToRaven && Teak.Instance != null && Teak.Instance.sdkRaven != null) {
-            Teak.Instance.sdkRaven.reportException(t, extras);
+        // TLS should be fine to use for this, because even in the thread-pool executor case, we are
+        // relying only on this TLS value for the lifespan of what is executed in this function, and
+        // any subsequent recursive calls.
+        Integer depth = this.exceptionDepth.get();
+        if (depth == null) {
+            this.exceptionDepth.set(0);
+            depth = 0;
         }
 
-        this.log(Level.Error, "exception", Raven.throwableToMap(t));
+        // If the exception death is 3+ then we're in some kind of exception loop, so stop reporting
+        // the exceptions
+        if (depth < 3) {
+            depth++;
+            this.exceptionDepth.set(depth);
+
+            // Send to Raven
+            if (reportToRaven && Teak.Instance != null && Teak.Instance.sdkRaven != null) {
+                Teak.Instance.sdkRaven.reportException(t, extras);
+            }
+
+            // Do the logging
+            this.log(Level.Error, "exception", Raven.throwableToMap(t));
+
+            // Decrement, and assign
+            depth--;
+            this.exceptionDepth.set(depth);
+        } else {
+            android.util.Log.e(this.androidLogTag, "");
+        }
     }
     // endregion
 
