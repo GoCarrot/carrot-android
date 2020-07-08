@@ -4,8 +4,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -71,7 +71,8 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
         } else {
             Teak.log.i("google.fcm.registered", Helpers.mm.h("fcmId", token));
             if (Teak.isEnabled()) {
-                TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", token));
+                final String senderId = this.firebaseApp == null ? null : this.firebaseApp.getOptions().getGcmSenderId();
+                TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", token, senderId));
             }
         }
     }
@@ -120,6 +121,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
                         // for all Firebase use and initialization.
                         Teak.log.i("google.fcm.intialization", pushConfiguration);
                         FirebaseOptions.Builder builder = new FirebaseOptions.Builder()
+                                                              .setProjectId((String) pushConfiguration.get("firebaseProjectId"))
                                                               .setGcmSenderId((String) pushConfiguration.get("gcmSenderId"))
                                                               .setApplicationId((String) pushConfiguration.get("firebaseAppId"))
                                                               .setApiKey((String) pushConfiguration.get("firebaseApiKey"));
@@ -158,7 +160,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
                         final String registrationId = instanceIdResult.getToken();
                         Teak.log.i("google.fcm.registered", Helpers.mm.h("fcmId", registrationId));
                         if (Teak.isEnabled()) {
-                            TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", registrationId));
+                            TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", registrationId, FCMPushProvider.this.firebaseApp.getOptions().getGcmSenderId()));
                         }
                     }
                 });

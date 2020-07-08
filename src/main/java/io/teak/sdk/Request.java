@@ -5,7 +5,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.Session;
-import io.teak.sdk.core.ThreadFactory;
+import io.teak.sdk.core.Executors;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.io.DefaultHttpRequest;
@@ -27,7 +27,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -332,7 +331,7 @@ public class Request implements Runnable {
 
     ///// SDK interface
 
-    static ScheduledExecutorService requestExecutor = Executors.newSingleThreadScheduledExecutor(ThreadFactory.autonamed());
+    static final ScheduledExecutorService requestExecutor = Executors.newSingleThreadScheduledExecutor();
 
     public static void submit(@NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session) {
         submit(endpoint, payload, session, null);
@@ -601,14 +600,28 @@ public class Request implements Runnable {
                 h.put("response_headers", response.headers);
             }
 
+            Map<String, Object> responseAsMap = null;
             if (response != null) {
                 try {
-                    h.put("payload", new JSONObject(response.body).toMap());
+                    responseAsMap = new JSONObject(response.body).toMap();
+                    h.put("payload", responseAsMap);
                 } catch (Exception ignored) {
                 }
             }
 
             Teak.log.i("request.reply", h);
+
+            // The server can reply with a 'report_client_error' key and then we will display it
+            // in a dialog box, if enhanced integration checks are enabled
+            if (responseAsMap != null &&
+                responseAsMap.containsKey("report_client_error")) {
+                final Map<String, Object> clientError = (Map<String, Object>) responseAsMap.get("report_client_error");
+                final String title = clientError.containsKey("title") ? (String) clientError.get("title") : "client.error";
+                final String message = clientError.containsKey("message") ? (String) clientError.get("message") : null;
+                if (message != null) {
+                    IntegrationChecker.addErrorToReport(title, message);
+                }
+            }
 
             this.onRequestCompleted(statusCode, body);
         } catch (Exception e) {

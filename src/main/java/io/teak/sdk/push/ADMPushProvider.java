@@ -16,7 +16,7 @@ import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.core.TeakCore;
-import io.teak.sdk.core.ThreadFactory;
+import io.teak.sdk.core.Executors;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.json.JSONObject;
@@ -25,13 +25,12 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvider, Unobfuscable {
     private ADM admInstance;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor(ThreadFactory.autonamed());
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     public ADMPushProvider() {
         super(ADMPushProvider.class.getName());
@@ -77,7 +76,7 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
     private void sendRegistrationEvent(@NonNull String registrationId) {
         Teak.log.i("amazon.adm.registered", Helpers.mm.h("admId", registrationId));
         if (Teak.isEnabled()) {
-            TeakEvent.postEvent(new PushRegistrationEvent("adm_push_key", registrationId));
+            TeakEvent.postEvent(new PushRegistrationEvent("adm_push_key", registrationId, null));
         }
     }
 

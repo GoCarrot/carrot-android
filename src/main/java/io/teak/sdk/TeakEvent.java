@@ -1,9 +1,11 @@
 package io.teak.sdk;
 
 import androidx.annotation.NonNull;
+import io.teak.sdk.core.Executors;
 import io.teak.sdk.core.ThreadFactory;
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class TeakEvent {
@@ -59,6 +61,8 @@ public class TeakEvent {
         private final Object eventListenersMutex = new Object();
         private ArrayList<EventListener> eventListeners = new ArrayList<>();
 
+        private final ExecutorService eventExecutor = Executors.newSingleThreadExecutor();
+
         void add(EventListener e) {
             synchronized (this.eventListenersMutex) {
                 if (!this.eventListeners.contains(e)) {
@@ -83,7 +87,31 @@ public class TeakEvent {
                 this.eventListeners = new ArrayList<>(this.eventListeners);
             }
 
-            for (EventListener e : eventListenersForEvent) {
+            if (false && BuildConfig.DEBUG) {
+                debugProcessEventOnListeners(event, eventListenersForEvent);
+            } else {
+                releaseProcessEventOnListeners(event, eventListenersForEvent);
+            }
+        }
+
+        private void releaseProcessEventOnListeners(final TeakEvent event, ArrayList<EventListener> listeners) {
+            synchronized (this.eventExecutor) {
+                for (EventListener e : listeners) {
+                    final EventListener currentListener = e;
+                    this.eventExecutor.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            currentListener.onNewEvent(event);
+                        }
+                    });
+                }
+            }
+        }
+
+        // This version makes sure no event handler is taking longer than 5 seconds to process.
+        // If something does, it will kill the thread, and print the trace out as an error.
+        private void debugProcessEventOnListeners(final TeakEvent event, ArrayList<EventListener> listeners) {
+            for (EventListener e : listeners) {
                 // TODO: This seems...kind of horrible, but maybe the Java runtime will be fine with it
                 final EventListener currentListener = e;
                 final Thread thread = ThreadFactory.autoStart(new Runnable() {

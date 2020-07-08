@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -263,9 +262,9 @@ public class TeakCore implements ITeakCore {
 
                     final boolean autoLaunch = !Helpers.getBooleanFromBundle(bundle, "noAutolaunch");
                     Teak.log.i("notification.opened",
-                            Helpers.mm.h("teakNotifId", bundle.getString("teakNotifId"),
-                                    "autoLaunch", autoLaunch,
-                                    "teakNotificationPlacement", bundle.getString("teakNotificationPlacement")));
+                        Helpers.mm.h("teakNotifId", bundle.getString("teakNotifId"),
+                            "autoLaunch", autoLaunch,
+                            "teakNotificationPlacement", bundle.getString("teakNotificationPlacement")));
 
                     // Launch the app
                     final Context context = ((PushNotificationEvent) event).context;
@@ -369,8 +368,8 @@ public class TeakCore implements ITeakCore {
 
     ///// Data Members
 
-    private final ExecutorService asyncExecutor = Executors.newCachedThreadPool(io.teak.sdk.core.ThreadFactory.autonamed());
+    private final ExecutorService asyncExecutor = Executors.newCachedThreadPool();
     private final ILocalBroadcastManager localBroadcastManager;
 
-    public static final ScheduledExecutorService operationQueue = Executors.newSingleThreadScheduledExecutor(ThreadFactory.autonamed());
+    public static final ScheduledExecutorService operationQueue = Executors.newSingleThreadScheduledExecutor();
 }

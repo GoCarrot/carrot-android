@@ -46,7 +46,6 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
@@ -105,7 +104,7 @@ public class Session {
     private State state = State.Allocated;
     private State previousState = null;
     private final InstrumentableReentrantLock stateLock = new InstrumentableReentrantLock();
-    private final ExecutorService executionQueue = Executors.newSingleThreadExecutor(ThreadFactory.autonamed());
+    private final ExecutorService executionQueue = Executors.newSingleThreadExecutor();
     // endregion
 
     // State: Created
@@ -324,7 +323,7 @@ public class Session {
         @SuppressWarnings("deprecation")
         final String teakSdkVersion = Teak.SDKVersion;
 
-        this.heartbeatService = Executors.newSingleThreadScheduledExecutor(ThreadFactory.autonamed());
+        this.heartbeatService = Executors.newSingleThreadScheduledExecutor();
         this.heartbeatService.scheduleAtFixedRate(new Runnable() {
             public void run() {
                 HttpsURLConnection connection = null;
@@ -685,7 +684,7 @@ public class Session {
 
                 boolean needsIdentifyUser = (currentSession.state == State.Configured);
                 if (!Helpers.stringsAreEqual(currentSession.email, email) &&
-                        (currentSession.state == State.UserIdentified || currentSession.state == State.IdentifyingUser)) {
+                    (currentSession.state == State.UserIdentified || currentSession.state == State.IdentifyingUser)) {
                     needsIdentifyUser = true;
                 }
 
@@ -1042,6 +1041,7 @@ public class Session {
             @Override
             public Map<String, Object> call() {
                 Map<String, Object> returnValue = new HashMap<>();
+                boolean wasTeakDeepLink = false;
 
                 // Make sure teak_notif_id is in the return value if provided
                 if (teakNotifId != null) {
@@ -1095,6 +1095,7 @@ public class Session {
                                 JSONObject teakData = new JSONObject(response.toString());
                                 if (teakData.getString("AndroidPath") != null) {
                                     uri = Uri.parse(String.format(Locale.US, "teak%s://%s", teakConfiguration.appConfiguration.appId, teakData.getString("AndroidPath")));
+                                    wasTeakDeepLink = true;
                                 }
 
                                 Teak.log.i("deep_link.request.resolve", uri.toString());
@@ -1112,17 +1113,25 @@ public class Session {
                                 connection.disconnect();
                             }
                         }
+                    } else if (DeepLink.willProcessUri(uri)) {
+                        wasTeakDeepLink = true;
                     }
 
-                    // Put the URI and any query parameters that start with 'teak_'
-                    returnValue.put("deep_link", uri.toString());
-                    for (String name : uri.getQueryParameterNames()) {
-                        if (name.startsWith("teak_")) {
-                            List<String> values = uri.getQueryParameters(name);
-                            if (values.size() > 1) {
-                                returnValue.put(name, values);
-                            } else {
-                                returnValue.put(name, values.get(0));
+                    // Always assign 'launch_link'
+                    returnValue.put("launch_link", uri.toString());
+
+                    // Put the URI and any query parameters that start with 'teak_' into 'deep_link'
+                    // but only if this was a Teak deep link
+                    if (wasTeakDeepLink) {
+                        returnValue.put("deep_link", uri.toString());
+                        for (String name : uri.getQueryParameterNames()) {
+                            if (name.startsWith("teak_")) {
+                                List<String> values = uri.getQueryParameters(name);
+                                if (values.size() > 1) {
+                                    returnValue.put(name, values);
+                                } else {
+                                    returnValue.put(name, values.get(0));
+                                }
                             }
                         }
                     }

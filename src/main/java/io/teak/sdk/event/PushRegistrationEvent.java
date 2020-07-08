@@ -1,6 +1,7 @@
 package io.teak.sdk.event;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.teak.sdk.TeakEvent;
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,10 +13,13 @@ public class PushRegistrationEvent extends TeakEvent {
 
     public final Map<String, String> registration;
 
-    public PushRegistrationEvent(@NonNull String key, @NonNull String value) {
+    public PushRegistrationEvent(@NonNull String key, @NonNull String value, @Nullable String senderId) {
         super(Registered);
         Map<String, String> map = new HashMap<>();
         map.put(key, value);
+        if (senderId != null) {
+            map.put("gcm_sender_id", senderId);
+        }
         this.registration = Collections.unmodifiableMap(map);
     }
 

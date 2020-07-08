@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.ThreadFactory;
@@ -38,6 +39,7 @@ public class IntegrationChecker {
 
     private final Activity activity;
 
+    private static boolean enhancedIntegrationChecks = false;
     private static final Map<String, String> errorsToReport = new HashMap<>();
 
     public static final String[][] dependencies = new String[][] {
@@ -232,12 +234,7 @@ public class IntegrationChecker {
             public void onNewEvent(@NonNull TeakEvent event) {
                 if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
                     final RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
-                    new Handler(Looper.getMainLooper()).post(new Runnable() {
-                        @Override
-                        public void run() {
-                            onRemoteConfigurationReady(remoteConfiguration);
-                        }
-                    });
+                    onRemoteConfigurationReady(remoteConfiguration);
                 }
             }
         });
@@ -387,26 +384,41 @@ public class IntegrationChecker {
 
     private void onRemoteConfigurationReady(@NonNull RemoteConfiguration remoteConfiguration) {
         // If Enhanced Integration Checks are enabled, report the errors as alert dialogs
-        if (remoteConfiguration.enhancedIntegrationChecks) {
+        IntegrationChecker.enhancedIntegrationChecks = remoteConfiguration.enhancedIntegrationChecks;
+        if (IntegrationChecker.enhancedIntegrationChecks) {
             for (Map.Entry<String, String> error : errorsToReport.entrySet()) {
-                AlertDialog.Builder builder;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    builder = new AlertDialog.Builder(this.activity, android.R.style.Theme_Material_Dialog_Alert);
-                } else {
-                    builder = new AlertDialog.Builder(this.activity);
-                }
-                builder.setTitle("Human, your assistance is needed")
-                    .setMessage(error.getValue())
-                    .setPositiveButton(android.R.string.yes, null)
-                    .setIcon(android.R.drawable.ic_dialog_alert)
-                    .show();
+                displayError(error.getValue(), error.getKey());
             }
         }
     }
 
-    private static void addErrorToReport(@NonNull String key, @NonNull String description) {
-        errorsToReport.put(key, description);
+    public static void addErrorToReport(@NonNull String key, @NonNull String description) {
+        if (IntegrationChecker.enhancedIntegrationChecks && IntegrationChecker.integrationChecker != null) {
+            IntegrationChecker.integrationChecker.displayError(description, key);
+        } else {
+            errorsToReport.put(key, description);
+        }
         android.util.Log.e(LOG_TAG, description);
+    }
+
+    private void displayError(@NonNull final String description, @Nullable final String title) {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                AlertDialog.Builder builder;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    builder = new AlertDialog.Builder(IntegrationChecker.this.activity, android.R.style.Theme_Material_Dialog_Alert);
+                } else {
+                    builder = new AlertDialog.Builder(IntegrationChecker.this.activity);
+                }
+
+                builder.setTitle(title == null ? "Human, your assistance is needed" : title)
+                    .setMessage(description)
+                    .setPositiveButton(android.R.string.yes, null)
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .show();
+            }
+        });
     }
 
     private void checkSupportv4Version() {

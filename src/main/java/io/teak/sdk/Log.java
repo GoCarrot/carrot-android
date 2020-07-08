@@ -2,7 +2,7 @@ package io.teak.sdk;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import io.teak.sdk.core.ThreadFactory;
+import io.teak.sdk.core.Executors;
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.raven.Raven;
 import java.io.BufferedReader;
@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.net.ssl.HttpsURLConnection;
 
@@ -62,9 +61,10 @@ public class Log {
     // endregion
 
     private final Map<String, Object> commonPayload = new HashMap<>();
+    private ThreadLocal<Integer> exceptionDepth = new ThreadLocal<>();
 
     // region Public API
-    public void trace(@NonNull String method, Object ...va) {
+    public void trace(@NonNull String method, Object... va) {
         if (!this.logTrace) {
             return;
         }
@@ -135,12 +135,35 @@ public class Log {
     }
 
     public void exception(@NonNull Throwable t, @Nullable Map<String, Object> extras, boolean reportToRaven) {
-        // Send to Raven
-        if (reportToRaven && Teak.Instance != null && Teak.Instance.sdkRaven != null) {
-            Teak.Instance.sdkRaven.reportException(t, extras);
+        // TLS should be fine to use for this, because even in the thread-pool executor case, we are
+        // relying only on this TLS value for the lifespan of what is executed in this function, and
+        // any subsequent recursive calls.
+        Integer depth = this.exceptionDepth.get();
+        if (depth == null) {
+            this.exceptionDepth.set(0);
+            depth = 0;
         }
 
-        this.log(Level.Error, "exception", Raven.throwableToMap(t));
+        // If the exception death is 3+ then we're in some kind of exception loop, so stop reporting
+        // the exceptions
+        if (depth < 3) {
+            depth++;
+            this.exceptionDepth.set(depth);
+
+            // Send to Raven
+            if (reportToRaven && Teak.Instance != null && Teak.Instance.sdkRaven != null) {
+                Teak.Instance.sdkRaven.reportException(t, extras);
+            }
+
+            // Do the logging
+            this.log(Level.Error, "exception", Raven.throwableToMap(t));
+
+            // Decrement, and assign
+            depth--;
+            this.exceptionDepth.set(depth);
+        } else {
+            android.util.Log.e(this.androidLogTag, "");
+        }
     }
     // endregion
 
@@ -159,7 +182,7 @@ public class Log {
     private Teak.LogListener logListener;
     // endregion
 
-    private final ExecutorService remoteLogQueue = Executors.newSingleThreadExecutor(ThreadFactory.autonamed());
+    private final ExecutorService remoteLogQueue = Executors.newSingleThreadExecutor();
 
     public Log(String androidLogTag, int jsonIndentation) {
         this.androidLogTag = androidLogTag;
@@ -258,8 +281,18 @@ public class Log {
             payload.put("event_data", logEvent.eventData);
         }
 
-        if (this.logListener != null) {
-            this.logListener.logEvent(logEvent.eventType, logEvent.logLevel.name, payload);
+        // Log to Android log
+        if (this.logLocally && android.util.Log.isLoggable(this.androidLogTag, logEvent.logLevel.androidLogPriority)) {
+            String jsonStringForAndroidLog = "{}";
+            try {
+                if (this.jsonIndentation > 0) {
+                    jsonStringForAndroidLog = new JSONObject(payload).toString(this.jsonIndentation);
+                } else {
+                    jsonStringForAndroidLog = new JSONObject(payload).toString();
+                }
+            } catch (Exception ignored) {
+            }
+            android.util.Log.println(logEvent.logLevel.androidLogPriority, this.androidLogTag, jsonStringForAndroidLog);
         }
 
         // Remote logging
@@ -309,18 +342,9 @@ public class Log {
             });
         }
 
-        // Log to Android log
-        if (this.logLocally && android.util.Log.isLoggable(this.androidLogTag, logEvent.logLevel.androidLogPriority)) {
-            String jsonStringForAndroidLog = "{}";
-            try {
-                if (this.jsonIndentation > 0) {
-                    jsonStringForAndroidLog = new JSONObject(payload).toString(this.jsonIndentation);
-                } else {
-                    jsonStringForAndroidLog = new JSONObject(payload).toString();
-                }
-            } catch (Exception ignored) {
-            }
-            android.util.Log.println(logEvent.logLevel.androidLogPriority, this.androidLogTag, jsonStringForAndroidLog);
+        // Log to listeners
+        if (this.logListener != null) {
+            this.logListener.logEvent(logEvent.eventType, logEvent.logLevel.name, payload);
         }
     }
 }

@@ -1,0 +1,9 @@
+#!/bin/bash
+set -u
+IFS=$'\n\t'
+
+find src -type f -iname "*.java" ! -name "*Executors.java" -exec grep "java.util.concurrent.Executors" {} \+
+if [ $? -eq 0 ]
+then
+    exit 1
+fi

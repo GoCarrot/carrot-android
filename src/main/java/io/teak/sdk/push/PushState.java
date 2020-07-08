@@ -7,11 +7,10 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import androidx.annotation.NonNull;
 import io.teak.sdk.DefaultObjectFactory;
-import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.NotificationBuilder;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
-import io.teak.sdk.core.ThreadFactory;
+import io.teak.sdk.core.Executors;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONObject;
@@ -24,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class PushState {
@@ -125,7 +123,7 @@ public class PushState {
 
     private List<StateChainEntry> stateChain = new ArrayList<>();
     private final INotificationManager notificationManager;
-    private final ExecutorService executionQueue = Executors.newSingleThreadExecutor(ThreadFactory.autonamed());
+    private final ExecutorService executionQueue = Executors.newSingleThreadExecutor();
 
     private static PushState Instance;
     public static void init(@NonNull Context context) {
@@ -181,6 +179,12 @@ public class PushState {
                     (currentState.equals(newStateEntry.state) && !newStateEntry.equalsIgnoreDate(currentEntry))) {
                     List<StateChainEntry> newChain = new ArrayList<>(PushState.this.stateChain);
                     newChain.add(newStateEntry);
+
+                    // Trim state chain to 50 max
+                    while (newChain.size() > 50) {
+                        newChain.remove(0);
+                    }
+
                     PushState.this.stateChain = Collections.unmodifiableList(newChain);
                     PushState.this.writeSerialzedStateChain(context, PushState.this.stateChain);
                     return newStateEntry.state;

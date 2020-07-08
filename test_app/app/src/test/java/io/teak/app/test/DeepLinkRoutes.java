@@ -29,7 +29,7 @@ public class DeepLinkRoutes extends TeakUnitTest {
         Thread.sleep(10); // sleep to make sure the async happens
         assertTrue(io.teak.sdk.core.DeepLink.routes.containsKey("/foo/([^/]+)/([^/]+)"));
 
-        final URI uri = new URI("/foo/1234/abcd");
+        final URI uri = new URI("teak" + TestAppId + ":///foo/1234/abcd");
         assertNotNull(uri);
         assertTrue(io.teak.sdk.core.DeepLink.processUri(uri));
 
@@ -50,7 +50,7 @@ public class DeepLinkRoutes extends TeakUnitTest {
         Thread.sleep(10);
         assertTrue(io.teak.sdk.core.DeepLink.routes.containsKey("/foo/([^/]+)/([^/]+)"));
 
-        final URI uri = new URI("/foo/1234/abcd?foo=bar");
+        final URI uri = new URI("teak" + TestAppId + ":///foo/1234/abcd?foo=bar");
         assertNotNull(uri);
         assertTrue(io.teak.sdk.core.DeepLink.processUri(uri));
 
@@ -72,7 +72,7 @@ public class DeepLinkRoutes extends TeakUnitTest {
         Thread.sleep(10);
         assertTrue(io.teak.sdk.core.DeepLink.routes.containsKey("/foo/([^/]+)/([^/]+)"));
 
-        final URI uri = new URI("/foo/1234/abcd?bar=barbar");
+        final URI uri = new URI("teak" + TestAppId + ":///foo/1234/abcd?bar=barbar");
         assertNotNull(uri);
         assertTrue(io.teak.sdk.core.DeepLink.processUri(uri));
 
