@@ -91,8 +91,18 @@
         <amazon:enable-feature
             android:name="com.amazon.device.messaging"
             android:required="false"/>
-        <service android:name="io.teak.sdk.push.ADMPushProvider"
+
+        <!-- ADM 1.0.1 -->
+        <service android:name="io.teak.sdk.push.ADMPushProvider$ADMMessageHandler_1_0_1"
             android:exported="false" />
+
+        <!-- ADM 1.1.0 -->
+        <service
+            android:name="io.teak.sdk.push.ADMPushProvider$ADMMessageHandler_1_1_0"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="false" />
+
+        <!-- ADM -->
         <receiver
             android:name="io.teak.sdk.push.ADMPushProvider$MessageAlertReceiver"
             android:permission="com.amazon.device.messaging.permission.SEND" >
