@@ -139,15 +139,36 @@ public class RemoteConfiguration {
                                 try {
                                     final JSONObject response = new JSONObject((responseBody == null || responseBody.trim().isEmpty()) ? "{}" : responseBody);
 
+                                    class ResponseHelper {
+                                        private String nullInsteadOfEmpty(String input) {
+                                            if (input != null && !input.trim().isEmpty()) {
+                                                return input;
+                                            }
+                                            return null;
+                                        }
+                                        private String strOrNull(String key) {
+                                            return nullInsteadOfEmpty(response.isNull(key) ? null : response.getString(key));
+                                        }
+                                        private boolean boolOrFalse(String key) {
+                                            return response.optBoolean(key, false);
+                                        }
+                                        private JSONObject jsonOrNull(String key) {
+                                            return response.has(key) ? response.getJSONObject(key) : null;
+                                        }
+                                    }
+                                    final ResponseHelper helper = new ResponseHelper();
+
+                                    // Future-Pat: This looks ugly, the reason we aren't moving it into the constructor itself is
+                                    // so that it can be easily mocked for the functional tests.
                                     final RemoteConfiguration configuration = new RemoteConfiguration(teakConfiguration.appConfiguration,
                                         response.isNull("auth") ? RemoteConfiguration.defaultHostname : response.getString("auth"),
-                                        nullInsteadOfEmpty(response.isNull("sdk_sentry_dsn") ? null : response.getString("sdk_sentry_dsn")),
-                                        nullInsteadOfEmpty(response.isNull("app_sentry_dsn") ? null : response.getString("app_sentry_dsn")),
-                                        nullInsteadOfEmpty(response.isNull("gcm_sender_id") ? null : response.getString("gcm_sender_id")),
-                                        nullInsteadOfEmpty(response.isNull("firebase_app_id") ? null : response.getString("firebase_app_id")),
-                                        response.optBoolean("ignore_default_firebase_configuration", false),
-                                        response.optBoolean("enhanced_integration_checks", false),
-                                        response.has("endpoint_configurations") ? response.getJSONObject("endpoint_configurations") : null,
+                                            helper.strOrNull("sdk_sentry_dsn"),
+                                            helper.strOrNull("app_sentry_dsn"),
+                                            helper.strOrNull("gcm_sender_id"),
+                                            helper.strOrNull("firebase_app_id"),
+                                            helper.boolOrFalse("ignore_default_firebase_configuration"),
+                                            helper.boolOrFalse("enhanced_integration_checks"),
+                                            helper.jsonOrNull("endpoint_configurations"),
                                         false);
 
                                     Teak.log.i("configuration.remote", configuration.toHash());
