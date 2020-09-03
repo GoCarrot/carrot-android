@@ -40,6 +40,8 @@ public class RemoteConfiguration {
     @SuppressWarnings("WeakerAccess")
     public final Map<String, Object> dynamicParameters;
     @SuppressWarnings("WeakerAccess")
+    public final int heartbeatInterval;
+    @SuppressWarnings("WeakerAccess")
     public final boolean isMocked;
 
     private static final String defaultHostname = "gocarrot.com";
@@ -123,7 +125,7 @@ public class RemoteConfiguration {
     public RemoteConfiguration(@NonNull AppConfiguration appConfiguration, @NonNull String hostname,
         String sdkSentryDsn, String appSentryDsn, String gcmSenderId, String firebaseAppId,
         boolean ignoreDefaultFirebaseConfiguration, boolean enhancedIntegrationChecks,
-        JSONObject endpointConfigurations, JSONObject dynamicParameters, boolean isMocked) {
+        JSONObject endpointConfigurations, JSONObject dynamicParameters, int heartbeatInterval, boolean isMocked) {
         this.appConfiguration = appConfiguration;
         this.hostname = hostname;
         this.appSentryDsn = appSentryDsn;
@@ -133,6 +135,7 @@ public class RemoteConfiguration {
         this.ignoreDefaultFirebaseConfiguration = ignoreDefaultFirebaseConfiguration;
         this.enhancedIntegrationChecks = enhancedIntegrationChecks;
         this.isMocked = isMocked;
+        this.heartbeatInterval = heartbeatInterval;
 
         this.endpointConfigurations = endpointConfigurations == null ? new JSONObject(defaultEndpointJson).toMap() : endpointConfigurations.toMap();
 
@@ -205,6 +208,7 @@ public class RemoteConfiguration {
                                         helper.boolOrFalse("enhanced_integration_checks"),
                                         helper.jsonOrNull("endpoint_configurations"),
                                         helper.jsonOrNull("dynamic_parameters"),
+                                        response.optInt("heartbeat_interval", 60),
                                         false);
 
                                     Teak.log.i("configuration.remote", configuration.toHash());

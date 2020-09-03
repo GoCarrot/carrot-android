@@ -318,6 +318,12 @@ public class Session {
     private void startHeartbeat() {
         final TeakConfiguration teakConfiguration = TeakConfiguration.get();
 
+        // If heartbeatInterval is 0, do not send heartbeats
+        final int heartbeatInterval = teakConfiguration.remoteConfiguration != null ? teakConfiguration.remoteConfiguration.heartbeatInterval : 60;
+        if (heartbeatInterval == 0) {
+            return;
+        }
+
         // TODO: Revist this when we have time, if it is important
         //noinspection deprecation - Alex said "ehhhhhhh" to changing the heartbeat param to a map
         @SuppressWarnings("deprecation")
@@ -362,7 +368,7 @@ public class Session {
                     }
                 }
             }
-        }, 0, 1, TimeUnit.MINUTES); // TODO: If RemoteConfiguration specifies a different rate, use that
+        }, 0, heartbeatInterval, TimeUnit.SECONDS);
     }
 
     private void identifyUser() {
