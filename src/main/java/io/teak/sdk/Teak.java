@@ -5,13 +5,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import io.teak.sdk.configuration.AppConfiguration;
-import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.core.Executors;
+import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.DeepLinksReadyEvent;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.io.AndroidResources;
