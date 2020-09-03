@@ -24,7 +24,7 @@ dexcount {
     verbose = false
     maxTreeDepth = Integer.MAX_VALUE
     runOnEachPackage = true
-    maxMethodCount = 2200 // This includes android.* etc dependencies, so I guess just do it this way for now
+    maxMethodCount = 2300 // This includes android.* etc dependencies, so I guess just do it this way for now
 }
 
 import static groovy.io.FileType.FILES

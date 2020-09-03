@@ -136,6 +136,7 @@ public class Request implements Runnable {
             public void onNewEvent(@NonNull TeakEvent event) {
                 if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
                     Request.remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
+                    configurationPayload.putAll(Request.remoteConfiguration.dynamicParameters);
                 }
             }
         });
