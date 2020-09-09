@@ -107,10 +107,14 @@ public class DeviceScreenState {
         Teak.log.i("teak.animation", Helpers.mm.h("delay_index", delayIndex, "timestamp", new Date().getTime() / 1000));
 
         int[] executionWindow = DeviceScreenState.ExecutionWindow[delayIndex];
-        final Job job = Teak.Instance.jobBuilder(DeviceScreenState.SCREEN_STATE_JOB_TAG, bundle)
-                            .setTrigger(Trigger.executionWindow(executionWindow[0], executionWindow[1]))
-                            .build();
-        Teak.Instance.dispatcher.mustSchedule(job);
+        try {
+            final Job job = Teak.Instance.jobBuilder(DeviceScreenState.SCREEN_STATE_JOB_TAG, bundle)
+                    .setTrigger(Trigger.executionWindow(executionWindow[0], executionWindow[1]))
+                    .build();
+            Teak.Instance.dispatcher.mustSchedule(job);
+        } catch (Exception e) {
+            Teak.log.exception(e, false);
+        }
     }
 
     public static Callable<Boolean> isDeviceScreenOn(@NonNull final Context context, @NonNull final JobParameters jobParameters) {
