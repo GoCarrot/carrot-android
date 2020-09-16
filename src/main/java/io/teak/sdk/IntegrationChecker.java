@@ -180,7 +180,7 @@ public class IntegrationChecker {
         return false;
     }
 
-    private IntegrationChecker(@NonNull Activity activity) throws UnsupportedVersionException {
+    private IntegrationChecker(@NonNull Activity activity) throws UnsupportedVersionException, InvalidConfigurationException {
         this.activity = activity;
 
         // Teak 2.0+ requires targeting Android 26+
@@ -211,9 +211,11 @@ public class IntegrationChecker {
                         this.activity.getString(resId);
                     }
                 } catch (Exception ignored) {
-                    addErrorToReport("R.string." + configString, "Failed to find R.string." + configString);
+                    throw new InvalidConfigurationException("Failed to find R.string." + configString);
                 }
             }
+        } catch (InvalidConfigurationException e) {
+            throw e;
         } catch (Exception ignored) {
         }
 

@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -117,7 +116,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
         // Init integration checks, we decide later if they report or not
         if (!IntegrationChecker.init(activity)) {
-            return;
+            throw new RuntimeException("Teak integration check failed. Please see the log for details.");
         }
 
         // Unless something gave us an object factory, use the default one
