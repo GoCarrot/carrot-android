@@ -50,6 +50,9 @@ public class TeakCocos2dx implements Unobfuscable {
                     case AdditionalData: {
                         eventName = "TeakAdditionalData";
                     } break;
+                    case LaunchedFromLink: {
+                        eventName = "TeakLaunchedFromLink";
+                    } break;
                 }
                 TeakCocos2dx.sendMessage(eventName, eventData);
             }

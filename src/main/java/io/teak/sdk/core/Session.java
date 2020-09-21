@@ -17,6 +17,7 @@ import io.teak.sdk.TeakNotification;
 import io.teak.sdk.event.AdvertisingInfoEvent;
 import io.teak.sdk.event.ExternalBroadcastEvent;
 import io.teak.sdk.event.FacebookAccessTokenEvent;
+import io.teak.sdk.event.LaunchedFromLinkEvent;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.LogoutEvent;
 import io.teak.sdk.event.PushRegistrationEvent;
@@ -1105,6 +1106,7 @@ public class Session {
                                 }
 
                                 Teak.log.i("deep_link.request.resolve", uri.toString());
+                                TeakEvent.postEvent(new LaunchedFromLinkEvent(teakData));
                             } catch (Exception e) {
                                 Teak.log.exception(e);
                             }
