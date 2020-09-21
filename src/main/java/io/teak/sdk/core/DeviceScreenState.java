@@ -109,8 +109,8 @@ public class DeviceScreenState {
         int[] executionWindow = DeviceScreenState.ExecutionWindow[delayIndex];
         try {
             final Job job = Teak.Instance.jobBuilder(DeviceScreenState.SCREEN_STATE_JOB_TAG, bundle)
-                    .setTrigger(Trigger.executionWindow(executionWindow[0], executionWindow[1]))
-                    .build();
+                                .setTrigger(Trigger.executionWindow(executionWindow[0], executionWindow[1]))
+                                .build();
             Teak.Instance.dispatcher.mustSchedule(job);
         } catch (Exception e) {
             Teak.log.exception(e, false);
