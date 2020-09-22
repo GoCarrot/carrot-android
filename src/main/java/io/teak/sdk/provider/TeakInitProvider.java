@@ -15,6 +15,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.teak.sdk.Teak;
+import io.teak.sdk.wrapper.cocos2dx.TeakCocos2dx;
 import io.teak.sdk.wrapper.unity.TeakUnity;
 
 public class TeakInitProvider extends ContentProvider {
@@ -73,9 +74,11 @@ public class TeakInitProvider extends ContentProvider {
                     Teak.Instance.lifecycleCallbacks.onActivityCreated(activity, bundle);
                 }
 
-                // Initialize Unity if we're running in Unity
+                // Initialize wrapper if needed.
                 if (TeakUnity.isAvailable()) {
                     TeakUnity.initialize();
+                } else if (TeakCocos2dx.isAvailable()) {
+                    TeakCocos2dx.initialize();
                 }
             }
         }

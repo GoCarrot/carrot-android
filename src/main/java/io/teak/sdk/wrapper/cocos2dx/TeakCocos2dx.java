@@ -1,4 +1,4 @@
-package io.teak.sdk.wrapper.unity;
+package io.teak.sdk.wrapper.cocos2dx;
 
 import androidx.annotation.NonNull;
 import io.teak.sdk.Teak;
@@ -10,19 +10,21 @@ import io.teak.sdk.wrapper.TeakInterface;
 import java.lang.reflect.Method;
 import java.util.Map;
 
-public class TeakUnity implements Unobfuscable {
-    private static Method unitySendMessage;
+// Future-Pat: Prefix all Cocos2dx events with 'Teak' since they seem to use global event dispatch
+
+public class TeakCocos2dx implements Unobfuscable {
     private static TeakInterface teakInterface;
+    private static Method runOnGLThread;
 
     static {
         try {
-            Class<?> unityPlayerClass = Class.forName("com.unity3d.player.UnityPlayer");
-            TeakUnity.unitySendMessage = unityPlayerClass.getMethod("UnitySendMessage", String.class, String.class, String.class);
+            Class<?> cocos2dxHelper = Class.forName("org.cocos2dx.lib.Cocos2dxHelper");
+            TeakCocos2dx.runOnGLThread = cocos2dxHelper.getMethod("runOnGLThread", Runnable.class);
 
             Teak.setLogListener(new Teak.LogListener() {
                 @Override
                 public void logEvent(String logEvent, String logLevel, Map<String, Object> logData) {
-                    unitySendMessage("LogEvent", new JSONObject(logData).toString());
+                    TeakCocos2dx.sendMessage("TeakLogEvent", new JSONObject(logData).toString());
                 }
             });
         } catch (Exception ignored) {
@@ -37,38 +39,28 @@ public class TeakUnity implements Unobfuscable {
                 String eventName = null;
                 switch (eventType) {
                     case NotificationLaunch: {
-                        eventName = "NotificationLaunch";
+                        eventName = "TeakNotificationLaunch";
                     } break;
                     case RewardClaim: {
-                        eventName = "RewardClaimAttempt";
+                        eventName = "TeakRewardClaimAttempt";
                     } break;
                     case ForegroundNotification: {
-                        eventName = "ForegroundNotification";
+                        eventName = "TeakForegroundNotification";
                     } break;
                     case AdditionalData: {
-                        eventName = "AdditionalData";
+                        eventName = "TeakAdditionalData";
                     } break;
                     case LaunchedFromLink: {
-                        eventName = "LaunchedFromLink";
+                        eventName = "TeakLaunchedFromLink";
                     } break;
                 }
-                unitySendMessage(eventName, eventData);
+                TeakCocos2dx.sendMessage(eventName, eventData);
             }
         });
     }
 
     public static boolean isAvailable() {
-        return TeakUnity.unitySendMessage != null;
-    }
-
-    private static void unitySendMessage(String method, String message) {
-        if (TeakUnity.isAvailable()) {
-            try {
-                TeakUnity.unitySendMessage.invoke(null, "TeakGameObject", method, message);
-            } catch (Exception e) {
-                Teak.log.exception(e);
-            }
-        }
+        return TeakCocos2dx.runOnGLThread != null;
     }
 
     @SuppressWarnings("unused")
@@ -78,11 +70,11 @@ public class TeakUnity implements Unobfuscable {
                 @Override
                 public void call(Map<String, Object> parameters) {
                     try {
-                        if (TeakUnity.isAvailable()) {
+                        if (TeakCocos2dx.isAvailable()) {
                             JSONObject eventData = new JSONObject();
                             eventData.put("route", route);
                             eventData.put("parameters", new JSONObject(parameters));
-                            TeakUnity.unitySendMessage("DeepLink", eventData.toString());
+                            TeakCocos2dx.sendMessage("TeakDeepLink", eventData.toString());
                         }
                     } catch (Exception e) {
                         Teak.log.exception(e);
@@ -97,5 +89,20 @@ public class TeakUnity implements Unobfuscable {
     @SuppressWarnings({"unused", "deprecation"})
     public static void testExceptionReporting() {
         Teak.log.exception(new Raven.ReportTestException(Teak.SDKVersion));
+    }
+
+    private static native void nativeSendMessage(String event, String json);
+
+    private static void sendMessage(final String event, final String eventData) {
+        try {
+            TeakCocos2dx.runOnGLThread.invoke(null, new Runnable() {
+                @Override
+                public void run() {
+                    TeakCocos2dx.nativeSendMessage(event, eventData);
+                }
+            });
+        } catch (Exception e) {
+            Teak.log.exception(e);
+        }
     }
 }

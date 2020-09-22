@@ -8,8 +8,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import io.teak.sdk.configuration.AppConfiguration;
-import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.core.Executors;
+import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.DeepLinksReadyEvent;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.io.AndroidResources;
@@ -106,9 +106,17 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * @param objectFactory Teak Object Factory to use, or null for default.
      */
     public static void onCreate(@NonNull Activity activity, @Nullable IObjectFactory objectFactory) {
+        // Provide a way to wait for debugger to connect via a data param
+        final Intent intent = activity.getIntent();
+        if (intent != null && intent.getData() != null) {
+            if ("teakdebug".equalsIgnoreCase(intent.getData().getScheme())) {
+                android.os.Debug.waitForDebugger();
+            }
+        }
+
         // Init integration checks, we decide later if they report or not
         if (!IntegrationChecker.init(activity)) {
-            return;
+            throw new RuntimeException("Teak integration check failed. Please see the log for details.");
         }
 
         // Unless something gave us an object factory, use the default one
@@ -585,6 +593,20 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * </pre>
      */
     public static final String ADDITIONAL_DATA_INTENT = "io.teak.sdk.Teak.intent.ADDITIONAL_DATA_INTENT";
+
+    /**
+     * Intent action used by Teak to notify you that the app was launched from a link created by the Teak dashboard.
+     * <p/>
+     * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
+     * <pre>
+     * {@code
+     *     IntentFilter filter = new IntentFilter();
+     *     filter.addAction(Teak.LAUNCHED_FROM_LINK_INTENT);
+     *     LocalBroadcastManager.getInstance(context).registerReceiver(yourBroadcastListener, filter);
+     * }
+     * </pre>
+     */
+    public static final String LAUNCHED_FROM_LINK_INTENT = "io.teak.sdk.Teak.intent.LAUNCHED_FROM_LINK_INTENT";
 
     ///// LogListener
 

@@ -367,13 +367,13 @@ public class TeakNotification implements Unobfuscable {
                                         Teak.log.e("notification.schedule.error", "Error scheduling notification.", mm.h("response", response.toString()));
                                     }
                                 } else {
-                                    Teak.log.e("notification.schedule.error", "Timed out while scheduling notification.");
+                                    Teak.log.e("notification.schedule.error", "JSON does not contain 'status' element.");
                                     contents.put("status", "error.internal");
                                 }
 
                                 q.offer(new JSONObject(contents).toString());
                             } catch (JSONException e) {
-                                Teak.log.e("notification.schedule.error", "Timed out while scheduling notification.");
+                                Teak.log.e("notification.schedule.error", "Error parsing JSON: " + e.toString());
                                 final Map<String, Object> contents = new HashMap<>();
                                 contents.put("status", "error.internal");
                                 q.offer(new JSONObject(contents).toString());
@@ -502,13 +502,13 @@ public class TeakNotification implements Unobfuscable {
                                         Teak.log.e("notification.schedule.error", "Error scheduling notification.", mm.h("response", response.toString()));
                                     }
                                 } else {
-                                    Teak.log.e("notification.schedule.error", "Timed out while scheduling notification.");
+                                    Teak.log.e("notification.schedule.error", "JSON does not contain 'status' element.");
                                     contents.put("status", "error.internal");
                                 }
 
                                 q.offer(new JSONObject(contents).toString());
                             } catch (JSONException e) {
-                                Teak.log.e("notification.schedule.error", "Timed out while scheduling notification.");
+                                Teak.log.e("notification.schedule.error", "Error parsing JSON: " + e.toString());
                                 final Map<String, Object> contents = new HashMap<>();
                                 contents.put("status", "error.internal");
                                 q.offer(new JSONObject(contents).toString());

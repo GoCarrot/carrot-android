@@ -21,6 +21,7 @@ public class TeakInterface implements Unobfuscable {
         filter.addAction(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
         filter.addAction(Teak.FOREGROUND_NOTIFICATION_INTENT);
         filter.addAction(Teak.ADDITIONAL_DATA_INTENT);
+        filter.addAction(Teak.LAUNCHED_FROM_LINK_INTENT);
 
         if (Teak.Instance != null) {
             Teak.Instance.objectFactory.getTeakCore().registerLocalBroadcastReceiver(broadcastReceiver, filter);
@@ -75,6 +76,15 @@ public class TeakInterface implements Unobfuscable {
                     Teak.log.exception(e);
                 } finally {
                     sdkWrapper.sdkSendMessage(ISDKWrapper.EventType.AdditionalData, eventData);
+                }
+            } else if (Teak.LAUNCHED_FROM_LINK_INTENT.equals(action)) {
+                String eventData = "{}";
+                try {
+                    eventData = bundle.getString("linkInfo");
+                } catch (Exception e) {
+                    Teak.log.exception(e);
+                } finally {
+                    sdkWrapper.sdkSendMessage(ISDKWrapper.EventType.LaunchedFromLink, eventData);
                 }
             }
         }

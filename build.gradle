@@ -24,7 +24,7 @@ dexcount {
     verbose = false
     maxTreeDepth = Integer.MAX_VALUE
     runOnEachPackage = true
-    maxMethodCount = 2200 // This includes android.* etc dependencies, so I guess just do it this way for now
+    maxMethodCount = 2300 // This includes android.* etc dependencies, so I guess just do it this way for now
 }
 
 import static groovy.io.FileType.FILES
@@ -200,7 +200,7 @@ dependencies {
     implementation 'com.firebase:firebase-jobdispatcher:0.8.5'
 
     // Amazon, Air, Unity compile-time-only dependencies
-    compileOnly files('libs/amazon-device-messaging-1.0.1.jar')
+    compileOnly files('libs/amazon-device-messaging-1.1.0.jar')
     compileOnly files('libs/in-app-purchasing-2.0.76.jar')
     compileOnly files('libs/FlashRuntimeExtensions.jar')
     compileOnly files('libs/UnityClasses.jar')

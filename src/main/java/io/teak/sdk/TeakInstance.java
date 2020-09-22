@@ -59,7 +59,14 @@ public class TeakInstance implements Unobfuscable {
         PushState.init(this.context);
 
         // Start Teak job dispatcher
-        this.dispatcher = new FirebaseJobDispatcher(new GooglePlayDriver(this.context));
+        FirebaseJobDispatcher dispatcher = null;
+        try {
+            Class.forName("com.firebase.jobdispatcher.FirebaseJobDispatcher");
+            dispatcher = new FirebaseJobDispatcher(new GooglePlayDriver(this.context));
+        } catch (Exception e) {
+            Teak.log.exception(e, false);
+        }
+        this.dispatcher = dispatcher;
 
         // Ravens
         TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {

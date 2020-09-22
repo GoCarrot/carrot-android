@@ -1,22 +1,21 @@
 package io.teak.sdk.push;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 import android.util.Base64;
 import androidx.annotation.NonNull;
 import com.amazon.device.messaging.ADM;
 import com.amazon.device.messaging.ADMMessageHandlerBase;
+import com.amazon.device.messaging.ADMMessageHandlerJobBase;
 import com.amazon.device.messaging.ADMMessageReceiver;
 import com.amazon.device.messaging.development.ADMManifest;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.Unobfuscable;
-import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.core.Executors;
+import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.json.JSONObject;
@@ -28,13 +27,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvider, Unobfuscable {
+public class ADMPushProvider implements IPushProvider, Unobfuscable {
     private ADM admInstance;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-
-    public ADMPushProvider() {
-        super(ADMPushProvider.class.getName());
-    }
 
     public void initialize(@NonNull Context context) {
         this.admInstance = new ADM(context);
@@ -49,8 +44,22 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
     ///// ADMMessageReceiver
 
     public static class MessageAlertReceiver extends ADMMessageReceiver implements Unobfuscable {
+        static boolean ADM_1_1_0 = false;
+        static {
+            try {
+                Class.forName("com.amazon.device.messaging.ADMMessageHandlerJobBase");
+                ADM_1_1_0 = true;
+            } catch (Exception ignored) {
+            }
+        }
+
         public MessageAlertReceiver() {
-            super(ADMPushProvider.class);
+            super(ADMMessageHandler_1_0_1.class);
+
+            if (ADM_1_1_0) {
+                Teak.log.i("amazon.adm.jobservice", "Registering ADMMessageHandler_1_1_0 job service.");
+                registerJobServiceClass(ADMMessageHandler_1_1_0.class, io.teak.sdk.Teak.JOB_ID);
+            }
         }
     }
 
@@ -73,18 +82,17 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
 
     ///// Helper
 
-    private void sendRegistrationEvent(@NonNull String registrationId) {
+    private static void sendRegistrationEvent(@NonNull String registrationId) {
         Teak.log.i("amazon.adm.registered", Helpers.mm.h("admId", registrationId));
         if (Teak.isEnabled()) {
             TeakEvent.postEvent(new PushRegistrationEvent("adm_push_key", registrationId, null));
         }
     }
 
-    ///// ADMMessageHandlerBase
+    ///// Functionality
 
-    @Override
-    protected void onMessage(Intent intent) {
-        final TeakCore teakCore = TeakCore.getWithoutThrow(getApplicationContext());
+    private static void onMessage(Context context, Intent intent) {
+        final TeakCore teakCore = TeakCore.getWithoutThrow(context);
         if (teakCore == null) {
             Teak.log.e("amazon.adm.null_teak_core", "TeakCore.getWithoutThrow returned null.");
         }
@@ -92,12 +100,11 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
         if (intent.hasExtra("teakAdm")) {
             JSONObject teakAdm = new JSONObject(intent.getStringExtra("teakAdm"));
             intent.putExtras(Helpers.jsonToGCMBundle(teakAdm));
-            TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Received, getApplicationContext(), intent));
+            TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Received, context, intent));
         }
     }
 
-    @Override
-    protected void onRegistrationError(String s) {
+    private static void onRegistrationError(Context context, String s) {
         Teak.log.e("amazon.adm.registration_error", "Error registering for ADM id: " + s);
 
         // If the error is INVALID_SENDER try and help the developer
@@ -106,7 +113,7 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
             // First check to see if api_key.txt is available
             InputStream inputStream = null;
             try {
-                inputStream = getApplicationContext().getAssets().open("api_key.txt");
+                inputStream = context.getAssets().open("api_key.txt");
             } catch (IOException e) {
                 Teak.log.e("amazon.adm.registration_error", "Unable to find 'api_key.txt' in assets, this is required for ADM use. Please see: https://developer.amazon.com/docs/adm/integrate-your-app.html#store-your-api-key-as-an-asset");
             }
@@ -135,7 +142,7 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
                     JSONObject json = new JSONObject(middleJson);
 
                     // Make sure the key and the package name match
-                    String packageName = getApplicationContext().getPackageName();
+                    String packageName = context.getPackageName();
                     if (!packageName.equals(json.getString("pkg"))) {
                         Teak.log.e("amazon.adm.registration_error.debugging", Helpers.mm.h("packageName", packageName, "api_key.packageName", json.getString("pkg")));
                         throw new Exception("Package name mismatch in 'api_key.txt'");
@@ -143,7 +150,7 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
                     Teak.log.i("amazon.adm.registration_error.debugging", "[✓] App package name matches package name inside 'api_key.txt'");
 
                     // Make sure the signature matches
-                    Signature[] sigs = Helpers.getAppSignatures(getApplicationContext());
+                    Signature[] sigs = Helpers.getAppSignatures(context);
                     for (Signature sig : sigs) {
                         if (json.has("appsigSha256")) {
                             String sigSha256 = Helpers.formatSig(sig, "SHA-256");
@@ -184,16 +191,66 @@ public class ADMPushProvider extends ADMMessageHandlerBase implements IPushProvi
         }
     }
 
-    @Override
-    protected void onRegistered(String s) {
-        sendRegistrationEvent(s);
-    }
-
-    @Override
-    protected void onUnregistered(String s) {
+    private static void onUnregistered(String s) {
         Teak.log.i("amazon.adm.unregistered", Helpers.mm.h("admId", s));
         if (Teak.isEnabled()) {
             TeakEvent.postEvent(new PushRegistrationEvent(PushRegistrationEvent.UnRegistered));
+        }
+    }
+
+    ///// ADMMessageHandlerBase (1.0.1)
+
+    public static class ADMMessageHandler_1_0_1 extends ADMMessageHandlerBase implements Unobfuscable {
+        public ADMMessageHandler_1_0_1() {
+            super(ADMMessageHandler_1_0_1.class.getName());
+        }
+
+        @Override
+        protected void onMessage(Intent intent) {
+            ADMPushProvider.onMessage(getApplicationContext(), intent);
+        }
+
+        @Override
+        protected void onRegistrationError(String s) {
+            ADMPushProvider.onRegistrationError(getApplicationContext(), s);
+        }
+
+        @Override
+        protected void onRegistered(String s) {
+            ADMPushProvider.sendRegistrationEvent(s);
+        }
+
+        @Override
+        protected void onUnregistered(String s) {
+            ADMPushProvider.onUnregistered(s);
+        }
+    }
+
+    ///// ADMMessageHandlerJobBase (1.1.0)
+
+    public static class ADMMessageHandler_1_1_0 extends ADMMessageHandlerJobBase implements Unobfuscable {
+        public ADMMessageHandler_1_1_0() {
+            super();
+        }
+
+        @Override
+        protected void onMessage(Context context, Intent intent) {
+            ADMPushProvider.onMessage(context, intent);
+        }
+
+        @Override
+        protected void onRegistrationError(Context context, String s) {
+            ADMPushProvider.onRegistrationError(context, s);
+        }
+
+        @Override
+        protected void onRegistered(Context context, String s) {
+            ADMPushProvider.sendRegistrationEvent(s);
+        }
+
+        @Override
+        protected void onUnregistered(Context context, String s) {
+            ADMPushProvider.onUnregistered(s);
         }
     }
 }
