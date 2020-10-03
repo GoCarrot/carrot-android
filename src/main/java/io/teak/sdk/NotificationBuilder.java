@@ -474,27 +474,31 @@ public class NotificationBuilder {
 
             private AnimationConfiguration loadAnimationConfigWithOOMFallbacks(JSONObject viewConfig) throws OutOfMemoryError {
                 final AnimationConfiguration ret = new AnimationConfiguration();
+                final JSONObject initialAnimationConfig = viewConfig.getJSONObject("view_animator");
                 try {
-                    final JSONObject animationConfig = viewConfig.getJSONObject("view_animator");
-                    ret.spriteSheetUrl = animationConfig.getString("sprite_sheet");
+                    ret.spriteSheetUrl = initialAnimationConfig.getString("sprite_sheet");
                     ret.spriteSheet = loadBitmapFromUriString(ret.spriteSheetUrl);
-                    ret.width = animationConfig.getInt("width");
-                    ret.height = animationConfig.getInt("height");
-                    ret.displayMs = animationConfig.optInt("display_ms", 500);
+                    ret.width = initialAnimationConfig.getInt("width");
+                    ret.height = initialAnimationConfig.getInt("height");
+                    ret.displayMs = initialAnimationConfig.optInt("display_ms", 500);
                     return ret;
                 } catch(OutOfMemoryError e) {
+                    Teak.log.e("oom.animation.initial", initialAnimationConfig.getString("sprite_sheet"));
+
                     final JSONArray oomFallbacks = viewConfig.optJSONArray("oom_view_animator");
                     if (oomFallbacks != null) {
                         for (int i = 0; i < oomFallbacks.length(); i++) {
+                            final JSONObject fallbackAnimationConfig = oomFallbacks.getJSONObject(i);
                             try {
-                                final JSONObject animationConfig = oomFallbacks.getJSONObject(i);
-                                ret.spriteSheetUrl = animationConfig.getString("sprite_sheet");
+                                ret.spriteSheetUrl = fallbackAnimationConfig.getString("sprite_sheet");
                                 ret.spriteSheet = loadBitmapFromUriString(ret.spriteSheetUrl);
-                                ret.width = animationConfig.getInt("width");
-                                ret.height = animationConfig.getInt("height");
-                                ret.displayMs = animationConfig.optInt("display_ms", 500);
+                                ret.width = fallbackAnimationConfig.getInt("width");
+                                ret.height = fallbackAnimationConfig.getInt("height");
+                                ret.displayMs = fallbackAnimationConfig.optInt("display_ms", 500);
+                                Teak.log.i("oom.animation.fallback", ret.spriteSheetUrl);
                                 return ret;
                             } catch (OutOfMemoryError ignored) {
+                                Teak.log.e("oom.animation.fallback", fallbackAnimationConfig.getString("sprite_sheet"));
                             }
                         }
 
@@ -511,12 +515,17 @@ public class NotificationBuilder {
                 try {
                     return loadBitmapFromUriString(viewConfig.getString("notification_background"));
                 } catch(OutOfMemoryError e) {
+                    Teak.log.e("oom.image.initial", viewConfig.getString("notification_background"));
+
                     final JSONArray oomFallbacks = viewConfig.optJSONArray("oom_notification_background");
                     if (oomFallbacks != null) {
                         for(int i = 0; i < oomFallbacks.length(); i++) {
                             try {
-                                return loadBitmapFromUriString(oomFallbacks.getString(i));
+                                final Bitmap ret = loadBitmapFromUriString(oomFallbacks.getString(i));
+                                Teak.log.i("oom.image.fallback", oomFallbacks.getString(i));
+                                return ret;
                             } catch(OutOfMemoryError ignored) {
+                                Teak.log.e("oom.animation.fallback", oomFallbacks.getString(i));
                             }
                         }
 
