@@ -32,6 +32,8 @@ import android.widget.ImageView;
 import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.ViewFlipper;
+
+import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.support.INotificationBuilder;
 import java.io.FileNotFoundException;
@@ -140,6 +142,11 @@ public class NotificationBuilder {
         if (wm != null) {
             wm.getDefaultDisplay().getMetrics(displayMetrics);
         }
+
+        // For Android 11+ it will remove RemoteViews over a certain size, get that size
+        final int config_notificationStripRemoteViewSizeBytes_Id = context.getResources().getIdentifier("config_notificationStripRemoteViewSizeBytes", "integer", "android");
+        final int config_notificationStripRemoteViewSizeBytes = config_notificationStripRemoteViewSizeBytes_Id > 0 ?
+                context.getResources().getInteger(config_notificationStripRemoteViewSizeBytes_Id) : 0;
 
         // Should this notification display both the small view and the big view when expanded?
         final boolean displayContentViewAboveBigContentView = teakNotificaton.display.optBoolean("displayContentViewAboveBigContentView", false);
@@ -326,6 +333,7 @@ public class NotificationBuilder {
                 while (keys.hasNext()) {
                     String key = keys.next();
 
+                    // 3.5.0+ the new 'oom_notification_background' key will be skipped
                     int tempViewElementId;
                     try {
                         tempViewElementId = R.id(key);
@@ -365,7 +373,7 @@ public class NotificationBuilder {
                         } else if (value.equalsIgnoreCase("NONE")) {
                             remoteViews.setViewVisibility(viewElementId, View.GONE);
                         } else {
-                            final Bitmap bitmap = loadBitmapFromUriString(value);
+                            final Bitmap bitmap = loadNotificationBackgroundWithOOMFallbacks(viewConfig);
                             if (bitmap == null) {
                                 if ("left_image".equals(key)) {
                                     remoteViews.setViewVisibility(viewElementId, View.GONE);
@@ -377,16 +385,20 @@ public class NotificationBuilder {
                             }
                         }
                     } else if (isUIType(viewElement, ViewFlipper.class)) {
-                        final JSONObject animationConfig = viewConfig.getJSONObject(key);
-                        final Bitmap bitmap = loadBitmapFromUriString(animationConfig.getString("sprite_sheet"));
-                        if (bitmap == null) {
-                            throw new AssetLoadException(animationConfig.getString("sprite_sheet"));
+                        final AnimationConfiguration animationConfig = loadAnimationConfigWithOOMFallbacks(viewConfig);
+                        if (animationConfig == null) {
+                            final JSONObject jsonConfig = viewConfig.getJSONObject("view_animator");
+                            throw new AssetLoadException(jsonConfig.getString("sprite_sheet"));
+                        } else if (animationConfig.spriteSheet == null) {
+                            throw new AssetLoadException(animationConfig.spriteSheetUrl);
                         }
-                        final int frameWidth = animationConfig.getInt("width");
-                        final int frameHeight = animationConfig.getInt("height");
+                        final Bitmap bitmap = animationConfig.spriteSheet;
+                        final int frameWidth = animationConfig.width;
+                        final int frameHeight = animationConfig.height;
+                        final int msPerFrame = animationConfig.displayMs;
+
                         final int numCols = bitmap.getWidth() / frameWidth;
                         final int numRows = bitmap.getHeight() / frameHeight;
-                        final int msPerFrame = animationConfig.optInt("display_ms", 500);
 
                         for (int x = 0; x < numCols; x++) {
                             for (int y = 0; y < numRows; y++) {
@@ -395,7 +407,7 @@ public class NotificationBuilder {
                                 Bitmap frame = Bitmap.createBitmap(bitmap, startX, startY, frameWidth, frameHeight);
 
                                 if (frame == null) {
-                                    throw new IllegalArgumentException("Frame [" + x + ", " + y + "] is null (" + animationConfig.getString("sprite_sheet") + ")");
+                                    throw new IllegalArgumentException("Frame [" + x + ", " + y + "] is null (" + animationConfig.spriteSheetUrl + ")");
                                 }
 
                                 final RemoteViews frameView = new RemoteViews(context.getPackageName(),
@@ -452,6 +464,71 @@ public class NotificationBuilder {
                 return remoteViews;
             }
 
+            class AnimationConfiguration {
+                public String spriteSheetUrl;
+                public Bitmap spriteSheet;
+                public int width;
+                public int height;
+                public int displayMs;
+            }
+
+            private AnimationConfiguration loadAnimationConfigWithOOMFallbacks(JSONObject viewConfig) throws OutOfMemoryError {
+                final AnimationConfiguration ret = new AnimationConfiguration();
+                try {
+                    final JSONObject animationConfig = viewConfig.getJSONObject("view_animator");
+                    ret.spriteSheetUrl = animationConfig.getString("sprite_sheet");
+                    ret.spriteSheet = loadBitmapFromUriString(ret.spriteSheetUrl);
+                    ret.width = animationConfig.getInt("width");
+                    ret.height = animationConfig.getInt("height");
+                    ret.displayMs = animationConfig.optInt("display_ms", 500);
+                    return ret;
+                } catch(OutOfMemoryError e) {
+                    final JSONArray oomFallbacks = viewConfig.optJSONArray("oom_view_animator");
+                    if (oomFallbacks != null) {
+                        for (int i = 0; i < oomFallbacks.length(); i++) {
+                            try {
+                                final JSONObject animationConfig = oomFallbacks.getJSONObject(i);
+                                ret.spriteSheetUrl = animationConfig.getString("sprite_sheet");
+                                ret.spriteSheet = loadBitmapFromUriString(ret.spriteSheetUrl);
+                                ret.width = animationConfig.getInt("width");
+                                ret.height = animationConfig.getInt("height");
+                                ret.displayMs = animationConfig.optInt("display_ms", 500);
+                                return ret;
+                            } catch (OutOfMemoryError ignored) {
+                            }
+                        }
+
+                        // No other fallbacks
+                        final OutOfMemoryError err = new OutOfMemoryError("All OOM fallbacks exceeded.");
+                        err.initCause(e);
+                        throw err;
+                    }
+                }
+                return null;
+            }
+
+            private Bitmap loadNotificationBackgroundWithOOMFallbacks(JSONObject viewConfig) throws OutOfMemoryError {
+                try {
+                    return loadBitmapFromUriString(viewConfig.getString("notification_background"));
+                } catch(OutOfMemoryError e) {
+                    final JSONArray oomFallbacks = viewConfig.optJSONArray("oom_notification_background");
+                    if (oomFallbacks != null) {
+                        for(int i = 0; i < oomFallbacks.length(); i++) {
+                            try {
+                                return loadBitmapFromUriString(oomFallbacks.getString(i));
+                            } catch(OutOfMemoryError ignored) {
+                            }
+                        }
+
+                        // No other fallbacks
+                        final OutOfMemoryError err = new OutOfMemoryError("All OOM fallbacks exceeded.");
+                        err.initCause(e);
+                        throw err;
+                    }
+                }
+                return null;
+            }
+
             private Bitmap loadBitmapFromUriString(String bitmapUriString) throws OutOfMemoryError {
                 final Uri bitmapUri = Uri.parse(bitmapUriString);
                 Bitmap ret = null;
@@ -470,6 +547,9 @@ public class NotificationBuilder {
                         final Uri.Builder uriBuilder = Uri.parse(bitmapUriString).buildUpon();
                         uriBuilder.appendQueryParameter("device_memory_class", String.valueOf(deviceMemoryClass));
                         uriBuilder.appendQueryParameter("scaled_density", String.valueOf(displayMetrics.scaledDensity));
+                        if (config_notificationStripRemoteViewSizeBytes > 0) {
+                            uriBuilder.appendQueryParameter("remote_view_byte_limit", String.valueOf(config_notificationStripRemoteViewSizeBytes));
+                        }
 
                         URL aURL = new URL(uriBuilder.toString());
                         HttpsURLConnection conn = (HttpsURLConnection) aURL.openConnection();
