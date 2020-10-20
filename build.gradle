@@ -150,8 +150,6 @@ android.libraryVariants.all { variant ->
             group "ApiDoc"
             description "Generates Javadoc for $variant.name."
 
-            destinationDir = file("docs/javadoc/javadoc") // This is intended duplication
-
             // Source files from the variant
             source = project.android.sourceSets.main.java.srcDirs
 

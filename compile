@@ -5,4 +5,4 @@ IFS=$'\n\t'
 ANDROID_HOME=/usr/local/share/android-sdk
 export ANDROID_HOME
 
-./gradlew clean assemble generateApiDoc
+./gradlew clean assemble
