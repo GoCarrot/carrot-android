@@ -32,7 +32,6 @@ import android.widget.ImageView;
 import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.ViewFlipper;
-
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.support.INotificationBuilder;
@@ -145,8 +144,7 @@ public class NotificationBuilder {
 
         // For Android 11+ it will remove RemoteViews over a certain size, get that size
         final int config_notificationStripRemoteViewSizeBytes_Id = context.getResources().getIdentifier("config_notificationStripRemoteViewSizeBytes", "integer", "android");
-        final int config_notificationStripRemoteViewSizeBytes = config_notificationStripRemoteViewSizeBytes_Id > 0 ?
-                context.getResources().getInteger(config_notificationStripRemoteViewSizeBytes_Id) : 0;
+        final int config_notificationStripRemoteViewSizeBytes = config_notificationStripRemoteViewSizeBytes_Id > 0 ? context.getResources().getInteger(config_notificationStripRemoteViewSizeBytes_Id) : 0;
 
         // Should this notification display both the small view and the big view when expanded?
         final boolean displayContentViewAboveBigContentView = teakNotificaton.display.optBoolean("displayContentViewAboveBigContentView", false);
@@ -482,7 +480,7 @@ public class NotificationBuilder {
                     ret.height = initialAnimationConfig.getInt("height");
                     ret.displayMs = initialAnimationConfig.optInt("display_ms", 500);
                     return ret;
-                } catch(OutOfMemoryError e) {
+                } catch (OutOfMemoryError e) {
                     Teak.log.e("oom.animation.initial", initialAnimationConfig.getString("sprite_sheet"));
 
                     final JSONArray oomFallbacks = viewConfig.optJSONArray("oom_view_animator");
@@ -514,17 +512,17 @@ public class NotificationBuilder {
             private Bitmap loadNotificationBackgroundWithOOMFallbacks(JSONObject viewConfig) throws OutOfMemoryError {
                 try {
                     return loadBitmapFromUriString(viewConfig.getString("notification_background"));
-                } catch(OutOfMemoryError e) {
+                } catch (OutOfMemoryError e) {
                     Teak.log.e("oom.image.initial", viewConfig.getString("notification_background"));
 
                     final JSONArray oomFallbacks = viewConfig.optJSONArray("oom_notification_background");
                     if (oomFallbacks != null) {
-                        for(int i = 0; i < oomFallbacks.length(); i++) {
+                        for (int i = 0; i < oomFallbacks.length(); i++) {
                             try {
                                 final Bitmap ret = loadBitmapFromUriString(oomFallbacks.getString(i));
                                 Teak.log.i("oom.image.fallback", oomFallbacks.getString(i));
                                 return ret;
-                            } catch(OutOfMemoryError ignored) {
+                            } catch (OutOfMemoryError ignored) {
                                 Teak.log.e("oom.animation.fallback", oomFallbacks.getString(i));
                             }
                         }
