@@ -179,13 +179,13 @@ public class Session {
     }
 
     private boolean isCurrentSession() {
-        this.stateLock.lock();
         Session.currentSessionLock.lock();
+        this.stateLock.lock();
         try {
             return (Session.currentSession == this);
         } finally {
-            Session.currentSessionLock.unlock();
             this.stateLock.unlock();
+            Session.currentSessionLock.unlock();
         }
     }
 
