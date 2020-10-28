@@ -23,7 +23,7 @@ import io.teak.sdk.event.PushRegistrationEvent;
 import java.util.Map;
 
 public class FCMPushProvider extends FirebaseMessagingService implements IPushProvider {
-    private static FCMPushProvider Instance = null;
+    public static FCMPushProvider Instance = null;
 
     private Context context;
     private FirebaseApp firebaseApp;
