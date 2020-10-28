@@ -62,6 +62,34 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
         TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Received, context, intent));
     }
 
+    /**
+     * Determine if the provided notification was sent by Teak.
+     *
+     * @param remoteMessage The notification received by the active {#FirebaseMessagingService}
+     * @return true if Teak sent this notification.
+     */
+    @SuppressWarnings("unused")
+    public static boolean isTeakNotification(RemoteMessage remoteMessage) {
+        final Map<String, String>  data = remoteMessage.getData();
+        return data != null && data.containsKey("teakNotifId");
+    }
+
+    /**
+     * Used to have Teak process a notification received by another {#FirebaseMessagingService}.
+     *
+     * Note: Teak takes no action if the notification was not sent by Teak.
+     *
+     * @param remoteMessage The notification received by the active {#FirebaseMessagingService}
+     * @param context
+     */
+    @SuppressWarnings("unused")
+    public void onMessageReceivedExternal(RemoteMessage remoteMessage, Context context) {
+        // Future-Pat, the RemoteMessage.toIntent method doesn't seem to exist all the time
+        // so don't rely on it.
+        final Intent intent = new Intent().putExtras(welcomeToTheBundle(remoteMessage.getData()));
+        this.postEvent(context, intent);
+    }
+
     //// FirebaseMessagingService
 
     @Override
@@ -81,13 +109,9 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
     public void onMessageReceived(RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
 
-        // Future-Pat, the RemoteMessage.toIntent method doesn't seem to exist all the time
-        // so don't rely on it.
-        final Intent intent = new Intent().putExtras(welcomeToTheBundle(remoteMessage.getData()));
-
         // Future-Pat, this method will only be invoked via an incoming message,
         // in which case getApplicationContext() will work
-        this.postEvent(getApplicationContext(), intent);
+        this.onMessageReceivedExternal(remoteMessage, getApplicationContext());
     }
 
     //// IPushProvider
