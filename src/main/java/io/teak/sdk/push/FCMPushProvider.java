@@ -17,13 +17,14 @@ import io.teak.sdk.Helpers;
 import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
+import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.event.PushRegistrationEvent;
 import java.util.Map;
 
-public class FCMPushProvider extends FirebaseMessagingService implements IPushProvider {
-    public static FCMPushProvider Instance = null;
+public class FCMPushProvider extends FirebaseMessagingService implements IPushProvider, Unobfuscable {
+    private static FCMPushProvider Instance = null;
 
     private Context context;
     private FirebaseApp firebaseApp;
@@ -83,11 +84,11 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
      * @param context
      */
     @SuppressWarnings("unused")
-    public void onMessageReceivedExternal(RemoteMessage remoteMessage, Context context) {
+    public static void onMessageReceivedExternal(RemoteMessage remoteMessage, Context context) {
         // Future-Pat, the RemoteMessage.toIntent method doesn't seem to exist all the time
         // so don't rely on it.
         final Intent intent = new Intent().putExtras(welcomeToTheBundle(remoteMessage.getData()));
-        this.postEvent(context, intent);
+        Instance.postEvent(context, intent);
     }
 
     //// FirebaseMessagingService
