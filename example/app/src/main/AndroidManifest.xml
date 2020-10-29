@@ -24,12 +24,16 @@
             </intent-filter>
         </service>
 
-        <activity android:name=".MainActivity" android:launchMode="singleTask">
-            <meta-data android:name="io.teak.sdk.initialize" android:value="true"/>
+        <activity android:name=".LauncherActivity" android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+
+        <activity android:name=".MainActivity" android:launchMode="singleTask">
+            <meta-data android:name="io.teak.sdk.initialize" android:value="true"/>
+
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
