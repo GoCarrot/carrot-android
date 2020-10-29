@@ -12,15 +12,9 @@ public class LauncherActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         final Intent launchMainActivity = new Intent(this, MainActivity.class);
-        this.startActivity(launchMainActivity);
-        this.finish();
-    }
-
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        final Intent launchMainActivity = new Intent(this, MainActivity.class);
-        launchMainActivity.setData(intent.getData());
+        if (getIntent() != null) {
+            launchMainActivity.putExtras(getIntent());
+        }
         this.startActivity(launchMainActivity);
         this.finish();
     }
