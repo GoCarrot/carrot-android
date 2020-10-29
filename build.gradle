@@ -211,6 +211,14 @@ android {
             proguardFiles 'proguard.txt', 'library.pro'
         }
     }
+
+    sourceSets {
+        main {
+            java {
+                exclude 'io/teak/sdk/support/v4*'
+            }
+        }
+    }
 }
 
 dependencies {
