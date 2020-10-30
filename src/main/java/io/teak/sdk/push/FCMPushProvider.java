@@ -29,6 +29,28 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
     private Context context;
     private FirebaseApp firebaseApp;
 
+    private static FCMPushProvider getInstance(@NonNull final Context context) {
+        if (Instance == null) {
+            Instance = new FCMPushProvider();
+            Instance.context = context;
+        } else {
+            Instance.context = context;
+
+            // Future-Pat: This exception is ignored because getApplicationContext() is not available unless
+            // this is the active receiver, and when receivers are chained, then this will throw an exception.
+            try {
+                if (Instance.getApplicationContext() != Instance.context) {
+                    Teak.log.e("google.fcm.initialize.context_mismatch",
+                            Helpers.mm.h("getApplicationContext", Instance.getApplicationContext(),
+                                    "Instance.context", Instance.context));
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        return FCMPushProvider.Instance;
+    }
+
     public FCMPushProvider() {
         super();
         Instance = this;
@@ -39,20 +61,11 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
 
         if (Instance == null) {
             Teak.log.i("google.fcm.initialize", "Creating new FCMPushProvider instance.");
-            Instance = new FCMPushProvider();
-            Instance.context = context;
         } else {
             Teak.log.i("google.fcm.initialize", "FCMPushProvider already created.");
-
-            Instance.context = context;
-            if (Instance.getApplicationContext() != Instance.context) {
-                Teak.log.e("google.fcm.initialize.context_mismatch",
-                    Helpers.mm.h("getApplicationContext", Instance.getApplicationContext(),
-                        "Instance.context", Instance.context));
-            }
         }
 
-        return Instance;
+        return FCMPushProvider.getInstance(context);
     }
 
     public void postEvent(final Context context, final Intent intent) {
@@ -88,7 +101,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
         // Future-Pat, the RemoteMessage.toIntent method doesn't seem to exist all the time
         // so don't rely on it.
         final Intent intent = new Intent().putExtras(welcomeToTheBundle(remoteMessage.getData()));
-        Instance.postEvent(context, intent);
+        FCMPushProvider.getInstance(context).postEvent(context, intent);
     }
 
     //// FirebaseMessagingService
@@ -112,7 +125,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
 
         // Future-Pat, this method will only be invoked via an incoming message,
         // in which case getApplicationContext() will work
-        this.onMessageReceivedExternal(remoteMessage, getApplicationContext());
+        FCMPushProvider.onMessageReceivedExternal(remoteMessage, getApplicationContext());
     }
 
     //// IPushProvider
