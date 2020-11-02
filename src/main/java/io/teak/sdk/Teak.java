@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -108,8 +110,16 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     public static void onCreate(@NonNull Activity activity, @Nullable IObjectFactory objectFactory) {
         // Provide a way to wait for debugger to connect via a data param
         final Intent intent = activity.getIntent();
+
         if (intent != null && intent.getData() != null) {
-            if ("teakdebug".equalsIgnoreCase(intent.getData().getScheme())) {
+            final Uri intentData = intent.getData();
+
+            if (intentData.getBooleanQueryParameter("teak_log", false)) {
+                Teak.forceDebug = true;
+            }
+
+            if (intentData.getBooleanQueryParameter("teak_debug", false) &&
+                (activity.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
                 android.os.Debug.waitForDebugger();
             }
         }
