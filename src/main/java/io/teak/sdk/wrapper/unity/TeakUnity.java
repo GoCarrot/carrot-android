@@ -3,16 +3,19 @@ package io.teak.sdk.wrapper.unity;
 import androidx.annotation.NonNull;
 import io.teak.sdk.Teak;
 import io.teak.sdk.Unobfuscable;
+import io.teak.sdk.core.Executors;
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.raven.Raven;
 import io.teak.sdk.wrapper.ISDKWrapper;
 import io.teak.sdk.wrapper.TeakInterface;
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 
 public class TeakUnity implements Unobfuscable {
     private static Method unitySendMessage;
     private static TeakInterface teakInterface;
+    private static ExecutorService unitySendMessageExecutor = Executors.newSingleThreadExecutor();
 
     static {
         try {
@@ -61,14 +64,19 @@ public class TeakUnity implements Unobfuscable {
         return TeakUnity.unitySendMessage != null;
     }
 
-    private static void unitySendMessage(String method, String message) {
-        if (TeakUnity.isAvailable()) {
-            try {
-                TeakUnity.unitySendMessage.invoke(null, "TeakGameObject", method, message);
-            } catch (Exception e) {
-                Teak.log.exception(e);
+    private static void unitySendMessage(final String method, final String message) {
+        TeakUnity.unitySendMessageExecutor.submit(new Runnable() {
+            @Override
+            public void run() {
+                if (TeakUnity.isAvailable()) {
+                    try {
+                        TeakUnity.unitySendMessage.invoke(null, "TeakGameObject", method, message);
+                    } catch (Exception e) {
+                        Teak.log.exception(e);
+                    }
+                }
             }
-        }
+        });
     }
 
     @SuppressWarnings("unused")
