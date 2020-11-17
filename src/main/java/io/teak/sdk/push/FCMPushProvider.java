@@ -93,7 +93,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
      * Note: Teak takes no action if the notification was not sent by Teak.
      *
      * @param remoteMessage The notification received by the active {#FirebaseMessagingService}
-     * @param context
+     * @param context Application context
      */
     @SuppressWarnings("unused")
     public static void onMessageReceivedExternal(RemoteMessage remoteMessage, Context context) {
@@ -179,15 +179,16 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
                     }
                 } catch (Exception e) {
                     Teak.log.exception(e);
+                    IntegrationChecker.addErrorToReport("google.fcm.initialization", e.getMessage());
                 }
             }
         }
 
         if (this.firebaseApp == null) {
             Teak.log.e("google.fcm.null_app", "Could not get or create Firebase App. Push notifications are unlikely to work.");
+            IntegrationChecker.addErrorToReport("google.fcm.null_app", "Could not get or create Firebase App. Push notifications are unlikely to work.");
         } else {
             try {
-
                 final Task<String> instanceIdTask = FirebaseMessaging.getInstance().getToken();
                 instanceIdTask.addOnSuccessListener(new OnSuccessListener<String>() {
                     @Override

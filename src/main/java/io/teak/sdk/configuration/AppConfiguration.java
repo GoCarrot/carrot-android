@@ -199,6 +199,18 @@ public class AppConfiguration {
             this.ignoreDefaultFirebaseConfiguration = ignoreDefaultFirebaseConfiguration == null ? false : ignoreDefaultFirebaseConfiguration;
         }
 
+        // Do some simple sanity checks on Firebase configuration
+        {
+            // GCM Sender Id should be contained within the Firebase App Id
+            if (this.firebaseAppId != null && this.gcmSenderId != null) {
+                final String[] parts = this.firebaseAppId.split(":");
+                if (!parts[1].equalsIgnoreCase(this.gcmSenderId)) {
+                    android.util.Log.e(IntegrationChecker.LOG_TAG, "Firebase App Id (" + this.firebaseAppId + ") mismatched with GCM Sender Id (" + this.gcmSenderId + ")");
+                    IntegrationChecker.addErrorToReport("app_configuration.gcm.mismatch", "Firebase App Id (" + this.firebaseAppId + ") mismatched with GCM Sender Id (" + this.gcmSenderId + ")");
+                }
+            }
+        }
+
         // Job Id
         {
             String tempJobId = androidResources.getTeakStringResource(TEAK_JOB_ID_RESOURCE);
