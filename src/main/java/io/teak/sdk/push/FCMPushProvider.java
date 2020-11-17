@@ -9,8 +9,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 import io.teak.sdk.Helpers;
@@ -188,14 +187,11 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
             Teak.log.e("google.fcm.null_app", "Could not get or create Firebase App. Push notifications are unlikely to work.");
         } else {
             try {
-                final Task<InstanceIdResult> instanceIdTask = FirebaseInstanceId
-                                                                  .getInstance(this.firebaseApp)
-                                                                  .getInstanceId();
 
-                instanceIdTask.addOnSuccessListener(new OnSuccessListener<InstanceIdResult>() {
+                final Task<String> instanceIdTask = FirebaseMessaging.getInstance().getToken();
+                instanceIdTask.addOnSuccessListener(new OnSuccessListener<String>() {
                     @Override
-                    public void onSuccess(InstanceIdResult instanceIdResult) {
-                        final String registrationId = instanceIdResult.getToken();
+                    public void onSuccess(String registrationId) {
                         Teak.log.i("google.fcm.registered", Helpers.mm.h("fcmId", registrationId));
                         if (Teak.isEnabled()) {
                             TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", registrationId, FCMPushProvider.this.firebaseApp.getOptions().getGcmSenderId()));

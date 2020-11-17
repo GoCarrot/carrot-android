@@ -234,7 +234,7 @@ dependencies {
     implementation 'com.google.android.gms:play-services-base:17.1.0'
     implementation 'com.google.android.gms:play-services-basement:17.1.0'
 
-    implementation 'com.google.firebase:firebase-messaging:19.0.1'
+    implementation 'com.google.firebase:firebase-messaging:21.0.0'
     implementation 'com.firebase:firebase-jobdispatcher:0.8.5'
 
     // Amazon, Air, Unity compile-time-only dependencies
