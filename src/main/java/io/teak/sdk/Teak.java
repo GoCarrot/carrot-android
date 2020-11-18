@@ -11,6 +11,7 @@ import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.core.Executors;
+import io.teak.sdk.core.InstrumentableReentrantLock;
 import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.DeepLinksReadyEvent;
 import io.teak.sdk.event.PushNotificationEvent;
@@ -121,6 +122,10 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             if (intentData.getBooleanQueryParameter("teak_debug", false) &&
                 (activity.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
                 android.os.Debug.waitForDebugger();
+            }
+
+            if (intentData.getBooleanQueryParameter("teak_mutex_report", false)) {
+                InstrumentableReentrantLock.interruptLongLocksAndReport = true;
             }
         }
 
