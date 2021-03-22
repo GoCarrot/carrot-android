@@ -128,10 +128,8 @@ public class FacebookAccessTokenBroadcast {
                     }
                 } break;
 
-                // Facebook SDK versions 4.x, 5.x, and 6.x use the same methods
-                case 4:
-                case 5:
-                case 6: {
+                // Facebook SDK versions 4.x - 9.x use the same methods
+                default: {
                     Class<?> com_facebook_AccessToken;
                     try {
                         com_facebook_AccessToken = Class.forName(FACEBOOK_4_x_ACCESS_TOKEN_CLASS_NAME);
@@ -158,9 +156,6 @@ public class FacebookAccessTokenBroadcast {
 
                         this.broadcastManager.registerReceiver(this.broadcastReceiver, filter);
                     }
-                } break;
-                default: {
-                    Teak.log.e("facebook", "Don't know how to use Facebook SDK version " + versionInts[0]);
                 } break;
             }
         }
