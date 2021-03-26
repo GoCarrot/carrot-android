@@ -40,8 +40,8 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
             try {
                 if (Instance.getApplicationContext() != Instance.context) {
                     Teak.log.e("google.fcm.initialize.context_mismatch",
-                            Helpers.mm.h("getApplicationContext", Instance.getApplicationContext(),
-                                    "Instance.context", Instance.context));
+                        Helpers.mm.h("getApplicationContext", Instance.getApplicationContext(),
+                            "Instance.context", Instance.context));
                 }
             } catch (Exception ignored) {
             }
@@ -83,7 +83,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
      */
     @SuppressWarnings("unused")
     public static boolean isTeakNotification(RemoteMessage remoteMessage) {
-        final Map<String, String>  data = remoteMessage.getData();
+        final Map<String, String> data = remoteMessage.getData();
         return data != null && data.containsKey("teakNotifId");
     }
 

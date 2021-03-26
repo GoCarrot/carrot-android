@@ -137,7 +137,7 @@ public class DefaultObjectFactory implements IObjectFactory {
 
         try {
             Class.forName("android.support.v4.app.NotificationManagerCompat");
-//            return new io.teak.sdk.support.v4.NotificationManager(context);
+            //            return new io.teak.sdk.support.v4.NotificationManager(context);
         } catch (Exception ignored) {
         }
 
@@ -169,7 +169,7 @@ public class DefaultObjectFactory implements IObjectFactory {
 
         try {
             Class.forName("android.support.v4.app.NotificationManagerCompat");
-//            return new io.teak.sdk.support.v4.NotificationBuilder(context, notificationChannelId);
+            //            return new io.teak.sdk.support.v4.NotificationBuilder(context, notificationChannelId);
         } catch (Exception ignored) {
         }
 

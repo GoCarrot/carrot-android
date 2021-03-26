@@ -76,12 +76,10 @@ public class DeviceConfiguration {
                     case AdvertisingInfoEvent.Type: {
                         advertisingId = ((AdvertisingInfoEvent) event).advertisingId;
                         limitAdTracking = ((AdvertisingInfoEvent) event).limitAdTracking;
-                    }
-                    break;
+                    } break;
                     case PushRegistrationEvent.Registered: {
                         pushRegistration = ((PushRegistrationEvent) event).registration;
-                    }
-                    break;
+                    } break;
                 }
             }
         });
