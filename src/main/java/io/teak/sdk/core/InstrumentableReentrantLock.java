@@ -11,6 +11,7 @@ public class InstrumentableReentrantLock extends ReentrantLock {
     @Override
     public void lock() {
         if (interruptLongLocksAndReport) {
+            String lockRequestTrace = "", lockHoldTrace = "";
             try {
                 Thread lockOwner = this.getOwner();
                 if (lockOwner != null && lockOwner != Thread.currentThread()) {
@@ -22,7 +23,8 @@ public class InstrumentableReentrantLock extends ReentrantLock {
                         for (StackTraceElement element : trimmedTrace) {
                             backTrace.append("\n\t").append(element.toString());
                         }
-                        android.util.Log.v("Teak.Instrumentation", backTrace.toString());
+                        lockRequestTrace = backTrace.toString();
+                        android.util.Log.v("Teak.Instrumentation", lockRequestTrace);
                     }
 
                     {
@@ -33,7 +35,8 @@ public class InstrumentableReentrantLock extends ReentrantLock {
                         for (StackTraceElement element : trimmedTrace) {
                             backTrace.append("\n\t").append(element.toString());
                         }
-                        android.util.Log.v("Teak.Instrumentation", backTrace.toString());
+                        lockHoldTrace = backTrace.toString();
+                        android.util.Log.v("Teak.Instrumentation", lockHoldTrace);
                     }
                 }
                 if (!this.tryLock(interruptTimeoutMS, TimeUnit.MILLISECONDS)) {
@@ -42,6 +45,8 @@ public class InstrumentableReentrantLock extends ReentrantLock {
             } catch (Exception e) {
                 String debugMessage = "Waited longer than " + interruptTimeoutMS + "ms to acquire lock.";
                 android.util.Log.e("Teak.Instrumentaiton", debugMessage, e);
+                android.util.Log.e("Teak.Instrumentaiton", lockRequestTrace, e);
+                android.util.Log.e("Teak.Instrumentaiton", lockHoldTrace, e);
                 throw new RuntimeException(debugMessage);
             }
         } else {

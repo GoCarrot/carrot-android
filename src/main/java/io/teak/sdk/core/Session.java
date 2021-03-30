@@ -179,13 +179,13 @@ public class Session {
     }
 
     private boolean isCurrentSession() {
-        this.stateLock.lock();
         Session.currentSessionLock.lock();
+        this.stateLock.lock();
         try {
             return (Session.currentSession == this);
         } finally {
-            Session.currentSessionLock.unlock();
             this.stateLock.unlock();
+            Session.currentSessionLock.unlock();
         }
     }
 
@@ -627,7 +627,7 @@ public class Session {
         public void onNewEvent(@NonNull TeakEvent event) {
             switch (event.eventType) {
                 case LogoutEvent.Type:
-                    logout();
+                    logout(false);
                     break;
                 case UserIdEvent.Type:
                     final UserIdEvent userIdEvent = (UserIdEvent) event;
@@ -684,7 +684,7 @@ public class Session {
                 Session.pendingEmail = email;
             } else {
                 if (currentSession.userId != null && !currentSession.userId.equals(userId)) {
-                    Session.logout();
+                    Session.logout(true);
                 }
 
                 currentSession.stateLock.lock();
@@ -709,7 +709,7 @@ public class Session {
         }
     }
 
-    private static void logout() {
+    private static void logout(boolean copyCurrentSession) {
         currentSessionLock.lock();
         try {
             final Session _lockedSession = currentSession;
@@ -718,7 +718,7 @@ public class Session {
                 // Do *not* copy the launch attribution. Prevent the server from
                 // double-counting attributions, and prevent the client from
                 // double-processing deep links and rewards.
-                Session newSession = new Session(currentSession, null);
+                Session newSession = new Session(copyCurrentSession ? currentSession : null, null);
 
                 currentSession.setState(State.Expiring);
                 currentSession.setState(State.Expired);

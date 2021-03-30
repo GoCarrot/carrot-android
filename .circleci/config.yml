@@ -111,6 +111,18 @@ jobs:
 
 workflows:
   version: 2
+
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - develop
+    jobs:
+      - build
+
   un-tagged-build:
     jobs:
       - build:
@@ -123,6 +135,7 @@ workflows:
           filters:
             tags:
               ignore: /.*/
+
   tagged-build:
     jobs:
       - build:

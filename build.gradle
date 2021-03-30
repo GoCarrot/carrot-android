@@ -94,14 +94,6 @@ tasks.whenTaskAdded { task ->
 }
 
 android.libraryVariants.all { variant ->
-    // Javadoc task
-    task("generate${variant.name.capitalize()}Javadoc", type: Javadoc) {
-        description "Generates Javadoc for $variant.name."
-        ext.androidJar = "${android.sdkDirectory}/platforms/${android.compileSdkVersion}/android.jar"
-        doFirst { classpath = files(variant.getJavaCompileProvider.classpath.files) + files(ext.androidJar) }
-        exclude '**/BuildConfig.java', '**/R.java'
-    }
-
     // Jar task
     // https://docs.gradle.org/current/dsl/org.gradle.api.tasks.bundling.Jar.html
     // ${android.defaultConfig.versionName}
@@ -144,6 +136,44 @@ android.libraryVariants.all { variant ->
         }
         from fileTree(dir: "src/main", include: 'res/**')
     })
+}
+
+task generateApiDoc() {
+    group "reporting"
+    description "Generates Javadoc."
+}
+
+android.libraryVariants.all { variant ->
+    // Only consider release 
+    if (variant.buildType.name == "release") {
+        def task = project.tasks.create("generate${variant.name.capitalize()}Javadoc", Javadoc) {
+            group "ApiDoc"
+            description "Generates Javadoc for $variant.name."
+
+            destinationDir = file("docs/javadoc/javadoc") // This is intended duplication
+
+            // Source files from the variant
+            source = project.android.sourceSets.main.java.srcDirs
+
+            // Classpath from the variant + android.jar
+            classpath = variant.javaCompiler.classpath + files(project.android.getBootClasspath()) + files("$buildDir/intermediates/classes/release")
+
+            // Include only public facing API classes
+            include "**/Teak.java"
+            include "**/TeakNotification.java"
+
+            options.windowTitle = "Teak Android SDK"
+            options.memberLevel = JavadocMemberLevel.PUBLIC
+            options.linkSource = false
+            options.links("http://docs.oracle.com/javase/7/docs/api/")
+            options.links("http://d.android.com/reference")
+
+            failOnError false
+        }
+
+        task.dependsOn assemble
+        generateApiDoc.dependsOn task
+    }
 }
 
 def getVersionName = { ->
@@ -196,7 +226,7 @@ dependencies {
     implementation 'com.google.android.gms:play-services-base:17.1.0'
     implementation 'com.google.android.gms:play-services-basement:17.1.0'
 
-    implementation 'com.google.firebase:firebase-messaging:19.0.1'
+    implementation 'com.google.firebase:firebase-messaging:21.0.0'
     implementation 'com.firebase:firebase-jobdispatcher:0.8.5'
 
     // Amazon, Air, Unity compile-time-only dependencies

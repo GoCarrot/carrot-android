@@ -70,6 +70,8 @@ public class UserProfile extends Request {
             this.payload.put("ms_since_first_event", msElapsed);
 
             super.run();
+
+            this.firstSetTime = 0;
         }
     }
 

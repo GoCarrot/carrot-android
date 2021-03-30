@@ -9,24 +9,46 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
+import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.event.PushRegistrationEvent;
 import java.util.Map;
 
-public class FCMPushProvider extends FirebaseMessagingService implements IPushProvider {
+public class FCMPushProvider extends FirebaseMessagingService implements IPushProvider, Unobfuscable {
     private static FCMPushProvider Instance = null;
 
     private Context context;
     private FirebaseApp firebaseApp;
+
+    private static FCMPushProvider getInstance(@NonNull final Context context) {
+        if (Instance == null) {
+            Instance = new FCMPushProvider();
+            Instance.context = context;
+        } else {
+            Instance.context = context;
+
+            // Future-Pat: This exception is ignored because getApplicationContext() is not available unless
+            // this is the active receiver, and when receivers are chained, then this will throw an exception.
+            try {
+                if (Instance.getApplicationContext() != Instance.context) {
+                    Teak.log.e("google.fcm.initialize.context_mismatch",
+                        Helpers.mm.h("getApplicationContext", Instance.getApplicationContext(),
+                            "Instance.context", Instance.context));
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        return FCMPushProvider.Instance;
+    }
 
     public FCMPushProvider() {
         super();
@@ -38,20 +60,11 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
 
         if (Instance == null) {
             Teak.log.i("google.fcm.initialize", "Creating new FCMPushProvider instance.");
-            Instance = new FCMPushProvider();
-            Instance.context = context;
         } else {
             Teak.log.i("google.fcm.initialize", "FCMPushProvider already created.");
-
-            Instance.context = context;
-            if (Instance.getApplicationContext() != Instance.context) {
-                Teak.log.e("google.fcm.initialize.context_mismatch",
-                    Helpers.mm.h("getApplicationContext", Instance.getApplicationContext(),
-                        "Instance.context", Instance.context));
-            }
         }
 
-        return Instance;
+        return FCMPushProvider.getInstance(context);
     }
 
     public void postEvent(final Context context, final Intent intent) {
@@ -60,6 +73,34 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
             Teak.log.e("google.fcm.null_teak_core", "TeakCore.getWithoutThrow returned null.");
         }
         TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Received, context, intent));
+    }
+
+    /**
+     * Determine if the provided notification was sent by Teak.
+     *
+     * @param remoteMessage The notification received by the active {#FirebaseMessagingService}
+     * @return true if Teak sent this notification.
+     */
+    @SuppressWarnings("unused")
+    public static boolean isTeakNotification(RemoteMessage remoteMessage) {
+        final Map<String, String> data = remoteMessage.getData();
+        return data != null && data.containsKey("teakNotifId");
+    }
+
+    /**
+     * Used to have Teak process a notification received by another {#FirebaseMessagingService}.
+     *
+     * Note: Teak takes no action if the notification was not sent by Teak.
+     *
+     * @param remoteMessage The notification received by the active {#FirebaseMessagingService}
+     * @param context Application context
+     */
+    @SuppressWarnings("unused")
+    public static void onMessageReceivedExternal(RemoteMessage remoteMessage, Context context) {
+        // Future-Pat, the RemoteMessage.toIntent method doesn't seem to exist all the time
+        // so don't rely on it.
+        final Intent intent = new Intent().putExtras(welcomeToTheBundle(remoteMessage.getData()));
+        FCMPushProvider.getInstance(context).postEvent(context, intent);
     }
 
     //// FirebaseMessagingService
@@ -81,13 +122,9 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
     public void onMessageReceived(RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
 
-        // Future-Pat, the RemoteMessage.toIntent method doesn't seem to exist all the time
-        // so don't rely on it.
-        final Intent intent = new Intent().putExtras(welcomeToTheBundle(remoteMessage.getData()));
-
         // Future-Pat, this method will only be invoked via an incoming message,
         // in which case getApplicationContext() will work
-        this.postEvent(getApplicationContext(), intent);
+        FCMPushProvider.onMessageReceivedExternal(remoteMessage, getApplicationContext());
     }
 
     //// IPushProvider
@@ -142,22 +179,20 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
                     }
                 } catch (Exception e) {
                     Teak.log.exception(e);
+                    IntegrationChecker.addErrorToReport("google.fcm.initialization", e.getMessage());
                 }
             }
         }
 
         if (this.firebaseApp == null) {
             Teak.log.e("google.fcm.null_app", "Could not get or create Firebase App. Push notifications are unlikely to work.");
+            IntegrationChecker.addErrorToReport("google.fcm.null_app", "Could not get or create Firebase App. Push notifications are unlikely to work.");
         } else {
             try {
-                final Task<InstanceIdResult> instanceIdTask = FirebaseInstanceId
-                                                                  .getInstance(this.firebaseApp)
-                                                                  .getInstanceId();
-
-                instanceIdTask.addOnSuccessListener(new OnSuccessListener<InstanceIdResult>() {
+                final Task<String> instanceIdTask = FirebaseMessaging.getInstance().getToken();
+                instanceIdTask.addOnSuccessListener(new OnSuccessListener<String>() {
                     @Override
-                    public void onSuccess(InstanceIdResult instanceIdResult) {
-                        final String registrationId = instanceIdResult.getToken();
+                    public void onSuccess(String registrationId) {
                         Teak.log.i("google.fcm.registered", Helpers.mm.h("fcmId", registrationId));
                         if (Teak.isEnabled()) {
                             TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", registrationId, FCMPushProvider.this.firebaseApp.getOptions().getGcmSenderId()));

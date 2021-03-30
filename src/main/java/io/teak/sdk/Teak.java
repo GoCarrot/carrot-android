@@ -4,11 +4,14 @@ import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.core.Executors;
+import io.teak.sdk.core.InstrumentableReentrantLock;
 import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.DeepLinksReadyEvent;
 import io.teak.sdk.event.PushNotificationEvent;
@@ -88,7 +91,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Initialize Teak and tell it to listen to the lifecycle events of {@link Activity}.
-     * <p/>
+     * <br>
      * <p>Call this function from the {@link Activity#onCreate} function of your <code>Activity</code>
      * <b>before</b> the call to <code>super.onCreate()</code></p>
      *
@@ -108,9 +111,21 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     public static void onCreate(@NonNull Activity activity, @Nullable IObjectFactory objectFactory) {
         // Provide a way to wait for debugger to connect via a data param
         final Intent intent = activity.getIntent();
+
         if (intent != null && intent.getData() != null) {
-            if ("teakdebug".equalsIgnoreCase(intent.getData().getScheme())) {
+            final Uri intentData = intent.getData();
+
+            if (intentData.getBooleanQueryParameter("teak_log", false)) {
+                Teak.forceDebug = true;
+            }
+
+            if (intentData.getBooleanQueryParameter("teak_debug", false) &&
+                (activity.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
                 android.os.Debug.waitForDebugger();
+            }
+
+            if (intentData.getBooleanQueryParameter("teak_mutex_report", false)) {
+                InstrumentableReentrantLock.interruptLongLocksAndReport = true;
             }
         }
 
@@ -157,7 +172,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Tell Teak about the result of an {@link Activity} started by your app.
-     * <p/>
+     * <br>
      * <p>This allows Teak to automatically get the results of In-App Purchase events.</p>
      *
      * @param requestCode The <code>requestCode</code> parameter received from {@link Activity#onActivityResult}
@@ -186,7 +201,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Tell Teak how it should identify the current user.
-     * <p/>
+     * <br>
      * <p>This should be the same way you identify the user in your backend.</p>
      *
      * @param userIdentifier An identifier which is unique for the current user.
@@ -198,7 +213,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Tell Teak how it should identify the current user.
-     * <p/>
+     * <br>
      * <p>This should be the same way you identify the user in your backend.</p>
      *
      * @param userIdentifier An identifier which is unique for the current user.
@@ -212,7 +227,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     /**
      * Value provided to {@link #identifyUser(String, String[])} to opt out of
      * collecting an IDFA for this specific user.
-     * <p/>
+     * <br>
      * If you prevent Teak from collecting the Identifier For Advertisers (IDFA), Teak will no longer be able to add this user to Facebook Ad Audiences.
      */
     @SuppressWarnings("unused")
@@ -221,7 +236,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     /**
      * Value provided to {@link #identifyUser(String, String[])} to opt out of
      * collecting a Facebook Access Token for this specific user.
-     * <p/>
+     * <br>
      * If you prevent Teak from collecting the Facebook Access Token, Teak will no longer be able to correlate this user across multiple devices.
      */
     @SuppressWarnings("unused")
@@ -230,7 +245,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     /**
      * Value provided to {@link #identifyUser(String, String[])} to opt out of
      * collecting a Push Key for this specific user.
-     * <p/>
+     * <br>
      * If you prevent Teak from collecting the Push Key, Teak will no longer be able to send Local Notifications or Push Notifications for this user.
      */
     @SuppressWarnings("unused")
@@ -238,7 +253,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Tell Teak how it should identify the current user, with data collection opt-out.
-     * <p/>
+     * <br>
      * <p>This should be the same way you identify the user in your backend.</p>
      *
      * @param userIdentifier An identifier which is unique for the current user.
@@ -252,7 +267,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Tell Teak how it should identify the current user, with data collection opt-out and email.
-     * <p/>
+     * <br>
      * <p>This should be the same way you identify the user in your backend.</p>
      *
      * @param userIdentifier An identifier which is unique for the current user.
@@ -536,7 +551,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Intent action used by Teak to notify you that the app was launched from a notification.
-     * <p/>
+     * <br>
      * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
      * <pre>
      * {@code
@@ -551,7 +566,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Intent action used by Teak to notify you that the a reward claim attempt has occured.
-     * <p/>
+     * <br>
      * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
      * <pre>
      * {@code
@@ -567,7 +582,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     /**
      * Intent action used by Teak to notify you that a notification was received while the app is
      * in the foreground.
-     * <p/>
+     * <br>
      * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
      * <pre>
      * {@code
@@ -582,7 +597,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Intent action used by Teak to notify you that "additional data" is available for the user.
-     * <p/>
+     * <br>
      * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
      * <pre>
      * {@code
@@ -596,7 +611,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Intent action used by Teak to notify you that the app was launched from a link created by the Teak dashboard.
-     * <p/>
+     * <br>
      * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
      * <pre>
      * {@code
@@ -619,7 +634,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Listen for Teak SDK log events.
-     *<p/>
+     * <br>
      * @param logListener A {@link LogListener} that will be called each time Teak would log an internal SDK event.
      */
     @SuppressWarnings("unused")
@@ -718,7 +733,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Indicate that your app is ready for deep links.
-     * <p/>
+     * <br>
      * Deep links will not be processed sooner than the earliest of:
      * - {@link #identifyUser(String, String[])} is called
      * - This method is called
@@ -744,7 +759,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Block until deep links are ready for processing.
-     * <p/>
+     * <br>
      * For internal use.
      * @throws ExecutionException
      * @throws InterruptedException
