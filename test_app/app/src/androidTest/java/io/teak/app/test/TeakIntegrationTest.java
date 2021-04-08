@@ -32,7 +32,6 @@ import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.configuration.AppConfiguration;
-import io.teak.sdk.core.ITeakCore;
 import io.teak.sdk.core.InstrumentableReentrantLock;
 import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.LifecycleEvent;

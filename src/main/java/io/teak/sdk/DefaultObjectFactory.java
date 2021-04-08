@@ -5,8 +5,8 @@ import android.content.pm.PackageManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.amazon.device.messaging.ADM;
-import io.teak.sdk.core.ITeakCore;
 import io.teak.sdk.core.TeakCore;
+
 import io.teak.sdk.io.DefaultAndroidDeviceInfo;
 import io.teak.sdk.io.DefaultAndroidNotification;
 import io.teak.sdk.io.DefaultAndroidResources;
@@ -27,7 +27,7 @@ public class DefaultObjectFactory implements IObjectFactory {
     private final IAndroidDeviceInfo androidDeviceInfo;
     private final IPushProvider pushProvider;
     private final IAndroidNotification androidNotification;
-    private final ITeakCore teakCore;
+    private final TeakCore teakCore;
 
     DefaultObjectFactory(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
         // Suggest AndroidX, require support-v4
@@ -85,12 +85,6 @@ public class DefaultObjectFactory implements IObjectFactory {
     @Override
     public IAndroidNotification getAndroidNotification() {
         return this.androidNotification;
-    }
-
-    @NonNull
-    @Override
-    public ITeakCore getTeakCore() {
-        return this.teakCore;
     }
 
     ///// Helpers

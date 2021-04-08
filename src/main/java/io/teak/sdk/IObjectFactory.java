@@ -2,7 +2,6 @@ package io.teak.sdk;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import io.teak.sdk.core.ITeakCore;
 import io.teak.sdk.io.IAndroidDeviceInfo;
 import io.teak.sdk.io.IAndroidNotification;
 import io.teak.sdk.io.IAndroidResources;
@@ -24,7 +23,4 @@ public interface IObjectFactory {
 
     @NonNull
     IAndroidNotification getAndroidNotification();
-
-    @NonNull
-    ITeakCore getTeakCore();
 }

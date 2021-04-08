@@ -40,7 +40,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 
-public class TeakCore implements ITeakCore {
+public class TeakCore {
     private static TeakCore Instance = null;
     public static TeakCore get(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
         if (Instance == null) {
@@ -306,7 +306,6 @@ public class TeakCore implements ITeakCore {
         }
     };
 
-    @Override
     public void registerLocalBroadcastReceiver(BroadcastReceiver broadcastReceiver, IntentFilter filter) {
         this.localBroadcastManager.registerReceiver(broadcastReceiver, filter);
     }

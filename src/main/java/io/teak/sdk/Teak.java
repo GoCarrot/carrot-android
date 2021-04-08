@@ -46,9 +46,9 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     public static final String SDKVersion = io.teak.sdk.BuildConfig.VERSION_NAME;
 
     /**
-     * Version of the Teak SDK, and Unity/Air SDK if applicable.
+     * Version of the Teak SDK, and Unity/Cocos2dx SDK if applicable.
      * <p>
-     * You must call {@link Teak#onCreate(Activity)} in order to get Unity/Air SDK version info.
+     * You must call {@link Teak#onCreate(Activity)} in order to get Unity/Cocos2dx SDK version info.
      */
     public static final Map<String, Object> Version;
 
@@ -146,7 +146,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         final AndroidResources androidResources = new AndroidResources(activity.getApplicationContext(), objectFactory.getAndroidResources());
         //noinspection ConstantConditions
         if (androidResources != null) {
-            // Add version info for Unity/Air
+            // Add version info for Unity/Cocos2dx
             String wrapperSDKName = androidResources.getStringResource("io_teak_wrapper_sdk_name");
             String wrapperSDKVersion = androidResources.getStringResource("io_teak_wrapper_sdk_version");
             if (wrapperSDKName != null && wrapperSDKVersion != null) {
@@ -194,9 +194,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     @Deprecated
     @SuppressWarnings("unused")
     public static void onNewIntent(Intent intent) {
-        if (!Teak.sdkMap.containsKey("adobeAir")) {
-            Teak.log.e("deprecation.onNewIntent", "Teak.onNewIntent is deprecated, call Activity.onNewIntent() instead.");
-        }
+        Teak.log.e("deprecation.onNewIntent", "Teak.onNewIntent is deprecated, call Activity.onNewIntent() instead.");
     }
 
     /**

@@ -22,10 +22,6 @@ public class TeakInterface implements Unobfuscable {
         filter.addAction(Teak.FOREGROUND_NOTIFICATION_INTENT);
         filter.addAction(Teak.ADDITIONAL_DATA_INTENT);
         filter.addAction(Teak.LAUNCHED_FROM_LINK_INTENT);
-
-        if (Teak.Instance != null) {
-            Teak.Instance.objectFactory.getTeakCore().registerLocalBroadcastReceiver(broadcastReceiver, filter);
-        }
     }
 
     @SuppressWarnings("FieldCanBeLocal")

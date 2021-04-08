@@ -358,7 +358,7 @@ public class TeakInstance implements Unobfuscable {
     private final int activityHashCode;
     private FacebookAccessTokenBroadcast facebookAccessTokenBroadcast;
 
-    // Needs to be public for Adobe Air Application workaround
+    // Needs to be public for TeakInitProvider
     @SuppressWarnings("WeakerAccess")
     public final Application.ActivityLifecycleCallbacks lifecycleCallbacks = new Application.ActivityLifecycleCallbacks() {
         @Override

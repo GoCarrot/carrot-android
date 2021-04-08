@@ -44,7 +44,6 @@ import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.configuration.AppConfiguration;
-import io.teak.sdk.core.ITeakCore;
 import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.PurchaseEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
@@ -275,7 +274,7 @@ public class Purchase {
 
                 @NonNull
                 @Override
-                public ITeakCore getTeakCore() {
+                public TeakCore getTeakCore() {
                     try {
                         return TeakCore.get(testRule.getActivity());
                     } catch (IntegrationChecker.MissingDependencyException e) {

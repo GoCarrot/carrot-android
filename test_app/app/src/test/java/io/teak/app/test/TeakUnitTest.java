@@ -11,7 +11,6 @@ import io.teak.sdk.IObjectFactory;
 import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.configuration.AppConfiguration;
-import io.teak.sdk.core.ITeakCore;
 import io.teak.sdk.core.InstrumentableReentrantLock;
 import io.teak.sdk.io.IAndroidDeviceInfo;
 import io.teak.sdk.io.IAndroidNotification;
