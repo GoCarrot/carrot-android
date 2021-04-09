@@ -27,6 +27,7 @@ import io.teak.sdk.event.PurchaseFailedEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.event.UserIdEvent;
+import io.teak.sdk.facebook.AccessTokenTracker;
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.push.PushState;
 import io.teak.sdk.raven.Raven;
@@ -45,6 +46,7 @@ public class TeakInstance implements Unobfuscable {
     private final Context context;
     public final FirebaseJobDispatcher dispatcher;
     private final TeakCore teakCore;
+    private AccessTokenTracker facebookAccessTokenTracker;
 
     private static final String PREFERENCE_FIRST_RUN = "io.teak.sdk.Preferences.FirstRun";
 
@@ -127,8 +129,9 @@ public class TeakInstance implements Unobfuscable {
             this.appStore = null;
         }
 
-        if (this.facebookAccessTokenBroadcast != null) {
-            this.facebookAccessTokenBroadcast.unregister();
+        if (this.facebookAccessTokenTracker != null) {
+            this.facebookAccessTokenTracker.stopTracking();
+            this.facebookAccessTokenTracker = null;
         }
 
         activity.getApplication().unregisterActivityLifecycleCallbacks(this.lifecycleCallbacks);
@@ -359,7 +362,6 @@ public class TeakInstance implements Unobfuscable {
     ///// Activity Lifecycle
 
     private final int activityHashCode;
-    private FacebookAccessTokenBroadcast facebookAccessTokenBroadcast;
 
     // Needs to be public for TeakInitProvider
     @SuppressWarnings("WeakerAccess")
@@ -377,8 +379,12 @@ public class TeakInstance implements Unobfuscable {
                     appStore.init(context);
                 }
 
-                // Facebook Access Token Broadcaster
-                facebookAccessTokenBroadcast = new FacebookAccessTokenBroadcast(context);
+                // Facebook Access Token Tracker
+                try {
+                    Class.forName("com.facebook.AccessTokenTracker");
+                    TeakInstance.this.facebookAccessTokenTracker = new AccessTokenTracker();
+                } catch (Exception ignored) {
+                }
 
                 Intent intent = activity.getIntent();
                 if (intent == null) {
@@ -445,6 +451,10 @@ public class TeakInstance implements Unobfuscable {
         public void onActivityDestroyed(Activity activity) {
             if (activity.hashCode() == activityHashCode && setState(State.Destroyed)) {
                 Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityDestroyed"));
+
+                if (TeakInstance.this.facebookAccessTokenTracker != null) {
+                    TeakInstance.this.facebookAccessTokenTracker.stopTracking();
+                }
             }
         }
 

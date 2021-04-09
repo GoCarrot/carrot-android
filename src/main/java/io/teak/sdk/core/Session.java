@@ -6,7 +6,6 @@ import android.net.Uri;
 import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import io.teak.sdk.FacebookAccessTokenBroadcast;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.Helpers.mm;
 import io.teak.sdk.Request;
@@ -419,7 +418,7 @@ public class Session {
 
                     if (teakConfiguration.dataCollectionConfiguration.enableFacebookAccessToken()) {
                         if (Session.this.facebookAccessToken == null) {
-                            Session.this.facebookAccessToken = FacebookAccessTokenBroadcast.getCurrentAccessToken();
+                            Session.this.facebookAccessToken = Helpers.getCurrentFacebookAccessToken();
                         }
 
                         if (Session.this.facebookAccessToken != null) {

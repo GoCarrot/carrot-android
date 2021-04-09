@@ -233,4 +233,5 @@ dependencies {
     compileOnly files('libs/amazon-device-messaging-1.1.0.jar')
     compileOnly files('libs/in-app-purchasing-2.0.76.jar')
     compileOnly files('libs/UnityClasses.jar')
+    compileOnly 'com.facebook.android:facebook-android-sdk:[5,6)'
 }

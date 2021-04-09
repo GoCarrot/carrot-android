@@ -13,6 +13,8 @@ import androidx.annotation.Nullable;
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONException;
 import io.teak.sdk.json.JSONObject;
+
+import java.lang.reflect.Method;
 import java.security.InvalidParameterException;
 import java.security.MessageDigest;
 import java.util.HashMap;
@@ -203,5 +205,23 @@ public class Helpers {
             }
         }
         return hexString.toString().toUpperCase();
+    }
+
+    public static String getCurrentFacebookAccessToken() {
+        try {
+            Class<?> com_facebook_AccessToken = Class.forName("com.facebook.AccessToken");
+            Method com_facebook_AccessToken_getCurrentAccessToken = com_facebook_AccessToken.getMethod("getCurrentAccessToken");
+            Method com_facebook_AccessToken_getToken = com_facebook_AccessToken.getMethod("getToken");
+
+            Object currentAccessToken = com_facebook_AccessToken_getCurrentAccessToken.invoke(null);
+            if (currentAccessToken != null) {
+                Object accessTokenString = com_facebook_AccessToken_getToken.invoke(currentAccessToken);
+                if (accessTokenString != null) {
+                    return accessTokenString.toString();
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
     }
 }
