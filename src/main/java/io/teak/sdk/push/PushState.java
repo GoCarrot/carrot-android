@@ -6,7 +6,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
 import androidx.annotation.NonNull;
-import io.teak.sdk.DefaultObjectFactory;
+import androidx.core.app.NotificationManagerCompat;
 import io.teak.sdk.NotificationBuilder;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
@@ -14,7 +14,6 @@ import io.teak.sdk.core.Executors;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONObject;
-import io.teak.sdk.support.INotificationManager;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -122,7 +121,7 @@ public class PushState {
     }
 
     private List<StateChainEntry> stateChain = new ArrayList<>();
-    private final INotificationManager notificationManager;
+    private final NotificationManagerCompat notificationManager;
     private final ExecutorService executionQueue = Executors.newSingleThreadExecutor();
 
     private static PushState Instance;
@@ -137,7 +136,7 @@ public class PushState {
     }
 
     private PushState(@NonNull Context context) {
-        this.notificationManager = DefaultObjectFactory.createNotificationManager(context);
+        this.notificationManager = NotificationManagerCompat.from(context);
 
         // Try and load serialized state chain
         final SharedPreferences preferences = context.getSharedPreferences(Teak.PREFERENCES_FILE, Context.MODE_PRIVATE);
@@ -221,10 +220,7 @@ public class PushState {
     }
 
     public int getNotificationStatus() {
-        if (this.notificationManager.hasNotificationsEnabled()) {
-            return this.notificationManager.areNotificationsEnabled() ? Teak.TEAK_NOTIFICATIONS_ENABLED : Teak.TEAK_NOTIFICATIONS_DISABLED;
-        }
-        return Teak.TEAK_NOTIFICATIONS_UNKNOWN;
+        return this.notificationManager.areNotificationsEnabled() ? Teak.TEAK_NOTIFICATIONS_ENABLED : Teak.TEAK_NOTIFICATIONS_DISABLED;
     }
 
     private StateChainEntry determineStateFromSystem(@NonNull Context context) {

@@ -18,7 +18,6 @@ import io.teak.sdk.push.FCMPushProvider;
 import io.teak.sdk.push.IPushProvider;
 import io.teak.sdk.store.IStore;
 import io.teak.sdk.support.ILocalBroadcastManager;
-import io.teak.sdk.support.INotificationManager;
 
 public class DefaultObjectFactory implements IObjectFactory {
     private final IAndroidResources androidResources;
@@ -116,22 +115,6 @@ public class DefaultObjectFactory implements IObjectFactory {
             return (IStore) clazz.newInstance();
         } catch (Exception e) {
             Teak.log.exception(e);
-        }
-
-        return null;
-    }
-
-    public static INotificationManager createNotificationManager(@NonNull Context context) {
-        try {
-            Class.forName("androidx.core.app.NotificationManagerCompat");
-            return new io.teak.sdk.support.androidx.NotificationManager(context);
-        } catch (Exception ignored) {
-        }
-
-        try {
-            Class.forName("android.support.v4.app.NotificationManagerCompat");
-            return new io.teak.sdk.support.v4.NotificationManager(context);
-        } catch (Exception ignored) {
         }
 
         return null;
