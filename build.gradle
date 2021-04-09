@@ -7,25 +7,10 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.3.2'
-        classpath 'com.getkeepsafe.dexcount:dexcount-gradle-plugin:0.8.6'
     }
 }
 
 apply plugin: 'com.android.library'
-apply plugin: 'com.getkeepsafe.dexcount' // Outputs to ${buildDir}/outputs/dexcount/${variant}
-
-dexcount {
-    format = "list"
-    includeClasses = false
-    includeClassCount = false
-    includeFieldCount = true
-    includeTotalMethodCount = false
-    orderByMethodCount = false
-    verbose = false
-    maxTreeDepth = Integer.MAX_VALUE
-    runOnEachPackage = true
-    maxMethodCount = 2300 // This includes android.* etc dependencies, so I guess just do it this way for now
-}
 
 import static groovy.io.FileType.FILES
 
@@ -91,51 +76,6 @@ tasks.whenTaskAdded { task ->
     if(task.name.contains("Test")) {
         task.enabled = false
     }
-}
-
-android.libraryVariants.all { variant ->
-    // Jar task
-    // https://docs.gradle.org/current/dsl/org.gradle.api.tasks.bundling.Jar.html
-    // ${android.defaultConfig.versionName}
-    def variantName = variant.name.capitalize()
-    def proguardTask = project.tasks.findByName(
-            "transformClassesAndResourcesWithProguardFor${variantName}")
-
-    def jarTask = task("jar${variant.name.capitalize()}", type: Jar) {
-        description "Bundles compiled .class files into a JAR file for $variant.name."
-        dependsOn (proguardTask == null ? variant.getJavaCompileProvider() : proguardTask)
-        from variant.javaCompileProvider.get().destinationDir
-        include 'io/teak/**'
-        archiveName "${archivesBaseName}-${variant.name}.jar"
-    }
-    artifacts.add('archives', jarTask)
-
-    // Zip jar + res/
-    artifacts.add('archives', task("zip${variant.name.capitalize()}", type: Zip) {
-        description "Bundles .jar file and res/**.xml into a ZIP file for $variant.name."
-        dependsOn jarTask
-        archiveName "${archivesBaseName}-${variant.name}.zip"
-
-        from(jarTask.archivePath) {
-            into('teak')
-            rename(Pattern.quote(jarTask.archivePath.name), "teak.jar")
-        }
-
-        // Use 'filter' to insert the proguard uuid into zip archive
-        def sentry_debug_meta_properties = "${project.rootDir.toPath()}/build/intermediates/assets" +
-                "/${variant.dirName}/sentry-debug-meta.properties"
-        def props = new Properties()
-        try {
-            file(sentry_debug_meta_properties).withInputStream { props.load(it) }
-            def uuid = props.getProperty("io.sentry.ProguardUuids")
-
-            filter { line ->
-                line.replaceAll("<string name=\"io_teak_sentry_proguard_uuid\"/>", "<string name=\"io_teak_sentry_proguard_uuid\">${uuid}</string>")
-            }
-        } catch (ignored) {
-        }
-        from fileTree(dir: "src/main", include: 'res/**')
-    })
 }
 
 task generateApiDoc() {

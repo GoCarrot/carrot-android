@@ -24,7 +24,6 @@ jobs:
           command: |
             echo 'sdk.dir=/opt/android/sdk' > local.properties
             echo 'sdk.dir=/opt/android/sdk' > test_app/local.properties
-            echo 'sdk.dir=/opt/android/sdk' > size_check/local.properties
       - run:
           name: Download Dependencies
           command: ./gradlew androidDependencies
@@ -41,9 +40,6 @@ jobs:
             - build/distributions/teak-release.zip
             - build/outputs/aar/teak-release.aar
       - sentry_persist_proguard
-      # - run:
-      #     name: Check the added size of SDK in bytes and methods
-      #     command: ./check_size
       - run:
           name: Make sure we're not using Executors or Threads
           command: ./check_thread_use

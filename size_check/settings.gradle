@@ -1,2 +1,0 @@
-include ':app', ':teak'
-project(':teak').projectDir = new File('../')
