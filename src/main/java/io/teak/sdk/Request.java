@@ -616,6 +616,7 @@ public class Request implements Runnable {
             // in a dialog box, if enhanced integration checks are enabled
             if (responseAsMap != null &&
                 responseAsMap.containsKey("report_client_error")) {
+                @SuppressWarnings("unchecked")
                 final Map<String, Object> clientError = (Map<String, Object>) responseAsMap.get("report_client_error");
                 final String title = clientError.containsKey("title") ? (String) clientError.get("title") : "client.error";
                 final String message = clientError.containsKey("message") ? (String) clientError.get("message") : null;
