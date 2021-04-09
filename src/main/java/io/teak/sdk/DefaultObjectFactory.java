@@ -18,7 +18,6 @@ import io.teak.sdk.push.FCMPushProvider;
 import io.teak.sdk.push.IPushProvider;
 import io.teak.sdk.store.IStore;
 import io.teak.sdk.support.ILocalBroadcastManager;
-import io.teak.sdk.support.INotificationBuilder;
 import io.teak.sdk.support.INotificationManager;
 
 public class DefaultObjectFactory implements IObjectFactory {
@@ -153,21 +152,6 @@ public class DefaultObjectFactory implements IObjectFactory {
 
         return null;
     }
-
-    public static INotificationBuilder createNotificationBuilder(@NonNull Context context, @NonNull String notificationChannelId) {
-        try {
-            Class.forName("androidx.core.app.NotificationCompat");
-            return new io.teak.sdk.support.androidx.NotificationBuilder(context, notificationChannelId);
-        } catch (Exception ignored) {
-        }
-
-        try {
-            Class.forName("android.support.v4.app.NotificationManagerCompat");
-            return new io.teak.sdk.support.v4.NotificationBuilder(context, notificationChannelId);
-        } catch (Exception ignored) {
-        }
-
-        // TODO: Integration checker things here.
         return null;
     }
 

@@ -32,9 +32,11 @@ import android.widget.ImageView;
 import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.ViewFlipper;
+
+import androidx.core.app.NotificationCompat;
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONObject;
-import io.teak.sdk.support.INotificationBuilder;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,8 +48,8 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import javax.net.ssl.HttpsURLConnection;
@@ -186,7 +188,22 @@ public class NotificationBuilder {
         }
         final IdHelper R = new IdHelper(); // Declaring local as 'R' ensures we don't accidentally use the other R
 
-        INotificationBuilder builder = DefaultObjectFactory.createNotificationBuilder(context, getNotificationChannelId(context));
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
+        builder.setGroup(UUID.randomUUID().toString());
+
+        // Set visibility of our notifications to public
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+            try {
+                builder.setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+            } catch (Exception ignored) {
+            }
+        }
+
+        // Configure notification behavior
+        builder.setPriority(NotificationCompat.PRIORITY_MAX);
+        builder.setDefaults(NotificationCompat.DEFAULT_ALL);
+        builder.setOnlyAlertOnce(true);
+        builder.setAutoCancel(true);
 
         // Rich text message
         Spanned richMessageText = new SpannedString(teakNotificaton.message);
