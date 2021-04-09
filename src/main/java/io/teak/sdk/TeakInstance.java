@@ -20,6 +20,7 @@ import com.firebase.jobdispatcher.RetryStrategy;
 import com.firebase.jobdispatcher.Trigger;
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.Session;
+import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.LogoutEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
@@ -43,6 +44,7 @@ public class TeakInstance implements Unobfuscable {
     public final IObjectFactory objectFactory;
     private final Context context;
     public final FirebaseJobDispatcher dispatcher;
+    private final TeakCore teakCore;
 
     private static final String PREFERENCE_FIRST_RUN = "io.teak.sdk.Preferences.FirstRun";
 
@@ -56,6 +58,7 @@ public class TeakInstance implements Unobfuscable {
         this.context = activity.getApplicationContext();
         this.activityHashCode = activity.hashCode();
         this.objectFactory = objectFactory;
+        this.teakCore = new TeakCore(this.context);
         PushState.init(this.context);
 
         // Start Teak job dispatcher

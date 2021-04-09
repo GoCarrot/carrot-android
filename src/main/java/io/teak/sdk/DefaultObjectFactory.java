@@ -5,7 +5,6 @@ import android.content.pm.PackageManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.amazon.device.messaging.ADM;
-import io.teak.sdk.core.TeakCore;
 
 import io.teak.sdk.io.DefaultAndroidDeviceInfo;
 import io.teak.sdk.io.DefaultAndroidNotification;
@@ -25,7 +24,6 @@ public class DefaultObjectFactory implements IObjectFactory {
     private final IAndroidDeviceInfo androidDeviceInfo;
     private final IPushProvider pushProvider;
     private final IAndroidNotification androidNotification;
-    private final TeakCore teakCore;
 
     DefaultObjectFactory(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
         // Suggest AndroidX, require support-v4
@@ -40,7 +38,6 @@ public class DefaultObjectFactory implements IObjectFactory {
         this.store = createStore(context);
         this.androidDeviceInfo = new DefaultAndroidDeviceInfo(context);
         this.androidNotification = DefaultAndroidNotification.get(context);
-        this.teakCore = TeakCore.get(context);
 
         // Future-Pat, this is handled differently because it can be the case where someone just uploads
         // their Google Play build to Amazon, in which case things can go wrong, and Teak should just
