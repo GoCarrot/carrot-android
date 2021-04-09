@@ -377,5 +377,5 @@ public class TeakCore {
     private final ExecutorService asyncExecutor = Executors.newCachedThreadPool();
     private final ILocalBroadcastManager localBroadcastManager;
 
-    public static final ScheduledExecutorService operationQueue = Executors.newSingleThreadScheduledExecutor();
+    static final ScheduledExecutorService operationQueue = Executors.newSingleThreadScheduledExecutor();
 }
