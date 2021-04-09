@@ -43,9 +43,6 @@ public class IntegrationChecker {
     private static final Map<String, String> errorsToReport = new HashMap<>();
 
     public static final String[][] dependencies = new String[][] {
-        new String[] {"android.support.v4.content.LocalBroadcastManager", "com.android.support:support-core-utils:28+"},
-        new String[] {"android.support.v4.app.NotificationManagerCompat", "com.android.support:support-compat:28+"},
-        new String[] {"androidx.localbroadcastmanager.content.LocalBroadcastManager", "androidx.core:core:1.0.+"},
         new String[] {"androidx.core.app.NotificationCompat", "androidx.core:core:1.0.+"},
         new String[] {"androidx.core.app.NotificationManagerCompat", "androidx.core:core:1.0.+"},
         new String[] {"com.google.android.gms.common.GooglePlayServicesUtil", "com.google.android.gms:play-services-base:16+", "com.google.android.gms:play-services-basement:16+"},
@@ -223,9 +220,6 @@ public class IntegrationChecker {
         ThreadFactory.autoStart(new Runnable() {
             @Override
             public void run() {
-                // If the target SDK version is 26+ the linked support-v4 lib must be 26.1.0+
-                checkSupportv4Version();
-
                 // Activity launch mode should be 'singleTask', 'singleTop' or 'singleInstance'
                 checkActivityLaunchMode();
             }
@@ -421,29 +415,5 @@ public class IntegrationChecker {
                     .show();
             }
         });
-    }
-
-    private void checkSupportv4Version() {
-        // Skip if AndroidX is present, we'll use that
-        try {
-            final Class<?> androidXNotificationCompat = Class.forName("androidx.core.app.NotificationCompat");
-            if (androidXNotificationCompat != null) return;
-        } catch (Exception ignored) {
-        }
-
-        try {
-            final ApplicationInfo appInfo = this.activity.getPackageManager().getApplicationInfo(this.activity.getPackageName(), PackageManager.GET_META_DATA);
-            final int targetSdkVersion = appInfo.targetSdkVersion;
-            try {
-                Class<?> notificationCompatBuilderClass = Class.forName("android.support.v4.app.NotificationCompat$Builder");
-                notificationCompatBuilderClass.getMethod("setChannelId", String.class);
-            } catch (ClassNotFoundException ignored) {
-                // This is fine, it will get caught by the
-            } catch (Exception ignored) {
-                addErrorToReport("support-v4.less-than.26.1", "App is targeting SDK version " + targetSdkVersion +
-                                                                  " but support-v4 library needs to be updated to at least version 26.1.0 to support notification categories.");
-            }
-        } catch (Exception ignored) {
-        }
     }
 }

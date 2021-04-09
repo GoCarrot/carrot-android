@@ -26,13 +26,8 @@ public class DefaultObjectFactory implements IObjectFactory {
     private final IAndroidNotification androidNotification;
 
     DefaultObjectFactory(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
-        // Suggest AndroidX, require support-v4
-        IntegrationChecker.suggestButRequireDependency("androidx.localbroadcastmanager.content.LocalBroadcastManager",
-            "android.support.v4.content.LocalBroadcastManager");
-        IntegrationChecker.suggestButRequireDependency("androidx.core.app.NotificationCompat",
-            "android.support.v4.app.NotificationManagerCompat");
-        IntegrationChecker.suggestButRequireDependency("androidx.core.app.NotificationManagerCompat",
-            "android.support.v4.app.NotificationManagerCompat");
+        IntegrationChecker.requireDependency("androidx.core.app.NotificationCompat");
+        IntegrationChecker.requireDependency("androidx.core.app.NotificationManagerCompat");
 
         this.androidResources = new DefaultAndroidResources(context);
         this.store = createStore(context);
@@ -124,14 +119,6 @@ public class DefaultObjectFactory implements IObjectFactory {
         } catch (Exception ignored) {
         }
 
-        try {
-            Class.forName("android.support.v4.content.LocalBroadcastManager");
-            return new io.teak.sdk.support.v4.LocalBroadcastManager(context);
-        } catch (Exception ignored) {
-        }
-
-        return null;
-    }
         return null;
     }
 
