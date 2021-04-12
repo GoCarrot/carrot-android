@@ -57,7 +57,7 @@ import javax.net.ssl.SSLProtocolException;
 
 public class Session {
 
-    @SuppressWarnings("FieldCanBeLocal") // This can be changed by tests
+    @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal"}) // This can be changed by tests
     private static long SAME_SESSION_TIME_DELTA = 120000;
 
     public static final Session NullSession = new Session("Null Session");
@@ -747,7 +747,7 @@ public class Session {
     }
 
     private static class WhenUserIdIsReadyRun implements Runnable {
-        private SessionRunnable runnable;
+        private final SessionRunnable runnable;
 
         WhenUserIdIsReadyRun(SessionRunnable runnable) {
             this.runnable = runnable;

@@ -146,5 +146,5 @@ public class TeakEvent {
         }
     }
 
-    private static EventListeners eventListeners = new EventListeners();
+    private static final EventListeners eventListeners = new EventListeners();
 }

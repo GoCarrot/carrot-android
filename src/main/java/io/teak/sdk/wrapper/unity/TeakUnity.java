@@ -15,7 +15,7 @@ import java.util.concurrent.ExecutorService;
 public class TeakUnity implements Unobfuscable {
     private static Method unitySendMessage;
     private static TeakInterface teakInterface;
-    private static ExecutorService unitySendMessageExecutor = Executors.newSingleThreadExecutor();
+    private static final ExecutorService unitySendMessageExecutor = Executors.newSingleThreadExecutor();
 
     static {
         try {

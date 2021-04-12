@@ -33,7 +33,7 @@ public class DeviceConfiguration {
     public boolean limitAdTracking;
 
     private final IPushProvider pushProvider;
-    private Map<String, Object> pushConfiguration = new HashMap<>();
+    private final Map<String, Object> pushConfiguration = new HashMap<>();
 
     public DeviceConfiguration(@NonNull Context context, @NonNull IObjectFactory objectFactory) {
         this.pushProvider = objectFactory.getPushProvider();

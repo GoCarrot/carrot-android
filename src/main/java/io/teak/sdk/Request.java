@@ -93,7 +93,7 @@ public class Request implements Runnable {
         return Request.teakApiKey != null && Request.teakApiKey.length() > 0;
     }
 
-    private static Map<String, Object> configurationPayload = new HashMap<>();
+    private static final Map<String, Object> configurationPayload = new HashMap<>();
 
     // TODO: Can't do this as a static-init block, will screw up unit tests
     static {

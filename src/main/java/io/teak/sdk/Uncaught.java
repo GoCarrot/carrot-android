@@ -5,8 +5,8 @@ import android.util.Log;
 class Uncaught implements Thread.UncaughtExceptionHandler {
     private static final String LOG_TAG = "Teak.Uncaught";
 
-    private Thread.UncaughtExceptionHandler previousUncaughtExceptionHandler;
-    private Thread createdOnThread;
+    private final Thread.UncaughtExceptionHandler previousUncaughtExceptionHandler;
+    private final Thread createdOnThread;
 
     @Override
     public void uncaughtException(Thread thread, Throwable ex) {

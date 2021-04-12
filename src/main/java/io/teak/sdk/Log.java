@@ -61,7 +61,7 @@ public class Log {
     // endregion
 
     private final Map<String, Object> commonPayload = new HashMap<>();
-    private ThreadLocal<Integer> exceptionDepth = new ThreadLocal<>();
+    private final ThreadLocal<Integer> exceptionDepth = new ThreadLocal<>();
 
     // region Public API
     public void trace(@NonNull String method, Object... va) {
