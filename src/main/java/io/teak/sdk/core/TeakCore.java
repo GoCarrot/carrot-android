@@ -1,14 +1,11 @@
 package io.teak.sdk.core;
 
 import android.app.Notification;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
-import io.teak.sdk.DefaultObjectFactory;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.NotificationBuilder;
@@ -19,7 +16,6 @@ import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.configuration.RemoteConfiguration;
-import io.teak.sdk.event.ExternalBroadcastEvent;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.NotificationDisplayEvent;
 import io.teak.sdk.event.PurchaseEvent;
@@ -29,7 +25,6 @@ import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.io.DefaultAndroidNotification;
 import io.teak.sdk.io.DefaultAndroidResources;
 import io.teak.sdk.json.JSONObject;
-import io.teak.sdk.support.ILocalBroadcastManager;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -40,7 +35,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 public class TeakCore {
     private static TeakCore Instance = null;
-    public static TeakCore get(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
+    public static TeakCore get(@NonNull Context context) {
         if (Instance == null) {
             Instance = new TeakCore(context);
         }
@@ -55,9 +50,7 @@ public class TeakCore {
         return null;
     }
 
-    public TeakCore(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
-        this.localBroadcastManager = DefaultObjectFactory.createLocalBroadcastManager(context);
-
+    public TeakCore(@NonNull Context context) {
         TeakEvent.addEventListener(this.teakEventListener);
 
         registerStaticTeakEventListeners();
@@ -75,11 +68,6 @@ public class TeakCore {
         @Override
         public void onNewEvent(@NonNull TeakEvent event) {
             switch (event.eventType) {
-                case ExternalBroadcastEvent.Type: {
-                    final Intent intent = ((ExternalBroadcastEvent) event).intent;
-                    sendLocalBroadcast(intent);
-                    break;
-                }
                 case LifecycleEvent.Resumed: {
                     final Intent intent = ((LifecycleEvent) event).intent;
                     if (!intent.getBooleanExtra("teakProcessedForPush", false)) {
@@ -272,19 +260,6 @@ public class TeakCore {
         }
     };
 
-    public void registerLocalBroadcastReceiver(BroadcastReceiver broadcastReceiver, IntentFilter filter) {
-        this.localBroadcastManager.registerReceiver(broadcastReceiver, filter);
-    }
-
-    private void sendLocalBroadcast(final Intent intent) {
-        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
-            @Override
-            public void run(Session session) {
-                localBroadcastManager.sendBroadcast(intent);
-            }
-        });
-    }
-
     private void checkIntentForPushLaunchAndSendBroadcasts(Intent intent) {
         if (intent.hasExtra("teakNotifId") && intent.getExtras() != null) {
             final Bundle bundle = intent.getExtras();
@@ -332,7 +307,6 @@ public class TeakCore {
     ///// Data Members
 
     private final ExecutorService asyncExecutor = Executors.newCachedThreadPool();
-    private final ILocalBroadcastManager localBroadcastManager;
 
     static final ScheduledExecutorService operationQueue = Executors.newSingleThreadScheduledExecutor();
 }

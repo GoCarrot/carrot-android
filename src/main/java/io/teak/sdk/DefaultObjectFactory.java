@@ -16,7 +16,6 @@ import io.teak.sdk.push.ADMPushProvider;
 import io.teak.sdk.push.FCMPushProvider;
 import io.teak.sdk.push.IPushProvider;
 import io.teak.sdk.store.IStore;
-import io.teak.sdk.support.ILocalBroadcastManager;
 
 public class DefaultObjectFactory implements IObjectFactory {
     private final IAndroidResources androidResources;
@@ -107,16 +106,6 @@ public class DefaultObjectFactory implements IObjectFactory {
             return (IStore) clazz.newInstance();
         } catch (Exception e) {
             Teak.log.exception(e);
-        }
-
-        return null;
-    }
-
-    public static ILocalBroadcastManager createLocalBroadcastManager(@NonNull Context context) {
-        try {
-            Class.forName("androidx.localbroadcastmanager.content.LocalBroadcastManager");
-            return new io.teak.sdk.support.androidx.LocalBroadcastManager(context);
-        } catch (Exception ignored) {
         }
 
         return null;

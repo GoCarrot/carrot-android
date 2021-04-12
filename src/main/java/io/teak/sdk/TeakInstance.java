@@ -51,7 +51,7 @@ public class TeakInstance implements Unobfuscable {
     private static final String PREFERENCE_FIRST_RUN = "io.teak.sdk.Preferences.FirstRun";
 
     @SuppressLint("ObsoleteSdkInt")
-    TeakInstance(@NonNull Activity activity, @NonNull final IObjectFactory objectFactory) throws IntegrationChecker.MissingDependencyException {
+    TeakInstance(@NonNull Activity activity, @NonNull final IObjectFactory objectFactory) {
         //noinspection all -- Disable warning on the null check
         if (activity == null) {
             throw new InvalidParameterException("null Activity passed to Teak.onCreate");
