@@ -159,6 +159,8 @@ android {
 }
 
 dependencies {
+    implementation 'org.greenrobot:eventbus:3.2.0'
+
     //noinspection GradleCompatible
     implementation 'com.android.installreferrer:installreferrer:1.0'
 
