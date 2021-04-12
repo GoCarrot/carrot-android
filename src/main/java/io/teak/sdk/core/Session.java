@@ -347,7 +347,7 @@ public class Session {
                     String buster;
                     {
                         final SecureRandom random = new SecureRandom();
-                        byte bytes[] = new byte[4];
+                        byte[] bytes = new byte[4];
                         random.nextBytes(bytes);
 
                         // When packing signed bytes into an int, each byte needs to be masked off
