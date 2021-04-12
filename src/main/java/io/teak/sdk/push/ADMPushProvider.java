@@ -21,6 +21,7 @@ import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.json.JSONObject;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
@@ -138,7 +139,7 @@ public class ADMPushProvider implements IPushProvider, Unobfuscable {
                         throw new Exception("Potentially malformed contents of 'api_key.txt', does not contain three sections delimited by '.'");
                     }
                     Teak.log.i("amazon.adm.registration_error.debugging", "[✓] Found validation section inside 'api_key.txt'");
-                    String middleJson = new String(Base64.decode(keySections[1], Base64.DEFAULT), "UTF-8");
+                    String middleJson = new String(Base64.decode(keySections[1], Base64.DEFAULT), StandardCharsets.UTF_8);
                     JSONObject json = new JSONObject(middleJson);
 
                     // Make sure the key and the package name match
