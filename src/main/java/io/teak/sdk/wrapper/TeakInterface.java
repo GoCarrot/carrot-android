@@ -23,6 +23,21 @@ public class TeakInterface implements Unobfuscable {
     }
 
     @Subscribe
+    public void onAdditionalData(Teak.AdditionalDataEvent event) {
+        String eventData = "{}";
+        try {
+            // The toString with an indentFactor argument can throw an exception
+            // whereas just toString() will return null. We want the exception
+            // so that we can send the empty hash.
+            eventData = event.additionalData.toString(0);
+        } catch (Exception e) {
+            Teak.log.exception(e);
+        } finally {
+            sdkWrapper.sdkSendMessage(ISDKWrapper.EventType.AdditionalData, eventData);
+        }
+    }
+
+    @Subscribe
     public void onLaunchedFromLink(Teak.LaunchFromLinkEvent event) {
         String eventData = "{}";
         try {
@@ -73,15 +88,6 @@ public class TeakInterface implements Unobfuscable {
                     Teak.log.exception(e);
                 } finally {
                     sdkWrapper.sdkSendMessage(ISDKWrapper.EventType.ForegroundNotification, eventData);
-                }
-            } else if (Teak.ADDITIONAL_DATA_INTENT.equals(action)) {
-                String eventData = "{}";
-                try {
-                    eventData = bundle.getString("additional_data");
-                } catch (Exception e) {
-                    Teak.log.exception(e);
-                } finally {
-                    sdkWrapper.sdkSendMessage(ISDKWrapper.EventType.AdditionalData, eventData);
                 }
             }
         }

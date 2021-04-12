@@ -26,7 +26,6 @@ import io.teak.sdk.event.PurchaseEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.event.TrackEventEvent;
-import io.teak.sdk.event.UserAdditionalDataEvent;
 import io.teak.sdk.io.DefaultAndroidNotification;
 import io.teak.sdk.io.DefaultAndroidResources;
 import io.teak.sdk.json.JSONObject;
@@ -288,13 +287,6 @@ public class TeakCore {
                     }
                     break;
                 }
-
-                case UserAdditionalDataEvent.Type: {
-                    Teak.log.i("additional_data.received", ((UserAdditionalDataEvent) event).additionalData.toString());
-                    final Intent intent = new Intent(Teak.ADDITIONAL_DATA_INTENT);
-                    intent.putExtra("additional_data", ((UserAdditionalDataEvent) event).additionalData.toString());
-                    sendLocalBroadcast(intent);
-                } break;
             }
         }
     };

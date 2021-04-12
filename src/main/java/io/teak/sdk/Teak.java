@@ -594,18 +594,18 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     public static final String FOREGROUND_NOTIFICATION_INTENT = "io.teak.sdk.Teak.intent.FOREGROUND_NOTIFICATION_INTENT";
 
     /**
-     * Intent action used by Teak to notify you that "additional data" is available for the user.
-     * <br>
-     * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
-     * <pre>
-     * {@code
-     *     IntentFilter filter = new IntentFilter();
-     *     filter.addAction(Teak.ADDITIONAL_DATA_INTENT);
-     *     LocalBroadcastManager.getInstance(context).registerReceiver(yourBroadcastListener, filter);
-     * }
-     * </pre>
+     * Event sent when "additional data" is available for the user.
      */
-    public static final String ADDITIONAL_DATA_INTENT = "io.teak.sdk.Teak.intent.ADDITIONAL_DATA_INTENT";
+    public static class AdditionalDataEvent {
+        /**
+         * A JSON object containing user-defined data received from the server.
+         */
+        public final JSONObject additionalData;
+
+        public AdditionalDataEvent(final JSONObject additionalData) {
+            this.additionalData = additionalData;
+        }
+    }
 
     /**
      * Event sent when the app was launched from a link created by the Teak dashboard.
