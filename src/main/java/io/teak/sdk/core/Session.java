@@ -1073,9 +1073,7 @@ public class Session {
                                 rewardMap.put("teakCreativeName", teakRewardLinkName);
                                 rewardMap.put("teakChannelName", teakChannelName);
 
-                                final Intent rewardIntent = new Intent(Teak.REWARD_CLAIM_ATTEMPT);
-                                rewardIntent.putExtra("reward", rewardMap);
-                                TeakEvent.postEvent(new ExternalBroadcastEvent(rewardIntent));
+                                Session.whenUserIdIsReadyPost(new Teak.RewardClaimEvent(rewardMap));
                             } catch (Exception e) {
                                 Teak.log.exception(e);
                             }
