@@ -189,15 +189,6 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     }
 
     /**
-     * @deprecated call {@link Activity#setIntent(Intent)} inside your {@link Activity#onNewIntent(Intent)}.
-     */
-    @Deprecated
-    @SuppressWarnings("unused")
-    public static void onNewIntent(Intent intent) {
-        Teak.log.e("deprecation.onNewIntent", "Teak.onNewIntent is deprecated, call Activity.onNewIntent() instead.");
-    }
-
-    /**
      * Tell Teak how it should identify the current user.
      * <br>
      * <p>This should be the same way you identify the user in your backend.</p>
