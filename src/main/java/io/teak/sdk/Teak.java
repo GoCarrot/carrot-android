@@ -146,7 +146,6 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         }
 
         final AndroidResources androidResources = new AndroidResources(activity.getApplicationContext(), objectFactory.getAndroidResources());
-        //noinspection ConstantConditions
         if (androidResources != null) {
             // Add version info for Unity/Cocos2dx
             String wrapperSDKName = androidResources.getStringResource("io_teak_wrapper_sdk_name");
@@ -166,8 +165,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         if (Instance == null) {
             try {
                 Instance = new TeakInstance(activity, objectFactory);
-            } catch (Exception e) {
-                return;
+            } catch (Exception ignored) {
             }
         }
     }
