@@ -1,7 +1,6 @@
 package io.teak.sdk.facebook;
 
 import com.facebook.AccessToken;
-
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.event.FacebookAccessTokenEvent;
 

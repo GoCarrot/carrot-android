@@ -4,9 +4,6 @@ import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
-
-import org.greenrobot.eventbus.EventBus;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.teak.sdk.Helpers;
@@ -54,6 +51,7 @@ import java.util.concurrent.TimeoutException;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLProtocolException;
+import org.greenrobot.eventbus.EventBus;
 
 public class Session {
 

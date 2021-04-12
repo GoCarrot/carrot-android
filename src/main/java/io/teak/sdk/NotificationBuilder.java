@@ -32,11 +32,9 @@ import android.widget.ImageView;
 import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.ViewFlipper;
-
 import androidx.core.app.NotificationCompat;
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONObject;
-
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;

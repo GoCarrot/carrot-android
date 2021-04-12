@@ -2,10 +2,11 @@ package io.teak.sdk;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
 import com.amazon.device.messaging.ADM;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.teak.sdk.io.DefaultAndroidDeviceInfo;
 import io.teak.sdk.io.DefaultAndroidNotification;
 import io.teak.sdk.io.DefaultAndroidResources;

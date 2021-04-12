@@ -13,7 +13,6 @@ import androidx.annotation.Nullable;
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONException;
 import io.teak.sdk.json.JSONObject;
-
 import java.lang.reflect.Method;
 import java.security.InvalidParameterException;
 import java.security.MessageDigest;
