@@ -4,6 +4,9 @@ import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
+
+import org.greenrobot.eventbus.EventBus;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.teak.sdk.Helpers;
@@ -251,6 +254,16 @@ public class Session {
                         userIdReadyRunnableQueue.clear();
                     } finally {
                         userIdReadyRunnableQueueLock.unlock();
+                    }
+
+                    userIdReadyEventBusQueueLock.lock();
+                    try {
+                        for (Object event : userIdReadyEventBusQueue) {
+                            EventBus.getDefault().post(event);
+                        }
+                        userIdReadyEventBusQueue.clear();
+                    } finally {
+                        userIdReadyEventBusQueueLock.unlock();
                     }
 
                     // Process deep link and/or rewards and send out events
@@ -750,6 +763,42 @@ public class Session {
             } finally {
                 currentSessionLock.unlock();
             }
+        }
+    }
+
+    private static final InstrumentableReentrantLock userIdReadyEventBusQueueLock = new InstrumentableReentrantLock();
+    private static final ArrayList<Object> userIdReadyEventBusQueue = new ArrayList<>();
+
+    public static void whenUserIdIsReadyPost(@NonNull Object event) {
+        currentSessionLock.lock();
+        try {
+            if (currentSession == null) {
+                userIdReadyEventBusQueueLock.lock();
+                try {
+                    userIdReadyEventBusQueue.add(event);
+                } finally {
+                    userIdReadyEventBusQueueLock.unlock();
+                }
+            } else {
+                final Session _lockedSession = currentSession;
+                _lockedSession.stateLock.lock();
+                try {
+                    if (currentSession.state == State.UserIdentified) {
+                        EventBus.getDefault().post(event);
+                    } else {
+                        userIdReadyEventBusQueueLock.lock();
+                        try {
+                            userIdReadyEventBusQueue.add(event);
+                        } finally {
+                            userIdReadyEventBusQueueLock.unlock();
+                        }
+                    }
+                } finally {
+                    _lockedSession.stateLock.unlock();
+                }
+            }
+        } finally {
+            currentSessionLock.unlock();
         }
     }
 
