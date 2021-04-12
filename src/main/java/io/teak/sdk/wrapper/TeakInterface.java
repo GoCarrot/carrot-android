@@ -3,8 +3,11 @@ package io.teak.sdk.wrapper;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+
 import io.teak.sdk.Teak;
 import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.json.JSONObject;
@@ -16,12 +19,19 @@ public class TeakInterface implements Unobfuscable {
     public TeakInterface(ISDKWrapper sdkWrapper) {
         this.sdkWrapper = sdkWrapper;
 
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Teak.REWARD_CLAIM_ATTEMPT);
-        filter.addAction(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
-        filter.addAction(Teak.FOREGROUND_NOTIFICATION_INTENT);
-        filter.addAction(Teak.ADDITIONAL_DATA_INTENT);
-        filter.addAction(Teak.LAUNCHED_FROM_LINK_INTENT);
+        EventBus.getDefault().register(this);
+    }
+
+    @Subscribe
+    public void onLaunchedFromLink(Teak.LaunchFromLinkEvent event) {
+        String eventData = "{}";
+        try {
+            eventData = event.todoExpandThis.toString(0);
+        } catch (Exception e) {
+            Teak.log.exception(e);
+        } finally {
+            sdkWrapper.sdkSendMessage(ISDKWrapper.EventType.LaunchedFromLink, eventData);
+        }
     }
 
     @SuppressWarnings("FieldCanBeLocal")
@@ -72,15 +82,6 @@ public class TeakInterface implements Unobfuscable {
                     Teak.log.exception(e);
                 } finally {
                     sdkWrapper.sdkSendMessage(ISDKWrapper.EventType.AdditionalData, eventData);
-                }
-            } else if (Teak.LAUNCHED_FROM_LINK_INTENT.equals(action)) {
-                String eventData = "{}";
-                try {
-                    eventData = bundle.getString("linkInfo");
-                } catch (Exception e) {
-                    Teak.log.exception(e);
-                } finally {
-                    sdkWrapper.sdkSendMessage(ISDKWrapper.EventType.LaunchedFromLink, eventData);
                 }
             }
         }

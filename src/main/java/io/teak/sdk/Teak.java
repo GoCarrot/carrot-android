@@ -608,18 +608,18 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     public static final String ADDITIONAL_DATA_INTENT = "io.teak.sdk.Teak.intent.ADDITIONAL_DATA_INTENT";
 
     /**
-     * Intent action used by Teak to notify you that the app was launched from a link created by the Teak dashboard.
-     * <br>
-     * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
-     * <pre>
-     * {@code
-     *     IntentFilter filter = new IntentFilter();
-     *     filter.addAction(Teak.LAUNCHED_FROM_LINK_INTENT);
-     *     LocalBroadcastManager.getInstance(context).registerReceiver(yourBroadcastListener, filter);
-     * }
-     * </pre>
+     * Event sent when the app was launched from a link created by the Teak dashboard.
      */
-    public static final String LAUNCHED_FROM_LINK_INTENT = "io.teak.sdk.Teak.intent.LAUNCHED_FROM_LINK_INTENT";
+    public static class LaunchFromLinkEvent {
+        /**
+         * TODO: This should be expanded out into data members
+         */
+        public final JSONObject todoExpandThis;
+
+        public LaunchFromLinkEvent(final JSONObject linkData) {
+            this.todoExpandThis = linkData;
+        }
+    }
 
     ///// LogListener
 

@@ -20,7 +20,6 @@ import io.teak.sdk.TeakNotification;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.event.ExternalBroadcastEvent;
-import io.teak.sdk.event.LaunchedFromLinkEvent;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.NotificationDisplayEvent;
 import io.teak.sdk.event.PurchaseEvent;
@@ -296,12 +295,6 @@ public class TeakCore {
                     intent.putExtra("additional_data", ((UserAdditionalDataEvent) event).additionalData.toString());
                     sendLocalBroadcast(intent);
                 } break;
-
-                case LaunchedFromLinkEvent.Type: {
-                    final Intent intent = new Intent(Teak.LAUNCHED_FROM_LINK_INTENT);
-                    intent.putExtra("linkInfo", ((LaunchedFromLinkEvent) event).linkInfo.toString());
-                    sendLocalBroadcast(intent);
-                }
             }
         }
     };
