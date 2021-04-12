@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.net.Uri;
+import android.os.Bundle;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -548,78 +550,175 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     }
 
     /**
-     * Intent action used by Teak to notify you that the app was launched from a notification.
-     * <br>
-     * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
-     * <pre>
-     * {@code
-     *     IntentFilter filter = new IntentFilter();
-     *     filter.addAction(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
-     *     LocalBroadcastManager.getInstance(context).registerReceiver(yourBroadcastListener, filter);
-     * }
-     * </pre>
+     * Event posted when a notification was received either in the foreground, or that launched the app.
      */
-    @SuppressWarnings("unused")
-    public static final String LAUNCHED_FROM_NOTIFICATION_INTENT = "io.teak.sdk.Teak.intent.LAUNCHED_FROM_NOTIFICATION";
+    public static class NotificationEvent {
+        /**
+         * True if the notification was received when the app was in the foreground.
+         */
+        public final boolean isForeground;
+
+        /**
+         * The reward id, or null if there was no reward attached.
+         */
+        public final String teakRewardId;
+
+        /**
+         * The notification id.
+         */
+        public final String teakNotifId;
+
+        /**
+         * True if there was a reward attached; false otherwise.
+         */
+        public final boolean incentivized;
+
+        /**
+         * The name of the schedule responsible on the Teak dashboard, if this was a scheduled notification; null otherwise.
+         */
+        public final String teakScheduleName;
+
+        /**
+         * The name of the notification creative on the Teak dashboard.
+         */
+        public final String teakCreativeName;
+
+        /**
+         * TODO
+         */
+        public final String teakChannelName;
+
+        /**
+         * The deep link attached to the notification; null if there was no deep link.
+         */
+        public final String teakDeepLink;
+
+        /**
+         * The text in the body of the notification.
+         */
+        public final String message;
+
+        /**
+         * Attached reward, or null.
+         */
+        public final Map<String, Object> reward;
+
+        // TODO: Is this needed?
+        public final String teakNotificationPlacement;
+
+        public NotificationEvent(final Bundle bundle, final boolean isForeground) {
+            this(bundle, isForeground, null);
+        }
+
+        public NotificationEvent(final Bundle bundle, final boolean isForeground, final Map<String, Object> reward) {
+            this.isForeground = isForeground;
+            this.teakRewardId = bundle.getString("teakRewardId");
+            this.teakNotifId = bundle.getString("teakNotifId");
+            this.incentivized = this.teakRewardId != null;
+            this.teakScheduleName = bundle.getString("teakScheduleName");
+            this.teakCreativeName = bundle.getString("teakCreativeName");
+            this.teakChannelName = bundle.getString("teakChannelName");
+            this.teakDeepLink = bundle.getString("teakDeepLink");
+            this.teakNotificationPlacement = bundle.getString("teakNotificationPlacement");
+            this.message = bundle.getString("message");
+            this.reward = reward;
+        }
+
+        public Map<String, Object> toMap() {
+            final HashMap<String, Object> map = new HashMap<>();
+            map.put("teakNotifId", this.teakNotifId);
+            map.put("teakRewardId", this.teakRewardId);
+            map.put("incentivized", this.incentivized);
+            map.put("teakScheduleName", this.teakScheduleName);
+            map.put("teakCreativeName", this.teakCreativeName);
+            map.put("teakChannelName", this.teakCreativeName);
+            map.put("teakDeepLink", this.teakDeepLink);
+            map.put("teakNotificationPlacement", this.teakNotificationPlacement);
+            map.put("message", this.message);
+
+            if (this.reward != null) {
+                map.putAll(reward);
+            }
+
+            return map;
+        }
+    }
 
     /**
-     * Intent action used by Teak to notify you that the a reward claim attempt has occured.
-     * <br>
-     * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
-     * <pre>
-     * {@code
-     *     IntentFilter filter = new IntentFilter();
-     *     filter.addAction(Teak.REWARD_CLAIM_ATTEMPT);
-     *     LocalBroadcastManager.getInstance(context).registerReceiver(yourBroadcastListener, filter);
-     * }
-     * </pre>
+     * Event posted when a reward claim attempt has occurred.
      */
-    @SuppressWarnings("unused")
-    public static final String REWARD_CLAIM_ATTEMPT = "io.teak.sdk.Teak.intent.REWARD_CLAIM_ATTEMPT";
+    public static class RewardClaimEvent {
+        /**
+         * The reward id.
+         */
+        public final String teakRewardId;
+
+        /**
+         * The notification id, if the reward came from a notification.
+         */
+        public final String teakNotifId;
+
+        /**
+         * The name of the schedule responsible on the Teak dashboard, if this was a scheduled notification; null otherwise.
+         */
+        public final String teakScheduleName;
+
+        /**
+         * The name of the notification creative on the Teak dashboard.
+         */
+        public final String teakCreativeName;
+
+        /**
+         * TODO
+         */
+        public final String teakChannelName;
+
+        /**
+         * The full contents of the reward.
+         */
+        public final Map<String, Object> rewardAsMap;
+
+        public RewardClaimEvent(@NonNull final Map<String, Object> rewardMap) {
+            this.rewardAsMap = rewardMap;
+            this.teakNotifId = (String) rewardMap.get("teakNotifId");
+            this.teakRewardId = (String) rewardMap.get("teakRewardId");
+            this.teakScheduleName = (String) rewardMap.get("teakScheduleName");
+            this.teakCreativeName = (String) rewardMap.get("teakCreativeName");
+            this.teakChannelName = (String) rewardMap.get("teakChannelName");
+        }
+
+        public Map<String, Object> toMap() {
+            return this.rewardAsMap;
+        }
+    }
 
     /**
-     * Intent action used by Teak to notify you that a notification was received while the app is
-     * in the foreground.
-     * <br>
-     * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
-     * <pre>
-     * {@code
-     *     IntentFilter filter = new IntentFilter();
-     *     filter.addAction(Teak.FOREGROUND_NOTIFICATION_INTENT);
-     *     LocalBroadcastManager.getInstance(context).registerReceiver(yourBroadcastListener, filter);
-     * }
-     * </pre>
+     * Event sent when "additional data" is available for the user.
      */
-    @SuppressWarnings("unused")
-    public static final String FOREGROUND_NOTIFICATION_INTENT = "io.teak.sdk.Teak.intent.FOREGROUND_NOTIFICATION_INTENT";
+    public static class AdditionalDataEvent {
+        /**
+         * A JSON object containing user-defined data received from the server.
+         */
+        public final JSONObject additionalData;
+
+        public AdditionalDataEvent(final JSONObject additionalData) {
+            this.additionalData = additionalData;
+        }
+    }
 
     /**
-     * Intent action used by Teak to notify you that "additional data" is available for the user.
-     * <br>
-     * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
-     * <pre>
-     * {@code
-     *     IntentFilter filter = new IntentFilter();
-     *     filter.addAction(Teak.ADDITIONAL_DATA_INTENT);
-     *     LocalBroadcastManager.getInstance(context).registerReceiver(yourBroadcastListener, filter);
-     * }
-     * </pre>
+     * Event sent when the app was launched from a link created by the Teak dashboard.
      */
-    public static final String ADDITIONAL_DATA_INTENT = "io.teak.sdk.Teak.intent.ADDITIONAL_DATA_INTENT";
+    public static class LaunchFromLinkEvent {
+        /**
+         * TODO: This should be expanded out into data members
+         */
+        public final JSONObject todoExpandThis;
 
-    /**
-     * Intent action used by Teak to notify you that the app was launched from a link created by the Teak dashboard.
-     * <br>
-     * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
-     * <pre>
-     * {@code
-     *     IntentFilter filter = new IntentFilter();
-     *     filter.addAction(Teak.LAUNCHED_FROM_LINK_INTENT);
-     *     LocalBroadcastManager.getInstance(context).registerReceiver(yourBroadcastListener, filter);
-     * }
-     * </pre>
-     */
-    public static final String LAUNCHED_FROM_LINK_INTENT = "io.teak.sdk.Teak.intent.LAUNCHED_FROM_LINK_INTENT";
+        public LaunchFromLinkEvent(final JSONObject linkData) {
+            this.todoExpandThis = linkData;
+        }
+    }
 
     ///// LogListener
 

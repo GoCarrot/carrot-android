@@ -4,6 +4,9 @@ import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
+
+import org.greenrobot.eventbus.EventBus;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.teak.sdk.Helpers;
@@ -14,15 +17,12 @@ import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
 import io.teak.sdk.event.AdvertisingInfoEvent;
-import io.teak.sdk.event.ExternalBroadcastEvent;
 import io.teak.sdk.event.FacebookAccessTokenEvent;
-import io.teak.sdk.event.LaunchedFromLinkEvent;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.LogoutEvent;
 import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.SessionStateEvent;
-import io.teak.sdk.event.UserAdditionalDataEvent;
 import io.teak.sdk.event.UserIdEvent;
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.push.PushState;
@@ -251,6 +251,16 @@ public class Session {
                         userIdReadyRunnableQueue.clear();
                     } finally {
                         userIdReadyRunnableQueueLock.unlock();
+                    }
+
+                    userIdReadyEventBusQueueLock.lock();
+                    try {
+                        for (Object event : userIdReadyEventBusQueue) {
+                            EventBus.getDefault().post(event);
+                        }
+                        userIdReadyEventBusQueue.clear();
+                    } finally {
+                        userIdReadyEventBusQueueLock.unlock();
                     }
 
                     // Process deep link and/or rewards and send out events
@@ -489,7 +499,8 @@ public class Session {
                                     // Grab additional data
                                     final JSONObject additionalData = response.optJSONObject("additional_data");
                                     if (additionalData != null) {
-                                        TeakEvent.postEvent(new UserAdditionalDataEvent(additionalData));
+                                        Teak.log.i("additional_data.received", additionalData.toString());
+                                        whenUserIdIsReadyPost(new Teak.AdditionalDataEvent(additionalData));
                                     }
 
                                     // Assign new state
@@ -750,6 +761,42 @@ public class Session {
             } finally {
                 currentSessionLock.unlock();
             }
+        }
+    }
+
+    private static final InstrumentableReentrantLock userIdReadyEventBusQueueLock = new InstrumentableReentrantLock();
+    private static final ArrayList<Object> userIdReadyEventBusQueue = new ArrayList<>();
+
+    public static void whenUserIdIsReadyPost(@NonNull Object event) {
+        currentSessionLock.lock();
+        try {
+            if (currentSession == null) {
+                userIdReadyEventBusQueueLock.lock();
+                try {
+                    userIdReadyEventBusQueue.add(event);
+                } finally {
+                    userIdReadyEventBusQueueLock.unlock();
+                }
+            } else {
+                final Session _lockedSession = currentSession;
+                _lockedSession.stateLock.lock();
+                try {
+                    if (currentSession.state == State.UserIdentified) {
+                        EventBus.getDefault().post(event);
+                    } else {
+                        userIdReadyEventBusQueueLock.lock();
+                        try {
+                            userIdReadyEventBusQueue.add(event);
+                        } finally {
+                            userIdReadyEventBusQueueLock.unlock();
+                        }
+                    }
+                } finally {
+                    _lockedSession.stateLock.unlock();
+                }
+            }
+        } finally {
+            currentSessionLock.unlock();
         }
     }
 
@@ -1025,9 +1072,7 @@ public class Session {
                                 rewardMap.put("teakCreativeName", teakRewardLinkName);
                                 rewardMap.put("teakChannelName", teakChannelName);
 
-                                final Intent rewardIntent = new Intent(Teak.REWARD_CLAIM_ATTEMPT);
-                                rewardIntent.putExtra("reward", rewardMap);
-                                TeakEvent.postEvent(new ExternalBroadcastEvent(rewardIntent));
+                                Session.whenUserIdIsReadyPost(new Teak.RewardClaimEvent(rewardMap));
                             } catch (Exception e) {
                                 Teak.log.exception(e);
                             }
@@ -1105,7 +1150,7 @@ public class Session {
                                 }
 
                                 Teak.log.i("deep_link.request.resolve", uri.toString());
-                                TeakEvent.postEvent(new LaunchedFromLinkEvent(teakData));
+                                whenUserIdIsReadyPost(new Teak.LaunchFromLinkEvent(teakData));
                             } catch (Exception e) {
                                 Teak.log.exception(e);
                             }

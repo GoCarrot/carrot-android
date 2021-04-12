@@ -1,14 +1,11 @@
 package io.teak.sdk.core;
 
 import android.app.Notification;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
-import io.teak.sdk.DefaultObjectFactory;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.NotificationBuilder;
@@ -19,19 +16,15 @@ import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.configuration.RemoteConfiguration;
-import io.teak.sdk.event.ExternalBroadcastEvent;
-import io.teak.sdk.event.LaunchedFromLinkEvent;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.NotificationDisplayEvent;
 import io.teak.sdk.event.PurchaseEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.event.TrackEventEvent;
-import io.teak.sdk.event.UserAdditionalDataEvent;
 import io.teak.sdk.io.DefaultAndroidNotification;
 import io.teak.sdk.io.DefaultAndroidResources;
 import io.teak.sdk.json.JSONObject;
-import io.teak.sdk.support.ILocalBroadcastManager;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -42,7 +35,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 public class TeakCore {
     private static TeakCore Instance = null;
-    public static TeakCore get(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
+    public static TeakCore get(@NonNull Context context) {
         if (Instance == null) {
             Instance = new TeakCore(context);
         }
@@ -57,9 +50,7 @@ public class TeakCore {
         return null;
     }
 
-    public TeakCore(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
-        this.localBroadcastManager = DefaultObjectFactory.createLocalBroadcastManager(context);
-
+    public TeakCore(@NonNull Context context) {
         TeakEvent.addEventListener(this.teakEventListener);
 
         registerStaticTeakEventListeners();
@@ -77,11 +68,6 @@ public class TeakCore {
         @Override
         public void onNewEvent(@NonNull TeakEvent event) {
             switch (event.eventType) {
-                case ExternalBroadcastEvent.Type: {
-                    final Intent intent = ((ExternalBroadcastEvent) event).intent;
-                    sendLocalBroadcast(intent);
-                    break;
-                }
                 case LifecycleEvent.Resumed: {
                     final Intent intent = ((LifecycleEvent) event).intent;
                     if (!intent.getBooleanExtra("teakProcessedForPush", false)) {
@@ -170,26 +156,7 @@ public class TeakCore {
                     final boolean gameIsInForeground = !Session.isExpiringOrExpired();
                     final boolean showInForeground = Helpers.getBooleanFromBundle(bundle, "teakShowInForeground");
                     if (gameIsInForeground) {
-                        if (TeakCore.this.localBroadcastManager != null) {
-                            final String teakRewardId = bundle.getString("teakRewardId");
-
-                            final HashMap<String, Object> eventDataDict = new HashMap<>();
-                            eventDataDict.put("teakNotifId", bundle.getString("teakNotifId"));
-                            eventDataDict.put("teakRewardId", teakRewardId);
-                            eventDataDict.put("incentivized", teakRewardId != null);
-                            eventDataDict.put("teakScheduleName", bundle.getString("teakScheduleName"));
-                            eventDataDict.put("teakCreativeName", bundle.getString("teakCreativeName"));
-                            eventDataDict.put("teakChannelName", bundle.getString("teakChannelName"));
-                            eventDataDict.put("teakDeepLink", bundle.getString("teakDeepLink"));
-
-                            // Notification content
-                            eventDataDict.put("message", bundle.getString("message"));
-
-                            final Intent broadcastEvent = new Intent(Teak.FOREGROUND_NOTIFICATION_INTENT);
-                            broadcastEvent.putExtras(bundle);
-                            broadcastEvent.putExtra("eventData", eventDataDict);
-                            sendLocalBroadcast(broadcastEvent);
-                        }
+                        Session.whenUserIdIsReadyPost(new Teak.NotificationEvent(bundle, true));
                     }
 
                     // Create Teak Notification
@@ -289,52 +256,17 @@ public class TeakCore {
                     }
                     break;
                 }
-
-                case UserAdditionalDataEvent.Type: {
-                    Teak.log.i("additional_data.received", ((UserAdditionalDataEvent) event).additionalData.toString());
-                    final Intent intent = new Intent(Teak.ADDITIONAL_DATA_INTENT);
-                    intent.putExtra("additional_data", ((UserAdditionalDataEvent) event).additionalData.toString());
-                    sendLocalBroadcast(intent);
-                } break;
-
-                case LaunchedFromLinkEvent.Type: {
-                    final Intent intent = new Intent(Teak.LAUNCHED_FROM_LINK_INTENT);
-                    intent.putExtra("linkInfo", ((LaunchedFromLinkEvent) event).linkInfo.toString());
-                    sendLocalBroadcast(intent);
-                }
             }
         }
     };
-
-    public void registerLocalBroadcastReceiver(BroadcastReceiver broadcastReceiver, IntentFilter filter) {
-        this.localBroadcastManager.registerReceiver(broadcastReceiver, filter);
-    }
-
-    private void sendLocalBroadcast(final Intent intent) {
-        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
-            @Override
-            public void run(Session session) {
-                localBroadcastManager.sendBroadcast(intent);
-            }
-        });
-    }
 
     private void checkIntentForPushLaunchAndSendBroadcasts(Intent intent) {
         if (intent.hasExtra("teakNotifId") && intent.getExtras() != null) {
             final Bundle bundle = intent.getExtras();
 
             // Send broadcast
-            if (bundle != null && this.localBroadcastManager != null) {
+            if (bundle != null) {
                 final String teakRewardId = bundle.getString("teakRewardId");
-
-                final HashMap<String, Object> eventDataDict = new HashMap<>();
-                eventDataDict.put("teakNotifId", bundle.getString("teakNotifId"));
-                eventDataDict.put("teakRewardId", teakRewardId);
-                eventDataDict.put("incentivized", teakRewardId != null);
-                eventDataDict.put("teakScheduleName", bundle.getString("teakScheduleName"));
-                eventDataDict.put("teakCreativeName", bundle.getString("teakCreativeName"));
-                eventDataDict.put("teakChannelName", bundle.getString("teakChannelName"));
-                eventDataDict.put("teakNotificationPlacement", bundle.getString("teakNotificationPlacement"));
 
                 if (teakRewardId != null) {
                     final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
@@ -342,31 +274,31 @@ public class TeakCore {
                         this.asyncExecutor.execute(new Runnable() {
                             @Override
                             public void run() {
+                                Teak.NotificationEvent notificationEvent = new Teak.NotificationEvent(bundle, false);
                                 try {
-                                    TeakNotification.Reward reward = rewardFuture.get();
-                                    HashMap<String, Object> rewardMap = new HashMap<>(reward.json.toMap());
-                                    eventDataDict.putAll(rewardMap);
+                                    final TeakNotification.Reward reward = rewardFuture.get();
 
-                                    // Broadcast reward only if everything goes well
-                                    final Intent rewardIntent = new Intent(Teak.REWARD_CLAIM_ATTEMPT);
-                                    rewardIntent.putExtra("reward", eventDataDict);
-                                    sendLocalBroadcast(rewardIntent);
+                                    final HashMap<String, Object> rewardMap = new HashMap<>(reward.json.toMap());
+                                    rewardMap.put("teakNotifId", notificationEvent.teakNotifId);
+                                    rewardMap.put("incentivized", true);
+                                    rewardMap.put("teakRewardId", notificationEvent.teakRewardId);
+                                    rewardMap.put("teakScheduleName", notificationEvent.teakScheduleName);
+                                    rewardMap.put("teakCreativeName", notificationEvent.teakCreativeName);
+                                    rewardMap.put("teakChannelName", notificationEvent.teakChannelName);
+
+                                    notificationEvent = new Teak.NotificationEvent(bundle, false, rewardMap);
+
+                                    Session.whenUserIdIsReadyPost(new Teak.RewardClaimEvent(rewardMap));
                                 } catch (Exception e) {
                                     Teak.log.exception(e);
                                 } finally {
-                                    final Intent broadcastEvent = new Intent(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
-                                    broadcastEvent.putExtras(bundle);
-                                    broadcastEvent.putExtra("eventData", eventDataDict);
-                                    sendLocalBroadcast(broadcastEvent);
+                                    Session.whenUserIdIsReadyPost(notificationEvent);
                                 }
                             }
                         });
                     }
                 } else {
-                    final Intent broadcastEvent = new Intent(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
-                    broadcastEvent.putExtras(bundle);
-                    broadcastEvent.putExtra("eventData", eventDataDict);
-                    sendLocalBroadcast(broadcastEvent);
+                    Session.whenUserIdIsReadyPost(new Teak.NotificationEvent(bundle, false));
                 }
             }
         }
@@ -375,7 +307,6 @@ public class TeakCore {
     ///// Data Members
 
     private final ExecutorService asyncExecutor = Executors.newCachedThreadPool();
-    private final ILocalBroadcastManager localBroadcastManager;
 
     static final ScheduledExecutorService operationQueue = Executors.newSingleThreadScheduledExecutor();
 }
