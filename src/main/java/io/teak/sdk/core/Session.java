@@ -364,7 +364,7 @@ public class Session {
                                          "&sdk_platform=" + URLEncoder.encode(teakConfiguration.deviceConfiguration.platformString, "UTF-8") +
                                          "&app_version=" + URLEncoder.encode(String.valueOf(teakConfiguration.appConfiguration.appVersion), "UTF-8") +
                                          "&app_version_name=" + URLEncoder.encode(String.valueOf(teakConfiguration.appConfiguration.appVersionName), "UTF-8") +
-                                         (Session.this.countryCode == null ? "" : "&country_code=" + URLEncoder.encode(String.valueOf(Session.this.countryCode), "UTF-8")) +
+                                         (Session.this.countryCode == null ? "" : "&country_code=" + URLEncoder.encode(Session.this.countryCode, "UTF-8")) +
                                          "&buster=" + URLEncoder.encode(buster, "UTF-8");
                     URL url = new URL("https://iroko.gocarrot.com/ping?" + queryString);
                     connection = (HttpsURLConnection) url.openConnection();
