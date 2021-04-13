@@ -3,15 +3,18 @@ package io.teak.sdk.push;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
+
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
+
+import java.util.Map;
+
+import androidx.annotation.NonNull;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.Teak;
@@ -20,7 +23,6 @@ import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.event.PushRegistrationEvent;
-import java.util.Map;
 
 public class FCMPushProvider extends FirebaseMessagingService implements IPushProvider, Unobfuscable {
     private static FCMPushProvider Instance = null;
@@ -130,63 +132,17 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
     //// IPushProvider
 
     @Override
-    public void requestPushKey(@NonNull Map<String, Object> pushConfiguration) {
-        // Future-Pat, this method will only be invoked via Teak SDK, so getApplicationContext()
-        // will not work.
-        final boolean ignoreDefaultFirebaseConfiguration = (boolean) pushConfiguration.get("ignoreDefaultFirebaseConfiguration");
-
+    public void requestPushKey() {
         if (this.firebaseApp == null) {
-            // First try and get a Firebase App if it's already initialized
-            if (!ignoreDefaultFirebaseConfiguration) {
-                try {
-                    this.firebaseApp = FirebaseApp.getInstance();
-                } catch (Exception ignored) {
-                }
-            }
-
-            if (this.firebaseApp == null) {
-                try {
-                    // If FirebaseOptions.fromResource is not null, it's a good bet that someone is using
-                    // the gradle plugin or something. In this case, we can safely create the default
-                    // because subsequent calls to FirebaseApp.initializeApp will simply return the
-                    // existing default.
-                    if (!ignoreDefaultFirebaseConfiguration && FirebaseOptions.fromResource(context) != null) {
-                        Teak.log.i("google.fcm.intialization", "FirebaseOptions.fromResource");
-                        this.firebaseApp = FirebaseApp.initializeApp(this.context);
-                    } else {
-                        // No FirebaseOptions.fromResource means we're almost certainly responsible
-                        // for all Firebase use and initialization.
-                        Teak.log.i("google.fcm.intialization", pushConfiguration);
-                        FirebaseOptions.Builder builder = new FirebaseOptions.Builder()
-                                                              .setProjectId((String) pushConfiguration.get("firebaseProjectId"))
-                                                              .setGcmSenderId((String) pushConfiguration.get("gcmSenderId"))
-                                                              .setApplicationId((String) pushConfiguration.get("firebaseAppId"))
-                                                              .setApiKey((String) pushConfiguration.get("firebaseApiKey"));
-
-                        // If there is no default Firebase instance, then we still need to have that
-                        try {
-                            // Because exceptions for control flow are awesome!
-                            FirebaseApp.getInstance();
-
-                            // Create with name TEAK, because [DEFAULT] already exists
-                            this.firebaseApp = FirebaseApp.initializeApp(this.context, builder.build(), "TEAK");
-                            Teak.log.i("google.fcm.initialized", "TEAK");
-                        } catch (Exception ignored) {
-                            // Create with name [DEFAULT], because one named [DEFAULT] must exist
-                            this.firebaseApp = FirebaseApp.initializeApp(this.context, builder.build());
-                            Teak.log.i("google.fcm.initialized", "[DEFAULT]");
-                        }
-                    }
-                } catch (Exception e) {
-                    Teak.log.exception(e);
-                    IntegrationChecker.addErrorToReport("google.fcm.initialization", e.getMessage());
-                }
+            try {
+                this.firebaseApp = FirebaseApp.getInstance();
+            } catch (Exception ignored) {
             }
         }
 
         if (this.firebaseApp == null) {
-            Teak.log.e("google.fcm.null_app", "Could not get or create Firebase App. Push notifications are unlikely to work.");
-            IntegrationChecker.addErrorToReport("google.fcm.null_app", "Could not get or create Firebase App. Push notifications are unlikely to work.");
+            Teak.log.e("google.fcm.null_app", "Could not get Firebase App. Push notifications are unlikely to work.");
+            IntegrationChecker.addErrorToReport("google.fcm.null_app", "Could not get Firebase App. Push notifications are unlikely to work.");
         } else {
             try {
                 final Task<String> instanceIdTask = FirebaseMessaging.getInstance().getToken();

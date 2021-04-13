@@ -67,7 +67,7 @@ public class ADMPushProvider implements IPushProvider, Unobfuscable {
     ///// IPushProvider
 
     @Override
-    public void requestPushKey(@NonNull Map<String, Object> ignored) {
+    public void requestPushKey() {
         executor.execute(new Runnable() {
             @Override
             public void run() {
