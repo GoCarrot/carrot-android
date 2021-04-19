@@ -150,7 +150,7 @@ android {
 
         release {
             minifyEnabled true
-            proguardFiles 'proguard.txt', 'library.pro'
+            proguardFiles 'proguard.txt', 'build-library.pro'
 
             buildConfigField "long", "VERSION_CODE", "${defaultConfig.versionCode}"
             buildConfigField "String" ,"VERSION_NAME", "\"${defaultConfig.versionName}\""

@@ -68,39 +68,3 @@
 # -keep public class mypackage.MyClass
 # -keep public interface mypackage.MyInterface
 # -keep public class * implements mypackage.MyInterface
-
-### Sentry ###
--keepattributes LineNumberTable,SourceFile
--dontwarn org.slf4j.**
--dontwarn javax.**
-
-### Teak ###
--keep interface io.teak.sdk.Unobfuscable
--keep class * implements io.teak.sdk.Unobfuscable { *; }
-
-### Clark reported an issue with this getting Proguarded ###
--keep public class android.support.v4.app.NotificationCompat$Builder {
-   public  *;
-}
-
-### AndroidX invoke via reflection ###
--keep class androidx.localbroadcastmanager.** { public *; }
--keep class androidx.core.app.NotificationManagerCompat { public *; }
-
-### Reported by tango @ PS ###
--keep class com.google.android.gms.common.GooglePlayServicesUtil { public *; }
--keep class com.google.android.gms.ads.identifier.AdvertisingIdClient { public *; }
-
-#### Keep the Teak classes for Unity dynamic invocation ###
-#-keep class io.teak.sdk.** { *; }
-
-### EventBus ###
--keepattributes *Annotation*
--keepclassmembers class * {
-    @org.greenrobot.eventbus.Subscribe <methods>;
-}
--keep enum org.greenrobot.eventbus.ThreadMode { *; }
-
--keepclassmembers class * extends org.greenrobot.eventbus.util.ThrowableFailureEvent {
-    <init>(java.lang.Throwable);
-}

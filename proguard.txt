@@ -1,16 +1,44 @@
+### Amazon In-App Purchasing ###
 -keep public class com.amazon.device.iap.* { public *; }
 -dontwarn com.amazon.device.iap.**
 
+### Amazon Device Messaging ###
 -keep public class com.amazon.device.messaging.* { public *; }
 -dontwarn com.amazon.device.messaging.**
 
+### Billing ###
 -keep public class com.android.vending.billing.IInAppBillingService { public *; }
 -keep public class * implements com.android.vending.billing.IInAppBillingService { public static *; }
 -dontwarn com.android.vending.billing.IInAppBillingService.**
 
--keep public class com.google.android.gms.iid.InstanceIDListenerService { public *; }
--keep public class * implements com.google.android.gms.iid.InstanceIDListenerService { public static *; }
--dontwarn com.google.android.gms.iid.InstanceIDListenerService.**
-
+### Facebook ###
 -keep class com.facebook.** { *; }
 -dontwarn com.facebook.**
+
+### Sentry ###
+-keepattributes LineNumberTable,SourceFile
+-dontwarn org.slf4j.**
+-dontwarn javax.**
+
+### Teak ###
+-keep interface io.teak.sdk.Unobfuscable
+-keep class * implements io.teak.sdk.Unobfuscable { *; }
+
+### AndroidX invoke via reflection ###
+-keep class androidx.localbroadcastmanager.** { public *; }
+-keep class androidx.core.app.NotificationManagerCompat { public *; }
+
+### Reported by tango @ PS ###
+-keep class com.google.android.gms.common.GooglePlayServicesUtil { public *; }
+-keep class com.google.android.gms.ads.identifier.AdvertisingIdClient { public *; }
+
+### EventBus ###
+-keepattributes *Annotation*
+-keepclassmembers class * {
+    @org.greenrobot.eventbus.Subscribe <methods>;
+}
+-keep enum org.greenrobot.eventbus.ThreadMode { *; }
+
+-keepclassmembers class * extends org.greenrobot.eventbus.util.ThrowableFailureEvent {
+    <init>(java.lang.Throwable);
+}
