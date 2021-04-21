@@ -172,11 +172,15 @@ dependencies {
 
     implementation 'com.google.firebase:firebase-messaging:21.0.0'
     implementation 'com.firebase:firebase-jobdispatcher:0.8.5'
+    implementation 'androidx.work:work-runtime:2.5.0'
 
-    implementation 'com.facebook.android:facebook-common:9+'
+    // Optional Facebook dependency
+    compileOnly 'com.facebook.android:facebook-common:9+'
 
-    // Amazon, Air, Unity compile-time-only dependencies
+    // Optional Amazon dependencies
     compileOnly files('libs/amazon-device-messaging-1.1.0.jar')
     compileOnly files('libs/in-app-purchasing-2.0.76.jar')
+
+    // Optional Unity dependency
     compileOnly files('libs/UnityClasses.jar')
 }

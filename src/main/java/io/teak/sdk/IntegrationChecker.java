@@ -4,15 +4,20 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.Signature;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.teak.sdk.configuration.AppConfiguration;
@@ -20,19 +25,6 @@ import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.ThreadFactory;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.io.ManifestParser;
-import io.teak.sdk.json.JSONArray;
-import io.teak.sdk.json.JSONObject;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import javax.net.ssl.HttpsURLConnection;
 
 public class IntegrationChecker {
     public static final String LOG_TAG = "Teak.Integration";
@@ -47,7 +39,9 @@ public class IntegrationChecker {
         new String[] {"androidx.core.app.NotificationManagerCompat", "androidx.core:core:1.0.+"},
         new String[] {"com.google.android.gms.common.GooglePlayServicesUtil", "com.google.android.gms:play-services-base:16+", "com.google.android.gms:play-services-basement:16+"},
         new String[] {"com.google.firebase.messaging.FirebaseMessagingService", "com.google.firebase:firebase-messaging:17+"},
-        new String[] {"com.google.android.gms.ads.identifier.AdvertisingIdClient", "com.google.android.gms:play-services-ads:16+"}};
+        new String[] {"com.google.android.gms.ads.identifier.AdvertisingIdClient", "com.google.android.gms:play-services-ads:16+"},
+        new String[] { "androidx.work.Worker", "androidx.work:work-runtime:2.5.0"}
+    };
 
     public static final String[] permissionFeatures = new String[] {
         "shortcutbadger"};
@@ -303,16 +297,6 @@ public class IntegrationChecker {
                 // Error if no Teak GCM receiver
                 if (teakFcmService == null) {
                     addErrorToReport("io.teak.sdk.push.FCMPushProvider", "Push notifications will not work because there is no \"io.teak.sdk.push.FCMPushProvider\" <service> in your AndroidManifest.xml.\n\nTo fix this, add the io.teak.sdk.push.FCMPushProvider <service>");
-                }
-            }
-
-            // Check to make sure the Teak job service is present
-            {
-                Teak.log.i("integration.manifest.JobService", "Checking AndroidManifest.xml for Teak Job Service.");
-                final List<ManifestParser.XmlTag> teakDeviceStateService = applications.get(0).find("service",
-                    new HashMap.SimpleEntry<>("name", "io.teak.sdk.service.JobService"));
-                if (teakDeviceStateService.size() < 1) {
-                    addErrorToReport("io.teak.sdk.service.JobService", "Animated notifications will not work on Android 8+ because there is no \"io.teak.sdk.service.DeviceStateService\" <service> in your AndroidManifest.xml.\n\nTo fix this, add the \"io.teak.sdk.service.DeviceStateService\" <service>");
                 }
             }
 

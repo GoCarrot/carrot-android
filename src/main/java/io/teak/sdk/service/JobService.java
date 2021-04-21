@@ -9,8 +9,6 @@ import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.core.DeviceScreenState;
 import io.teak.sdk.core.Executors;
 import io.teak.sdk.io.IAndroidNotification;
-import io.teak.sdk.raven.Raven;
-import io.teak.sdk.raven.Sender;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -38,9 +36,7 @@ public class JobService extends com.firebase.jobdispatcher.JobService implements
         Callable<Boolean> jobCallable = null;
         try {
             final String jobType = jobBundle.getString(JOB_TYPE_KEY);
-            if (Raven.JOB_TYPE.equals(jobType)) {
-                jobCallable = new Sender(jobBundle);
-            } else if (IAndroidNotification.ANIMATED_NOTIFICATION_JOB_TYPE.equals(jobType)) {
+            if (IAndroidNotification.ANIMATED_NOTIFICATION_JOB_TYPE.equals(jobType)) {
                 DeviceScreenState.scheduleScreenStateJob(jobParameters);
             } else if (DeviceScreenState.SCREEN_STATE_JOB_TAG.equals(jobType)) {
                 jobCallable = DeviceScreenState.isDeviceScreenOn(this.getApplicationContext(), jobParameters);
