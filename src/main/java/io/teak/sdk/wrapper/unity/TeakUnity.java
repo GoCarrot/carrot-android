@@ -1,5 +1,9 @@
 package io.teak.sdk.wrapper.unity;
 
+import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+
 import androidx.annotation.NonNull;
 import io.teak.sdk.Teak;
 import io.teak.sdk.Unobfuscable;
@@ -8,9 +12,6 @@ import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.raven.Raven;
 import io.teak.sdk.wrapper.ISDKWrapper;
 import io.teak.sdk.wrapper.TeakInterface;
-import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
 
 public class TeakUnity implements Unobfuscable {
     private static Method unitySendMessage;
@@ -71,6 +72,11 @@ public class TeakUnity implements Unobfuscable {
                 if (TeakUnity.isAvailable()) {
                     try {
                         TeakUnity.unitySendMessage.invoke(null, "TeakGameObject", method, message);
+                    } catch (UnsatisfiedLinkError ignored) {
+                        // TEAK-ANDROID-SDK-K4
+                        // TEAK-ANDROID-SDK-K5
+                        // TEAK-ANDROID-SDK-K6
+                        // TEAK-ANDROID-SDK-K9
                     } catch (Exception e) {
                         Teak.log.exception(e);
                     }
