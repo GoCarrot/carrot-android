@@ -40,8 +40,7 @@ public class IntegrationChecker {
         new String[] {"com.google.android.gms.common.GooglePlayServicesUtil", "com.google.android.gms:play-services-base:16+", "com.google.android.gms:play-services-basement:16+"},
         new String[] {"com.google.firebase.messaging.FirebaseMessagingService", "com.google.firebase:firebase-messaging:17+"},
         new String[] {"com.google.android.gms.ads.identifier.AdvertisingIdClient", "com.google.android.gms:play-services-ads:16+"},
-        new String[] { "androidx.work.Worker", "androidx.work:work-runtime:2.5.0"}
-    };
+        new String[] {"androidx.work.Worker", "androidx.work:work-runtime:2.5.0"}};
 
     public static final String[] permissionFeatures = new String[] {
         "shortcutbadger"};

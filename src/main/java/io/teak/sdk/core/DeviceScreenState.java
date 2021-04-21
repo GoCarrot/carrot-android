@@ -128,10 +128,10 @@ public class DeviceScreenState {
 
         int[] executionWindow = DeviceScreenState.ExecutionWindow[delayIndex];
         final OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(Sender.class)
-                .setInputData(dataBuilder.build())
-                .build();
+                                               .setInputData(dataBuilder.build())
+                                               .build();
         WorkManager.getInstance(this.context)
-                .enqueueUniqueWork("io.teak.sdk.screenState", ExistingWorkPolicy.REPLACE, request);
+            .enqueueUniqueWork("io.teak.sdk.screenState", ExistingWorkPolicy.REPLACE, request);
     }
 
     public class DeviceScreenStateWorker extends Worker {

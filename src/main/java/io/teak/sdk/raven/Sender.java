@@ -99,7 +99,7 @@ public class Sender extends Worker {
 
             return Result.success();
         } catch (Exception ignored) {
-          return Result.failure();
+            return Result.failure();
         } finally {
             if (rd != null) {
                 try {

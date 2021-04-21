@@ -96,8 +96,8 @@ public class DefaultAndroidNotification implements IAndroidNotification {
         try {
             if (this.animatedNotifications.size() > 0) {
                 final Data data = new Data.Builder()
-                        .putInt(IAndroidNotification.ANIMATED_NOTIFICATION_COUNT_KEY, this.animatedNotifications.size())
-                        .build();
+                                      .putInt(IAndroidNotification.ANIMATED_NOTIFICATION_COUNT_KEY, this.animatedNotifications.size())
+                                      .build();
                 this.deviceScreenState.scheduleScreenStateWork(data);
             }
         } catch (Exception e) {

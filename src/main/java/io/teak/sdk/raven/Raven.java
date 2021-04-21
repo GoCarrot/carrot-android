@@ -363,25 +363,25 @@ public class Raven implements Thread.UncaughtExceptionHandler {
 
         void send() {
             final Constraints constraints = new Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
-                    .build();
+                                                .setRequiredNetworkType(NetworkType.CONNECTED)
+                                                .build();
             final OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(Sender.class)
-                    .setInputData(this.toData())
-                    .setConstraints(constraints)
-                    .build();
+                                                   .setInputData(this.toData())
+                                                   .setConstraints(constraints)
+                                                   .build();
             WorkManager.getInstance(Raven.this.applicationContext)
-                    .enqueueUniqueWork(this.uuid, ExistingWorkPolicy.KEEP, request);
+                .enqueueUniqueWork(this.uuid, ExistingWorkPolicy.KEEP, request);
         }
 
         Data toData() {
             this.payload.putAll(Raven.this.payloadTemplate);
             try {
                 Data.Builder data = new Data.Builder()
-                    .putLong(Sender.TIMESTAMP_KEY, this.timestamp.getTime() / 1000L)
-                    .putString(Sender.PAYLOAD_KEY, new JSONObject(this.payload).toString())
-                    .putString(Sender.ENDPOINT_KEY, Raven.this.endpoint.toString())
-                    .putString(Sender.SENTRY_KEY_KEY, Raven.this.SENTRY_KEY)
-                    .putString(Sender.SENTRY_SECRET_KEY, Raven.this.SENTRY_SECRET);
+                                        .putLong(Sender.TIMESTAMP_KEY, this.timestamp.getTime() / 1000L)
+                                        .putString(Sender.PAYLOAD_KEY, new JSONObject(this.payload).toString())
+                                        .putString(Sender.ENDPOINT_KEY, Raven.this.endpoint.toString())
+                                        .putString(Sender.SENTRY_KEY_KEY, Raven.this.SENTRY_KEY)
+                                        .putString(Sender.SENTRY_SECRET_KEY, Raven.this.SENTRY_SECRET);
                 return data.build();
             } catch (Exception e) {
                 Log.e(LOG_TAG, Log.getStackTraceString(e));
