@@ -11,12 +11,7 @@ import android.os.Bundle;
 import android.os.DeadObjectException;
 import android.os.IBinder;
 import android.util.SparseArray;
-import io.teak.sdk.Helpers;
-import io.teak.sdk.Teak;
-import io.teak.sdk.TeakEvent;
-import io.teak.sdk.event.PurchaseEvent;
-import io.teak.sdk.event.PurchaseFailedEvent;
-import io.teak.sdk.json.JSONObject;
+
 import java.io.InvalidObjectException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -24,6 +19,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.teak.sdk.Helpers;
+import io.teak.sdk.Teak;
+import io.teak.sdk.TeakEvent;
+import io.teak.sdk.event.PurchaseEvent;
+import io.teak.sdk.event.PurchaseFailedEvent;
+import io.teak.sdk.json.JSONObject;
 
 public class GooglePlay implements IStore {
     private Object mService;
@@ -87,9 +89,7 @@ public class GooglePlay implements IStore {
                     Class<?> cls = Class.forName("com.android.vending.billing.IInAppBillingService$Stub");
                     Method m = cls.getMethod("asInterface", IBinder.class);
                     mService = m.invoke(null, (Object) service);
-                } catch (Exception e) {
-                    Teak.log.exception(e);
-                    return;
+                } catch (Exception ignored) {
                 }
             }
         };
