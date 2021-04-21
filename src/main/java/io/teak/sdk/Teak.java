@@ -7,9 +7,18 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.net.Uri;
 import android.os.Bundle;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.FutureTask;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.core.Executors;
 import io.teak.sdk.core.InstrumentableReentrantLock;
@@ -19,14 +28,6 @@ import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.io.AndroidResources;
 import io.teak.sdk.json.JSONException;
 import io.teak.sdk.json.JSONObject;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.FutureTask;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Teak

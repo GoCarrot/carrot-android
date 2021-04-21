@@ -6,7 +6,6 @@ import androidx.annotation.NonNull;
 import io.teak.sdk.TeakNotification;
 
 public interface IAndroidNotification {
-    String ANIMATED_NOTIFICATION_JOB_TYPE = "AnimatedNotificationCount";
     String ANIMATED_NOTIFICATION_COUNT_KEY = "ActiveNotifications";
 
     void cancelNotification(@NonNull Context context, int platformId);

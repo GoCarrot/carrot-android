@@ -11,13 +11,16 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+
+import java.net.URLEncoder;
+import java.security.InvalidParameterException;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.firebase.jobdispatcher.FirebaseJobDispatcher;
-import com.firebase.jobdispatcher.GooglePlayDriver;
-import com.firebase.jobdispatcher.Job;
-import com.firebase.jobdispatcher.RetryStrategy;
-import com.firebase.jobdispatcher.Trigger;
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.Session;
 import io.teak.sdk.core.TeakCore;
@@ -31,20 +34,12 @@ import io.teak.sdk.facebook.AccessTokenTracker;
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.push.PushState;
 import io.teak.sdk.raven.Raven;
-import io.teak.sdk.service.JobService;
 import io.teak.sdk.shortcutbadger.ShortcutBadger;
 import io.teak.sdk.store.IStore;
-import java.net.URLEncoder;
-import java.security.InvalidParameterException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class TeakInstance implements Unobfuscable {
     public final IObjectFactory objectFactory;
     private final Context context;
-    public final FirebaseJobDispatcher dispatcher;
     private final TeakCore teakCore;
     private AccessTokenTracker facebookAccessTokenTracker;
 
@@ -62,16 +57,6 @@ public class TeakInstance implements Unobfuscable {
         this.objectFactory = objectFactory;
         this.teakCore = new TeakCore(this.context);
         PushState.init(this.context);
-
-        // Start Teak job dispatcher
-        FirebaseJobDispatcher dispatcher = null;
-        try {
-            Class.forName("com.firebase.jobdispatcher.FirebaseJobDispatcher");
-            dispatcher = new FirebaseJobDispatcher(new GooglePlayDriver(this.context));
-        } catch (Exception e) {
-            Teak.log.exception(e, false);
-        }
-        this.dispatcher = dispatcher;
 
         // Ravens
         TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
@@ -534,17 +519,5 @@ public class TeakInstance implements Unobfuscable {
                 }
             }
         });
-    }
-
-    ///// JobService
-
-    public Job.Builder jobBuilder(@NonNull String tag, @NonNull Bundle extras) {
-        return this.dispatcher.newJobBuilder()
-            .setService(JobService.class)
-            .setTag(tag)
-            .setExtras(extras)
-            .setTrigger(Trigger.NOW)
-            .setReplaceCurrent(true)
-            .setRetryStrategy(RetryStrategy.DEFAULT_LINEAR);
     }
 }

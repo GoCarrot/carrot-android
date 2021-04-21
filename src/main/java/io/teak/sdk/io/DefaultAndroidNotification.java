@@ -3,17 +3,23 @@ package io.teak.sdk.io;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Random;
+
 import androidx.annotation.NonNull;
-import com.firebase.jobdispatcher.Job;
+import androidx.work.Data;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.NotificationBuilder;
 import io.teak.sdk.Teak;
@@ -23,16 +29,12 @@ import io.teak.sdk.core.DeviceScreenState;
 import io.teak.sdk.event.NotificationDisplayEvent;
 import io.teak.sdk.event.NotificationReDisplayEvent;
 import io.teak.sdk.event.PushNotificationEvent;
-import io.teak.sdk.service.JobService;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Random;
 
-public class DefaultAndroidNotification extends BroadcastReceiver implements IAndroidNotification {
+public class DefaultAndroidNotification implements IAndroidNotification {
     private final NotificationManager notificationManager;
     private final ArrayList<AnimationEntry> animatedNotifications = new ArrayList<>();
     private final Handler handler;
-    private final DeviceScreenState deviceScreenState = new DeviceScreenState();
+    private final DeviceScreenState deviceScreenState;
 
     private class AnimationEntry {
         final Notification notification;
@@ -60,13 +62,10 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
 
     public DefaultAndroidNotification(@NonNull final Context context) {
         this.notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        this.deviceScreenState = new DeviceScreenState(context);
 
         if (!"test_package_name".equalsIgnoreCase(context.getPackageName())) {
-            IntentFilter screenStateFilter = new IntentFilter();
-            screenStateFilter.addAction(DeviceScreenState.SCREEN_ON);
-            screenStateFilter.addAction(DeviceScreenState.SCREEN_OFF);
-            context.registerReceiver(this, screenStateFilter);
-
+            EventBus.getDefault().register(this);
             this.handler = new Handler(Looper.getMainLooper());
         } else {
             this.handler = null;
@@ -93,18 +92,13 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
         });
     }
 
-    private void issueAnimatedNotificationSizeJob() {
+    private void scheduleScreenStateWork() {
         try {
             if (this.animatedNotifications.size() > 0) {
-                final Bundle bundle = new Bundle();
-                bundle.putInt(IAndroidNotification.ANIMATED_NOTIFICATION_COUNT_KEY, this.animatedNotifications.size());
-                bundle.putString(JobService.JOB_TYPE_KEY, IAndroidNotification.ANIMATED_NOTIFICATION_JOB_TYPE);
-
-                final Job job = Teak.Instance.jobBuilder(IAndroidNotification.ANIMATED_NOTIFICATION_JOB_TYPE, bundle)
-                                    .build();
-                Teak.Instance.dispatcher.mustSchedule(job);
-            } else {
-                Teak.Instance.dispatcher.cancel(IAndroidNotification.ANIMATED_NOTIFICATION_JOB_TYPE);
+                final Data data = new Data.Builder()
+                        .putInt(IAndroidNotification.ANIMATED_NOTIFICATION_COUNT_KEY, this.animatedNotifications.size())
+                        .build();
+                this.deviceScreenState.scheduleScreenStateWork(data);
             }
         } catch (Exception e) {
             Teak.log.exception(e, false);
@@ -125,7 +119,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                 }
             }
             this.animatedNotifications.removeAll(removeList);
-            this.issueAnimatedNotificationSizeJob();
+            this.scheduleScreenStateWork();
         }
     }
 
@@ -152,7 +146,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                     if (teakNotification.isAnimated) {
                         synchronized (DefaultAndroidNotification.this.animatedNotifications) {
                             DefaultAndroidNotification.this.animatedNotifications.add(new AnimationEntry(nativeNotification, teakNotification));
-                            DefaultAndroidNotification.this.issueAnimatedNotificationSizeJob();
+                            DefaultAndroidNotification.this.scheduleScreenStateWork();
                         }
                     }
                 } catch (SecurityException ignored) {
@@ -170,26 +164,10 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
         });
     }
 
-    @Override
-    public void onReceive(final Context context, final Intent intent) {
-        DeviceScreenState.State state = DeviceScreenState.State.Unknown;
-        if (DeviceScreenState.SCREEN_ON.equals(intent.getAction())) {
-            state = DeviceScreenState.State.ScreenOn;
-        } else if (DeviceScreenState.SCREEN_OFF.equals(intent.getAction())) {
-            state = DeviceScreenState.State.ScreenOff;
-        }
+    @Subscribe
+    public void onScreenState(final DeviceScreenState.ScreenStateChangeEvent event) {
+        if (event.newState == DeviceScreenState.State.ScreenOn) return;
 
-        this.deviceScreenState.setState(state, new DeviceScreenState.Callbacks() {
-            @Override
-            public void onStateChanged(DeviceScreenState.State oldState, DeviceScreenState.State newState) {
-                if (newState == DeviceScreenState.State.ScreenOff) {
-                    DefaultAndroidNotification.this.reIssueAnimatedNotifications(context);
-                }
-            }
-        });
-    }
-
-    private void reIssueAnimatedNotifications(@NonNull final Context context) {
         // This should only be the case during unit tests, but catch it here anyway
         if (this.handler == null) {
             Teak.log.e("notification.animation.error", "this.handler is null, skipping animation refresh");
@@ -199,7 +177,7 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
         // Double, double, toil and trouble...
         String tempNotificationChannelId = null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            tempNotificationChannelId = NotificationBuilder.getQuietNotificationChannelId(context);
+            tempNotificationChannelId = NotificationBuilder.getQuietNotificationChannelId(event.context);
         }
         final String notificationChannelId = tempNotificationChannelId;
 
@@ -236,19 +214,19 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                             }
 
                             // Now it needs new intents
-                            ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
+                            ComponentName cn = new ComponentName(event.context.getPackageName(), "io.teak.sdk.Teak");
 
                             // Create intent to fire if/when notification is cleared
-                            Intent pushClearedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX);
+                            Intent pushClearedIntent = new Intent(event.context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX);
                             pushClearedIntent.putExtras(entry.bundle);
                             pushClearedIntent.setComponent(cn);
-                            entry.notification.deleteIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
+                            entry.notification.deleteIntent = PendingIntent.getBroadcast(event.context, rng.nextInt(), pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
 
                             // Create intent to fire if/when notification is opened, attach bundle info
-                            Intent pushOpenedIntent = new Intent(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX);
+                            Intent pushOpenedIntent = new Intent(event.context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX);
                             pushOpenedIntent.putExtras(entry.bundle);
                             pushOpenedIntent.setComponent(cn);
-                            entry.notification.contentIntent = PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
+                            entry.notification.contentIntent = PendingIntent.getBroadcast(event.context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
 
                             DefaultAndroidNotification.this.notificationManager.notify(NOTIFICATION_TAG, entry.bundle.getInt("platformId"), entry.notification);
                             TeakEvent.postEvent(new NotificationReDisplayEvent(entry.bundle, entry.notification));
@@ -258,8 +236,8 @@ public class DefaultAndroidNotification extends BroadcastReceiver implements IAn
                     }
                 }
 
-                // Re-issue the job, this will overwrite the current job, and reset the retry-backoff
-                DefaultAndroidNotification.this.issueAnimatedNotificationSizeJob();
+                // Re-issue the work, this will overwrite the current worker, and reset the retry-backoff
+                DefaultAndroidNotification.this.scheduleScreenStateWork();
             }
         }, 1000);
     }

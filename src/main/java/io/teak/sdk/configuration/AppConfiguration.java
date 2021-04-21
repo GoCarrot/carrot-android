@@ -5,13 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import androidx.annotation.NonNull;
-import io.teak.sdk.Helpers;
-import io.teak.sdk.IntegrationChecker;
-import io.teak.sdk.Teak;
-import io.teak.sdk.io.AndroidResources;
-import io.teak.sdk.io.IAndroidResources;
-import io.teak.sdk.json.JSONObject;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -20,13 +14,19 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import androidx.annotation.NonNull;
+import io.teak.sdk.Helpers;
+import io.teak.sdk.IntegrationChecker;
+import io.teak.sdk.Teak;
+import io.teak.sdk.io.AndroidResources;
+import io.teak.sdk.io.IAndroidResources;
+import io.teak.sdk.json.JSONObject;
+
 public class AppConfiguration {
     @SuppressWarnings("WeakerAccess")
     public final String appId;
     @SuppressWarnings("WeakerAccess")
     public final String apiKey;
-    @SuppressWarnings("WeakerAccess")
-    public final int jobId;
     @SuppressWarnings("WeakerAccess")
     public final long appVersion;
     @SuppressWarnings("WeakerAccess")
@@ -52,8 +52,6 @@ public class AppConfiguration {
     public static final String TEAK_API_KEY_RESOURCE = "io_teak_api_key";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_APP_ID_RESOURCE = "io_teak_app_id";
-    @SuppressWarnings("WeakerAccess")
-    public static final String TEAK_JOB_ID_RESOURCE = "io_teak_job_id";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_STORE_ID = "io_teak_store_id";
     @SuppressWarnings("WeakerAccess")
@@ -107,18 +105,6 @@ public class AppConfiguration {
             } else if (this.apiKey.trim().length() < 1) {
                 throw new IntegrationChecker.InvalidConfigurationException("R.string." + TEAK_API_KEY_RESOURCE + " is empty.");
             }
-        }
-
-        // Job Id
-        {
-            String tempJobId = androidResources.getTeakStringResource(TEAK_JOB_ID_RESOURCE);
-
-            int jobIdAsInt = Teak.JOB_ID;
-            if (tempJobId != null && tempJobId.trim().length() > 0) {
-                jobIdAsInt = Integer.parseInt(tempJobId.trim());
-            }
-
-            this.jobId = jobIdAsInt;
         }
 
         // Store
@@ -201,7 +187,6 @@ public class AppConfiguration {
         HashMap<String, Object> ret = new HashMap<>();
         ret.put("appId", this.appId);
         ret.put("apiKey", this.apiKey);
-        ret.put("jobId", this.jobId);
         ret.put("appVersion", this.appVersion);
         ret.put("bundleId", this.bundleId);
         ret.put("installerPackage", this.installerPackage);
