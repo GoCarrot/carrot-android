@@ -6,19 +6,14 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.provider.Settings;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import io.teak.sdk.Helpers;
-import io.teak.sdk.IntegrationChecker;
-import io.teak.sdk.RetriableTask;
-import io.teak.sdk.Teak;
-import io.teak.sdk.TeakEvent;
-import io.teak.sdk.core.ThreadFactory;
-import io.teak.sdk.event.AdvertisingInfoEvent;
+
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -27,6 +22,17 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
+import java.util.regex.Pattern;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import io.teak.sdk.Helpers;
+import io.teak.sdk.IntegrationChecker;
+import io.teak.sdk.RetriableTask;
+import io.teak.sdk.Teak;
+import io.teak.sdk.TeakEvent;
+import io.teak.sdk.core.ThreadFactory;
+import io.teak.sdk.event.AdvertisingInfoEvent;
 
 public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
     private final Context context;
@@ -236,5 +242,42 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
             }
         }
         return line;
+    }
+
+    /**
+     * Gets the number of cores available in this device, across all processors.
+     * Requires: Ability to peruse the filesystem at "/sys/devices/system/cpu"
+     * <p>
+     * http://forums.makingmoneywithandroid.com/android-development/280-%5Bhow-%5D-get-number-cpu-cores-android-device.html
+     *
+     * @return The number of cores, or 1 if failed to get result
+     */
+    @Override
+    public int getNumCores() {
+        //Private Class to display only CPU devices in the directory listing
+        class CpuFilter implements FileFilter {
+            @Override
+            public boolean accept(File pathname) {
+                //Check if filename is "cpu", followed by a single digit number
+                if (Pattern.matches("cpu[0-9]+", pathname.getName())) {
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        try {
+            //Get directory containing CPU info
+            File dir = new File("/sys/devices/system/cpu/");
+
+            //Filter to only list the devices we care about
+            File[] files = dir.listFiles(new CpuFilter());
+
+            //Return the number of cores (virtual CPU devices)
+            return files.length;
+        } catch (Exception e) {
+            Teak.log.exception(e);
+            return 1;
+        }
     }
 }

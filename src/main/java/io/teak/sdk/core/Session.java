@@ -4,26 +4,9 @@ import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import io.teak.sdk.Helpers;
-import io.teak.sdk.Helpers.mm;
-import io.teak.sdk.Request;
-import io.teak.sdk.Teak;
-import io.teak.sdk.TeakConfiguration;
-import io.teak.sdk.TeakEvent;
-import io.teak.sdk.TeakNotification;
-import io.teak.sdk.event.AdvertisingInfoEvent;
-import io.teak.sdk.event.FacebookAccessTokenEvent;
-import io.teak.sdk.event.LifecycleEvent;
-import io.teak.sdk.event.LogoutEvent;
-import io.teak.sdk.event.PushRegistrationEvent;
-import io.teak.sdk.event.RemoteConfigurationEvent;
-import io.teak.sdk.event.SessionStateEvent;
-import io.teak.sdk.event.UserIdEvent;
-import io.teak.sdk.json.JSONObject;
-import io.teak.sdk.push.PushState;
-import io.teak.sdk.referrer.InstallReferrerFuture;
+
+import org.greenrobot.eventbus.EventBus;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -48,10 +31,31 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLProtocolException;
-import org.greenrobot.eventbus.EventBus;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import io.teak.sdk.Helpers;
+import io.teak.sdk.Helpers.mm;
+import io.teak.sdk.Request;
+import io.teak.sdk.Teak;
+import io.teak.sdk.TeakConfiguration;
+import io.teak.sdk.TeakEvent;
+import io.teak.sdk.TeakNotification;
+import io.teak.sdk.event.AdvertisingInfoEvent;
+import io.teak.sdk.event.FacebookAccessTokenEvent;
+import io.teak.sdk.event.LifecycleEvent;
+import io.teak.sdk.event.LogoutEvent;
+import io.teak.sdk.event.PushRegistrationEvent;
+import io.teak.sdk.event.RemoteConfigurationEvent;
+import io.teak.sdk.event.SessionStateEvent;
+import io.teak.sdk.event.UserIdEvent;
+import io.teak.sdk.json.JSONObject;
+import io.teak.sdk.push.PushState;
+import io.teak.sdk.referrer.InstallReferrerFuture;
 
 public class Session {
 
@@ -432,6 +436,11 @@ public class Session {
                         if (Session.this.facebookAccessToken != null) {
                             payload.put("access_token", Session.this.facebookAccessToken);
                         }
+                    }
+
+                    // Report additional device information
+                    {
+                        payload.put("device_num_cores", teakConfiguration.deviceConfiguration.numCores);
                     }
 
                     Map<String, Object> attribution = new HashMap<>();

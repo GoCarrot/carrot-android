@@ -1,8 +1,9 @@
 package io.teak.sdk.io;
 
+import java.util.Map;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import java.util.Map;
 
 public interface IAndroidDeviceInfo {
     @NonNull
@@ -15,4 +16,6 @@ public interface IAndroidDeviceInfo {
     String getSystemProperty(String propName);
 
     void requestAdvertisingId();
+
+    int getNumCores();
 }
