@@ -185,36 +185,6 @@ class TeakIntegrationTest {
 
     private Class<?> teakThunkClass = Teak.class;
 
-    void call_prime31PurchaseSucceeded(String json) {
-        try {
-            Method method = teakThunkClass.getDeclaredMethod("prime31PurchaseSucceeded", String.class);
-            method.setAccessible(true);
-            method.invoke(null, json);
-        } catch (Exception e) {
-            fail(android.util.Log.getStackTraceString(e));
-        }
-    }
-
-    void call_openIABPurchaseSucceeded(String json) {
-        try {
-            Method method = teakThunkClass.getDeclaredMethod("openIABPurchaseSucceeded", String.class);
-            method.setAccessible(true);
-            method.invoke(null, json);
-        } catch (Exception e) {
-            fail(android.util.Log.getStackTraceString(e));
-        }
-    }
-
-    void call_pluginPurchaseFailed(int errorCode) {
-        try {
-            Method method = teakThunkClass.getDeclaredMethod("pluginPurchaseFailed", int.class);
-            method.setAccessible(true);
-            method.invoke(null, errorCode);
-        } catch (Exception e) {
-            fail(android.util.Log.getStackTraceString(e));
-        }
-    }
-
     void call_onActivityResult(int resultCode, Intent data) {
         try {
             Method method = teakThunkClass.getDeclaredMethod("onActivityResult", int.class, int.class, Intent.class);
