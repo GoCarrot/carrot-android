@@ -43,11 +43,11 @@ jobs:
       - run:
           name: Make sure we're not using Executors or Threads
           command: ./check_thread_use
-      # - run:
-      #     name: Run Teak SDK Unit Tests
-      #     command: (cd test_app; ./gradlew test --continue)
-      # - store_test_results:
-      #     path: test_app/app/build/test-results/
+      - run:
+          name: Run Teak SDK Unit Tests
+          command: (cd test_app; ./gradlew test --continue)
+      - store_test_results:
+          path: test_app/app/build/test-results/
 
   tag_build:
     docker:
