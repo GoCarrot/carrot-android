@@ -12,6 +12,7 @@ import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.core.InstrumentableReentrantLock;
+import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.io.IAndroidDeviceInfo;
 import io.teak.sdk.io.IAndroidNotification;
 import io.teak.sdk.io.IAndroidResources;
@@ -27,7 +28,7 @@ public class TeakUnitTest {
     IAndroidResources androidResources;
     TestTeakEventListener eventListener;
     IAndroidNotification androidNotification;
-    ITeakCore teakCore;
+    TeakCore teakCore;
 
     protected static final String TestAppId = "1136371193060244";
 
@@ -62,10 +63,6 @@ public class TeakUnitTest {
         androidResources = mock(io.teak.sdk.io.IAndroidResources.class);
         when(androidResources.getStringResource(AppConfiguration.TEAK_APP_ID_RESOURCE)).thenReturn(TestAppId);
         when(androidResources.getStringResource(AppConfiguration.TEAK_API_KEY_RESOURCE)).thenReturn("1f3850f794b9093864a0778009744d03");
-        when(androidResources.getStringResource(AppConfiguration.TEAK_GCM_SENDER_ID_RESOURCE)).thenReturn("12126273415");
-        when(androidResources.getStringResource(AppConfiguration.TEAK_FIREBASE_APP_ID_RESOURCE)).thenReturn("1:12126273415:android:102329156b15bf0c");
-        when(androidResources.getStringResource(AppConfiguration.TEAK_FIREBASE_API_KEY_RESOURCE)).thenReturn("AIzaSyA_lmYrQPyGS8QQtCKk05-YRU92zWcIZbQ");
-        when(androidResources.getStringResource(AppConfiguration.TEAK_FIREBASE_PROJECT_ID_RESOURCE)).thenReturn("teak-sdk-test");
 
         // Android Device Info mock
         final IAndroidDeviceInfo androidDeviceInfo = mock(IAndroidDeviceInfo.class);
@@ -75,7 +72,7 @@ public class TeakUnitTest {
         androidNotification = mock(IAndroidNotification.class);
 
         // Teak Core
-        teakCore = mock(ITeakCore.class);
+        teakCore = mock(TeakCore.class);
 
         // Create and add an easily mockable TeakEvent.EventListener
         if (eventListener != null) {
@@ -113,12 +110,6 @@ public class TeakUnitTest {
             @Override
             public IAndroidNotification getAndroidNotification() {
                 return androidNotification;
-            }
-
-            @NonNull
-            @Override
-            public ITeakCore getTeakCore() {
-                return teakCore;
             }
         };
 
