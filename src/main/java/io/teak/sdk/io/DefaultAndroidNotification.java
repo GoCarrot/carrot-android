@@ -64,11 +64,11 @@ public class DefaultAndroidNotification implements IAndroidNotification {
         this.notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         this.deviceScreenState = new DeviceScreenState(context);
 
-        if (!"test_package_name".equalsIgnoreCase(context.getPackageName())) {
+        if ("test_package_name".equalsIgnoreCase(context.getPackageName())) {
+            this.handler = null;
+        } else {
             EventBus.getDefault().register(this);
             this.handler = new Handler(Looper.getMainLooper());
-        } else {
-            this.handler = null;
         }
 
         TeakEvent.addEventListener(new TeakEvent.EventListener() {

@@ -32,9 +32,7 @@ import android.widget.ImageView;
 import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.ViewFlipper;
-import androidx.core.app.NotificationCompat;
-import io.teak.sdk.json.JSONArray;
-import io.teak.sdk.json.JSONObject;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,8 +48,13 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
+
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
+
+import androidx.core.app.NotificationCompat;
+import io.teak.sdk.json.JSONArray;
+import io.teak.sdk.json.JSONObject;
 
 public class NotificationBuilder {
     public static class AssetLoadException extends Exception {

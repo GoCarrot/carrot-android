@@ -134,6 +134,8 @@ public class TeakCore {
                     final Bundle bundle = intent.getExtras();
                     if (bundle == null || !bundle.containsKey("teakNotifId")) break;
 
+                    final boolean isUnitTest = bundle.getBoolean("teakUnitTest");
+
                     // Debug output
                     HashMap<String, Object> debugHash = new HashMap<>();
                     Set<String> keys = bundle.keySet();
@@ -191,7 +193,7 @@ public class TeakCore {
                                 }
 
                                 // If the API key is null, assign that
-                                if (!bundle.getBoolean("teakUnitTest")) {
+                                if (!isUnitTest) {
                                     try {
                                         if (!Request.hasTeakApiKey()) {
                                             AppConfiguration tempAppConfiguration = new AppConfiguration(context, new DefaultAndroidResources(context));
@@ -206,7 +208,7 @@ public class TeakCore {
                             // If the game is backgrounded, or we can show in foreground, display notification
                             if (!gameIsInForeground || showInForeground) {
                                 // Create native notification
-                                Notification nativeNotification = NotificationBuilder.createNativeNotification(context, bundle, teakNotification);
+                                final Notification nativeNotification = NotificationBuilder.createNativeNotification(context, bundle, teakNotification);
                                 if (nativeNotification == null) return null;
 
                                 // Ensure that DefaultAndroidNotification instance exists.
