@@ -18,4 +18,8 @@ public interface IAndroidDeviceInfo {
     void requestAdvertisingId();
 
     int getNumCores();
+
+    long totalMemoryInBytes();
+
+    Map<String, Object> displayMetrics();
 }

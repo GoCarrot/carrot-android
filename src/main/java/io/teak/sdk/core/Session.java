@@ -441,6 +441,8 @@ public class Session {
                     // Report additional device information
                     {
                         payload.put("device_num_cores", teakConfiguration.deviceConfiguration.numCores);
+                        payload.put("device_device_memory_in_bytes", teakConfiguration.deviceConfiguration.memoryInBytes);
+                        payload.put("device_display_metrics", teakConfiguration.deviceConfiguration.displayMetrics);
                     }
 
                     Map<String, Object> attribution = new HashMap<>();

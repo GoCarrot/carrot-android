@@ -1,11 +1,13 @@
 package io.teak.sdk.io;
 
 import android.annotation.SuppressLint;
+import android.app.ActivityManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.provider.Settings;
+import android.util.DisplayMetrics;
 
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.ConnectionResult;
@@ -279,5 +281,21 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
             Teak.log.exception(e);
             return 1;
         }
+    }
+
+    public long totalMemoryInBytes() {
+        final ActivityManager actManager = (ActivityManager) this.context.getSystemService(Context.ACTIVITY_SERVICE);
+        final ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
+        actManager.getMemoryInfo(memInfo);
+        return memInfo.totalMem;
+    }
+
+    public Map<String, Object> displayMetrics() {
+        final DisplayMetrics displayMetrics = this.context.getResources().getDisplayMetrics();
+        final HashMap<String, Object> map = new HashMap<>();
+        map.put("width", displayMetrics.widthPixels);
+        map.put("height", displayMetrics.heightPixels);
+        map.put("dpi", displayMetrics.densityDpi);
+        return map;
     }
 }

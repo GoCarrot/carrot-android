@@ -3,6 +3,7 @@ package io.teak.sdk.configuration;
 import android.app.ActivityManager;
 import android.content.Context;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -29,6 +30,8 @@ public class DeviceConfiguration {
     public final String platformString;
     public final int memoryClass;
     public final int numCores;
+    public final long memoryInBytes;
+    public final Map<String, Object> displayMetrics;
 
     public String advertisingId;
     public boolean limitAdTracking;
@@ -52,9 +55,11 @@ public class DeviceConfiguration {
             this.memoryClass = am == null ? 0 : am.getMemoryClass();
         }
 
-        // Number of cores
+        // System information
         {
             this.numCores = androidDeviceInfo.getNumCores();
+            this.memoryInBytes = androidDeviceInfo.totalMemoryInBytes();
+            this.displayMetrics = Collections.unmodifiableMap(androidDeviceInfo.displayMetrics());
         }
 
         // Device model/manufacturer
@@ -129,6 +134,8 @@ public class DeviceConfiguration {
         ret.put("platformString", this.platformString);
         ret.put("memoryClass", this.memoryClass);
         ret.put("numCores", this.numCores);
+        ret.put("memoryInBytes", this.memoryInBytes);
+        ret.put("displayMetrics", this.displayMetrics);
         return ret;
     }
 
