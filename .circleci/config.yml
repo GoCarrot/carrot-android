@@ -34,10 +34,17 @@ jobs:
       - run:
           name: Build Teak SDK
           command: ./gradlew assemble
+      - run:
+          name: Compute Checksum
+          command: |
+            sha512sum build/outputs/aar/teak-release.aar > teak-release.sha512
+            sha256sum build/outputs/aar/teak-release.aar > teak-release.sha256
       - persist_to_workspace:
           root: .
           paths:
             - build/outputs/aar/teak-release.aar
+            - teak-release.sha512
+            - teak-release.sha256
       - sentry_persist_proguard
       - run:
           name: Make sure we're not using Executors or Threads
@@ -79,6 +86,8 @@ jobs:
           name: Upload SDK to S3
           command: |
             aws s3 cp build/outputs/aar/teak-release.aar s3://teak-build-artifacts/android/teak-$(git describe --tags --always).aar --acl public-read
+            aws s3 cp teak-release.sha512 s3://teak-build-artifacts/android/teak-$(git describe --tags --always).sha512 --acl public-read
+            aws s3 cp teak-release.sha256 s3://teak-build-artifacts/android/teak-$(git describe --tags --always).sha256 --acl public-read
 
   deploy_latest:
     docker:
@@ -101,6 +110,8 @@ jobs:
           name: Upload SDK to S3
           command: |
             aws s3 cp build/outputs/aar/teak-release.aar s3://teak-build-artifacts/android/teak.aar --acl public-read
+            aws s3 cp teak-release.sha256 s3://teak-build-artifacts/android/teak.sha256 --acl public-read
+            aws s3 cp teak-release.sha512 s3://teak-build-artifacts/android/teak.sha512 --acl public-read
 
 workflows:
   version: 2
