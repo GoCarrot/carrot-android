@@ -37,7 +37,6 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - build/distributions/teak-release.zip
             - build/outputs/aar/teak-release.aar
       - sentry_persist_proguard
       - run:
@@ -79,7 +78,6 @@ jobs:
       - run:
           name: Upload SDK to S3
           command: |
-            aws s3 cp build/distributions/teak-release.zip s3://teak-build-artifacts/android/teak-$(git describe --tags --always).zip --acl public-read
             aws s3 cp build/outputs/aar/teak-release.aar s3://teak-build-artifacts/android/teak-$(git describe --tags --always).aar --acl public-read
 
   deploy_latest:
@@ -102,7 +100,6 @@ jobs:
       - run:
           name: Upload SDK to S3
           command: |
-            aws s3 cp build/distributions/teak-release.zip s3://teak-build-artifacts/android/teak.zip --acl public-read
             aws s3 cp build/outputs/aar/teak-release.aar s3://teak-build-artifacts/android/teak.aar --acl public-read
 
 workflows:
