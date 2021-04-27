@@ -462,15 +462,6 @@ public class TeakInstance implements Unobfuscable {
     ///// Built-in deep links
 
     private void registerTeakInternalDeepLinks() {
-        Teak.registerDeepLink("/teak_internal/store/:sku", "", "", new Teak.DeepLink() {
-            @Override
-            public void call(Map<String, Object> params) {
-                if (TeakInstance.this.appStore != null) {
-                    TeakInstance.this.appStore.launchPurchaseFlowForSKU((String) params.get("sku"));
-                }
-            }
-        });
-
         Teak.registerDeepLink("/teak_internal/companion", "", "", new Teak.DeepLink() {
             @Override
             public void call(Map<String, Object> params) {
