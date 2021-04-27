@@ -12,6 +12,4 @@ public interface IStore {
     void processPurchase(String purchaseDataAsString, Map<String, Object> extras);
 
     void checkActivityResultForPurchase(int resultCode, Intent data);
-
-    void launchPurchaseFlowForSKU(String sku);
 }

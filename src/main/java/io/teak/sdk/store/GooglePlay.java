@@ -1,7 +1,6 @@
 package io.teak.sdk.store;
 
 import android.app.Activity;
-import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -101,20 +100,6 @@ public class GooglePlay implements IStore {
             mContext.bindService(serviceIntent, mServiceConn, Context.BIND_AUTO_CREATE);
         } else {
             Teak.log.e("google_play", "Google Play Billing service unavailable on device.");
-        }
-    }
-
-    public void launchPurchaseFlowForSKU(String sku) {
-        try {
-            Class<?> cls = Class.forName("com.android.vending.billing.IInAppBillingService");
-            Method m = cls.getMethod("getBuyIntent", int.class, String.class, String.class, String.class);
-
-            Bundle buyIntentBundle = (Bundle) m.invoke(mService, 3, mContext.getPackageName(), "inapp", sku);
-            PendingIntent pendingIntent = buyIntentBundle.getParcelable("BUY_INTENT");
-            if (pendingIntent != null) {
-                ((Activity) mContext).startIntentSenderForResult(pendingIntent.getIntentSender(), 1001, new Intent(), 0, 0, 0);
-            }
-        } catch (Exception ignored) {
         }
     }
 

@@ -12,6 +12,13 @@ import com.amazon.device.iap.model.PurchaseUpdatesResponse;
 import com.amazon.device.iap.model.RequestId;
 import com.amazon.device.iap.model.UserData;
 import com.amazon.device.iap.model.UserDataResponse;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+
+import androidx.annotation.NonNull;
 import io.teak.sdk.Helpers.mm;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
@@ -19,10 +26,6 @@ import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.PurchaseEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
 import io.teak.sdk.json.JSONObject;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
 
 public class Amazon implements IStore {
     private HashMap<RequestId, ArrayBlockingQueue<String>> skuDetailsRequestMap;
@@ -71,10 +74,6 @@ public class Amazon implements IStore {
 
     public void checkActivityResultForPurchase(int resultCode, Intent data) {
         // None
-    }
-
-    public void launchPurchaseFlowForSKU(String sku) {
-        Teak.log.i("amazon.iap", "TODO: launchPurchaseFlowForSKU: " + sku);
     }
 
     @Override
