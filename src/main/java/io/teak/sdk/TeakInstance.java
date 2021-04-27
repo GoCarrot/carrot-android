@@ -334,16 +334,6 @@ public class TeakInstance implements Unobfuscable {
         TeakEvent.postEvent(new PurchaseFailedEvent(errorCode, extras));
     }
 
-    void checkActivityResultForPurchase(int resultCode, Intent data) {
-        if (this.isEnabled()) {
-            if (this.appStore != null) {
-                this.appStore.checkActivityResultForPurchase(resultCode, data);
-            } else {
-                Teak.log.e("purchase.failed.error", "Unable to checkActivityResultForPurchase, no active app store.");
-            }
-        }
-    }
-
     ///// Activity Lifecycle
 
     private final int activityHashCode;

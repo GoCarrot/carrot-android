@@ -171,24 +171,6 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     }
 
     /**
-     * Tell Teak about the result of an {@link Activity} started by your app.
-     * <br>
-     * <p>This allows Teak to automatically get the results of In-App Purchase events.</p>
-     *
-     * @param requestCode The <code>requestCode</code> parameter received from {@link Activity#onActivityResult}
-     * @param resultCode  The <code>resultCode</code> parameter received from {@link Activity#onActivityResult}
-     * @param data        The <code>data</code> parameter received from {@link Activity#onActivityResult}
-     */
-    @SuppressWarnings("unused")
-    public static void onActivityResult(@SuppressWarnings("unused") int requestCode, int resultCode, Intent data) {
-        Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityResult"));
-
-        if (data != null) {
-            checkActivityResultForPurchase(resultCode, data);
-        }
-    }
-
-    /**
      * Tell Teak how it should identify the current user.
      * <br>
      * <p>This should be the same way you identify the user in your backend.</p>
@@ -784,19 +766,6 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
                 @Override
                 public void run() {
                     Instance.purchaseFailed(errorCode, extras);
-                }
-            });
-        }
-    }
-
-    // Called by onActivityResult, as well as via reflection/directly in external purchase
-    // activity code.
-    public static void checkActivityResultForPurchase(final int resultCode, final Intent data) {
-        if (Instance != null) {
-            asyncExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Instance.checkActivityResultForPurchase(resultCode, data);
                 }
             });
         }

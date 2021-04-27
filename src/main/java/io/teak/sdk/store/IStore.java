@@ -1,7 +1,7 @@
 package io.teak.sdk.store;
 
 import android.content.Context;
-import android.content.Intent;
+
 import java.util.Map;
 
 public interface IStore {
@@ -10,6 +10,4 @@ public interface IStore {
     void dispose();
 
     void processPurchase(String purchaseDataAsString, Map<String, Object> extras);
-
-    void checkActivityResultForPurchase(int resultCode, Intent data);
 }

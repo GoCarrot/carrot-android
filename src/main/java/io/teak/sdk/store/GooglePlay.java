@@ -1,18 +1,15 @@
 package io.teak.sdk.store;
 
-import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.ResolveInfo;
 import android.os.Bundle;
-import android.os.DeadObjectException;
 import android.os.IBinder;
 import android.util.SparseArray;
 
 import java.io.InvalidObjectException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,7 +20,6 @@ import io.teak.sdk.Helpers;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.event.PurchaseEvent;
-import io.teak.sdk.event.PurchaseFailedEvent;
 import io.teak.sdk.json.JSONObject;
 
 public class GooglePlay implements IStore {
@@ -71,6 +67,7 @@ public class GooglePlay implements IStore {
     private static final String GET_SKU_DETAILS_ITEM_LIST = "ITEM_ID_LIST";
     //private static final String GET_SKU_DETAILS_ITEM_TYPE_LIST = "ITEM_TYPE_LIST";
 
+    @Override
     public void init(Context context) {
         mContext = context;
 
@@ -103,6 +100,7 @@ public class GooglePlay implements IStore {
         }
     }
 
+    @Override
     public void dispose() {
         if (mServiceConn != null) {
             if (mContext != null) mContext.unbindService(mServiceConn);
@@ -119,43 +117,6 @@ public class GooglePlay implements IStore {
             this.processPurchaseJson(new JSONObject(purchaseString), extras);
         } catch (Exception e) {
             Teak.log.exception(e);
-        }
-    }
-
-    // In case it is needed at a later point. It does get stripped out by ProGuard.
-    @SuppressWarnings("unused")
-    private void isBillingSupported() {
-        try {
-            final String packageName = mContext.getPackageName();
-
-            // check for in-app billing v3 support
-            Class<?> cls = Class.forName("com.android.vending.billing.IInAppBillingService");
-            Method m = cls.getMethod("isBillingSupported", int.class, String.class, String.class);
-            int response = (Integer) m.invoke(mService, 3, packageName, ITEM_TYPE_INAPP);
-            if (response != BILLING_RESPONSE_RESULT_OK) {
-                Teak.log.e("google_play", "Error checking for Google Play billing v3 support.");
-            }
-
-            // Check for v5 subscriptions support. This is needed for
-            // getBuyIntentToReplaceSku which allows for subscription update
-            response = (Integer) m.invoke(mService, 5, packageName, ITEM_TYPE_SUBS);
-            if (response != BILLING_RESPONSE_RESULT_OK) {
-                // Subscription v5 not available
-
-                // check for v3 subscriptions support
-                response = (Integer) m.invoke(mService, 3, packageName, ITEM_TYPE_SUBS);
-                //noinspection StatementWithEmptyBody
-                if (response == BILLING_RESPONSE_RESULT_OK) {
-                    // Subscription v3 available
-                }
-            }
-        } catch (Exception e) {
-            //noinspection ConstantConditions,StatementWithEmptyBody
-            if (e instanceof InvocationTargetException && e.getCause() instanceof DeadObjectException) {
-                // ignored, Sentry bug TEAK-SDK-7T
-            } else {
-                Teak.log.exception(e);
-            }
         }
     }
 
@@ -249,54 +210,6 @@ public class GooglePlay implements IStore {
         else {
             Teak.log.e("google_play", "Unexpected type for bundle response code.", Helpers.mm.h("class", o.getClass().getName()));
             throw new InvalidObjectException("Unexpected type for bundle response code: " + o.getClass().getName());
-        }
-    }
-
-    private int getResponseCodeFromIntent(Intent i) throws InvalidObjectException {
-        Object o = i.getExtras().get(RESPONSE_CODE);
-        if (o == null) {
-            return BILLING_RESPONSE_RESULT_OK;
-        } else if (o instanceof Integer)
-            return (Integer) o;
-        else if (o instanceof Long)
-            return (int) ((Long) o).longValue();
-        else {
-            Teak.log.e("google_play", "Unexpected type for bundle response code.", Helpers.mm.h("class", o.getClass().getName()));
-            throw new InvalidObjectException("Unexpected type for intent response code: " + o.getClass().getName());
-        }
-    }
-
-    public void checkActivityResultForPurchase(int resultCode, Intent data) {
-        if (data == null || data.getExtras() == null) return;
-
-        int tempResponseCode;
-        try {
-            tempResponseCode = getResponseCodeFromIntent(data);
-        } catch (Exception ignored) {
-            return;
-        }
-        final int responseCode = tempResponseCode;
-
-        Teak.log.i("google_play.check_activity.bundle", Helpers.bundleToJson(data.getExtras()).toMap());
-
-        final String purchaseData = data.getStringExtra(RESPONSE_INAPP_PURCHASE_DATA);
-        final String dataSignature = data.getStringExtra(RESPONSE_INAPP_SIGNATURE);
-        final String responseCodeString = BILLING_RESPONSE.get(responseCode);
-
-        if (responseCodeString != null) {
-            Teak.log.i("google_play.check_activity.response_code", Helpers.mm.h("RESPONSE_CODE", responseCodeString));
-        }
-
-        // Check for purchase activity result
-        if (purchaseData != null && dataSignature != null &&
-            resultCode == Activity.RESULT_OK && responseCode == BILLING_RESPONSE_RESULT_OK) {
-            try {
-                processPurchaseJson(new JSONObject(purchaseData), null);
-            } catch (Exception e) {
-                Teak.log.exception(e);
-            }
-        } else if (responseCode > 0) {
-            TeakEvent.postEvent(new PurchaseFailedEvent(responseCode, null));
         }
     }
 }

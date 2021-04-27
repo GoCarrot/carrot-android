@@ -1,8 +1,7 @@
 package io.teak.sdk.store;
 
 import android.content.Context;
-import android.content.Intent;
-import androidx.annotation.NonNull;
+
 import com.amazon.device.iap.PurchasingListener;
 import com.amazon.device.iap.PurchasingService;
 import com.amazon.device.iap.model.Product;
@@ -50,6 +49,7 @@ public class Amazon implements IStore {
         }
     }
 
+    @Override
     public void dispose() {
         // None
     }
@@ -70,10 +70,6 @@ public class Amazon implements IStore {
             Teak.log.exception(e);
             return null;
         }
-    }
-
-    public void checkActivityResultForPurchase(int resultCode, Intent data) {
-        // None
     }
 
     @Override

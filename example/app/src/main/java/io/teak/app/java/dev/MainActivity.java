@@ -12,17 +12,10 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
-import android.os.IBinder;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.util.DisplayMetrics;
 import android.util.Log;
-
-import androidx.appcompat.app.AppCompatActivity;
-import io.teak.sdk.Teak;
-import io.teak.sdk.TeakEvent;
-import io.teak.sdk.TeakNotification;
-import io.teak.sdk.event.PushNotificationEvent;
-
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
@@ -45,6 +38,12 @@ import java.util.Locale;
 import java.util.Map;
 
 import javax.net.ssl.SSLException;
+
+import androidx.appcompat.app.AppCompatActivity;
+import io.teak.sdk.Teak;
+import io.teak.sdk.TeakEvent;
+import io.teak.sdk.TeakNotification;
+import io.teak.sdk.event.PushNotificationEvent;
 
 public class MainActivity extends AppCompatActivity {
     public static final String LOG_TAG = "Teak.Example";
@@ -163,8 +162,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        // Call onActivityResult() for Teak
-        Teak.onActivityResult(requestCode, resultCode, data);
         super.onActivityResult(requestCode, resultCode, data);
 
         // If your In App Purchase activity needs to be modified to call Teak, you can do this
@@ -175,6 +172,8 @@ public class MainActivity extends AppCompatActivity {
             Method m = cls.getMethod("checkActivityResultForPurchase", int.class, Intent.class);
             m.invoke(null, resultCode, data);
         } catch (Exception ignored) {} */
+
+        // TODO: Update this to new google billing
 
         if (requestCode == 1001) {
             int responseCode = data.getIntExtra("RESPONSE_CODE", 0);
