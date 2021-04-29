@@ -173,6 +173,9 @@ dependencies {
 
     implementation 'com.google.firebase:firebase-messaging:21.0.0'
 
+    // Optional Google Billing v3
+    compileOnly "com.android.billingclient:billing:3.0.0"
+
     // Optional Facebook dependency
     compileOnly 'com.facebook.android:facebook-common:9+'
 

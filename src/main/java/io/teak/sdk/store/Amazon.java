@@ -26,15 +26,15 @@ import io.teak.sdk.event.PurchaseEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
 import io.teak.sdk.json.JSONObject;
 
-public class Amazon implements IStore {
-    private HashMap<RequestId, ArrayBlockingQueue<String>> skuDetailsRequestMap;
+public class Amazon implements IStore, PurchasingListener {
+    private final HashMap<RequestId, ArrayBlockingQueue<String>> skuDetailsRequestMap;
 
-    public void init(Context context) {
+    public Amazon(Context context) {
         this.skuDetailsRequestMap = new HashMap<>();
         try {
-            PurchasingService.registerListener(context, new TeakPurchasingListener());
+            PurchasingService.registerListener(context, this);
 
-            Teak.log.i("amazon.iap", "Amazon In-App Purchasing 2.0 registered.", mm.h("sandboxMode", PurchasingService.IS_SANDBOX_MODE));
+            Teak.log.i("billing.amazon.iap", "Amazon In-App Purchasing 2.0 registered.", mm.h("sandboxMode", PurchasingService.IS_SANDBOX_MODE));
 
             TeakEvent.addEventListener(new TeakEvent.EventListener() {
                 @Override
@@ -47,11 +47,6 @@ public class Amazon implements IStore {
         } catch (Exception e) {
             Teak.log.exception(e);
         }
-    }
-
-    @Override
-    public void dispose() {
-        // None
     }
 
     private JSONObject querySkuDetails(String sku) {
@@ -109,7 +104,6 @@ public class Amazon implements IStore {
         }
     }
 
-    private class TeakPurchasingListener implements PurchasingListener {
         @Override
         public void onUserDataResponse(UserDataResponse userDataResponse) {
             if (userDataResponse.getRequestStatus() == UserDataResponse.RequestStatus.SUCCESSFUL) {
@@ -157,5 +151,4 @@ public class Amazon implements IStore {
         public void onPurchaseUpdatesResponse(PurchaseUpdatesResponse purchaseUpdatesResponse) {
             // None
         }
-    }
 }

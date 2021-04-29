@@ -110,7 +110,6 @@ public class TeakInstance implements Unobfuscable {
 
     private void cleanup(Activity activity) {
         if (this.appStore != null) {
-            this.appStore.dispose();
             this.appStore = null;
         }
 
@@ -348,11 +347,8 @@ public class TeakInstance implements Unobfuscable {
 
                 final Context context = activity.getApplicationContext();
 
-                // Create IStore
+                // Get IStore
                 appStore = objectFactory.getIStore();
-                if (appStore != null) {
-                    appStore.init(context);
-                }
 
                 // Facebook Access Token Tracker
                 try {

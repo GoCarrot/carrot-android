@@ -87,7 +87,7 @@ public class DefaultObjectFactory implements IObjectFactory {
         }
 
         // Applicable store, default to GooglePlay
-        Class<?> clazz = io.teak.sdk.store.GooglePlay.class;
+        Class<?> clazz = io.teak.sdk.store.GooglePlayBillingV3.class;
         if (Helpers.isAmazonDevice(context)) {
             try {
                 Class.forName("com.amazon.device.iap.PurchasingListener");
@@ -98,7 +98,7 @@ public class DefaultObjectFactory implements IObjectFactory {
         }
 
         try {
-            return (IStore) clazz.newInstance();
+            return (IStore) clazz.getDeclaredConstructor(Context.class).newInstance(context);
         } catch (Exception e) {
             Teak.log.exception(e);
         }
