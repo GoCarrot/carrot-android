@@ -71,12 +71,6 @@ public class DefaultObjectFactory implements IObjectFactory {
         return this.pushProvider;
     }
 
-    @NonNull
-    @Override
-    public IAndroidNotification getAndroidNotification() {
-        return this.androidNotification;
-    }
-
     ///// Helpers
 
     private IStore createStore(@NonNull Context context) {
