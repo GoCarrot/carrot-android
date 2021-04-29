@@ -105,12 +105,6 @@ public class TeakUnitTest {
             public IPushProvider getPushProvider() {
                 return null;
             }
-
-            @NonNull
-            @Override
-            public IAndroidNotification getAndroidNotification() {
-                return androidNotification;
-            }
         };
 
         // Re-initialize TeakConfiguration
