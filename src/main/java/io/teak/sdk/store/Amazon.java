@@ -34,7 +34,7 @@ public class Amazon implements IStore, PurchasingListener {
         try {
             PurchasingService.registerListener(context, this);
 
-            Teak.log.i("billing.amazon.iap", "Amazon In-App Purchasing 2.0 registered.", mm.h("sandboxMode", PurchasingService.IS_SANDBOX_MODE));
+            Teak.log.i("billing.amazon.v2", "Amazon In-App Purchasing 2.0 registered.", mm.h("sandboxMode", PurchasingService.IS_SANDBOX_MODE));
 
             TeakEvent.addEventListener(new TeakEvent.EventListener() {
                 @Override
