@@ -14,21 +14,30 @@ import static groovy.io.FileType.FILES
 
 gradle.projectsEvaluated {
     android.libraryVariants.all { variant ->
-        def variantName = variant.name.capitalize()
-        def proguardTask = project.tasks.findByName(
-                "transformClassesAndResourcesWithProguardFor${variantName}")
-        if (proguardTask) {
+
+        if (variant.buildType.isMinifyEnabled()) {
+            def variantName = variant.name.capitalize()
+            def proguardTaskName = "minify${variantName}WithR8"
+            def proguardTask = project.tasks.findByName(proguardTaskName)
+            if (proguardTask == null) {
+                throw new GradleException('> could not find mapping task: ' + proguardTaskName)
+            }
+            if (variant.mappingFileProvider.get().files.size() != 1) {
+                throw new GradleException('> expected only one mapping file, got ' + variant.mappingFileProvider.get().files.size())
+            }
+
             // Compute UUID
             def sentry_debug_meta_properties = "${project.rootDir.toPath()}/build/intermediates/assets" +
                     "/${variant.dirName}/sentry-debug-meta.properties"
             def sentryProguardTask = project.tasks.create(
-                    name: "processSentryProguardFor${variantName}",
+                    name: "processSentryR8For${variantName}",
                     type: Exec) {
                 workingDir project.rootDir
                 commandLine "sentry-cli", "upload-proguard", "--write-properties",
                         sentry_debug_meta_properties,
-                        variant.getMappingFile(),
-                        "--no-upload"
+                        variant.mappingFileProvider.get().files[0],
+                        "--no-upload",
+                        "--require-one"
             }
 
             // Add UUID into resource strings

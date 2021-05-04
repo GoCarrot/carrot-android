@@ -186,6 +186,9 @@ commands:
       proguard_mapping:
         type: string
         default: "build/outputs/mapping/release/mapping.txt"
+      sentry_uuid:
+        type: string
+        default: "build/intermediates/assets/release/sentry-debug-meta.properties"
     steps:
       - persist_to_workspace:
           root: .
@@ -197,9 +200,6 @@ commands:
   sentry_upload_proguard:
     description: "Upload ProGuard Mappings to Sentry"
     parameters:
-      android_manifest:
-        type: string
-        default: "build/intermediates/aapt_friendly_merged_manifests/release/processReleaseManifest/aapt/AndroidManifest.xml"
       proguard_mapping:
         type: string
         default: "build/outputs/mapping/release/mapping.txt"
@@ -209,4 +209,6 @@ commands:
     steps:
       - run:
           name: Upload ProGuard Mappings to Sentry
-          command: sentry-cli upload-proguard --require-one --write-properties build/intermediates/assets/release/sentry-debug-meta.properties << parameters.proguard_mapping >> << parameters.sentry_cli_args >>
+          command: |
+            sentry-cli --version
+            sentry-cli upload-proguard --require-one << parameters.proguard_mapping >> << parameters.sentry_cli_args >>
