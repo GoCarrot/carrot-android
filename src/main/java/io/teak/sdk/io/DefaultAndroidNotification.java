@@ -36,7 +36,7 @@ public class DefaultAndroidNotification implements IAndroidNotification {
     private final Handler handler;
     private final DeviceScreenState deviceScreenState;
 
-    private class AnimationEntry {
+    private static class AnimationEntry {
         final Notification notification;
         final Bundle bundle;
 
@@ -71,23 +71,20 @@ public class DefaultAndroidNotification implements IAndroidNotification {
             this.handler = new Handler(Looper.getMainLooper());
         }
 
-        TeakEvent.addEventListener(new TeakEvent.EventListener() {
-            @Override
-            public void onNewEvent(@NonNull TeakEvent event) {
-                switch (event.eventType) {
-                    case PushNotificationEvent.Cleared:
-                    case PushNotificationEvent.Interaction: {
-                        final Intent intent = ((PushNotificationEvent) event).intent;
-                        if (intent != null && intent.getExtras() != null) {
-                            final Bundle bundle = intent.getExtras();
-                            cancelNotification(context, bundle.getInt("platformId"));
-                        }
-                    } break;
-                    case NotificationDisplayEvent.Type: {
-                        NotificationDisplayEvent notificationDisplayEvent = (NotificationDisplayEvent) event;
-                        displayNotification(context, notificationDisplayEvent.teakNotification, notificationDisplayEvent.nativeNotification);
-                    } break;
-                }
+        TeakEvent.addEventListener(event -> {
+            switch (event.eventType) {
+                case PushNotificationEvent.Cleared:
+                case PushNotificationEvent.Interaction: {
+                    final Intent intent = ((PushNotificationEvent) event).intent;
+                    if (intent != null && intent.getExtras() != null) {
+                        final Bundle bundle = intent.getExtras();
+                        cancelNotification(context, bundle.getInt("platformId"));
+                    }
+                } break;
+                case NotificationDisplayEvent.Type: {
+                    NotificationDisplayEvent notificationDisplayEvent = (NotificationDisplayEvent) event;
+                    displayNotification(context, notificationDisplayEvent.teakNotification, notificationDisplayEvent.nativeNotification);
+                } break;
             }
         });
     }
@@ -134,31 +131,28 @@ public class DefaultAndroidNotification implements IAndroidNotification {
             return;
         }
 
-        this.handler.post(new Runnable() {
-            @Override
-            public void run() {
-                // Run the GC
-                Helpers.runAndLogGC("display_notification.gc");
+        this.handler.post(() -> {
+            // Run the GC
+            Helpers.runAndLogGC("display_notification.gc");
 
-                try {
-                    DefaultAndroidNotification.this.notificationManager.notify(NOTIFICATION_TAG, teakNotification.platformId, nativeNotification);
+            try {
+                DefaultAndroidNotification.this.notificationManager.notify(NOTIFICATION_TAG, teakNotification.platformId, nativeNotification);
 
-                    if (teakNotification.isAnimated) {
-                        synchronized (DefaultAndroidNotification.this.animatedNotifications) {
-                            DefaultAndroidNotification.this.animatedNotifications.add(new AnimationEntry(nativeNotification, teakNotification));
-                            DefaultAndroidNotification.this.scheduleScreenStateWork();
-                        }
+                if (teakNotification.isAnimated) {
+                    synchronized (DefaultAndroidNotification.this.animatedNotifications) {
+                        DefaultAndroidNotification.this.animatedNotifications.add(new AnimationEntry(nativeNotification, teakNotification));
+                        DefaultAndroidNotification.this.scheduleScreenStateWork();
                     }
-                } catch (SecurityException ignored) {
-                    // This likely means that they need the VIBRATE permission on old versions of Android
-                    Teak.log.e("notification.permission_needed.vibrate", "Please add this to your AndroidManifest.xml: <uses-permission android:name=\"android.permission.VIBRATE\" />");
-                } catch (OutOfMemoryError e) {
-                    Teak.log.exception(e);
-                } catch (Exception e) {
-                    // Unit testing case
-                    if (nativeNotification.flags != Integer.MAX_VALUE) {
-                        throw e;
-                    }
+                }
+            } catch (SecurityException ignored) {
+                // This likely means that they need the VIBRATE permission on old versions of Android
+                Teak.log.e("notification.permission_needed.vibrate", "Please add this to your AndroidManifest.xml: <uses-permission android:name=\"android.permission.VIBRATE\" />");
+            } catch (OutOfMemoryError e) {
+                Teak.log.exception(e);
+            } catch (Exception e) {
+                // Unit testing case
+                if (nativeNotification.flags != Integer.MAX_VALUE) {
+                    throw e;
                 }
             }
         });
@@ -181,64 +175,61 @@ public class DefaultAndroidNotification implements IAndroidNotification {
         }
         final String notificationChannelId = tempNotificationChannelId;
 
-        this.handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                synchronized (DefaultAndroidNotification.this.animatedNotifications) {
-                    Random rng = new Random();
-                    for (final AnimationEntry entry : DefaultAndroidNotification.this.animatedNotifications) {
-                        try {
-                            DefaultAndroidNotification.this.notificationManager.cancel(NOTIFICATION_TAG, entry.bundle.getInt("platformId"));
+        this.handler.postDelayed(() -> {
+            synchronized (DefaultAndroidNotification.this.animatedNotifications) {
+                Random rng = new Random();
+                for (final AnimationEntry entry : DefaultAndroidNotification.this.animatedNotifications) {
+                    try {
+                        DefaultAndroidNotification.this.notificationManager.cancel(NOTIFICATION_TAG, entry.bundle.getInt("platformId"));
 
-                            class Deprecated {
-                                @SuppressWarnings("deprecation")
-                                private void assignDeprecated() {
-                                    entry.notification.defaults = 0; // Disable sound/vibrate etc
-                                    entry.notification.vibrate = new long[] {0L};
-                                    entry.notification.sound = null;
-                                }
+                        class Deprecated {
+                            @SuppressWarnings("deprecation")
+                            private void assignDeprecated() {
+                                entry.notification.defaults = 0; // Disable sound/vibrate etc
+                                entry.notification.vibrate = new long[] {0L};
+                                entry.notification.sound = null;
                             }
-                            final Deprecated deprecated = new Deprecated();
-                            deprecated.assignDeprecated();
-
-                            entry.bundle.putInt("platformId", rng.nextInt());
-
-                            // Fire burn, and cauldron bubble...
-                            if (notificationChannelId != null) {
-                                try {
-                                    final Field mChannelIdField = Notification.class.getDeclaredField("mChannelId");
-                                    mChannelIdField.setAccessible(true);
-                                    mChannelIdField.set(entry.notification, notificationChannelId);
-                                } catch (Exception ignored) {
-                                }
-                            }
-
-                            // Now it needs new intents
-                            ComponentName cn = new ComponentName(event.context.getPackageName(), "io.teak.sdk.Teak");
-
-                            // Create intent to fire if/when notification is cleared
-                            Intent pushClearedIntent = new Intent(event.context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX);
-                            pushClearedIntent.putExtras(entry.bundle);
-                            pushClearedIntent.setComponent(cn);
-                            entry.notification.deleteIntent = PendingIntent.getBroadcast(event.context, rng.nextInt(), pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
-
-                            // Create intent to fire if/when notification is opened, attach bundle info
-                            Intent pushOpenedIntent = new Intent(event.context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX);
-                            pushOpenedIntent.putExtras(entry.bundle);
-                            pushOpenedIntent.setComponent(cn);
-                            entry.notification.contentIntent = PendingIntent.getBroadcast(event.context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
-
-                            DefaultAndroidNotification.this.notificationManager.notify(NOTIFICATION_TAG, entry.bundle.getInt("platformId"), entry.notification);
-                            TeakEvent.postEvent(new NotificationReDisplayEvent(entry.bundle, entry.notification));
-                        } catch (Exception e) {
-                            Teak.log.exception(e);
                         }
+                        final Deprecated deprecated = new Deprecated();
+                        deprecated.assignDeprecated();
+
+                        entry.bundle.putInt("platformId", rng.nextInt());
+
+                        // Fire burn, and cauldron bubble...
+                        if (notificationChannelId != null) {
+                            try {
+                                final Field mChannelIdField = Notification.class.getDeclaredField("mChannelId");
+                                mChannelIdField.setAccessible(true);
+                                mChannelIdField.set(entry.notification, notificationChannelId);
+                            } catch (Exception ignored) {
+                            }
+                        }
+
+                        // Now it needs new intents
+                        ComponentName cn = new ComponentName(event.context.getPackageName(), "io.teak.sdk.Teak");
+
+                        // Create intent to fire if/when notification is cleared
+                        Intent pushClearedIntent = new Intent(event.context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX);
+                        pushClearedIntent.putExtras(entry.bundle);
+                        pushClearedIntent.setComponent(cn);
+                        entry.notification.deleteIntent = PendingIntent.getBroadcast(event.context, rng.nextInt(), pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
+
+                        // Create intent to fire if/when notification is opened, attach bundle info
+                        Intent pushOpenedIntent = new Intent(event.context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX);
+                        pushOpenedIntent.putExtras(entry.bundle);
+                        pushOpenedIntent.setComponent(cn);
+                        entry.notification.contentIntent = PendingIntent.getBroadcast(event.context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
+
+                        DefaultAndroidNotification.this.notificationManager.notify(NOTIFICATION_TAG, entry.bundle.getInt("platformId"), entry.notification);
+                        TeakEvent.postEvent(new NotificationReDisplayEvent(entry.bundle, entry.notification));
+                    } catch (Exception e) {
+                        Teak.log.exception(e);
                     }
                 }
-
-                // Re-issue the work, this will overwrite the current worker, and reset the retry-backoff
-                DefaultAndroidNotification.this.scheduleScreenStateWork();
             }
+
+            // Re-issue the work, this will overwrite the current worker, and reset the retry-backoff
+            DefaultAndroidNotification.this.scheduleScreenStateWork();
         }, 1000);
     }
 }

@@ -59,29 +59,23 @@ public class TeakInstance implements Unobfuscable {
         PushState.init(this.context);
 
         // Ravens
-        TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
-            @Override
-            public void onConfigurationReady(@NonNull TeakConfiguration configuration) {
-                TeakInstance.this.sdkRaven = new Raven(context, "sdk", configuration, objectFactory);
-                TeakInstance.this.appRaven = new Raven(context, configuration.appConfiguration.bundleId, configuration, objectFactory);
-            }
+        TeakConfiguration.addEventListener(configuration -> {
+            TeakInstance.this.sdkRaven = new Raven(context, "sdk", configuration, objectFactory);
+            TeakInstance.this.appRaven = new Raven(context, configuration.appConfiguration.bundleId, configuration, objectFactory);
         });
 
-        TeakEvent.addEventListener(new TeakEvent.EventListener() {
-            @Override
-            public void onNewEvent(@NonNull TeakEvent event) {
-                if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
-                    final RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
+        TeakEvent.addEventListener(event -> {
+            if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
+                final RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
 
-                    if (remoteConfiguration.sdkSentryDsn != null && TeakInstance.this.sdkRaven != null) {
-                        TeakInstance.this.sdkRaven.setDsn(remoteConfiguration.sdkSentryDsn);
-                    }
+                if (remoteConfiguration.sdkSentryDsn != null && TeakInstance.this.sdkRaven != null) {
+                    TeakInstance.this.sdkRaven.setDsn(remoteConfiguration.sdkSentryDsn);
+                }
 
-                    if (remoteConfiguration.appSentryDsn != null && TeakInstance.this.appRaven != null) {
-                        TeakInstance.this.appRaven.setDsn(remoteConfiguration.appSentryDsn);
-                        if (!android.os.Debug.isDebuggerConnected()) {
-                            TeakInstance.this.appRaven.setAsUncaughtExceptionHandler();
-                        }
+                if (remoteConfiguration.appSentryDsn != null && TeakInstance.this.appRaven != null) {
+                    TeakInstance.this.appRaven.setDsn(remoteConfiguration.appSentryDsn);
+                    if (!android.os.Debug.isDebuggerConnected()) {
+                        TeakInstance.this.appRaven.setAsUncaughtExceptionHandler();
                     }
                 }
             }
@@ -139,7 +133,7 @@ public class TeakInstance implements Unobfuscable {
     ///// logout
 
     void logout() {
-        Teak.log.i("logout", new HashMap<String, Object>());
+        Teak.log.i("logout", new HashMap<>());
 
         if (this.isEnabled()) {
             TeakEvent.postEvent(new LogoutEvent());
@@ -180,23 +174,17 @@ public class TeakInstance implements Unobfuscable {
     ///// Player profile
 
     void setNumericAttribute(final String attributeName, final double attributeValue) {
-        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
-            @Override
-            public void run(Session session) {
-                if (session.userProfile != null) {
-                    session.userProfile.setNumericAttribute(attributeName, attributeValue);
-                }
+        Session.whenUserIdIsReadyRun(session -> {
+            if (session.userProfile != null) {
+                session.userProfile.setNumericAttribute(attributeName, attributeValue);
             }
         });
     }
 
     void setStringAttribute(final String attributeName, final String attributeValue) {
-        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
-            @Override
-            public void run(Session session) {
-                if (session.userProfile != null) {
-                    session.userProfile.setStringAttribute(attributeName, attributeValue);
-                }
+        Session.whenUserIdIsReadyRun(session -> {
+            if (session.userProfile != null) {
+                session.userProfile.setStringAttribute(attributeName, attributeValue);
             }
         });
     }
@@ -451,38 +439,35 @@ public class TeakInstance implements Unobfuscable {
         Teak.registerDeepLink("/teak_internal/companion", "", "", new Teak.DeepLink() {
             @Override
             public void call(Map<String, Object> params) {
-                Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
-                    @Override
-                    public void run(Session session) {
-                        final TeakConfiguration teakConfiguration = TeakConfiguration.get();
-                        String key;
-                        String value;
-                        try {
-                            JSONObject params = new JSONObject();
-                            params.put("user_id", session.userId());
-                            params.put("device_id", teakConfiguration.deviceConfiguration.deviceId);
-                            key = "response";
-                            value = params.toString();
-                        } catch (Exception e) {
-                            key = "error";
-                            value = e.toString();
-                            Teak.log.exception(e);
-                        }
+                Session.whenUserIdIsReadyRun(session -> {
+                    final TeakConfiguration teakConfiguration = TeakConfiguration.get();
+                    String key;
+                    String value;
+                    try {
+                        JSONObject params1 = new JSONObject();
+                        params1.put("user_id", session.userId());
+                        params1.put("device_id", teakConfiguration.deviceConfiguration.deviceId);
+                        key = "response";
+                        value = params1.toString();
+                    } catch (Exception e) {
+                        key = "error";
+                        value = e.toString();
+                        Teak.log.exception(e);
+                    }
 
-                        try {
-                            final String uriString = "teak:///callback?" + key + "=" + URLEncoder.encode(value, "UTF-8");
-                            final Intent uriIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(uriString));
-                            uriIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            final List<ResolveInfo> resolvedActivities = teakConfiguration.appConfiguration.packageManager.queryIntentActivities(uriIntent, 0);
-                            for (ResolveInfo info : resolvedActivities) {
-                                if ("io.teak.app.Teak".equalsIgnoreCase(info.activityInfo.packageName)) {
-                                    teakConfiguration.appConfiguration.applicationContext.startActivity(uriIntent);
-                                    break;
-                                }
+                    try {
+                        final String uriString = "teak:///callback?" + key + "=" + URLEncoder.encode(value, "UTF-8");
+                        final Intent uriIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(uriString));
+                        uriIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        final List<ResolveInfo> resolvedActivities = teakConfiguration.appConfiguration.packageManager.queryIntentActivities(uriIntent, 0);
+                        for (ResolveInfo info : resolvedActivities) {
+                            if ("io.teak.app.Teak".equalsIgnoreCase(info.activityInfo.packageName)) {
+                                teakConfiguration.appConfiguration.applicationContext.startActivity(uriIntent);
+                                break;
                             }
-                        } catch (Exception e) {
-                            Teak.log.exception(e);
                         }
+                    } catch (Exception e) {
+                        Teak.log.exception(e);
                     }
                 });
             }

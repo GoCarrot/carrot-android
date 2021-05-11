@@ -3,13 +3,25 @@ package io.teak.sdk.push;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.Signature;
+import android.os.Build;
 import android.util.Base64;
-import androidx.annotation.NonNull;
+
 import com.amazon.device.messaging.ADM;
 import com.amazon.device.messaging.ADMMessageHandlerBase;
 import com.amazon.device.messaging.ADMMessageHandlerJobBase;
 import com.amazon.device.messaging.ADMMessageReceiver;
 import com.amazon.device.messaging.development.ADMManifest;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
@@ -19,15 +31,8 @@ import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.event.PushRegistrationEvent;
 import io.teak.sdk.json.JSONObject;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
-import java.util.Scanner;
-import java.util.concurrent.ExecutorService;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+@RequiresApi(api = Build.VERSION_CODES.KITKAT)
 public class ADMPushProvider implements IPushProvider, Unobfuscable {
     private ADM admInstance;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -68,15 +73,12 @@ public class ADMPushProvider implements IPushProvider, Unobfuscable {
 
     @Override
     public void requestPushKey() {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (admInstance.getRegistrationId() == null) {
-                    admInstance.startRegister();
-                } else {
-                    String registrationId = admInstance.getRegistrationId();
-                    sendRegistrationEvent(registrationId);
-                }
+        executor.execute(() -> {
+            if (admInstance.getRegistrationId() == null) {
+                admInstance.startRegister();
+            } else {
+                String registrationId = admInstance.getRegistrationId();
+                sendRegistrationEvent(registrationId);
             }
         });
     }
@@ -152,31 +154,33 @@ public class ADMPushProvider implements IPushProvider, Unobfuscable {
 
                     // Make sure the signature matches
                     Signature[] sigs = Helpers.getAppSignatures(context);
-                    for (Signature sig : sigs) {
-                        if (json.has("appsigSha256")) {
-                            String sigSha256 = Helpers.formatSig(sig, "SHA-256");
-                            if (!sigSha256.equalsIgnoreCase(json.getString("appsigSha256"))) {
-                                Teak.log.e("amazon.adm.registration_error.debugging", Helpers.mm.h("sha256", sigSha256, "api_key.sha256", json.getString("appsigSha256")));
-                                throw new Exception("App signature SHA-256 does not match api_key.txt");
+                    if (sigs != null) {
+                        for (Signature sig : sigs) {
+                            if (json.has("appsigSha256")) {
+                                String sigSha256 = Helpers.formatSig(sig, "SHA-256");
+                                if (!sigSha256.equalsIgnoreCase(json.getString("appsigSha256"))) {
+                                    Teak.log.e("amazon.adm.registration_error.debugging", Helpers.mm.h("sha256", sigSha256, "api_key.sha256", json.getString("appsigSha256")));
+                                    throw new Exception("App signature SHA-256 does not match api_key.txt");
+                                }
+                            }
+
+                            if (json.has("appsig")) {
+                                String sigMd5 = Helpers.formatSig(sig, "MD5");
+                                if (!sigMd5.equalsIgnoreCase(json.getString("appsig"))) {
+                                    Teak.log.e("amazon.adm.registration_error.debugging", Helpers.mm.h("md5", sigMd5, "api_key.md5", json.getString("appsig")));
+                                    throw new Exception("App signature MD5 does not match api_key.txt");
+                                }
+                            }
+
+                            if (!json.has("appsigSha256") || !json.has("appsig")) {
+                                String sigMd5 = Helpers.formatSig(sig, "MD5");
+                                String sigSha256 = Helpers.formatSig(sig, "SHA-256");
+                                Teak.log.w("amazon.adm.registration_error.debugging", "Couldn't find 'appsigSha256' or 'appsig' please ensure that your API key matches one of the included signatures.",
+                                        Helpers.mm.h("md5", sigMd5, "sha256", sigSha256));
                             }
                         }
-
-                        if (json.has("appsig")) {
-                            String sigMd5 = Helpers.formatSig(sig, "MD5");
-                            if (!sigMd5.equalsIgnoreCase(json.getString("appsig"))) {
-                                Teak.log.e("amazon.adm.registration_error.debugging", Helpers.mm.h("md5", sigMd5, "api_key.md5", json.getString("appsig")));
-                                throw new Exception("App signature MD5 does not match api_key.txt");
-                            }
-                        }
-
-                        if (!json.has("appsigSha256") || !json.has("appsig")) {
-                            String sigMd5 = Helpers.formatSig(sig, "MD5");
-                            String sigSha256 = Helpers.formatSig(sig, "SHA-256");
-                            Teak.log.w("amazon.adm.registration_error.debugging", "Couldn't find 'appsigSha256' or 'appsig' please ensure that your API key matches one of the included signatures.",
-                                Helpers.mm.h("md5", sigMd5, "sha256", sigSha256));
-                        }
+                        Teak.log.i("amazon.adm.registration_error.debugging", "[✓] App signature matches signature inside 'api_key.txt'");
                     }
-                    Teak.log.i("amazon.adm.registration_error.debugging", "[✓] App signature matches signature inside 'api_key.txt'");
 
                     // Couldn't find the error, sorry!
                     Teak.log.w("amazon.adm.registration_error.debugging", "Unable to automatically find reason for INVALID_SENDER");

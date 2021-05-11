@@ -46,7 +46,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -227,9 +226,7 @@ public class NotificationBuilder {
         // Icon accent color (added in API 21 version of Notification builder, so use reflection)
         try {
             Method setColor = builder.getClass().getMethod("setColor", int.class);
-            if (setColor != null) {
-                setColor.invoke(builder, R.integer("io_teak_notification_accent_color"));
-            }
+            setColor.invoke(builder, R.integer("io_teak_notification_accent_color"));
         } catch (Exception ignored) {
         }
 
@@ -330,12 +327,7 @@ public class NotificationBuilder {
                 }
 
                 // ViewFlipper must inflate on main thread
-                FutureTask<View> viewInflaterRunnable = new FutureTask<>(new Callable<View>() {
-                    @Override
-                    public View call() throws Exception {
-                        return factory.inflate(viewLayout, null);
-                    }
-                });
+                FutureTask<View> viewInflaterRunnable = new FutureTask<>(() -> factory.inflate(viewLayout, null));
                 new Handler(Looper.getMainLooper()).post(viewInflaterRunnable);
                 View inflatedView = viewInflaterRunnable.get();
 
@@ -360,7 +352,6 @@ public class NotificationBuilder {
                     final int viewElementId = tempViewElementId;
                     final View viewElement = inflatedView.findViewById(viewElementId);
 
-                    //noinspection StatementWithEmptyBody
                     if (isUIType(viewElement, Button.class)) {
                         // Button must go before TextView, because Button is a TextView
 

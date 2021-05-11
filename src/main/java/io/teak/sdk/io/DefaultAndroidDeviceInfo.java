@@ -22,7 +22,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.regex.Pattern;
 
@@ -150,31 +149,25 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
         // First try to use Google Play
         boolean usingGooglePlayForAdId = false;
         try {
-            final FutureTask<AdvertisingIdClient.Info> adInfoFuture = new FutureTask<>(new RetriableTask<>(10, 7000L, new Callable<AdvertisingIdClient.Info>() {
-                @Override
-                public AdvertisingIdClient.Info call() throws Exception {
-                    if (isGooglePlayServicesAvailable()) {
-                        return AdvertisingIdClient.getAdvertisingIdInfo(context);
-                    }
-                    throw new Exception("Retrying GooglePlayServicesUtil.isGooglePlayServicesAvailable()");
+            final FutureTask<AdvertisingIdClient.Info> adInfoFuture = new FutureTask<>(new RetriableTask<>(10, 7000L, () -> {
+                if (isGooglePlayServicesAvailable()) {
+                    return AdvertisingIdClient.getAdvertisingIdInfo(context);
                 }
+                throw new Exception("Retrying GooglePlayServicesUtil.isGooglePlayServicesAvailable()");
             }));
 
             if (isGooglePlayServicesAvailable()) {
-                ThreadFactory.autoStart(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            final AdvertisingIdClient.Info adInfo = adInfoFuture.get();
-                            if (adInfo != null) {
-                                final String advertisingId = adInfo.getId();
-                                final boolean limitAdTracking = adInfo.isLimitAdTrackingEnabled();
+                ThreadFactory.autoStart(() -> {
+                    try {
+                        final AdvertisingIdClient.Info adInfo = adInfoFuture.get();
+                        if (adInfo != null) {
+                            final String advertisingId = adInfo.getId();
+                            final boolean limitAdTracking = adInfo.isLimitAdTrackingEnabled();
 
-                                TeakEvent.postEvent(new AdvertisingInfoEvent(advertisingId, limitAdTracking));
-                            }
-                        } catch (Exception e) {
-                            Teak.log.exception(e);
+                            TeakEvent.postEvent(new AdvertisingInfoEvent(advertisingId, limitAdTracking));
                         }
+                    } catch (Exception e) {
+                        Teak.log.exception(e);
                     }
                 });
 
@@ -261,10 +254,7 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
             @Override
             public boolean accept(File pathname) {
                 //Check if filename is "cpu", followed by a single digit number
-                if (Pattern.matches("cpu[0-9]+", pathname.getName())) {
-                    return true;
-                }
-                return false;
+                return Pattern.matches("cpu[0-9]+", pathname.getName());
             }
         }
 

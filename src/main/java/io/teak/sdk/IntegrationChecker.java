@@ -75,18 +75,6 @@ public class IntegrationChecker {
         addDependency(fullyQualifiedClassName, false);
     }
 
-    public static void suggestButRequireDependency(@NonNull String suggested, @NonNull String required) throws MissingDependencyException {
-        try {
-            Class.forName(suggested);
-        } catch (Exception ignored) {
-            try {
-                Class.forName(required);
-            } catch (Exception ignored2) {
-                IntegrationChecker.requireDependency(required);
-            }
-        }
-    }
-
     private static void addDependency(@NonNull String fullyQualifiedClassName, boolean required) throws MissingDependencyException {
         // Protect against future-Pat adding/removing a dependency and forgetting to update the array
         if (BuildConfig.DEBUG) {
@@ -210,37 +198,19 @@ public class IntegrationChecker {
         }
 
         // Run checks on a background thread
-        ThreadFactory.autoStart(new Runnable() {
-            @Override
-            public void run() {
-                // Activity launch mode should be 'singleTask', 'singleTop' or 'singleInstance'
-                checkActivityLaunchMode();
-            }
-        });
+        // Activity launch mode should be 'singleTask', 'singleTop' or 'singleInstance'
+        ThreadFactory.autoStart(this::checkActivityLaunchMode);
 
-        TeakEvent.addEventListener(new TeakEvent.EventListener() {
-            @Override
-            public void onNewEvent(@NonNull TeakEvent event) {
-                if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
-                    final RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
-                    onRemoteConfigurationReady(remoteConfiguration);
-                }
+        TeakEvent.addEventListener(event -> {
+            if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
+                final RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
+                onRemoteConfigurationReady(remoteConfiguration);
             }
         });
 
         // If < API 26, the manifest checker will work properly, otherwise it will not
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
-                @Override
-                public void onConfigurationReady(@NonNull TeakConfiguration configuration) {
-                    ThreadFactory.autoStart(new Runnable() {
-                        @Override
-                        public void run() {
-                            checkAndroidManifest();
-                        }
-                    });
-                }
-            });
+            TeakConfiguration.addEventListener(configuration -> ThreadFactory.autoStart(this::checkAndroidManifest));
         }
     }
 
@@ -381,22 +351,19 @@ public class IntegrationChecker {
     }
 
     private void displayError(@NonNull final String description, @Nullable final String title) {
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                AlertDialog.Builder builder;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    builder = new AlertDialog.Builder(IntegrationChecker.this.activity, android.R.style.Theme_Material_Dialog_Alert);
-                } else {
-                    builder = new AlertDialog.Builder(IntegrationChecker.this.activity);
-                }
-
-                builder.setTitle(title == null ? "Human, your assistance is needed" : title)
-                    .setMessage(description)
-                    .setPositiveButton(android.R.string.yes, null)
-                    .setIcon(android.R.drawable.ic_dialog_alert)
-                    .show();
+        new Handler(Looper.getMainLooper()).post(() -> {
+            AlertDialog.Builder builder;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                builder = new AlertDialog.Builder(IntegrationChecker.this.activity, android.R.style.Theme_Material_Dialog_Alert);
+            } else {
+                builder = new AlertDialog.Builder(IntegrationChecker.this.activity);
             }
+
+            builder.setTitle(title == null ? "Human, your assistance is needed" : title)
+                .setMessage(description)
+                .setPositiveButton(android.R.string.yes, null)
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .show();
         });
     }
 }

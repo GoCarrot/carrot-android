@@ -1,16 +1,7 @@
 package io.teak.sdk;
 
 import android.util.Base64;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import io.teak.sdk.configuration.RemoteConfiguration;
-import io.teak.sdk.core.Executors;
-import io.teak.sdk.core.Session;
-import io.teak.sdk.event.RemoteConfigurationEvent;
-import io.teak.sdk.event.TrackEventEvent;
-import io.teak.sdk.io.DefaultHttpRequest;
-import io.teak.sdk.io.IHttpRequest;
-import io.teak.sdk.json.JSONObject;
+
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URL;
@@ -30,8 +21,20 @@ import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import io.teak.sdk.configuration.RemoteConfiguration;
+import io.teak.sdk.core.Executors;
+import io.teak.sdk.core.Session;
+import io.teak.sdk.event.RemoteConfigurationEvent;
+import io.teak.sdk.event.TrackEventEvent;
+import io.teak.sdk.io.DefaultHttpRequest;
+import io.teak.sdk.io.IHttpRequest;
+import io.teak.sdk.json.JSONObject;
 
 public class Request implements Runnable {
     public static final int DEFAULT_PORT = 443;
@@ -53,7 +56,7 @@ public class Request implements Runnable {
 
     ///// Mini-configs
 
-    class RetryConfiguration {
+    static class RetryConfiguration {
         float jitter;
         float[] times;
         int retryIndex;
@@ -65,7 +68,7 @@ public class Request implements Runnable {
         }
     }
 
-    public class BatchConfiguration {
+    public static class BatchConfiguration {
         public long count;
         public float time;
         public float maximumWaitTime;
@@ -97,31 +100,28 @@ public class Request implements Runnable {
 
     // TODO: Can't do this as a static-init block, will screw up unit tests
     static {
-        TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
-            @Override
-            public void onConfigurationReady(@NonNull TeakConfiguration configuration) {
-                Request.teakApiKey = configuration.appConfiguration.apiKey;
+        TeakConfiguration.addEventListener(configuration -> {
+            Request.teakApiKey = configuration.appConfiguration.apiKey;
 
-                configurationPayload.put("sdk_version", Teak.Version);
-                configurationPayload.put("game_id", configuration.appConfiguration.appId);
-                configurationPayload.put("app_version", String.valueOf(configuration.appConfiguration.appVersion));
-                configurationPayload.put("app_version_name", String.valueOf(configuration.appConfiguration.appVersionName));
-                configurationPayload.put("bundle_id", configuration.appConfiguration.bundleId);
-                configurationPayload.put("appstore_name", configuration.appConfiguration.storeId);
-                if (configuration.appConfiguration.installerPackage != null) {
-                    configurationPayload.put("installer_package", configuration.appConfiguration.installerPackage);
-                }
+            configurationPayload.put("sdk_version", Teak.Version);
+            configurationPayload.put("game_id", configuration.appConfiguration.appId);
+            configurationPayload.put("app_version", String.valueOf(configuration.appConfiguration.appVersion));
+            configurationPayload.put("app_version_name", String.valueOf(configuration.appConfiguration.appVersionName));
+            configurationPayload.put("bundle_id", configuration.appConfiguration.bundleId);
+            configurationPayload.put("appstore_name", configuration.appConfiguration.storeId);
+            if (configuration.appConfiguration.installerPackage != null) {
+                configurationPayload.put("installer_package", configuration.appConfiguration.installerPackage);
+            }
 
-                configurationPayload.put("device_id", configuration.deviceConfiguration.deviceId);
-                configurationPayload.put("sdk_platform", configuration.deviceConfiguration.platformString);
-                configurationPayload.put("device_manufacturer", configuration.deviceConfiguration.deviceManufacturer);
-                configurationPayload.put("device_model", configuration.deviceConfiguration.deviceModel);
-                configurationPayload.put("device_fallback", configuration.deviceConfiguration.deviceFallback);
-                configurationPayload.put("device_memory_class", configuration.deviceConfiguration.memoryClass);
+            configurationPayload.put("device_id", configuration.deviceConfiguration.deviceId);
+            configurationPayload.put("sdk_platform", configuration.deviceConfiguration.platformString);
+            configurationPayload.put("device_manufacturer", configuration.deviceConfiguration.deviceManufacturer);
+            configurationPayload.put("device_model", configuration.deviceConfiguration.deviceModel);
+            configurationPayload.put("device_fallback", configuration.deviceConfiguration.deviceFallback);
+            configurationPayload.put("device_memory_class", configuration.deviceConfiguration.memoryClass);
 
-                if (configuration.debugConfiguration.isDebug()) {
-                    configurationPayload.put("debug", true);
-                }
+            if (configuration.debugConfiguration.isDebug()) {
+                configurationPayload.put("debug", true);
             }
         });
     }
@@ -131,13 +131,10 @@ public class Request implements Runnable {
     protected static RemoteConfiguration remoteConfiguration;
 
     public static void registerStaticEventListeners() {
-        TeakEvent.addEventListener(new TeakEvent.EventListener() {
-            @Override
-            public void onNewEvent(@NonNull TeakEvent event) {
-                if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
-                    Request.remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
-                    configurationPayload.putAll(Request.remoteConfiguration.dynamicParameters);
-                }
+        TeakEvent.addEventListener(event -> {
+            if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
+                Request.remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
+                configurationPayload.putAll(Request.remoteConfiguration.dynamicParameters);
             }
         });
     }
@@ -151,7 +148,7 @@ public class Request implements Runnable {
         long firstAddTime = 0L;
 
         BatchedRequest(@Nullable String hostname, @NonNull String endpoint, @NonNull Session session, boolean addStandardAttributes) {
-            super(hostname, endpoint, new HashMap<String, Object>(), session, null, addStandardAttributes);
+            super(hostname, endpoint, new HashMap<>(), session, null, addStandardAttributes);
         }
 
         synchronized boolean add(@NonNull String endpoint, @Nullable Map<String, Object> payload, @Nullable Callback callback) {
@@ -363,12 +360,7 @@ public class Request implements Runnable {
 
         if (batch != null) {
             if (!batch.add(endpoint, payload, callback)) {
-                requestExecutor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        submit(finalHostname, endpoint, payload, session, callback);
-                    }
-                });
+                requestExecutor.execute(() -> submit(finalHostname, endpoint, payload, session, callback));
             }
         } else {
             requestExecutor.execute(new Request(hostname, endpoint, payload, session, callback, true));
@@ -408,7 +400,7 @@ public class Request implements Runnable {
             if (Request.remoteConfiguration != null) {
                 Object objHost = Request.remoteConfiguration.endpointConfigurations.containsKey(hostname) ? Request.remoteConfiguration.endpointConfigurations.get(hostname) : null;
                 @SuppressWarnings("unchecked")
-                Map<String, Object> host = (objHost != null && objHost instanceof Map) ? (Map<String, Object>) objHost : null;
+                Map<String, Object> host = (objHost instanceof Map) ? (Map<String, Object>) objHost : null;
                 if (host != null && host.containsKey(endpoint) && host.get(endpoint) instanceof Map) {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> endpointConfig = (Map<String, Object>) host.get(endpoint);
@@ -538,7 +530,7 @@ public class Request implements Runnable {
                 Object value = payload.get(key);
                 if (value != null) {
                     final String encoded = formEncode(key, value, escape);
-                    if (encoded != null && encoded.length() > 0) {
+                    if (encoded.length() > 0) {
                         listOfThingsToJoin.add(encoded);
                     }
                 } else {
@@ -657,6 +649,7 @@ public class Request implements Runnable {
     }
 
     @Override
+    @NonNull
     public String toString() {
         try {
             return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toMap())));

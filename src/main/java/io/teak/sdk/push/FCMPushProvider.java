@@ -4,8 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -108,20 +106,16 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
     //// FirebaseMessagingService
 
     @Override
-    public void onNewToken(String token) {
-        if (token == null) {
-            Teak.log.e("google.fcm.null_token", "Got null token from onNewToken.");
-        } else {
-            Teak.log.i("google.fcm.registered", Helpers.mm.h("fcmId", token));
-            if (Teak.isEnabled()) {
-                final String senderId = this.firebaseApp == null ? null : this.firebaseApp.getOptions().getGcmSenderId();
-                TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", token, senderId));
-            }
+    public void onNewToken(@NonNull String token) {
+        Teak.log.i("google.fcm.registered", Helpers.mm.h("fcmId", token));
+        if (Teak.isEnabled()) {
+            final String senderId = this.firebaseApp == null ? null : this.firebaseApp.getOptions().getGcmSenderId();
+            TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", token, senderId));
         }
     }
 
     @Override
-    public void onMessageReceived(RemoteMessage remoteMessage) {
+    public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
 
         // Future-Pat, this method will only be invoked via an incoming message,
@@ -146,22 +140,14 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
         } else {
             try {
                 final Task<String> instanceIdTask = FirebaseMessaging.getInstance().getToken();
-                instanceIdTask.addOnSuccessListener(new OnSuccessListener<String>() {
-                    @Override
-                    public void onSuccess(String registrationId) {
-                        Teak.log.i("google.fcm.registered", Helpers.mm.h("fcmId", registrationId));
-                        if (Teak.isEnabled()) {
-                            TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", registrationId, FCMPushProvider.this.firebaseApp.getOptions().getGcmSenderId()));
-                        }
+                instanceIdTask.addOnSuccessListener(registrationId -> {
+                    Teak.log.i("google.fcm.registered", Helpers.mm.h("fcmId", registrationId));
+                    if (Teak.isEnabled()) {
+                        TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", registrationId, FCMPushProvider.this.firebaseApp.getOptions().getGcmSenderId()));
                     }
                 });
 
-                instanceIdTask.addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Teak.log.exception(e);
-                    }
-                });
+                instanceIdTask.addOnFailureListener(e -> Teak.log.exception(e));
             } catch (Exception e) {
                 Teak.log.exception(e);
             }

@@ -55,6 +55,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         }
 
         @Override
+        @NonNull
         public String toString() {
             return this.value;
         }
@@ -151,12 +152,9 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         user.put("log_run_id", Teak.log.runId); // Run id is always available
         this.payloadTemplate.put("user", user);
 
-        TeakEvent.addEventListener(new TeakEvent.EventListener() {
-            @Override
-            public void onNewEvent(@NonNull TeakEvent event) {
-                if (event instanceof UserIdEvent) {
-                    user.put("id", ((UserIdEvent) event).userId);
-                }
+        TeakEvent.addEventListener(event -> {
+            if (event instanceof UserIdEvent) {
+                user.put("id", ((UserIdEvent) event).userId);
             }
         });
 
@@ -182,7 +180,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
     }
 
     @Override
-    public void uncaughtException(Thread thread, Throwable ex) {
+    public void uncaughtException(@NonNull Thread thread, @NonNull Throwable ex) {
         if (!(ex instanceof OutOfMemoryError)) {
             reportException(ex, null);
         }
@@ -314,6 +312,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
     }
 
     @Override
+    @NonNull
     public String toString() {
         try {
             return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toMap())));
@@ -398,6 +397,7 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         }
 
         @Override
+        @NonNull
         public String toString() {
             try {
                 return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toMap())));

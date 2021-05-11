@@ -4,13 +4,11 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
-import androidx.annotation.NonNull;
 import io.teak.sdk.Teak;
 import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.core.Executors;
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.raven.Raven;
-import io.teak.sdk.wrapper.ISDKWrapper;
 import io.teak.sdk.wrapper.TeakInterface;
 
 public class TeakUnity implements Unobfuscable {
@@ -35,29 +33,26 @@ public class TeakUnity implements Unobfuscable {
 
     @SuppressWarnings("WeakerAccess")
     public static void initialize() {
-        teakInterface = new TeakInterface(new ISDKWrapper() {
-            @Override
-            public void sdkSendMessage(@NonNull EventType eventType, @NonNull String eventData) {
-                String eventName = null;
-                switch (eventType) {
-                    case NotificationLaunch: {
-                        eventName = "NotificationLaunch";
-                    } break;
-                    case RewardClaim: {
-                        eventName = "RewardClaimAttempt";
-                    } break;
-                    case ForegroundNotification: {
-                        eventName = "ForegroundNotification";
-                    } break;
-                    case AdditionalData: {
-                        eventName = "AdditionalData";
-                    } break;
-                    case LaunchedFromLink: {
-                        eventName = "LaunchedFromLink";
-                    } break;
-                }
-                unitySendMessage(eventName, eventData);
+        teakInterface = new TeakInterface((eventType, eventData) -> {
+            String eventName = null;
+            switch (eventType) {
+                case NotificationLaunch: {
+                    eventName = "NotificationLaunch";
+                } break;
+                case RewardClaim: {
+                    eventName = "RewardClaimAttempt";
+                } break;
+                case ForegroundNotification: {
+                    eventName = "ForegroundNotification";
+                } break;
+                case AdditionalData: {
+                    eventName = "AdditionalData";
+                } break;
+                case LaunchedFromLink: {
+                    eventName = "LaunchedFromLink";
+                } break;
             }
+            unitySendMessage(eventName, eventData);
         });
     }
 
@@ -66,20 +61,17 @@ public class TeakUnity implements Unobfuscable {
     }
 
     private static void unitySendMessage(final String method, final String message) {
-        TeakUnity.unitySendMessageExecutor.submit(new Runnable() {
-            @Override
-            public void run() {
-                if (TeakUnity.isAvailable()) {
-                    try {
-                        TeakUnity.unitySendMessage.invoke(null, "TeakGameObject", method, message);
-                    } catch (UnsatisfiedLinkError ignored) {
-                        // TEAK-ANDROID-SDK-K4
-                        // TEAK-ANDROID-SDK-K5
-                        // TEAK-ANDROID-SDK-K6
-                        // TEAK-ANDROID-SDK-K9
-                    } catch (Exception e) {
-                        Teak.log.exception(e);
-                    }
+        TeakUnity.unitySendMessageExecutor.submit(() -> {
+            if (TeakUnity.isAvailable()) {
+                try {
+                    TeakUnity.unitySendMessage.invoke(null, "TeakGameObject", method, message);
+                } catch (UnsatisfiedLinkError ignored) {
+                    // TEAK-ANDROID-SDK-K4
+                    // TEAK-ANDROID-SDK-K5
+                    // TEAK-ANDROID-SDK-K6
+                    // TEAK-ANDROID-SDK-K9
+                } catch (Exception e) {
+                    Teak.log.exception(e);
                 }
             }
         });

@@ -5,6 +5,16 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationManagerCompat;
 import io.teak.sdk.NotificationBuilder;
@@ -14,15 +24,6 @@ import io.teak.sdk.core.Executors;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONObject;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 
 public class PushState {
     private static final String PUSH_STATE_CHAIN_KEY = "io.teak.sdk.Preferences.PushStateChain";
@@ -53,7 +54,7 @@ public class PushState {
         }
     }
 
-    private class StateChainEntry {
+    private static class StateChainEntry {
         final State state;
         final Date date;
         final boolean canBypassDnd;
@@ -154,42 +155,36 @@ public class PushState {
         }
 
         // Event listener - When onResume is called, update the state chain
-        TeakEvent.addEventListener(new TeakEvent.EventListener() {
-            @Override
-            public void onNewEvent(@NonNull TeakEvent event) {
-                switch (event.eventType) {
-                    case LifecycleEvent.Resumed: {
-                        LifecycleEvent lifecycleEvent = (LifecycleEvent) event;
-                        PushState.this.updateStateChain(lifecycleEvent.context);
-                    } break;
-                }
+        TeakEvent.addEventListener(event -> {
+            switch (event.eventType) {
+                case LifecycleEvent.Resumed: {
+                    LifecycleEvent lifecycleEvent = (LifecycleEvent) event;
+                    PushState.this.updateStateChain(lifecycleEvent.context);
+                } break;
             }
         });
     }
 
     private Future<State> updateStateChain(@NonNull final Context context) {
-        return this.executionQueue.submit(new Callable<State>() {
-            @Override
-            public State call() {
-                final State currentState = PushState.this.getCurrentStateFromChain();
-                final StateChainEntry currentEntry = PushState.this.stateChain.size() == 0 ? null : PushState.this.stateChain.get(PushState.this.stateChain.size() - 1);
-                final StateChainEntry newStateEntry = PushState.this.determineStateFromSystem(context);
-                if (currentState.canTransitionTo(newStateEntry.state) ||
-                    (currentState.equals(newStateEntry.state) && !newStateEntry.equalsIgnoreDate(currentEntry))) {
-                    List<StateChainEntry> newChain = new ArrayList<>(PushState.this.stateChain);
-                    newChain.add(newStateEntry);
+        return this.executionQueue.submit(() -> {
+            final State currentState = PushState.this.getCurrentStateFromChain();
+            final StateChainEntry currentEntry = PushState.this.stateChain.size() == 0 ? null : PushState.this.stateChain.get(PushState.this.stateChain.size() - 1);
+            final StateChainEntry newStateEntry = PushState.this.determineStateFromSystem(context);
+            if (currentState.canTransitionTo(newStateEntry.state) ||
+                (currentState.equals(newStateEntry.state) && !newStateEntry.equalsIgnoreDate(currentEntry))) {
+                List<StateChainEntry> newChain = new ArrayList<>(PushState.this.stateChain);
+                newChain.add(newStateEntry);
 
-                    // Trim state chain to 50 max
-                    while (newChain.size() > 50) {
-                        newChain.remove(0);
-                    }
-
-                    PushState.this.stateChain = Collections.unmodifiableList(newChain);
-                    PushState.this.writeSerialzedStateChain(context, PushState.this.stateChain);
-                    return newStateEntry.state;
+                // Trim state chain to 50 max
+                while (newChain.size() > 50) {
+                    newChain.remove(0);
                 }
-                return PushState.this.getCurrentStateFromChain();
+
+                PushState.this.stateChain = Collections.unmodifiableList(newChain);
+                PushState.this.writeSerialzedStateChain(context, PushState.this.stateChain);
+                return newStateEntry.state;
             }
+            return PushState.this.getCurrentStateFromChain();
         });
     }
 
@@ -206,15 +201,12 @@ public class PushState {
             jsonStateChain.put(entry.toJson());
         }
 
-        this.executionQueue.submit(new Runnable() {
-            @Override
-            public void run() {
-                synchronized (Teak.PREFERENCES_FILE) {
-                    SharedPreferences preferences = context.getSharedPreferences(Teak.PREFERENCES_FILE, Context.MODE_PRIVATE);
-                    SharedPreferences.Editor editor = preferences.edit();
-                    editor.putString(PUSH_STATE_CHAIN_KEY, jsonStateChain.toString());
-                    editor.apply();
-                }
+        this.executionQueue.submit(() -> {
+            synchronized (Teak.PREFERENCES_FILE) {
+                SharedPreferences preferences = context.getSharedPreferences(Teak.PREFERENCES_FILE, Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = preferences.edit();
+                editor.putString(PUSH_STATE_CHAIN_KEY, jsonStateChain.toString());
+                editor.apply();
             }
         });
     }

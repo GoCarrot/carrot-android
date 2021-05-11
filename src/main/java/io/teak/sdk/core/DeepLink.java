@@ -1,9 +1,7 @@
 package io.teak.sdk.core;
 
 import android.net.Uri;
-import io.teak.sdk.Helpers;
-import io.teak.sdk.Teak;
-import io.teak.sdk.TeakConfiguration;
+
 import java.net.URI;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -15,6 +13,10 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import io.teak.sdk.Helpers;
+import io.teak.sdk.Teak;
+import io.teak.sdk.TeakConfiguration;
 
 public class DeepLink {
     /**
@@ -72,12 +74,9 @@ public class DeepLink {
 
         final String patternKey = pattern;
         final DeepLink link = new DeepLink(route, call, groupNames, name, description);
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                synchronized (routes) {
-                    routes.put(patternKey, link);
-                }
+        executor.execute(() -> {
+            synchronized (routes) {
+                routes.put(patternKey, link);
             }
         });
     }
@@ -123,7 +122,7 @@ public class DeepLink {
                         }
                     }
 
-                    Map<String, String> query = new HashMap<String, String>();
+                    Map<String, String> query = new HashMap<>();
                     if (uri.getQuery() != null) {
                         String[] pairs = uri.getQuery().split("&");
                         for (String pair : pairs) {
@@ -156,14 +155,11 @@ public class DeepLink {
                                                         "params", parameterDict,
                                                         "route", value.route));
 
-                    executor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                value.call.call(parameterDict);
-                            } catch (Exception e) {
-                                Teak.log.exception(e);
-                            }
+                    executor.execute(() -> {
+                        try {
+                            value.call.call(parameterDict);
+                        } catch (Exception e) {
+                            Teak.log.exception(e);
                         }
                     });
                     return true;
@@ -171,7 +167,7 @@ public class DeepLink {
             }
         }
 
-        Teak.log.i("deep_link.ignored", Helpers.mm.h("url", uri == null ? "null" : uri.toString()));
+        Teak.log.i("deep_link.ignored", Helpers.mm.h("url", uri.toString()));
         return false;
     }
 

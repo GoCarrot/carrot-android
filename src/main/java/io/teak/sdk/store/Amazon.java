@@ -17,7 +17,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import androidx.annotation.NonNull;
 import io.teak.sdk.Helpers.mm;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
@@ -36,12 +35,9 @@ public class Amazon implements IStore, PurchasingListener {
 
             Teak.log.i("billing.amazon.v2", "Amazon In-App Purchasing 2.0 registered.", mm.h("sandboxMode", PurchasingService.IS_SANDBOX_MODE));
 
-            TeakEvent.addEventListener(new TeakEvent.EventListener() {
-                @Override
-                public void onNewEvent(@NonNull TeakEvent event) {
-                    if (event.eventType.equals(LifecycleEvent.Resumed)) {
-                        PurchasingService.getUserData();
-                    }
+            TeakEvent.addEventListener(event -> {
+                if (event.eventType.equals(LifecycleEvent.Resumed)) {
+                    PurchasingService.getUserData();
                 }
             });
         } catch (Exception e) {
@@ -82,7 +78,7 @@ public class Amazon implements IStore, PurchasingListener {
             JSONObject receipt = originalJson.getJSONObject("receipt");
             JSONObject userData = originalJson.getJSONObject("userData");
 
-            Map<String, Object> payload = (extras == null ? new HashMap<String, Object>() : extras);
+            Map<String, Object> payload = (extras == null ? new HashMap<>() : extras);
             payload.put("purchase_token", receipt.get("receiptId"));
             payload.put("purchase_time_string", receipt.get("purchaseDate"));
             payload.put("product_id", receipt.get("sku"));

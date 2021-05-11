@@ -23,7 +23,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -220,12 +219,9 @@ public class Session {
                 case Configured: {
                     TeakEvent.removeEventListener(this.remoteConfigurationEventListener);
 
-                    this.executionQueue.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (Session.this.userId != null) {
-                                Session.this.identifyUser();
-                            }
+                    this.executionQueue.execute(() -> {
+                        if (Session.this.userId != null) {
+                            Session.this.identifyUser();
                         }
                     });
                 } break;
@@ -342,42 +338,40 @@ public class Session {
         final String teakSdkVersion = Teak.SDKVersion;
 
         this.heartbeatService = Executors.newSingleThreadScheduledExecutor();
-        this.heartbeatService.scheduleAtFixedRate(new Runnable() {
-            public void run() {
-                HttpsURLConnection connection = null;
-                try {
-                    String buster;
-                    {
-                        final SecureRandom random = new SecureRandom();
-                        byte[] bytes = new byte[4];
-                        random.nextBytes(bytes);
+        this.heartbeatService.scheduleAtFixedRate(() -> {
+            HttpsURLConnection connection = null;
+            try {
+                String buster;
+                {
+                    final SecureRandom random = new SecureRandom();
+                    byte[] bytes = new byte[4];
+                    random.nextBytes(bytes);
 
-                        // When packing signed bytes into an int, each byte needs to be masked off
-                        // because it is sign-extended to 32 bits (rather than zero-extended) due to
-                        // the arithmetic promotion rule (described in JLS, Conversions and Promotions).
-                        // https://stackoverflow.com/questions/7619058/convert-a-byte-array-to-integer-in-java-and-vice-versa
-                        final int asInt = bytes[0] << 24 | (bytes[1] & 0xFF) << 16 | (bytes[2] & 0xFF) << 8 | (bytes[3] & 0xFF);
-                        buster = String.format("%08x", asInt);
-                    }
+                    // When packing signed bytes into an int, each byte needs to be masked off
+                    // because it is sign-extended to 32 bits (rather than zero-extended) due to
+                    // the arithmetic promotion rule (described in JLS, Conversions and Promotions).
+                    // https://stackoverflow.com/questions/7619058/convert-a-byte-array-to-integer-in-java-and-vice-versa
+                    final int asInt = bytes[0] << 24 | (bytes[1] & 0xFF) << 16 | (bytes[2] & 0xFF) << 8 | (bytes[3] & 0xFF);
+                    buster = String.format("%08x", asInt);
+                }
 
-                    String queryString = "game_id=" + URLEncoder.encode(teakConfiguration.appConfiguration.appId, "UTF-8") +
-                                         "&api_key=" + URLEncoder.encode(Session.this.userId, "UTF-8") +
-                                         "&sdk_version=" + URLEncoder.encode(teakSdkVersion, "UTF-8") +
-                                         "&sdk_platform=" + URLEncoder.encode(teakConfiguration.deviceConfiguration.platformString, "UTF-8") +
-                                         "&app_version=" + URLEncoder.encode(String.valueOf(teakConfiguration.appConfiguration.appVersion), "UTF-8") +
-                                         "&app_version_name=" + URLEncoder.encode(String.valueOf(teakConfiguration.appConfiguration.appVersionName), "UTF-8") +
-                                         (Session.this.countryCode == null ? "" : "&country_code=" + URLEncoder.encode(Session.this.countryCode, "UTF-8")) +
-                                         "&buster=" + URLEncoder.encode(buster, "UTF-8");
-                    URL url = new URL("https://iroko.gocarrot.com/ping?" + queryString);
-                    connection = (HttpsURLConnection) url.openConnection();
-                    connection.setRequestProperty("Accept-Charset", "UTF-8");
-                    connection.setUseCaches(false);
-                    connection.getResponseCode();
-                } catch (Exception ignored) {
-                } finally {
-                    if (connection != null) {
-                        connection.disconnect();
-                    }
+                String queryString = "game_id=" + URLEncoder.encode(teakConfiguration.appConfiguration.appId, "UTF-8") +
+                                     "&api_key=" + URLEncoder.encode(Session.this.userId, "UTF-8") +
+                                     "&sdk_version=" + URLEncoder.encode(teakSdkVersion, "UTF-8") +
+                                     "&sdk_platform=" + URLEncoder.encode(teakConfiguration.deviceConfiguration.platformString, "UTF-8") +
+                                     "&app_version=" + URLEncoder.encode(String.valueOf(teakConfiguration.appConfiguration.appVersion), "UTF-8") +
+                                     "&app_version_name=" + URLEncoder.encode(String.valueOf(teakConfiguration.appConfiguration.appVersionName), "UTF-8") +
+                                     (Session.this.countryCode == null ? "" : "&country_code=" + URLEncoder.encode(Session.this.countryCode, "UTF-8")) +
+                                     "&buster=" + URLEncoder.encode(buster, "UTF-8");
+                URL url = new URL("https://iroko.gocarrot.com/ping?" + queryString);
+                connection = (HttpsURLConnection) url.openConnection();
+                connection.setRequestProperty("Accept-Charset", "UTF-8");
+                connection.setUseCaches(false);
+                connection.getResponseCode();
+            } catch (Exception ignored) {
+            } finally {
+                if (connection != null) {
+                    connection.disconnect();
                 }
             }
         }, 0, heartbeatInterval, TimeUnit.SECONDS);
@@ -386,198 +380,182 @@ public class Session {
     private void identifyUser() {
         final TeakConfiguration teakConfiguration = TeakConfiguration.get();
 
-        this.executionQueue.execute(new Runnable() {
-            public void run() {
-                Session.this.stateLock.lock();
-                try {
-                    if (Session.this.state != State.UserIdentified && !Session.this.setState(State.IdentifyingUser)) {
-                        return;
+        this.executionQueue.execute(() -> {
+            Session.this.stateLock.lock();
+            try {
+                if (Session.this.state != State.UserIdentified && !Session.this.setState(State.IdentifyingUser)) {
+                    return;
+                }
+
+                HashMap<String, Object> payload = new HashMap<>();
+
+                if (Session.this.state == State.UserIdentified) {
+                    payload.put("do_not_track_event", Boolean.TRUE);
+                }
+
+                if (Session.this.email != null) {
+                    payload.put("email", Session.this.email);
+                }
+
+                // "true", "false" or "unknown" (if API < 19)
+                payload.put("notifications_enabled",
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ? String.valueOf(Teak.getNotificationStatus() == Teak.TEAK_NOTIFICATIONS_ENABLED) : "unknown");
+
+                TimeZone tz = TimeZone.getDefault();
+                long rawTz = tz.getRawOffset();
+                if (tz.inDaylightTime(new Date())) {
+                    rawTz += tz.getDSTSavings();
+                }
+                long minutes = TimeUnit.MINUTES.convert(rawTz, TimeUnit.MILLISECONDS);
+                String tzOffset = new DecimalFormat("#0.00").format(minutes / 60.0f);
+                payload.put("timezone", tzOffset);
+
+                String locale = Locale.getDefault().toString();
+                payload.put("locale", locale);
+
+                payload.put("android_limit_ad_tracking", !teakConfiguration.dataCollectionConfiguration.enableIDFA());
+                if (teakConfiguration.deviceConfiguration.advertisingId != null &&
+                    teakConfiguration.dataCollectionConfiguration.enableIDFA()) {
+                    payload.put("android_ad_id", teakConfiguration.deviceConfiguration.advertisingId);
+                } else {
+                    payload.put("android_ad_id", "");
+                }
+
+                if (teakConfiguration.dataCollectionConfiguration.enableFacebookAccessToken()) {
+                    if (Session.this.facebookAccessToken == null) {
+                        Session.this.facebookAccessToken = Helpers.getCurrentFacebookAccessToken();
                     }
 
-                    HashMap<String, Object> payload = new HashMap<>();
-
-                    if (Session.this.state == State.UserIdentified) {
-                        payload.put("do_not_track_event", Boolean.TRUE);
+                    if (Session.this.facebookAccessToken != null) {
+                        payload.put("access_token", Session.this.facebookAccessToken);
                     }
+                }
 
-                    if (Session.this.email != null) {
-                        payload.put("email", Session.this.email);
+                // Report additional device information
+                {
+                    payload.put("device_num_cores", teakConfiguration.deviceConfiguration.numCores);
+                    payload.put("device_device_memory_in_bytes", teakConfiguration.deviceConfiguration.memoryInBytes);
+                    payload.put("device_display_metrics", teakConfiguration.deviceConfiguration.displayMetrics);
+                }
+
+                Map<String, Object> attribution = new HashMap<>();
+                if (Session.this.launchAttribution != null) {
+                    try {
+                        attribution = Session.this.launchAttribution.get(5, TimeUnit.SECONDS);
+                    } catch (Exception ignored) {
                     }
+                }
+                payload.putAll(attribution);
 
-                    // "true", "false" or "unknown" (if API < 19)
-                    payload.put("notifications_enabled",
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ? String.valueOf(Teak.getNotificationStatus() == Teak.TEAK_NOTIFICATIONS_ENABLED) : "unknown");
+                if (teakConfiguration.deviceConfiguration.pushRegistration != null &&
+                    teakConfiguration.dataCollectionConfiguration.enablePushKey()) {
+                    payload.putAll(teakConfiguration.deviceConfiguration.pushRegistration);
+                    payload.putAll(PushState.get().toMap());
+                }
 
-                    TimeZone tz = TimeZone.getDefault();
-                    long rawTz = tz.getRawOffset();
-                    if (tz.inDaylightTime(new Date())) {
-                        rawTz += tz.getDSTSavings();
-                    }
-                    long minutes = TimeUnit.MINUTES.convert(rawTz, TimeUnit.MILLISECONDS);
-                    String tzOffset = new DecimalFormat("#0.00").format(minutes / 60.0f);
-                    payload.put("timezone", tzOffset);
+                Teak.log.i("session.identify_user", mm.h("userId", Session.this.userId, "timezone", tzOffset, "locale", locale, "session_id", Session.this.sessionId));
 
-                    String locale = Locale.getDefault().toString();
-                    payload.put("locale", locale);
+                Request.submit("/games/" + teakConfiguration.appConfiguration.appId + "/users.json", payload, Session.this,
+                        (responseCode, responseBody) -> {
+                            Session.this.stateLock.lock();
+                            try {
+                                JSONObject response = new JSONObject(responseBody);
 
-                    payload.put("android_limit_ad_tracking", !teakConfiguration.dataCollectionConfiguration.enableIDFA());
-                    if (teakConfiguration.deviceConfiguration.advertisingId != null &&
-                        teakConfiguration.dataCollectionConfiguration.enableIDFA()) {
-                        payload.put("android_ad_id", teakConfiguration.deviceConfiguration.advertisingId);
-                    } else {
-                        payload.put("android_ad_id", "");
-                    }
+                                // TODO: Grab 'id' and 'game_id' from response and store for Parsnip
 
-                    if (teakConfiguration.dataCollectionConfiguration.enableFacebookAccessToken()) {
-                        if (Session.this.facebookAccessToken == null) {
-                            Session.this.facebookAccessToken = Helpers.getCurrentFacebookAccessToken();
-                        }
+                                // Enable verbose logging if flagged
+                                boolean logLocal = response.optBoolean("verbose_logging");
+                                boolean logRemote = response.optBoolean("log_remote");
+                                teakConfiguration.debugConfiguration.setLogPreferences(logLocal, logRemote);
 
-                        if (Session.this.facebookAccessToken != null) {
-                            payload.put("access_token", Session.this.facebookAccessToken);
-                        }
-                    }
-
-                    // Report additional device information
-                    {
-                        payload.put("device_num_cores", teakConfiguration.deviceConfiguration.numCores);
-                        payload.put("device_device_memory_in_bytes", teakConfiguration.deviceConfiguration.memoryInBytes);
-                        payload.put("device_display_metrics", teakConfiguration.deviceConfiguration.displayMetrics);
-                    }
-
-                    Map<String, Object> attribution = new HashMap<>();
-                    if (Session.this.launchAttribution != null) {
-                        try {
-                            attribution = Session.this.launchAttribution.get(5, TimeUnit.SECONDS);
-                        } catch (Exception ignored) {
-                        }
-                    }
-                    payload.putAll(attribution);
-
-                    if (teakConfiguration.deviceConfiguration.pushRegistration != null &&
-                        teakConfiguration.dataCollectionConfiguration.enablePushKey()) {
-                        payload.putAll(teakConfiguration.deviceConfiguration.pushRegistration);
-                        payload.putAll(PushState.get().toMap());
-                    }
-
-                    Teak.log.i("session.identify_user", Helpers.mm.h("userId", Session.this.userId, "timezone", tzOffset, "locale", locale, "session_id", Session.this.sessionId));
-
-                    Request.submit("/games/" + teakConfiguration.appConfiguration.appId + "/users.json", payload, Session.this,
-                        new Request.Callback() {
-                            @Override
-                            public void onRequestCompleted(int responseCode, String responseBody) {
-                                Session.this.stateLock.lock();
-                                try {
-                                    JSONObject response = new JSONObject(responseBody);
-
-                                    // TODO: Grab 'id' and 'game_id' from response and store for Parsnip
-
-                                    // Enable verbose logging if flagged
-                                    boolean logLocal = response.optBoolean("verbose_logging");
-                                    boolean logRemote = response.optBoolean("log_remote");
-                                    teakConfiguration.debugConfiguration.setLogPreferences(logLocal, logRemote);
-
-                                    // Server requesting new push key.
-                                    if (response.optBoolean("reset_push_key", false)) {
-                                        teakConfiguration.deviceConfiguration.requestNewPushToken();
-                                    }
-
-                                    // Assign country code from server if it sends it
-                                    if (!response.isNull("country_code")) {
-                                        Session.this.countryCode = response.getString("country_code");
-                                    }
-
-                                    // Assign deep link to launch, if it is provided
-                                    if (!response.isNull("deep_link")) {
-                                        final String deepLink = response.getString("deep_link");
-                                        Map<String, Object> merge = new HashMap<>();
-                                        merge.put("deep_link", deepLink);
-                                        Session.this.launchAttribution = Session.attributionFutureMerging(Session.this.launchAttribution, merge);
-                                        Teak.log.i("deep_link.processed", deepLink);
-                                    }
-
-                                    // Grab user profile
-                                    JSONObject profile = response.optJSONObject("user_profile");
-                                    if (profile != null) {
-                                        try {
-                                            Session.this.userProfile = new UserProfile(Session.this, profile.toMap());
-                                        } catch (Exception ignored) {
-                                        }
-                                    }
-
-                                    // Grab additional data
-                                    final JSONObject additionalData = response.optJSONObject("additional_data");
-                                    if (additionalData != null) {
-                                        Teak.log.i("additional_data.received", additionalData.toString());
-                                        whenUserIdIsReadyPost(new Teak.AdditionalDataEvent(additionalData));
-                                    }
-
-                                    // Assign new state
-                                    // Prevent warning for 'do_not_track_event'
-                                    if (Session.this.state == State.Expiring) {
-                                        Session.this.previousState = State.UserIdentified;
-                                    } else if (Session.this.state != State.UserIdentified) {
-                                        Session.this.setState(State.UserIdentified);
-                                    }
-
-                                } catch (Exception e) {
-                                    Teak.log.exception(e);
-                                } finally {
-                                    Session.this.stateLock.unlock();
+                                // Server requesting new push key.
+                                if (response.optBoolean("reset_push_key", false)) {
+                                    teakConfiguration.deviceConfiguration.requestNewPushToken();
                                 }
+
+                                // Assign country code from server if it sends it
+                                if (!response.isNull("country_code")) {
+                                    Session.this.countryCode = response.getString("country_code");
+                                }
+
+                                // Assign deep link to launch, if it is provided
+                                if (!response.isNull("deep_link")) {
+                                    final String deepLink = response.getString("deep_link");
+                                    Map<String, Object> merge = new HashMap<>();
+                                    merge.put("deep_link", deepLink);
+                                    Session.this.launchAttribution = Session.attributionFutureMerging(Session.this.launchAttribution, merge);
+                                    Teak.log.i("deep_link.processed", deepLink);
+                                }
+
+                                // Grab user profile
+                                JSONObject profile = response.optJSONObject("user_profile");
+                                if (profile != null) {
+                                    try {
+                                        Session.this.userProfile = new UserProfile(Session.this, profile.toMap());
+                                    } catch (Exception ignored) {
+                                    }
+                                }
+
+                                // Grab additional data
+                                final JSONObject additionalData = response.optJSONObject("additional_data");
+                                if (additionalData != null) {
+                                    Teak.log.i("additional_data.received", additionalData.toString());
+                                    whenUserIdIsReadyPost(new Teak.AdditionalDataEvent(additionalData));
+                                }
+
+                                // Assign new state
+                                // Prevent warning for 'do_not_track_event'
+                                if (Session.this.state == State.Expiring) {
+                                    Session.this.previousState = State.UserIdentified;
+                                } else if (Session.this.state != State.UserIdentified) {
+                                    Session.this.setState(State.UserIdentified);
+                                }
+
+                            } catch (Exception e) {
+                                Teak.log.exception(e);
+                            } finally {
+                                Session.this.stateLock.unlock();
                             }
                         });
-                } finally {
-                    Session.this.stateLock.unlock();
-                }
+            } finally {
+                Session.this.stateLock.unlock();
             }
         });
     }
 
-    private final TeakEvent.EventListener teakEventListener = new TeakEvent.EventListener() {
-        @Override
-        public void onNewEvent(@NonNull TeakEvent event) {
-            switch (event.eventType) {
-                case FacebookAccessTokenEvent.Type: {
-                    String newAccessToken = ((FacebookAccessTokenEvent) event).accessToken;
-                    if (newAccessToken != null && !newAccessToken.equals(Session.this.facebookAccessToken)) {
-                        Session.this.facebookAccessToken = newAccessToken;
-                        Teak.log.i("session.fb_access_token", Helpers.mm.h("access_token", Session.this.facebookAccessToken, "session_id", Session.this.sessionId));
-                        userInfoWasUpdated();
-                    }
-                } break;
-                case AdvertisingInfoEvent.Type: {
+    private final TeakEvent.EventListener teakEventListener = event -> {
+        switch (event.eventType) {
+            case FacebookAccessTokenEvent.Type: {
+                String newAccessToken = ((FacebookAccessTokenEvent) event).accessToken;
+                if (newAccessToken != null && !newAccessToken.equals(Session.this.facebookAccessToken)) {
+                    Session.this.facebookAccessToken = newAccessToken;
+                    Teak.log.i("session.fb_access_token", mm.h("access_token", Session.this.facebookAccessToken, "session_id", Session.this.sessionId));
                     userInfoWasUpdated();
-                } break;
-                case PushRegistrationEvent.Registered: {
-                    userInfoWasUpdated();
-                } break;
-            }
+                }
+            } break;
+            case AdvertisingInfoEvent.Type: {
+                userInfoWasUpdated();
+            } break;
+            case PushRegistrationEvent.Registered: {
+                userInfoWasUpdated();
+            } break;
         }
     };
 
     private void userInfoWasUpdated() {
         // TODO: Revisit/double-check this logic
-        this.executionQueue.execute(new Runnable() {
-            @Override
-            public void run() {
-                Session.currentSessionLock.lock();
-                Session.this.stateLock.lock();
-                try {
-                    if (Session.this.state == State.UserIdentified) {
-                        identifyUser();
-                    } else if (Session.this.state == State.IdentifyingUser) {
-                        Session.whenUserIdIsReadyRun(new SessionRunnable() {
-                            @Override
-                            public void run(Session session) {
-                                identifyUser();
-                            }
-                        });
-                    }
-                } finally {
-                    Session.this.stateLock.unlock();
-                    Session.currentSessionLock.unlock();
+        this.executionQueue.execute(() -> {
+            Session.currentSessionLock.lock();
+            Session.this.stateLock.lock();
+            try {
+                if (Session.this.state == State.UserIdentified) {
+                    identifyUser();
+                } else if (Session.this.state == State.IdentifyingUser) {
+                    Session.whenUserIdIsReadyRun(session -> identifyUser());
                 }
+            } finally {
+                Session.this.stateLock.unlock();
+                Session.currentSessionLock.unlock();
             }
         });
     }
@@ -587,56 +565,47 @@ public class Session {
         if (this.launchAttribution == null || this.launchAttributionProcessed) return;
         this.launchAttributionProcessed = true;
 
-        this.executionQueue.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Teak.waitUntilDeepLinksAreReady();
-                } catch (Exception ignored) {
-                }
+        this.executionQueue.execute(() -> {
+            try {
+                Teak.waitUntilDeepLinksAreReady();
+            } catch (Exception ignored) {
+            }
 
-                // If this is no longer the current session, do not continue processing
-                if (!Session.this.isCurrentSession()) {
-                    return;
-                }
+            // If this is no longer the current session, do not continue processing
+            if (!Session.this.isCurrentSession()) {
+                return;
+            }
 
-                try {
-                    // Resolve attribution Future
-                    final Map<String, Object> attribution = Session.this.launchAttribution.get(15, TimeUnit.SECONDS);
+            try {
+                // Resolve attribution Future
+                final Map<String, Object> attribution = Session.this.launchAttribution.get(15, TimeUnit.SECONDS);
 
-                    // Process any deep links
-                    Session.this.checkAttributionForDeepLinkAndPostEvents(attribution);
+                // Process any deep links
+                Session.this.checkAttributionForDeepLinkAndPostEvents(attribution);
 
-                    // Process any rewards
-                    Session.this.checkAttributionForRewardAndPostEvents(attribution);
-                } catch (Exception e) {
-                    Teak.log.exception(e);
-                }
+                // Process any rewards
+                Session.this.checkAttributionForRewardAndPostEvents(attribution);
+            } catch (Exception e) {
+                Teak.log.exception(e);
             }
         });
     }
 
     // This is separate so it can be removed/added independently
-    private final TeakEvent.EventListener remoteConfigurationEventListener = new TeakEvent.EventListener() {
-        @Override
-        public void onNewEvent(@NonNull TeakEvent event) {
-            if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
-                executionQueue.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        stateLock.lock();
-                        try {
-                            if (state == State.Expiring) {
-                                previousState = State.Configured;
-                            } else {
-                                setState(State.Configured);
-                            }
-                        } finally {
-                            stateLock.unlock();
-                        }
+    private final TeakEvent.EventListener remoteConfigurationEventListener = event -> {
+        if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
+            executionQueue.execute(() -> {
+                stateLock.lock();
+                try {
+                    if (state == State.Expiring) {
+                        previousState = State.Configured;
+                    } else {
+                        setState(State.Configured);
                     }
-                });
-            }
+                } finally {
+                    stateLock.unlock();
+                }
+            });
         }
     };
 
@@ -751,8 +720,8 @@ public class Session {
         }
     }
 
-    public static abstract class SessionRunnable {
-        public abstract void run(Session session);
+    public interface SessionRunnable {
+        void run(Session session);
     }
 
     private static class WhenUserIdIsReadyRun implements Runnable {
@@ -1063,28 +1032,25 @@ public class Session {
             if (teakRewardId != null) {
                 final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
                 if (rewardFuture != null) {
-                    Session.this.executionQueue.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                final TeakNotification.Reward reward = rewardFuture.get();
+                    Session.this.executionQueue.execute(() -> {
+                        try {
+                            final TeakNotification.Reward reward = rewardFuture.get();
 
-                                // Future-Pat, we can do this cast because we have vendored the JSONObject code
-                                // and it uses a HashMap.
-                                final HashMap<String, Object> rewardMap = (HashMap<String, Object>) reward.json.toMap();
+                            // Future-Pat, we can do this cast because we have vendored the JSONObject code
+                            // and it uses a HashMap.
+                            final HashMap<String, Object> rewardMap = (HashMap<String, Object>) reward.json.toMap();
 
-                                // This is to make sure the payloads match from a notification claim
-                                rewardMap.put("teakNotifId", teakNotifId);
-                                rewardMap.put("incentivized", true);
-                                rewardMap.put("teakRewardId", teakRewardId);
-                                rewardMap.put("teakScheduleName", null);
-                                rewardMap.put("teakCreativeName", teakRewardLinkName);
-                                rewardMap.put("teakChannelName", teakChannelName);
+                            // This is to make sure the payloads match from a notification claim
+                            rewardMap.put("teakNotifId", teakNotifId);
+                            rewardMap.put("incentivized", true);
+                            rewardMap.put("teakRewardId", teakRewardId);
+                            rewardMap.put("teakScheduleName", null);
+                            rewardMap.put("teakCreativeName", teakRewardLinkName);
+                            rewardMap.put("teakChannelName", teakChannelName);
 
-                                Session.whenUserIdIsReadyPost(new Teak.RewardClaimEvent(rewardMap));
-                            } catch (Exception e) {
-                                Teak.log.exception(e);
-                            }
+                            Session.whenUserIdIsReadyPost(new Teak.RewardClaimEvent(rewardMap));
+                        } catch (Exception e) {
+                            Teak.log.exception(e);
                         }
                     });
                 }
@@ -1097,109 +1063,106 @@ public class Session {
     private static Future<Map<String, Object>> attributionWithDeepLink(final Future<String> urlFuture, final String teakNotifId) {
         final TeakConfiguration teakConfiguration = TeakConfiguration.get();
 
-        FutureTask<Map<String, Object>> returnTask = new FutureTask<>(new Callable<Map<String, Object>>() {
-            @Override
-            public Map<String, Object> call() {
-                Map<String, Object> returnValue = new HashMap<>();
-                boolean wasTeakDeepLink = false;
+        FutureTask<Map<String, Object>> returnTask = new FutureTask<>(() -> {
+            Map<String, Object> returnValue = new HashMap<>();
+            boolean wasTeakDeepLink = false;
 
-                // Make sure teak_notif_id is in the return value if provided
-                if (teakNotifId != null) {
-                    returnValue.put("teak_notif_id", teakNotifId);
-                }
+            // Make sure teak_notif_id is in the return value if provided
+            if (teakNotifId != null) {
+                returnValue.put("teak_notif_id", teakNotifId);
+            }
 
-                // Wait on the incoming Future
-                Uri uri = null;
-                try {
-                    uri = Uri.parse(urlFuture.get(5, TimeUnit.SECONDS));
-                } catch (Exception ignored) {
-                }
+            // Wait on the incoming Future
+            Uri uri = null;
+            try {
+                uri = Uri.parse(urlFuture.get(5, TimeUnit.SECONDS));
+            } catch (Exception ignored) {
+            }
 
-                // If we have a URL, process it if needed
-                if (uri != null) {
-                    // Try and resolve any Teak links
-                    if (uri.getScheme() != null && (uri.getScheme().equals("http") || uri.getScheme().equals("https"))) {
-                        HttpsURLConnection connection = null;
+            // If we have a URL, process it if needed
+            if (uri != null) {
+                // Try and resolve any Teak links
+                if (uri.getScheme() != null && (uri.getScheme().equals("http") || uri.getScheme().equals("https"))) {
+                    HttpsURLConnection connection = null;
+                    try {
+                        Uri.Builder httpsUri = uri.buildUpon();
+                        httpsUri.scheme("https");
+                        URL url = new URL(httpsUri.build().toString());
+
+                        Teak.log.i("deep_link.request.send", url.toString());
+
+                        connection = (HttpsURLConnection) url.openConnection();
+                        connection.setUseCaches(false);
+                        connection.setRequestProperty("Accept-Charset", "UTF-8");
+                        connection.setRequestProperty("X-Teak-DeviceType", "API");
+                        connection.setRequestProperty("X-Teak-Supports-Templates", "TRUE");
+
+                        // Get Response
+                        InputStream is;
+                        if (connection.getResponseCode() < 400) {
+                            is = connection.getInputStream();
+                        } else {
+                            is = connection.getErrorStream();
+                        }
+                        BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+                        String line;
+                        StringBuilder response = new StringBuilder();
+                        while ((line = rd.readLine()) != null) {
+                            response.append(line);
+                            response.append('\r');
+                        }
+                        rd.close();
+
+                        Teak.log.i("deep_link.request.reply", response.toString());
+
                         try {
-                            Uri.Builder httpsUri = uri.buildUpon();
-                            httpsUri.scheme("https");
-                            URL url = new URL(httpsUri.build().toString());
-
-                            Teak.log.i("deep_link.request.send", url.toString());
-
-                            connection = (HttpsURLConnection) url.openConnection();
-                            connection.setUseCaches(false);
-                            connection.setRequestProperty("Accept-Charset", "UTF-8");
-                            connection.setRequestProperty("X-Teak-DeviceType", "API");
-                            connection.setRequestProperty("X-Teak-Supports-Templates", "TRUE");
-
-                            // Get Response
-                            InputStream is;
-                            if (connection.getResponseCode() < 400) {
-                                is = connection.getInputStream();
-                            } else {
-                                is = connection.getErrorStream();
+                            JSONObject teakData = new JSONObject(response.toString());
+                            if (teakData.getString("AndroidPath") != null) {
+                                uri = Uri.parse(String.format(Locale.US, "teak%s://%s", teakConfiguration.appConfiguration.appId, teakData.getString("AndroidPath")));
+                                wasTeakDeepLink = true;
                             }
-                            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-                            String line;
-                            StringBuilder response = new StringBuilder();
-                            while ((line = rd.readLine()) != null) {
-                                response.append(line);
-                                response.append('\r');
-                            }
-                            rd.close();
 
-                            Teak.log.i("deep_link.request.reply", response.toString());
-
-                            try {
-                                JSONObject teakData = new JSONObject(response.toString());
-                                if (teakData.getString("AndroidPath") != null) {
-                                    uri = Uri.parse(String.format(Locale.US, "teak%s://%s", teakConfiguration.appConfiguration.appId, teakData.getString("AndroidPath")));
-                                    wasTeakDeepLink = true;
-                                }
-
-                                Teak.log.i("deep_link.request.resolve", uri.toString());
-                                whenUserIdIsReadyPost(new Teak.LaunchFromLinkEvent(teakData));
-                            } catch (Exception e) {
-                                Teak.log.exception(e);
-                            }
-                        } catch (SSLProtocolException ssl_e) {
-                            // Ignored, Sentry issue 'TEAK-SDK-Z'
-                        } catch (SSLException ssl_e) {
-                            // Ignored
+                            Teak.log.i("deep_link.request.resolve", uri.toString());
+                            whenUserIdIsReadyPost(new Teak.LaunchFromLinkEvent(teakData));
                         } catch (Exception e) {
                             Teak.log.exception(e);
-                        } finally {
-                            if (connection != null) {
-                                connection.disconnect();
-                            }
                         }
-                    } else if (DeepLink.willProcessUri(uri)) {
-                        wasTeakDeepLink = true;
+                    } catch (SSLProtocolException ssl_e) {
+                        // Ignored, Sentry issue 'TEAK-SDK-Z'
+                    } catch (SSLException ssl_e) {
+                        // Ignored
+                    } catch (Exception e) {
+                        Teak.log.exception(e);
+                    } finally {
+                        if (connection != null) {
+                            connection.disconnect();
+                        }
                     }
+                } else if (DeepLink.willProcessUri(uri)) {
+                    wasTeakDeepLink = true;
+                }
 
-                    // Always assign 'launch_link'
-                    returnValue.put("launch_link", uri.toString());
+                // Always assign 'launch_link'
+                returnValue.put("launch_link", uri.toString());
 
-                    // Put the URI and any query parameters that start with 'teak_' into 'deep_link'
-                    // but only if this was a Teak deep link
-                    if (wasTeakDeepLink) {
-                        returnValue.put("deep_link", uri.toString());
-                        for (String name : uri.getQueryParameterNames()) {
-                            if (name.startsWith("teak_")) {
-                                List<String> values = uri.getQueryParameters(name);
-                                if (values.size() > 1) {
-                                    returnValue.put(name, values);
-                                } else {
-                                    returnValue.put(name, values.get(0));
-                                }
+                // Put the URI and any query parameters that start with 'teak_' into 'deep_link'
+                // but only if this was a Teak deep link
+                if (wasTeakDeepLink) {
+                    returnValue.put("deep_link", uri.toString());
+                    for (String name : uri.getQueryParameterNames()) {
+                        if (name.startsWith("teak_")) {
+                            List<String> values = uri.getQueryParameters(name);
+                            if (values.size() > 1) {
+                                returnValue.put(name, values);
+                            } else {
+                                returnValue.put(name, values.get(0));
                             }
                         }
                     }
                 }
-
-                return returnValue;
             }
+
+            return returnValue;
         });
 
         // Start it running, and return the Future
@@ -1226,14 +1189,14 @@ public class Session {
 
             @Override
             public Map<String, Object> get() throws InterruptedException, ExecutionException {
-                Map<String, Object> ret = previousAttribution == null ? new HashMap<String, Object>() : previousAttribution.get();
+                Map<String, Object> ret = previousAttribution == null ? new HashMap<>() : previousAttribution.get();
                 ret.putAll(merging);
                 return ret;
             }
 
             @Override
             public Map<String, Object> get(long timeout, @NonNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-                Map<String, Object> ret = previousAttribution == null ? new HashMap<String, Object>() : previousAttribution.get(timeout, unit);
+                Map<String, Object> ret = previousAttribution == null ? new HashMap<>() : previousAttribution.get(timeout, unit);
                 ret.putAll(merging);
                 return ret;
             }
@@ -1291,6 +1254,7 @@ public class Session {
     }
 
     @Override
+    @NonNull
     public String toString() {
         try {
             return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toMap())));

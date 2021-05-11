@@ -79,18 +79,15 @@ public class DeviceConfiguration {
         }
 
         // Listen for Ad Info and Push Key events
-        TeakEvent.addEventListener(new TeakEvent.EventListener() {
-            @Override
-            public void onNewEvent(@NonNull TeakEvent event) {
-                switch (event.eventType) {
-                    case AdvertisingInfoEvent.Type: {
-                        advertisingId = ((AdvertisingInfoEvent) event).advertisingId;
-                        limitAdTracking = ((AdvertisingInfoEvent) event).limitAdTracking;
-                    } break;
-                    case PushRegistrationEvent.Registered: {
-                        pushRegistration = ((PushRegistrationEvent) event).registration;
-                    } break;
-                }
+        TeakEvent.addEventListener(event -> {
+            switch (event.eventType) {
+                case AdvertisingInfoEvent.Type: {
+                    advertisingId = ((AdvertisingInfoEvent) event).advertisingId;
+                    limitAdTracking = ((AdvertisingInfoEvent) event).limitAdTracking;
+                } break;
+                case PushRegistrationEvent.Registered: {
+                    pushRegistration = ((PushRegistrationEvent) event).registration;
+                } break;
             }
         });
 
@@ -140,6 +137,7 @@ public class DeviceConfiguration {
     }
 
     @Override
+    @NonNull
     public String toString() {
         try {
             return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toMap())));

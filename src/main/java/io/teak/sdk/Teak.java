@@ -8,6 +8,7 @@ import android.content.pm.ApplicationInfo;
 import android.net.Uri;
 import android.os.Bundle;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -248,18 +249,13 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static void identifyUser(final String userIdentifier, final String[] optOut, final String email) {
-        Teak.log.trace("Teak.identifyUser", "userIdentifier", userIdentifier, "optOut", optOut.toString(), "email", email);
+        Teak.log.trace("Teak.identifyUser", "userIdentifier", userIdentifier, "optOut", Arrays.toString(optOut), "email", email);
 
         // Always process deep links when identifyUser is called
         Teak.processDeepLinks();
 
         if (Instance != null) {
-            asyncExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Instance.identifyUser(userIdentifier, optOut != null ? optOut : new String[] {}, email);
-                }
-            });
+            asyncExecutor.submit(() -> Instance.identifyUser(userIdentifier, optOut != null ? optOut : new String[] {}, email));
         }
     }
 
@@ -271,12 +267,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         Teak.log.trace("Teak.logout");
 
         if (Instance != null) {
-            asyncExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Instance.logout();
-                }
-            });
+            asyncExecutor.submit(() -> Instance.logout());
         }
     }
 
@@ -292,12 +283,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         Teak.log.trace("Teak.trackEvent", "actionId", actionId, "objectTypeId", objectTypeId, "objectInstanceId", objectInstanceId);
 
         if (Instance != null) {
-            asyncExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Instance.trackEvent(actionId, objectTypeId, objectInstanceId);
-                }
-            });
+            asyncExecutor.submit(() -> Instance.trackEvent(actionId, objectTypeId, objectInstanceId));
         }
     }
 
@@ -314,12 +300,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         Teak.log.trace("Teak.incrementEvent", "actionId", actionId, "objectTypeId", objectTypeId, "objectInstanceId", objectInstanceId);
 
         if (Instance != null) {
-            asyncExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Instance.trackEvent(actionId, objectTypeId, objectInstanceId, count);
-                }
-            });
+            asyncExecutor.submit(() -> Instance.trackEvent(actionId, objectTypeId, objectInstanceId, count));
         }
     }
 
@@ -407,12 +388,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         Teak.log.trace("Teak.setNumericAttribute", "attributeName", attributeName, "attributeValue", attributeValue);
 
         if (Instance != null) {
-            asyncExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Instance.setNumericAttribute(attributeName, attributeValue);
-                }
-            });
+            asyncExecutor.submit(() -> Instance.setNumericAttribute(attributeName, attributeValue));
         }
     }
 
@@ -427,12 +403,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         Teak.log.trace("Teak.setStringAttribute", "attributeName", attributeName, "attributeValue", attributeValue);
 
         if (Instance != null) {
-            asyncExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Instance.setStringAttribute(attributeName, attributeValue);
-                }
-            });
+            asyncExecutor.submit(() -> Instance.setStringAttribute(attributeName, attributeValue));
         }
     }
 
@@ -741,13 +712,10 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             Teak.log.i("purchase." + pluginName, originalJson.toMap());
 
             if (Instance != null) {
-                asyncExecutor.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        final Map<String, Object> extras = new HashMap<>();
-                        extras.put("iap_plugin", pluginName);
-                        Instance.purchaseSucceeded(json, extras);
-                    }
+                asyncExecutor.submit(() -> {
+                    final Map<String, Object> extras = new HashMap<>();
+                    extras.put("iap_plugin", pluginName);
+                    Instance.purchaseSucceeded(json, extras);
                 });
             }
         } catch (Exception e) {
@@ -762,12 +730,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             final Map<String, Object> extras = new HashMap<>();
             extras.put("iap_plugin", pluginName);
 
-            asyncExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Instance.purchaseFailed(errorCode, extras);
-                }
-            });
+            asyncExecutor.submit(() -> Instance.purchaseFailed(errorCode, extras));
         }
     }
 
@@ -805,12 +768,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         }
     }
 
-    private static final FutureTask<Void> waitForDeepLink = new FutureTask<>(new Runnable() {
-        @Override
-        public void run() {
-            TeakEvent.postEvent(new DeepLinksReadyEvent());
-        }
-    }, null);
+    private static final FutureTask<Void> waitForDeepLink = new FutureTask<>(() -> TeakEvent.postEvent(new DeepLinksReadyEvent()), null);
 
     /**
      * Block until deep links are ready for processing.

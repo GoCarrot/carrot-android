@@ -5,6 +5,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+
 import androidx.annotation.NonNull;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.IntegrationChecker;
@@ -25,13 +33,6 @@ import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.io.DefaultAndroidNotification;
 import io.teak.sdk.io.DefaultAndroidResources;
 import io.teak.sdk.json.JSONObject;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
 
 public class TeakCore {
     private static TeakCore Instance = null;
@@ -79,34 +80,14 @@ public class TeakCore {
                 case TrackEventEvent.Type: {
                     final Map<String, Object> payload = ((TrackEventEvent) event).payload;
 
-                    asyncExecutor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
-                                @Override
-                                public void run(Session session) {
-                                    Request.submit("/me/events", payload, session);
-                                }
-                            });
-                        }
-                    });
+                    asyncExecutor.execute(() -> Session.whenUserIdIsReadyRun(session -> Request.submit("/me/events", payload, session)));
                     break;
                 }
                 case PurchaseEvent.Type: {
                     final Map<String, Object> payload = ((PurchaseEvent) event).payload;
                     Teak.log.i("purchase.succeeded", payload);
 
-                    asyncExecutor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
-                                @Override
-                                public void run(Session session) {
-                                    Request.submit("/me/purchase", payload, session);
-                                }
-                            });
-                        }
-                    });
+                    asyncExecutor.execute(() -> Session.whenUserIdIsReadyRun(session -> Request.submit("/me/purchase", payload, session)));
                     break;
                 }
                 case PurchaseFailedEvent.Type: {
@@ -114,17 +95,7 @@ public class TeakCore {
                     payload.put("errorCode", ((PurchaseFailedEvent) event).errorCode);
                     Teak.log.i("purchase.failed", payload);
 
-                    asyncExecutor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
-                                @Override
-                                public void run(Session session) {
-                                    Request.submit("/me/purchase", payload, session);
-                                }
-                            });
-                        }
-                    });
+                    asyncExecutor.execute(() -> Session.whenUserIdIsReadyRun(session -> Request.submit("/me/purchase", payload, session)));
                     break;
                 }
                 case PushNotificationEvent.Received: {
@@ -172,53 +143,50 @@ public class TeakCore {
 
                     // Create & display native notification asynchronously, image downloads etc
                     final Context context = ((PushNotificationEvent) event).context;
-                    asyncExecutor.submit(new RetriableTask<>(3, 2000L, 2, new Callable<Object>() {
-                        @Override
-                        public Object call() throws NotificationBuilder.AssetLoadException {
-                            // Send metric
-                            final String teakUserId = bundle.getString("teakUserId", null);
-                            final String teakAppId = bundle.getString("teakAppId", null);
-                            if (teakAppId != null && teakUserId != null) {
-                                HashMap<String, Object> payload = new HashMap<>();
-                                payload.put("app_id", teakAppId);
-                                payload.put("user_id", teakUserId);
-                                payload.put("platform_id", teakNotification.teakNotifId);
+                    asyncExecutor.submit(new RetriableTask<>(3, 2000L, 2, () -> {
+                        // Send metric
+                        final String teakUserId = bundle.getString("teakUserId", null);
+                        final String teakAppId = bundle.getString("teakAppId", null);
+                        if (teakAppId != null && teakUserId != null) {
+                            HashMap<String, Object> payload = new HashMap<>();
+                            payload.put("app_id", teakAppId);
+                            payload.put("user_id", teakUserId);
+                            payload.put("platform_id", teakNotification.teakNotifId);
 
-                                if (gameIsInForeground) {
-                                    payload.put("notification_placement", "foreground");
-                                }
+                            if (gameIsInForeground) {
+                                payload.put("notification_placement", "foreground");
+                            }
 
-                                if (teakNotification.teakNotifId == 0) {
-                                    payload.put("impression", false);
-                                }
+                            if (teakNotification.teakNotifId == 0) {
+                                payload.put("impression", false);
+                            }
 
-                                // If the API key is null, assign that
-                                if (!isUnitTest) {
-                                    try {
-                                        if (!Request.hasTeakApiKey()) {
-                                            AppConfiguration tempAppConfiguration = new AppConfiguration(context, new DefaultAndroidResources(context));
-                                            Request.setTeakApiKey(tempAppConfiguration.apiKey);
-                                        }
-                                        Request.submit("parsnip.gocarrot.com", "/notification_received", payload, Session.NullSession);
-                                    } catch (IntegrationChecker.InvalidConfigurationException ignored) {
+                            // If the API key is null, assign that
+                            if (!isUnitTest) {
+                                try {
+                                    if (!Request.hasTeakApiKey()) {
+                                        AppConfiguration tempAppConfiguration = new AppConfiguration(context, new DefaultAndroidResources(context));
+                                        Request.setTeakApiKey(tempAppConfiguration.apiKey);
                                     }
+                                    Request.submit("parsnip.gocarrot.com", "/notification_received", payload, Session.NullSession);
+                                } catch (IntegrationChecker.InvalidConfigurationException ignored) {
                                 }
                             }
-
-                            // If the game is backgrounded, or we can show in foreground, display notification
-                            if (!gameIsInForeground || showInForeground) {
-                                // Create native notification
-                                final Notification nativeNotification = NotificationBuilder.createNativeNotification(context, bundle, teakNotification);
-                                if (nativeNotification == null) return null;
-
-                                // Ensure that DefaultAndroidNotification instance exists.
-                                if (DefaultAndroidNotification.get(context) == null) return null;
-
-                                // Send display event
-                                TeakEvent.postEvent(new NotificationDisplayEvent(teakNotification, nativeNotification));
-                            }
-                            return null;
                         }
+
+                        // If the game is backgrounded, or we can show in foreground, display notification
+                        if (!gameIsInForeground || showInForeground) {
+                            // Create native notification
+                            final Notification nativeNotification = NotificationBuilder.createNativeNotification(context, bundle, teakNotification);
+                            if (nativeNotification == null) return null;
+
+                            // Ensure that DefaultAndroidNotification instance exists.
+                            if (DefaultAndroidNotification.get(context) == null) return null;
+
+                            // Send display event
+                            TeakEvent.postEvent(new NotificationDisplayEvent(teakNotification, nativeNotification));
+                        }
+                        return null;
                     }));
                     break;
                 }
@@ -273,29 +241,26 @@ public class TeakCore {
                 if (teakRewardId != null) {
                     final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
                     if (rewardFuture != null) {
-                        this.asyncExecutor.execute(new Runnable() {
-                            @Override
-                            public void run() {
-                                Teak.NotificationEvent notificationEvent = new Teak.NotificationEvent(bundle, false);
-                                try {
-                                    final TeakNotification.Reward reward = rewardFuture.get();
+                        this.asyncExecutor.execute(() -> {
+                            Teak.NotificationEvent notificationEvent = new Teak.NotificationEvent(bundle, false);
+                            try {
+                                final TeakNotification.Reward reward = rewardFuture.get();
 
-                                    final HashMap<String, Object> rewardMap = new HashMap<>(reward.json.toMap());
-                                    rewardMap.put("teakNotifId", notificationEvent.teakNotifId);
-                                    rewardMap.put("incentivized", true);
-                                    rewardMap.put("teakRewardId", notificationEvent.teakRewardId);
-                                    rewardMap.put("teakScheduleName", notificationEvent.teakScheduleName);
-                                    rewardMap.put("teakCreativeName", notificationEvent.teakCreativeName);
-                                    rewardMap.put("teakChannelName", notificationEvent.teakChannelName);
+                                final HashMap<String, Object> rewardMap = new HashMap<>(reward.json.toMap());
+                                rewardMap.put("teakNotifId", notificationEvent.teakNotifId);
+                                rewardMap.put("incentivized", true);
+                                rewardMap.put("teakRewardId", notificationEvent.teakRewardId);
+                                rewardMap.put("teakScheduleName", notificationEvent.teakScheduleName);
+                                rewardMap.put("teakCreativeName", notificationEvent.teakCreativeName);
+                                rewardMap.put("teakChannelName", notificationEvent.teakChannelName);
 
-                                    notificationEvent = new Teak.NotificationEvent(bundle, false, rewardMap);
+                                notificationEvent = new Teak.NotificationEvent(bundle, false, rewardMap);
 
-                                    Session.whenUserIdIsReadyPost(new Teak.RewardClaimEvent(rewardMap));
-                                } catch (Exception e) {
-                                    Teak.log.exception(e);
-                                } finally {
-                                    Session.whenUserIdIsReadyPost(notificationEvent);
-                                }
+                                Session.whenUserIdIsReadyPost(new Teak.RewardClaimEvent(rewardMap));
+                            } catch (Exception e) {
+                                Teak.log.exception(e);
+                            } finally {
+                                Session.whenUserIdIsReadyPost(notificationEvent);
                             }
                         });
                     }
