@@ -158,6 +158,10 @@ android {
             buildConfigField "String" ,"VERSION_NAME", "\"${defaultConfig.versionName}\""
         }
     }
+
+    lintOptions {
+        abortOnError false
+    }
 }
 
 dependencies {
