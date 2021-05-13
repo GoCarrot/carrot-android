@@ -20,13 +20,11 @@ import java.util.List;
 import java.util.Map;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.Session;
 import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.LogoutEvent;
-import io.teak.sdk.event.PurchaseFailedEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.event.UserIdEvent;
@@ -305,21 +303,9 @@ public class TeakInstance implements Unobfuscable {
         }
     }
 
-    ///// Purchase
+    ///// Purchase Tracking
 
     private IStore appStore;
-
-    void purchaseSucceeded(String purchaseString, @Nullable Map<String, Object> extras) {
-        if (this.appStore != null) {
-            this.appStore.processPurchase(purchaseString, extras);
-        } else {
-            Teak.log.e("purchase.succeeded.error", "Unable to process purchaseSucceeded, no active app store.");
-        }
-    }
-
-    void purchaseFailed(int errorCode, @Nullable Map<String, Object> extras) {
-        TeakEvent.postEvent(new PurchaseFailedEvent(errorCode, extras));
-    }
 
     ///// Activity Lifecycle
 

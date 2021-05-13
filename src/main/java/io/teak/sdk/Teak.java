@@ -702,38 +702,6 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         }
     }
 
-    ///// Purchase Code
-
-    // Called by Unity integration
-    @SuppressWarnings("unused")
-    public static void pluginPurchaseSucceeded(final String json, final String pluginName) {
-        try {
-            final JSONObject originalJson = new JSONObject(json);
-            Teak.log.i("purchase." + pluginName, originalJson.toMap());
-
-            if (Instance != null) {
-                asyncExecutor.submit(() -> {
-                    final Map<String, Object> extras = new HashMap<>();
-                    extras.put("iap_plugin", pluginName);
-                    Instance.purchaseSucceeded(json, extras);
-                });
-            }
-        } catch (Exception e) {
-            Teak.log.exception(e);
-        }
-    }
-
-    // Called by Unity integration
-    @SuppressWarnings("unused")
-    public static void pluginPurchaseFailed(final int errorCode, final String pluginName) {
-        if (Instance != null) {
-            final Map<String, Object> extras = new HashMap<>();
-            extras.put("iap_plugin", pluginName);
-
-            asyncExecutor.submit(() -> Instance.purchaseFailed(errorCode, extras));
-        }
-    }
-
     ///// Logging
 
     public static int jsonLogIndentation = 0;

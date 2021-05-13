@@ -3,6 +3,7 @@ package io.teak.sdk.store;
 import android.content.Context;
 
 import com.android.billingclient.api.BillingClient;
+import com.android.billingclient.api.BillingClientStateListener;
 import com.android.billingclient.api.BillingResult;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.PurchasesUpdatedListener;
@@ -16,12 +17,12 @@ import java.util.Map;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import io.teak.sdk.Helpers;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.event.PurchaseEvent;
-import io.teak.sdk.json.JSONObject;
 
-public class GooglePlayBillingV3 implements IStore, PurchasesUpdatedListener {
+public class GooglePlayBillingV3 implements IStore, PurchasesUpdatedListener, BillingClientStateListener {
     private final BillingClient billingClient;
 
     public GooglePlayBillingV3(Context context) {
@@ -30,37 +31,46 @@ public class GooglePlayBillingV3 implements IStore, PurchasesUpdatedListener {
                 .enablePendingPurchases()
                 .build();
         Teak.log.i("billing.google.v3", "Google Play Billing v3 registered.");
+
+        this.billingClient.startConnection(this);
     }
 
     @Override
-    public void processPurchase(String purchaseDataAsString, Map<String, Object> extras) {
-        final JSONObject purchaseData = new JSONObject(purchaseDataAsString);
-        final String sku = (String) purchaseData.get("productId");
-        final Map<String, Object> payload = (extras == null ? new HashMap<>() : extras);
-        payload.put("purchase_token", purchaseData.get("purchaseToken"));
-        payload.put("purchase_time", purchaseData.get("purchaseTime"));
-        payload.put("product_id", sku);
-        if (purchaseData.has("orderId")) {
-            payload.put("order_id", purchaseData.get("orderId"));
+    public void onBillingSetupFinished(@NonNull BillingResult billingResult) {
+    }
+
+    @Override
+    public void onBillingServiceDisconnected() {
+    }
+
+    @Override
+    public void onPurchasesUpdated(@NonNull BillingResult billingResult, @Nullable List<Purchase> purchaseList) {
+        for(Purchase purchase : purchaseList) {
+            final Map<String, Object> payload = new HashMap<>();
+            payload.put("purchase_token", purchase.getPurchaseToken());
+            payload.put("purchase_time", purchase.getPurchaseTime());
+            payload.put("product_id", purchase.getSku());
+            payload.put("order_id", purchase.getOrderId());
+
+            final SkuDetailsParams params = SkuDetailsParams
+                    .newBuilder()
+                    .setType(BillingClient.SkuType.INAPP)
+                    .setSkusList(Collections.singletonList(purchase.getSku()))
+                    .build();
+
+            this.billingClient.querySkuDetailsAsync(params, (ignored, skuDetailsList) -> {
+                if (skuDetailsList != null && !skuDetailsList.isEmpty()) {
+                    final SkuDetails skuDetails = skuDetailsList.get(0);
+                    payload.put("price_amount_micros", skuDetails.getPriceAmountMicros());
+                    payload.put("price_currency_code", skuDetails.getPriceCurrencyCode());
+
+                    Teak.log.i("billing.google.v3.sku", "SKU Details retrieved.", Helpers.mm.h(purchase.getSku(), skuDetails.getPriceAmountMicros()));
+                } else {
+                    Teak.log.e("billing.google.v3.sku", "SKU Details query failed.");
+                }
+
+                TeakEvent.postEvent(new PurchaseEvent(payload));
+            });
         }
-
-        final SkuDetailsParams params = SkuDetailsParams
-                .newBuilder()
-                .setSkusList(Collections.singletonList(sku))
-                .build();
-        this.billingClient.querySkuDetailsAsync(params, (billingResult, list) -> {
-            if (list != null && !list.isEmpty()) {
-                final SkuDetails skuDetails = list.get(0);
-                payload.put("price_amount_micros", skuDetails.getPriceAmountMicros());
-                payload.put("price_currency_code", skuDetails.getPriceCurrencyCode());
-            }
-
-            TeakEvent.postEvent(new PurchaseEvent(payload));
-        });
-    }
-
-    @Override
-    public void onPurchasesUpdated(@NonNull BillingResult billingResult, @Nullable List<Purchase> list) {
-        Teak.log.i("billing.google.v3", "onPurchasesUpdated" + billingResult.toString());
     }
 }
