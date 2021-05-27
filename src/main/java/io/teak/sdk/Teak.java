@@ -8,6 +8,7 @@ import android.content.pm.ApplicationInfo;
 import android.net.Uri;
 import android.os.Bundle;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -146,15 +147,20 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             }
         }
 
+        // Add version info for Unity
+        try {
+            Class<?> clazz = Class.forName("io.teak.sdk.wrapper.Version");
+            Method m = clazz.getDeclaredMethod("map");
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> wrapperVersion = (Map<String, Object>)m.invoke(null);
+            if (wrapperVersion != null) {
+                Teak.sdkMap.putAll(wrapperVersion);
+            }
+        } catch (Exception ignored) {
+        }
+
         final AndroidResources androidResources = new AndroidResources(activity.getApplicationContext(), objectFactory.getAndroidResources());
         if (androidResources != null) {
-            // Add version info for Unity/Cocos2dx
-            String wrapperSDKName = androidResources.getStringResource("io_teak_wrapper_sdk_name");
-            String wrapperSDKVersion = androidResources.getStringResource("io_teak_wrapper_sdk_version");
-            if (wrapperSDKName != null && wrapperSDKVersion != null) {
-                Teak.sdkMap.put(wrapperSDKName, wrapperSDKVersion);
-            }
-
             // Check for 'trace' log mode
             final Boolean traceLog = androidResources.getTeakBoolResource(AppConfiguration.TEAK_TRACE_LOG_RESOURCE, false);
             if (traceLog != null) {
