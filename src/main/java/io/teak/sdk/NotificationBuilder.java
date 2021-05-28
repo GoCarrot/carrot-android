@@ -380,7 +380,7 @@ public class NotificationBuilder {
                         } else if (value.equalsIgnoreCase("NONE")) {
                             remoteViews.setViewVisibility(viewElementId, View.GONE);
                         } else {
-                            final Bitmap bitmap = loadNotificationBackgroundWithOOMFallbacks(viewConfig);
+                            final Bitmap bitmap = loadBitmapWithOOMFallbacks(key, viewConfig);
                             if (bitmap == null) {
                                 if ("left_image".equals(key)) {
                                     remoteViews.setViewVisibility(viewElementId, View.GONE);
@@ -518,13 +518,14 @@ public class NotificationBuilder {
                 return null;
             }
 
-            private Bitmap loadNotificationBackgroundWithOOMFallbacks(JSONObject viewConfig) throws OutOfMemoryError {
+            private Bitmap loadBitmapWithOOMFallbacks(String key, JSONObject viewConfig) throws OutOfMemoryError {
                 try {
-                    return loadBitmapFromUriString(viewConfig.getString("notification_background"));
+                    return loadBitmapFromUriString(viewConfig.getString(key));
                 } catch (OutOfMemoryError e) {
-                    Teak.log.e("oom.image.initial", viewConfig.getString("notification_background"));
+                    Teak.log.e("oom.image.initial", viewConfig.getString(key));
 
-                    final JSONArray oomFallbacks = viewConfig.optJSONArray("oom_notification_background");
+                    final String oom_key = "oom_" + key;
+                    final JSONArray oomFallbacks = viewConfig.optJSONArray(oom_key);
                     if (oomFallbacks != null) {
                         for (int i = 0; i < oomFallbacks.length(); i++) {
                             try {
