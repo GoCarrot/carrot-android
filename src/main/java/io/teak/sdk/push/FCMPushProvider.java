@@ -141,10 +141,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
             try {
                 final Task<String> instanceIdTask = FirebaseMessaging.getInstance().getToken();
                 instanceIdTask.addOnSuccessListener(registrationId -> {
-                    Teak.log.i("google.fcm.registered", Helpers.mm.h("fcmId", registrationId));
-                    if (Teak.isEnabled()) {
-                        TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", registrationId, FCMPushProvider.this.firebaseApp.getOptions().getGcmSenderId()));
-                    }
+                    this.onNewToken(registrationId.toString());
                 });
 
                 instanceIdTask.addOnFailureListener(e -> Teak.log.exception(e));
