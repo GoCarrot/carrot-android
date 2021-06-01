@@ -220,10 +220,19 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         }
     }
 
+    public static boolean shouldSuppressThrowable(Throwable t) {
+        final String message = t.getMessage();
+        return message.startsWith("signal");
+    }
+
     public static Map<String, Object> throwableToMap(Throwable t) {
         Throwable throwable = t;
         if (throwable instanceof InvocationTargetException && throwable.getCause() != null) {
             throwable = throwable.getCause();
+        }
+
+        if (Raven.shouldSuppressThrowable(throwable)) {
+            return null;
         }
 
         HashMap<String, Object> exception = new HashMap<>();
@@ -284,6 +293,9 @@ public class Raven implements Thread.UncaughtExceptionHandler {
         HashMap<String, Object> additions = new HashMap<>();
         ArrayList<Object> exceptions = new ArrayList<>();
         Map<String, Object> exception = Raven.throwableToMap(throwable);
+        if (exception == null) {
+            return;
+        }
 
         exceptions.add(exception);
         additions.put("exception", exceptions);
