@@ -222,6 +222,9 @@ public class Raven implements Thread.UncaughtExceptionHandler {
 
     public static boolean shouldSuppressThrowable(Throwable t) {
         final String message = t.getMessage();
+        if (message == null) {
+            return false;
+        }
         return message.startsWith("signal");
     }
 
