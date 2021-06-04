@@ -550,7 +550,7 @@ public class Request implements Runnable {
         final boolean isMockedRequest = Request.remoteConfiguration != null && Request.remoteConfiguration.isMocked;
 
         final SecretKeySpec keySpec = new SecretKeySpec(Request.teakApiKey.getBytes(), "HmacSHA256");
-        String requestBody;
+        String sig;
 
         try {
             if (this.hostname == null) {
@@ -558,15 +558,13 @@ public class Request implements Runnable {
             }
 
             if (isMockedRequest) {
-                requestBody = Payload.toRequestBody(this.payload, "unit_test_request_sig");
+                sig = "unit_test_request_sig";
             } else {
                 final String stringToSign = "POST\n" + this.hostname + "\n" + this.endpoint + "\n" + Payload.toSigningString(this.payload);
                 final Mac mac = Mac.getInstance("HmacSHA256");
                 mac.init(keySpec);
                 final byte[] result = mac.doFinal(stringToSign.getBytes());
-                final String sig = Base64.encodeToString(result, Base64.NO_WRAP);
-
-                requestBody = Payload.toRequestBody(this.payload, sig);
+                sig = Base64.encodeToString(result, Base64.NO_WRAP);
             }
         } catch (Exception e) {
             Teak.log.exception(e);
@@ -581,6 +579,8 @@ public class Request implements Runnable {
                 isMockedRequest ? Request.MOCKED_PORT : Request.DEFAULT_PORT,
                 this.endpoint);
             final IHttpRequest request = new DefaultHttpRequest();
+
+            final String requestBody = Payload.toRequestBody(this.payload, sig);
             final IHttpRequest.Response response = request.synchronousRequest(url, requestBody);
 
             final int statusCode = response == null ? 0 : response.statusCode;
