@@ -13,20 +13,25 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
 
+import io.teak.sdk.Request;
+
 public class DefaultHttpRequest implements IHttpRequest {
     @Override
     @SuppressWarnings("TryWithIdenticalCatches")
-    public Response synchronousRequest(URL url, String requestBody) throws IOException {
+    public Response synchronousRequest(URL url, Map<String, Object> payload, String sig) throws IOException {
         Response ret = Response.ERROR_RESPONSE;
 
         HttpURLConnection connection = null;
         BufferedReader rd = null;
 
         try {
+            final String requestBody = Request.Payload.toRequestBody(payload, sig);
+
             if ("https".equalsIgnoreCase(url.getProtocol())) {
                 connection = (HttpsURLConnection) url.openConnection();
             } else if ("http".equalsIgnoreCase(url.getProtocol())) {

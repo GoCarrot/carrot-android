@@ -579,9 +579,7 @@ public class Request implements Runnable {
                 isMockedRequest ? Request.MOCKED_PORT : Request.DEFAULT_PORT,
                 this.endpoint);
             final IHttpRequest request = new DefaultHttpRequest();
-
-            final String requestBody = Payload.toRequestBody(this.payload, sig);
-            final IHttpRequest.Response response = request.synchronousRequest(url, requestBody);
+            final IHttpRequest.Response response = request.synchronousRequest(url, this.payload, sig);
 
             final int statusCode = response == null ? 0 : response.statusCode;
             final String body = response == null ? null : response.body;
