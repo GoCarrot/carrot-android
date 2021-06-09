@@ -1,15 +1,7 @@
 package io.teak.sdk;
 
-import android.util.Base64;
-
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URL;
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -487,60 +479,6 @@ public class Request implements Runnable {
         this.batch = batch;
     }
 
-    public static class Payload {
-        @SuppressWarnings("WeakerAccess")
-        public static String toSigningString(Map<String, Object> payload) throws UnsupportedEncodingException {
-            return payloadToString(payload, false);
-        }
-
-        @SuppressWarnings("WeakerAccess")
-        public static String toRequestBody(Map<String, Object> payload, String sig) throws UnsupportedEncodingException {
-            return payloadToString(payload, true) + "&sig=" + URLEncoder.encode(sig, "UTF-8");
-        }
-
-        private static String formEncode(String name, Object value, boolean escape) throws UnsupportedEncodingException {
-            List<String> listOfThingsToJoin = new ArrayList<>();
-            if (value instanceof Map) {
-                Map<?, ?> valueMap = (Map<?, ?>) value;
-                for (Map.Entry<?, ?> entry : valueMap.entrySet()) {
-                    listOfThingsToJoin.add(formEncode(String.format("%s[%s]", name, entry.getKey().toString()), entry.getValue(), escape));
-                }
-            } else if (value instanceof Collection || value instanceof Object[]) {
-                // If something is not an instanceof Map, then it's an array/set/vector Collection
-                Collection valueCollection = value instanceof Collection ? (Collection) value : Arrays.asList((Object[]) value);
-                for (Object v : valueCollection) {
-                    listOfThingsToJoin.add(formEncode(String.format("%s[]", name == null ? "" : name), v, escape));
-                }
-            } else {
-                if (name == null) {
-                    listOfThingsToJoin.add(escape ? URLEncoder.encode(value.toString(), "UTF-8") : value.toString());
-                } else {
-                    listOfThingsToJoin.add(String.format("%s=%s", name, escape ? URLEncoder.encode(value.toString(), "UTF-8") : value.toString()));
-                }
-            }
-            return Helpers.join("&", listOfThingsToJoin);
-        }
-
-        @SuppressWarnings("WeakerAccess")
-        public static String payloadToString(Map<String, Object> payload, boolean escape) throws UnsupportedEncodingException {
-            ArrayList<String> payloadKeys = new ArrayList<>(payload.keySet());
-            Collections.sort(payloadKeys);
-            List<String> listOfThingsToJoin = new ArrayList<>();
-            for (String key : payloadKeys) {
-                Object value = payload.get(key);
-                if (value != null) {
-                    final String encoded = formEncode(key, value, escape);
-                    if (encoded.length() > 0) {
-                        listOfThingsToJoin.add(encoded);
-                    }
-                } else {
-                    Teak.log.e("request", "Value for key is null.", Helpers.mm.h("key", key));
-                }
-            }
-            return Helpers.join("&", listOfThingsToJoin);
-        }
-    }
-
     @Override
     public void run() {
         this.sent = true;
@@ -551,6 +489,8 @@ public class Request implements Runnable {
 
         final SecretKeySpec keySpec = new SecretKeySpec(Request.teakApiKey.getBytes(), "HmacSHA256");
         String sig;
+        final JSONObject jsonPayload = new JSONObject(this.payload);
+        final String requestBody = jsonPayload.toString();
 
         try {
             if (this.hostname == null) {
@@ -560,11 +500,20 @@ public class Request implements Runnable {
             if (isMockedRequest) {
                 sig = "unit_test_request_sig";
             } else {
-                final String stringToSign = "POST\n" + this.hostname + "\n" + this.endpoint + "\n" + Payload.toSigningString(this.payload);
-                final Mac mac = Mac.getInstance("HmacSHA256");
-                mac.init(keySpec);
-                final byte[] result = mac.doFinal(stringToSign.getBytes());
-                sig = Base64.encodeToString(result, Base64.NO_WRAP);
+                String requestBodyHash;
+                {
+                    final Mac mac = Mac.getInstance("HmacSHA256");
+                    mac.init(keySpec);
+                    final byte[] result = mac.doFinal(requestBody.getBytes());
+                    requestBodyHash = Helpers.bytesToHex(result);
+                }
+                {
+                    final String stringToSign = "TeakV2-HMAC-SHA256\nPOST\n" + this.hostname + "\n" + this.endpoint + "\n" + requestBodyHash + "\n";
+                    final Mac mac = Mac.getInstance("HmacSHA256");
+                    mac.init(keySpec);
+                    final byte[] result = mac.doFinal(stringToSign.getBytes());
+                    sig = Helpers.bytesToHex(result);
+                }
             }
         } catch (Exception e) {
             Teak.log.exception(e);
@@ -579,7 +528,7 @@ public class Request implements Runnable {
                 isMockedRequest ? Request.MOCKED_PORT : Request.DEFAULT_PORT,
                 this.endpoint);
             final IHttpRequest request = new DefaultHttpRequest();
-            final IHttpRequest.Response response = request.synchronousRequest(url, this.payload, sig);
+            final IHttpRequest.Response response = request.synchronousRequest(url, requestBody, sig);
 
             final int statusCode = response == null ? 0 : response.statusCode;
             final String body = response == null ? null : response.body;

@@ -8,11 +8,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 import android.os.Build;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import io.teak.sdk.json.JSONArray;
-import io.teak.sdk.json.JSONException;
-import io.teak.sdk.json.JSONObject;
+
 import java.lang.reflect.Method;
 import java.security.InvalidParameterException;
 import java.security.MessageDigest;
@@ -21,6 +17,12 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import io.teak.sdk.json.JSONArray;
+import io.teak.sdk.json.JSONException;
+import io.teak.sdk.json.JSONObject;
 
 public class Helpers {
     @SuppressWarnings("deprecation")
@@ -222,5 +224,17 @@ public class Helpers {
         } catch (Exception ignored) {
         }
         return null;
+    }
+
+    // https://stackoverflow.com/questions/9655181/how-to-convert-a-byte-array-to-a-hex-string-in-java
+    private static final char[] HEX_ARRAY = "0123456789abcdef".toCharArray();
+    public static String bytesToHex(byte[] bytes) {
+        char[] hexChars = new char[bytes.length * 2];
+        for (int j = 0; j < bytes.length; j++) {
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = HEX_ARRAY[v >>> 4];
+            hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
+        }
+        return new String(hexChars);
     }
 }
