@@ -64,8 +64,7 @@ jobs:
           ANDROID_HOME=/opt/android/sdk
     steps:
       - checkout
-      - teak/tag-promote:
-          fingerprint: "31:0a:6a:16:60:51:96:90:df:b9:52:86:a9:88:ce:18"
+      - teak/tag-promote
 
   deploy_versioned:
     docker:
