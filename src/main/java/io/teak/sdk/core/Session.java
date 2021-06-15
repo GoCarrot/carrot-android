@@ -30,6 +30,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -1119,7 +1120,9 @@ public class Session {
                             JSONObject teakData = new JSONObject(response.toString());
                             if (teakData.getString("AndroidPath") != null) {
                                 final String androidPath = teakData.getString("AndroidPath");
-                                if(Pattern.matches("^[a-zA-Z0-9+\\.\\-_]*:", androidPath)) {
+                                final Pattern pattern = Pattern.compile("^[a-zA-Z0-9+.\\-_]*:");
+                                final Matcher matcher = pattern.matcher(androidPath);
+                                if(matcher.find()) {
                                     uri = Uri.parse(androidPath);
                                 } else {
                                     uri = Uri.parse(String.format(Locale.US, "teak%s://%s", teakConfiguration.appConfiguration.appId, androidPath));
