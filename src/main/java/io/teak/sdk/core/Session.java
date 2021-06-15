@@ -970,16 +970,15 @@ public class Session {
         try {
             final TeakConfiguration teakConfiguration = TeakConfiguration.get();
             final String deep_link = (String) attribution.get("deep_link");
-            final String teakNotifId = (String) attribution.get("teak_notif_id");
             final URI uri = deep_link == null ? null : new URI(deep_link);
 
             if (uri != null) {
                 // See if TeakLinks can do anything with the deep link
                 final boolean deepLinkWasProcessedByTeak = DeepLink.processUri(uri);
 
-                // Otherwise, if this was a deep link from a Teak Notification, then go ahead and
-                // try to find a different app to launch.
-                if (!deepLinkWasProcessedByTeak && teakNotifId != null) {
+                // Otherwise, if this was a deep link (not a launch_link) then it was either a universal
+                // link or came in from a Teak Notification
+                if (!deepLinkWasProcessedByTeak) {
                     Intent uriIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(deep_link));
                     uriIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     List<ResolveInfo> resolvedActivities = teakConfiguration.appConfiguration.packageManager.queryIntentActivities(uriIntent, 0);
