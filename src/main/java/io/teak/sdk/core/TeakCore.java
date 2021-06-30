@@ -251,7 +251,9 @@ public class TeakCore {
                                 rewardMap.put("incentivized", true);
                                 rewardMap.put("teakRewardId", notificationEvent.teakRewardId);
                                 rewardMap.put("teakScheduleName", notificationEvent.teakScheduleName);
+                                rewardMap.put("teakScheduleId", notificationEvent.teakScheduleId);
                                 rewardMap.put("teakCreativeName", notificationEvent.teakCreativeName);
+                                rewardMap.put("teakCreativeId", notificationEvent.teakCreativeId);
                                 rewardMap.put("teakChannelName", notificationEvent.teakChannelName);
 
                                 notificationEvent = new Teak.NotificationEvent(bundle, false, rewardMap);

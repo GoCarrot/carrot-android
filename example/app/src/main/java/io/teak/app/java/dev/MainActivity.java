@@ -50,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Subscribe
     public void onNotification(Teak.NotificationEvent event) {
+        Log.d(LOG_TAG, event.toString());
     }
 
     @Subscribe
