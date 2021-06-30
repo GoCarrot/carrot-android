@@ -527,9 +527,19 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         public final String teakScheduleName;
 
         /**
+         * The id of the schedule responsible on the Teak dashboard, if this was a scheduled notification; null otherwise.
+         */
+        public final String teakScheduleId;
+
+        /**
          * The name of the notification creative on the Teak dashboard.
          */
         public final String teakCreativeName;
+
+        /**
+         * The id of the notification creative on the Teak dashboard.
+         */
+        public final String teakCreativeId;
 
         /**
          * TODO
@@ -564,7 +574,9 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             this.teakNotifId = bundle.getString("teakNotifId");
             this.incentivized = this.teakRewardId != null;
             this.teakScheduleName = bundle.getString("teakScheduleName");
+            this.teakScheduleId = bundle.getString("teakScheduleId");
             this.teakCreativeName = bundle.getString("teakCreativeName");
+            this.teakCreativeId = bundle.getString("teakCreativeId");
             this.teakChannelName = bundle.getString("teakChannelName");
             this.teakDeepLink = bundle.getString("teakDeepLink");
             this.teakNotificationPlacement = bundle.getString("teakNotificationPlacement");
