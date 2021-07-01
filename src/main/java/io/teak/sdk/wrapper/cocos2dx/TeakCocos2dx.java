@@ -1,14 +1,13 @@
 package io.teak.sdk.wrapper.cocos2dx;
 
-import androidx.annotation.NonNull;
+import java.lang.reflect.Method;
+import java.util.Map;
+
 import io.teak.sdk.Teak;
 import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.raven.Raven;
-import io.teak.sdk.wrapper.ISDKWrapper;
 import io.teak.sdk.wrapper.TeakInterface;
-import java.lang.reflect.Method;
-import java.util.Map;
 
 // Future-Pat: Prefix all Cocos2dx events with 'Teak' since they seem to use global event dispatch
 
@@ -33,29 +32,26 @@ public class TeakCocos2dx implements Unobfuscable {
 
     @SuppressWarnings("WeakerAccess")
     public static void initialize() {
-        teakInterface = new TeakInterface(new ISDKWrapper() {
-            @Override
-            public void sdkSendMessage(@NonNull EventType eventType, @NonNull String eventData) {
-                String eventName = null;
-                switch (eventType) {
-                    case NotificationLaunch: {
-                        eventName = "TeakNotificationLaunch";
-                    } break;
-                    case RewardClaim: {
-                        eventName = "TeakRewardClaimAttempt";
-                    } break;
-                    case ForegroundNotification: {
-                        eventName = "TeakForegroundNotification";
-                    } break;
-                    case AdditionalData: {
-                        eventName = "TeakAdditionalData";
-                    } break;
-                    case LaunchedFromLink: {
-                        eventName = "TeakLaunchedFromLink";
-                    } break;
-                }
-                TeakCocos2dx.sendMessage(eventName, eventData);
+        teakInterface = new TeakInterface((eventType, eventData) -> {
+            String eventName = null;
+            switch (eventType) {
+                case NotificationLaunch: {
+                    eventName = "TeakNotificationLaunch";
+                } break;
+                case RewardClaim: {
+                    eventName = "TeakRewardClaimAttempt";
+                } break;
+                case ForegroundNotification: {
+                    eventName = "TeakForegroundNotification";
+                } break;
+                case AdditionalData: {
+                    eventName = "TeakAdditionalData";
+                } break;
+                case LaunchedFromLink: {
+                    eventName = "TeakLaunchedFromLink";
+                } break;
             }
+            TeakCocos2dx.sendMessage(eventName, eventData);
         });
     }
 
@@ -95,12 +91,7 @@ public class TeakCocos2dx implements Unobfuscable {
 
     private static void sendMessage(final String event, final String eventData) {
         try {
-            TeakCocos2dx.runOnGLThread.invoke(null, new Runnable() {
-                @Override
-                public void run() {
-                    TeakCocos2dx.nativeSendMessage(event, eventData);
-                }
-            });
+            TeakCocos2dx.runOnGLThread.invoke(null, (Runnable) () -> TeakCocos2dx.nativeSendMessage(event, eventData));
         } catch (Exception e) {
             Teak.log.exception(e);
         }

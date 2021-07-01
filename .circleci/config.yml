@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  teak: teak/sdk-utils@0.0.3
+  teak: teak/sdk-utils@0.0.10
 
 jobs:
   build:
@@ -24,7 +24,6 @@ jobs:
           command: |
             echo 'sdk.dir=/opt/android/sdk' > local.properties
             echo 'sdk.dir=/opt/android/sdk' > test_app/local.properties
-            echo 'sdk.dir=/opt/android/sdk' > size_check/local.properties
       - run:
           name: Download Dependencies
           command: ./gradlew androidDependencies
@@ -35,23 +34,28 @@ jobs:
       - run:
           name: Build Teak SDK
           command: ./gradlew assemble
+      - run:
+          name: Compute Checksum
+          command: |
+            sha512sum build/outputs/aar/teak-release.aar > teak-release.sha512
+            sha256sum build/outputs/aar/teak-release.aar > teak-release.sha256
       - persist_to_workspace:
           root: .
           paths:
-            - build/distributions/teak-release.zip
             - build/outputs/aar/teak-release.aar
+            - teak-release.sha512
+            - teak-release.sha256
       - sentry_persist_proguard
-      # - run:
-      #     name: Check the added size of SDK in bytes and methods
-      #     command: ./check_size
+      - sentry_upload_proguard:
+          sentry_cli_args: --no-upload
       - run:
           name: Make sure we're not using Executors or Threads
           command: ./check_thread_use
-      # - run:
-      #     name: Run Teak SDK Unit Tests
-      #     command: (cd test_app; ./gradlew test --continue)
-      # - store_test_results:
-      #     path: test_app/app/build/test-results/
+      - run:
+          name: Run Teak SDK Unit Tests
+          command: (cd test_app; ./gradlew test --continue)
+      - store_test_results:
+          path: test_app/app/build/test-results/
 
   tag_build:
     docker:
@@ -60,8 +64,7 @@ jobs:
           ANDROID_HOME=/opt/android/sdk
     steps:
       - checkout
-      - teak/tag-promote:
-          fingerprint: "31:0a:6a:16:60:51:96:90:df:b9:52:86:a9:88:ce:18"
+      - teak/tag-promote
 
   deploy_versioned:
     docker:
@@ -83,8 +86,9 @@ jobs:
       - run:
           name: Upload SDK to S3
           command: |
-            aws s3 cp build/distributions/teak-release.zip s3://teak-build-artifacts/android/teak-$(git describe --tags --always).zip --acl public-read
             aws s3 cp build/outputs/aar/teak-release.aar s3://teak-build-artifacts/android/teak-$(git describe --tags --always).aar --acl public-read
+            aws s3 cp teak-release.sha512 s3://teak-build-artifacts/android/teak-$(git describe --tags --always).sha512 --acl public-read
+            aws s3 cp teak-release.sha256 s3://teak-build-artifacts/android/teak-$(git describe --tags --always).sha256 --acl public-read
 
   deploy_latest:
     docker:
@@ -106,8 +110,9 @@ jobs:
       - run:
           name: Upload SDK to S3
           command: |
-            aws s3 cp build/distributions/teak-release.zip s3://teak-build-artifacts/android/teak.zip --acl public-read
             aws s3 cp build/outputs/aar/teak-release.aar s3://teak-build-artifacts/android/teak.aar --acl public-read
+            aws s3 cp teak-release.sha256 s3://teak-build-artifacts/android/teak.sha256 --acl public-read
+            aws s3 cp teak-release.sha512 s3://teak-build-artifacts/android/teak.sha512 --acl public-read
 
 workflows:
   version: 2
@@ -177,17 +182,16 @@ commands:
   sentry_persist_proguard:
     description: "Persist ProGuard Mappings to Workspace"
     parameters:
-      android_manifest:
-        type: string
-        default: "build/intermediates/aapt_friendly_merged_manifests/release/processReleaseManifest/aapt/AndroidManifest.xml"
       proguard_mapping:
         type: string
         default: "build/outputs/mapping/release/mapping.txt"
+      sentry_uuid:
+        type: string
+        default: "build/intermediates/assets/release/sentry-debug-meta.properties"
     steps:
       - persist_to_workspace:
           root: .
           paths:
-            - << parameters.android_manifest >>
             - << parameters.proguard_mapping >>
   #
   # Upload ProGuard mappings to Sentry
@@ -195,13 +199,15 @@ commands:
   sentry_upload_proguard:
     description: "Upload ProGuard Mappings to Sentry"
     parameters:
-      android_manifest:
-        type: string
-        default: "build/intermediates/aapt_friendly_merged_manifests/release/processReleaseManifest/aapt/AndroidManifest.xml"
       proguard_mapping:
         type: string
         default: "build/outputs/mapping/release/mapping.txt"
+      sentry_cli_args:
+        type: string
+        default: ""
     steps:
       - run:
           name: Upload ProGuard Mappings to Sentry
-          command: sentry-cli upload-proguard --android-manifest << parameters.android_manifest >> << parameters.proguard_mapping >>
+          command: |
+            sentry-cli --version
+            sentry-cli upload-proguard --require-one << parameters.proguard_mapping >> << parameters.sentry_cli_args >>

@@ -64,7 +64,7 @@ public class TeakInitProvider extends ContentProvider {
 
     ///// ActivityLifecycleCallbacks
 
-    private Application.ActivityLifecycleCallbacks lifecycleCallbacks = new Application.ActivityLifecycleCallbacks() {
+    private final Application.ActivityLifecycleCallbacks lifecycleCallbacks = new Application.ActivityLifecycleCallbacks() {
         @Override
         public void onActivityCreated(Activity activity, Bundle bundle) {
             if (shouldAttachToActivity(activity)) {

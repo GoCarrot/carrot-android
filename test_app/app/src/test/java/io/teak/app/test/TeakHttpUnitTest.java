@@ -49,6 +49,7 @@ public class TeakHttpUnitTest extends TeakUnitTest {
                         false,
                         null,
                         null,
+                        600,
                         true);
         TeakEvent.postEvent(new RemoteConfigurationEvent(remoteConfiguration));
     }

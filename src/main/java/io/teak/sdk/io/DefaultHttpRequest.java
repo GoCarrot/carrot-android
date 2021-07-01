@@ -13,15 +13,14 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.List;
-import java.util.Map;
+
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
 
 public class DefaultHttpRequest implements IHttpRequest {
     @Override
     @SuppressWarnings("TryWithIdenticalCatches")
-    public Response synchronousRequest(URL url, String requestBody) throws IOException {
+    public Response synchronousRequest(URL url, String requestBody, String sig) throws IOException {
         Response ret = Response.ERROR_RESPONSE;
 
         HttpURLConnection connection = null;
@@ -37,9 +36,10 @@ public class DefaultHttpRequest implements IHttpRequest {
             connection.setRequestProperty("Accept-Charset", "UTF-8");
             connection.setUseCaches(false);
             connection.setDoOutput(true);
-            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            connection.setRequestProperty("Authorization", "TeakV2-HMAC-SHA256 Signature=" + sig);
+            connection.setRequestProperty("Content-Type", "application/json");
             connection.setRequestProperty("Content-Length",
-                "" + Integer.toString(requestBody.getBytes().length));
+                "" + requestBody.getBytes().length);
 
             // Send request
             DataOutputStream wr = new DataOutputStream(connection.getOutputStream());

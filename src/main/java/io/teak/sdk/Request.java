@@ -1,24 +1,7 @@
 package io.teak.sdk;
 
-import android.util.Base64;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import io.teak.sdk.configuration.RemoteConfiguration;
-import io.teak.sdk.core.Executors;
-import io.teak.sdk.core.Session;
-import io.teak.sdk.event.RemoteConfigurationEvent;
-import io.teak.sdk.event.TrackEventEvent;
-import io.teak.sdk.io.DefaultHttpRequest;
-import io.teak.sdk.io.IHttpRequest;
-import io.teak.sdk.json.JSONObject;
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URL;
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,8 +13,20 @@ import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import io.teak.sdk.configuration.RemoteConfiguration;
+import io.teak.sdk.core.Executors;
+import io.teak.sdk.core.Session;
+import io.teak.sdk.event.RemoteConfigurationEvent;
+import io.teak.sdk.event.TrackEventEvent;
+import io.teak.sdk.io.DefaultHttpRequest;
+import io.teak.sdk.io.IHttpRequest;
+import io.teak.sdk.json.JSONObject;
 
 public class Request implements Runnable {
     public static final int DEFAULT_PORT = 443;
@@ -53,7 +48,7 @@ public class Request implements Runnable {
 
     ///// Mini-configs
 
-    class RetryConfiguration {
+    static class RetryConfiguration {
         float jitter;
         float[] times;
         int retryIndex;
@@ -65,7 +60,7 @@ public class Request implements Runnable {
         }
     }
 
-    public class BatchConfiguration {
+    public static class BatchConfiguration {
         public long count;
         public float time;
         public float maximumWaitTime;
@@ -93,35 +88,32 @@ public class Request implements Runnable {
         return Request.teakApiKey != null && Request.teakApiKey.length() > 0;
     }
 
-    private static Map<String, Object> configurationPayload = new HashMap<>();
+    private static final Map<String, Object> configurationPayload = new HashMap<>();
 
     // TODO: Can't do this as a static-init block, will screw up unit tests
     static {
-        TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
-            @Override
-            public void onConfigurationReady(@NonNull TeakConfiguration configuration) {
-                Request.teakApiKey = configuration.appConfiguration.apiKey;
+        TeakConfiguration.addEventListener(configuration -> {
+            Request.teakApiKey = configuration.appConfiguration.apiKey;
 
-                configurationPayload.put("sdk_version", Teak.Version);
-                configurationPayload.put("game_id", configuration.appConfiguration.appId);
-                configurationPayload.put("app_version", String.valueOf(configuration.appConfiguration.appVersion));
-                configurationPayload.put("app_version_name", String.valueOf(configuration.appConfiguration.appVersionName));
-                configurationPayload.put("bundle_id", configuration.appConfiguration.bundleId);
-                configurationPayload.put("appstore_name", configuration.appConfiguration.storeId);
-                if (configuration.appConfiguration.installerPackage != null) {
-                    configurationPayload.put("installer_package", configuration.appConfiguration.installerPackage);
-                }
+            configurationPayload.put("sdk_version", Teak.Version);
+            configurationPayload.put("game_id", configuration.appConfiguration.appId);
+            configurationPayload.put("app_version", String.valueOf(configuration.appConfiguration.appVersion));
+            configurationPayload.put("app_version_name", String.valueOf(configuration.appConfiguration.appVersionName));
+            configurationPayload.put("bundle_id", configuration.appConfiguration.bundleId);
+            configurationPayload.put("appstore_name", configuration.appConfiguration.storeId);
+            if (configuration.appConfiguration.installerPackage != null) {
+                configurationPayload.put("installer_package", configuration.appConfiguration.installerPackage);
+            }
 
-                configurationPayload.put("device_id", configuration.deviceConfiguration.deviceId);
-                configurationPayload.put("sdk_platform", configuration.deviceConfiguration.platformString);
-                configurationPayload.put("device_manufacturer", configuration.deviceConfiguration.deviceManufacturer);
-                configurationPayload.put("device_model", configuration.deviceConfiguration.deviceModel);
-                configurationPayload.put("device_fallback", configuration.deviceConfiguration.deviceFallback);
-                configurationPayload.put("device_memory_class", configuration.deviceConfiguration.memoryClass);
+            configurationPayload.put("device_id", configuration.deviceConfiguration.deviceId);
+            configurationPayload.put("sdk_platform", configuration.deviceConfiguration.platformString);
+            configurationPayload.put("device_manufacturer", configuration.deviceConfiguration.deviceManufacturer);
+            configurationPayload.put("device_model", configuration.deviceConfiguration.deviceModel);
+            configurationPayload.put("device_fallback", configuration.deviceConfiguration.deviceFallback);
+            configurationPayload.put("device_memory_class", configuration.deviceConfiguration.memoryClass);
 
-                if (configuration.debugConfiguration.isDebug()) {
-                    configurationPayload.put("debug", true);
-                }
+            if (configuration.debugConfiguration.isDebug()) {
+                configurationPayload.put("debug", true);
             }
         });
     }
@@ -131,13 +123,10 @@ public class Request implements Runnable {
     protected static RemoteConfiguration remoteConfiguration;
 
     public static void registerStaticEventListeners() {
-        TeakEvent.addEventListener(new TeakEvent.EventListener() {
-            @Override
-            public void onNewEvent(@NonNull TeakEvent event) {
-                if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
-                    Request.remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
-                    configurationPayload.putAll(Request.remoteConfiguration.dynamicParameters);
-                }
+        TeakEvent.addEventListener(event -> {
+            if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
+                Request.remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
+                configurationPayload.putAll(Request.remoteConfiguration.dynamicParameters);
             }
         });
     }
@@ -151,7 +140,7 @@ public class Request implements Runnable {
         long firstAddTime = 0L;
 
         BatchedRequest(@Nullable String hostname, @NonNull String endpoint, @NonNull Session session, boolean addStandardAttributes) {
-            super(hostname, endpoint, new HashMap<String, Object>(), session, null, addStandardAttributes);
+            super(hostname, endpoint, new HashMap<>(), session, null, addStandardAttributes);
         }
 
         synchronized boolean add(@NonNull String endpoint, @Nullable Map<String, Object> payload, @Nullable Callback callback) {
@@ -363,12 +352,7 @@ public class Request implements Runnable {
 
         if (batch != null) {
             if (!batch.add(endpoint, payload, callback)) {
-                requestExecutor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        submit(finalHostname, endpoint, payload, session, callback);
-                    }
-                });
+                requestExecutor.execute(() -> submit(finalHostname, endpoint, payload, session, callback));
             }
         } else {
             requestExecutor.execute(new Request(hostname, endpoint, payload, session, callback, true));
@@ -408,7 +392,7 @@ public class Request implements Runnable {
             if (Request.remoteConfiguration != null) {
                 Object objHost = Request.remoteConfiguration.endpointConfigurations.containsKey(hostname) ? Request.remoteConfiguration.endpointConfigurations.get(hostname) : null;
                 @SuppressWarnings("unchecked")
-                Map<String, Object> host = (objHost != null && objHost instanceof Map) ? (Map<String, Object>) objHost : null;
+                Map<String, Object> host = (objHost instanceof Map) ? (Map<String, Object>) objHost : null;
                 if (host != null && host.containsKey(endpoint) && host.get(endpoint) instanceof Map) {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> endpointConfig = (Map<String, Object>) host.get(endpoint);
@@ -495,60 +479,6 @@ public class Request implements Runnable {
         this.batch = batch;
     }
 
-    public static class Payload {
-        @SuppressWarnings("WeakerAccess")
-        public static String toSigningString(Map<String, Object> payload) throws UnsupportedEncodingException {
-            return payloadToString(payload, false);
-        }
-
-        @SuppressWarnings("WeakerAccess")
-        public static String toRequestBody(Map<String, Object> payload, String sig) throws UnsupportedEncodingException {
-            return payloadToString(payload, true) + "&sig=" + URLEncoder.encode(sig, "UTF-8");
-        }
-
-        private static String formEncode(String name, Object value, boolean escape) throws UnsupportedEncodingException {
-            List<String> listOfThingsToJoin = new ArrayList<>();
-            if (value instanceof Map) {
-                Map<?, ?> valueMap = (Map<?, ?>) value;
-                for (Map.Entry<?, ?> entry : valueMap.entrySet()) {
-                    listOfThingsToJoin.add(formEncode(String.format("%s[%s]", name, entry.getKey().toString()), entry.getValue(), escape));
-                }
-            } else if (value instanceof Collection || value instanceof Object[]) {
-                // If something is not an instanceof Map, then it's an array/set/vector Collection
-                Collection valueCollection = value instanceof Collection ? (Collection) value : Arrays.asList((Object[]) value);
-                for (Object v : valueCollection) {
-                    listOfThingsToJoin.add(formEncode(String.format("%s[]", name == null ? "" : name), v, escape));
-                }
-            } else {
-                if (name == null) {
-                    listOfThingsToJoin.add(escape ? URLEncoder.encode(value.toString(), "UTF-8") : value.toString());
-                } else {
-                    listOfThingsToJoin.add(String.format("%s=%s", name, escape ? URLEncoder.encode(value.toString(), "UTF-8") : value.toString()));
-                }
-            }
-            return Helpers.join("&", listOfThingsToJoin);
-        }
-
-        @SuppressWarnings("WeakerAccess")
-        public static String payloadToString(Map<String, Object> payload, boolean escape) throws UnsupportedEncodingException {
-            ArrayList<String> payloadKeys = new ArrayList<>(payload.keySet());
-            Collections.sort(payloadKeys);
-            List<String> listOfThingsToJoin = new ArrayList<>();
-            for (String key : payloadKeys) {
-                Object value = payload.get(key);
-                if (value != null) {
-                    final String encoded = formEncode(key, value, escape);
-                    if (encoded != null && encoded.length() > 0) {
-                        listOfThingsToJoin.add(encoded);
-                    }
-                } else {
-                    Teak.log.e("request", "Value for key is null.", Helpers.mm.h("key", key));
-                }
-            }
-            return Helpers.join("&", listOfThingsToJoin);
-        }
-    }
-
     @Override
     public void run() {
         this.sent = true;
@@ -558,7 +488,9 @@ public class Request implements Runnable {
         final boolean isMockedRequest = Request.remoteConfiguration != null && Request.remoteConfiguration.isMocked;
 
         final SecretKeySpec keySpec = new SecretKeySpec(Request.teakApiKey.getBytes(), "HmacSHA256");
-        String requestBody;
+        String sig;
+        final JSONObject jsonPayload = new JSONObject(this.payload);
+        final String requestBody = jsonPayload.toString();
 
         try {
             if (this.hostname == null) {
@@ -566,15 +498,22 @@ public class Request implements Runnable {
             }
 
             if (isMockedRequest) {
-                requestBody = Payload.toRequestBody(this.payload, "unit_test_request_sig");
+                sig = "unit_test_request_sig";
             } else {
-                final String stringToSign = "POST\n" + this.hostname + "\n" + this.endpoint + "\n" + Payload.toSigningString(this.payload);
-                final Mac mac = Mac.getInstance("HmacSHA256");
-                mac.init(keySpec);
-                final byte[] result = mac.doFinal(stringToSign.getBytes());
-                final String sig = Base64.encodeToString(result, Base64.NO_WRAP);
-
-                requestBody = Payload.toRequestBody(this.payload, sig);
+                String requestBodyHash;
+                {
+                    final Mac mac = Mac.getInstance("HmacSHA256");
+                    mac.init(keySpec);
+                    final byte[] result = mac.doFinal(requestBody.getBytes());
+                    requestBodyHash = Helpers.bytesToHex(result);
+                }
+                {
+                    final String stringToSign = "TeakV2-HMAC-SHA256\nPOST\n" + this.hostname + "\n" + this.endpoint + "\n" + requestBodyHash + "\n";
+                    final Mac mac = Mac.getInstance("HmacSHA256");
+                    mac.init(keySpec);
+                    final byte[] result = mac.doFinal(stringToSign.getBytes());
+                    sig = Helpers.bytesToHex(result);
+                }
             }
         } catch (Exception e) {
             Teak.log.exception(e);
@@ -589,7 +528,7 @@ public class Request implements Runnable {
                 isMockedRequest ? Request.MOCKED_PORT : Request.DEFAULT_PORT,
                 this.endpoint);
             final IHttpRequest request = new DefaultHttpRequest();
-            final IHttpRequest.Response response = request.synchronousRequest(url, requestBody);
+            final IHttpRequest.Response response = request.synchronousRequest(url, requestBody, sig);
 
             final int statusCode = response == null ? 0 : response.statusCode;
             final String body = response == null ? null : response.body;
@@ -616,6 +555,7 @@ public class Request implements Runnable {
             // in a dialog box, if enhanced integration checks are enabled
             if (responseAsMap != null &&
                 responseAsMap.containsKey("report_client_error")) {
+                @SuppressWarnings("unchecked")
                 final Map<String, Object> clientError = (Map<String, Object>) responseAsMap.get("report_client_error");
                 final String title = clientError.containsKey("title") ? (String) clientError.get("title") : "client.error";
                 final String message = clientError.containsKey("message") ? (String) clientError.get("message") : null;
@@ -656,6 +596,7 @@ public class Request implements Runnable {
     }
 
     @Override
+    @NonNull
     public String toString() {
         try {
             return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toMap())));

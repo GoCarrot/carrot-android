@@ -2,20 +2,21 @@ package io.teak.sdk.configuration;
 
 import android.app.ActivityManager;
 import android.content.Context;
-import androidx.annotation.NonNull;
-import io.teak.sdk.IObjectFactory;
-import io.teak.sdk.Teak;
-import io.teak.sdk.TeakConfiguration;
-import io.teak.sdk.TeakEvent;
-import io.teak.sdk.event.AdvertisingInfoEvent;
-import io.teak.sdk.event.PushRegistrationEvent;
-import io.teak.sdk.event.RemoteConfigurationEvent;
-import io.teak.sdk.io.IAndroidDeviceInfo;
-import io.teak.sdk.json.JSONObject;
-import io.teak.sdk.push.IPushProvider;
+
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
+import androidx.annotation.NonNull;
+import io.teak.sdk.IObjectFactory;
+import io.teak.sdk.Teak;
+import io.teak.sdk.TeakEvent;
+import io.teak.sdk.event.AdvertisingInfoEvent;
+import io.teak.sdk.event.PushRegistrationEvent;
+import io.teak.sdk.io.IAndroidDeviceInfo;
+import io.teak.sdk.json.JSONObject;
+import io.teak.sdk.push.IPushProvider;
 
 public class DeviceConfiguration {
     public Map<String, String> pushRegistration;
@@ -28,12 +29,14 @@ public class DeviceConfiguration {
     public final String deviceProduct;
     public final String platformString;
     public final int memoryClass;
+    public final int numCores;
+    public final long memoryInBytes;
+    public final Map<String, Object> displayMetrics;
 
     public String advertisingId;
     public boolean limitAdTracking;
 
     private final IPushProvider pushProvider;
-    private Map<String, Object> pushConfiguration = new HashMap<>();
 
     public DeviceConfiguration(@NonNull Context context, @NonNull IObjectFactory objectFactory) {
         this.pushProvider = objectFactory.getPushProvider();
@@ -50,6 +53,13 @@ public class DeviceConfiguration {
         {
             ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
             this.memoryClass = am == null ? 0 : am.getMemoryClass();
+        }
+
+        // System information
+        {
+            this.numCores = androidDeviceInfo.getNumCores();
+            this.memoryInBytes = androidDeviceInfo.totalMemoryInBytes();
+            this.displayMetrics = Collections.unmodifiableMap(androidDeviceInfo.displayMetrics());
         }
 
         // Device model/manufacturer
@@ -69,69 +79,37 @@ public class DeviceConfiguration {
         }
 
         // Listen for Ad Info and Push Key events
-        TeakEvent.addEventListener(new TeakEvent.EventListener() {
-            @Override
-            public void onNewEvent(@NonNull TeakEvent event) {
-                switch (event.eventType) {
-                    case AdvertisingInfoEvent.Type: {
-                        advertisingId = ((AdvertisingInfoEvent) event).advertisingId;
-                        limitAdTracking = ((AdvertisingInfoEvent) event).limitAdTracking;
-                    } break;
-                    case PushRegistrationEvent.Registered: {
-                        pushRegistration = ((PushRegistrationEvent) event).registration;
-                    } break;
-                }
+        TeakEvent.addEventListener(event -> {
+            switch (event.eventType) {
+                case AdvertisingInfoEvent.Type: {
+                    advertisingId = ((AdvertisingInfoEvent) event).advertisingId;
+                    limitAdTracking = ((AdvertisingInfoEvent) event).limitAdTracking;
+                } break;
+                case PushRegistrationEvent.Registered: {
+                    pushRegistration = ((PushRegistrationEvent) event).registration;
+                } break;
             }
         });
 
         // Request Ad Info, event will inform us when it's ready
         androidDeviceInfo.requestAdvertisingId();
 
-        // Push Configuration (Can be overridden via RemoteConfiguration)
-        TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
-            @Override
-            public void onConfigurationReady(@NonNull TeakConfiguration configuration) {
-                DeviceConfiguration.this.pushConfiguration.put("gcmSenderId", configuration.appConfiguration.gcmSenderId);
-                DeviceConfiguration.this.pushConfiguration.put("firebaseAppId", configuration.appConfiguration.firebaseAppId);
-                DeviceConfiguration.this.pushConfiguration.put("firebaseApiKey", configuration.appConfiguration.firebaseApiKey);
-                DeviceConfiguration.this.pushConfiguration.put("firebaseProjectId", configuration.appConfiguration.firebaseProjectId);
-                DeviceConfiguration.this.pushConfiguration.put("ignoreDefaultFirebaseConfiguration", configuration.appConfiguration.ignoreDefaultFirebaseConfiguration);
-            }
-        });
-
-        // TODO: Test/handle the case where remote config is already ready.
-
-        // Listen for remote configuration events
-        TeakEvent.addEventListener(new TeakEvent.EventListener() {
-            @Override
-            public void onNewEvent(@NonNull TeakEvent event) {
-                if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
-                    final RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
-
-                    // Override the provided GCM Sender Id with one from Teak, if applicable
-                    if (remoteConfiguration.gcmSenderId != null) {
-                        DeviceConfiguration.this.pushConfiguration.put("gcmSenderId", remoteConfiguration.gcmSenderId);
-                    }
-
-                    // Override the provided Firebase App Id with one from Teak, if applicable
-                    if (remoteConfiguration.firebaseAppId != null) {
-                        DeviceConfiguration.this.pushConfiguration.put("firebaseAppId", remoteConfiguration.firebaseAppId);
-                    }
-
-                    // Override ignoring the default Firebase configuration
-                    if (remoteConfiguration.firebaseAppId != null) {
-                        DeviceConfiguration.this.pushConfiguration.put("ignoreDefaultFirebaseConfiguration", remoteConfiguration.firebaseAppId);
-                    }
-
-                    requestNewPushToken();
-                }
-            }
-        });
+        // Request push token
+        // TODO: If strange behavior happens, the previous code waited for remote configuration, so maybe that's the cause
+        this.requestNewPushToken();
+        //        TeakEvent.addEventListener(new TeakEvent.EventListener() {
+        //            @Override
+        //            public void onNewEvent(@NonNull TeakEvent event) {
+        //                if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
+        //                    requestNewPushToken();
+        //                }
+        //            }
+        //        });
     }
 
     public void requestNewPushToken() {
         if (this.pushProvider != null) {
-            this.pushProvider.requestPushKey(this.pushConfiguration);
+            this.pushProvider.requestPushKey();
         }
     }
 
@@ -152,10 +130,14 @@ public class DeviceConfiguration {
         ret.put("deviceProduct", this.deviceProduct);
         ret.put("platformString", this.platformString);
         ret.put("memoryClass", this.memoryClass);
+        ret.put("numCores", this.numCores);
+        ret.put("memoryInBytes", this.memoryInBytes);
+        ret.put("displayMetrics", this.displayMetrics);
         return ret;
     }
 
     @Override
+    @NonNull
     public String toString() {
         try {
             return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toMap())));

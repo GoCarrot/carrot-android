@@ -1,12 +1,13 @@
 package io.teak.sdk;
 
-import androidx.annotation.NonNull;
-import io.teak.sdk.core.Executors;
-import io.teak.sdk.core.ThreadFactory;
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import androidx.annotation.NonNull;
+import io.teak.sdk.core.Executors;
+import io.teak.sdk.core.ThreadFactory;
 
 public class TeakEvent {
     public final String eventType;
@@ -20,17 +21,14 @@ public class TeakEvent {
     public static boolean postEvent(@NonNull TeakEvent event) {
         synchronized (eventProcessingThreadMutex) {
             if (eventProcessingThread == null || !eventProcessingThread.isAlive()) {
-                eventProcessingThread = ThreadFactory.autoStart(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            TeakEvent event;
-                            while ((event = eventQueue.take()).eventType != null) {
-                                TeakEvent.eventListeners.processEvent(event);
-                            }
-                        } catch (Exception e) {
-                            Teak.log.exception(e);
+                eventProcessingThread = ThreadFactory.autoStart(() -> {
+                    try {
+                        TeakEvent event1;
+                        while ((event1 = eventQueue.take()).eventType != null) {
+                            TeakEvent.eventListeners.processEvent(event1);
                         }
+                    } catch (Exception e) {
+                        Teak.log.exception(e);
                     }
                 });
             }
@@ -98,12 +96,7 @@ public class TeakEvent {
             synchronized (this.eventExecutor) {
                 for (EventListener e : listeners) {
                     final EventListener currentListener = e;
-                    this.eventExecutor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            currentListener.onNewEvent(event);
-                        }
-                    });
+                    this.eventExecutor.execute(() -> currentListener.onNewEvent(event));
                 }
             }
         }
@@ -114,12 +107,7 @@ public class TeakEvent {
             for (EventListener e : listeners) {
                 // TODO: This seems...kind of horrible, but maybe the Java runtime will be fine with it
                 final EventListener currentListener = e;
-                final Thread thread = ThreadFactory.autoStart(new Runnable() {
-                    @Override
-                    public void run() {
-                        currentListener.onNewEvent(event);
-                    }
-                });
+                final Thread thread = ThreadFactory.autoStart(() -> currentListener.onNewEvent(event));
                 try {
                     thread.join(5000);
                 } catch (Exception ignored) {
@@ -146,5 +134,5 @@ public class TeakEvent {
         }
     }
 
-    private static EventListeners eventListeners = new EventListeners();
+    private static final EventListeners eventListeners = new EventListeners();
 }

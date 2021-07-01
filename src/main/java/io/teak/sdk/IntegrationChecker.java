@@ -4,15 +4,20 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.Signature;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.teak.sdk.configuration.AppConfiguration;
@@ -20,19 +25,6 @@ import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.ThreadFactory;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.io.ManifestParser;
-import io.teak.sdk.json.JSONArray;
-import io.teak.sdk.json.JSONObject;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import javax.net.ssl.HttpsURLConnection;
 
 public class IntegrationChecker {
     public static final String LOG_TAG = "Teak.Integration";
@@ -43,14 +35,12 @@ public class IntegrationChecker {
     private static final Map<String, String> errorsToReport = new HashMap<>();
 
     public static final String[][] dependencies = new String[][] {
-        new String[] {"android.support.v4.content.LocalBroadcastManager", "com.android.support:support-core-utils:28+"},
-        new String[] {"android.support.v4.app.NotificationManagerCompat", "com.android.support:support-compat:28+"},
-        new String[] {"androidx.localbroadcastmanager.content.LocalBroadcastManager", "androidx.core:core:1.0.+"},
         new String[] {"androidx.core.app.NotificationCompat", "androidx.core:core:1.0.+"},
         new String[] {"androidx.core.app.NotificationManagerCompat", "androidx.core:core:1.0.+"},
         new String[] {"com.google.android.gms.common.GooglePlayServicesUtil", "com.google.android.gms:play-services-base:16+", "com.google.android.gms:play-services-basement:16+"},
         new String[] {"com.google.firebase.messaging.FirebaseMessagingService", "com.google.firebase:firebase-messaging:17+"},
-        new String[] {"com.google.android.gms.ads.identifier.AdvertisingIdClient", "com.google.android.gms:play-services-ads:16+"}};
+        new String[] {"com.google.android.gms.ads.identifier.AdvertisingIdClient", "com.google.android.gms:play-services-ads:16+"},
+        new String[] {"androidx.work.Worker", "androidx.work:work-runtime:2.5.0"}};
 
     public static final String[] permissionFeatures = new String[] {
         "shortcutbadger"};
@@ -83,18 +73,6 @@ public class IntegrationChecker {
 
     public static void suggestDependency(@NonNull String fullyQualifiedClassName) throws MissingDependencyException {
         addDependency(fullyQualifiedClassName, false);
-    }
-
-    public static void suggestButRequireDependency(@NonNull String suggested, @NonNull String required) throws MissingDependencyException {
-        try {
-            Class.forName(suggested);
-        } catch (Exception ignored) {
-            try {
-                Class.forName(required);
-            } catch (Exception ignored2) {
-                IntegrationChecker.requireDependency(required);
-            }
-        }
     }
 
     private static void addDependency(@NonNull String fullyQualifiedClassName, boolean required) throws MissingDependencyException {
@@ -220,40 +198,19 @@ public class IntegrationChecker {
         }
 
         // Run checks on a background thread
-        ThreadFactory.autoStart(new Runnable() {
-            @Override
-            public void run() {
-                // If the target SDK version is 26+ the linked support-v4 lib must be 26.1.0+
-                checkSupportv4Version();
+        // Activity launch mode should be 'singleTask', 'singleTop' or 'singleInstance'
+        ThreadFactory.autoStart(this::checkActivityLaunchMode);
 
-                // Activity launch mode should be 'singleTask', 'singleTop' or 'singleInstance'
-                checkActivityLaunchMode();
-            }
-        });
-
-        TeakEvent.addEventListener(new TeakEvent.EventListener() {
-            @Override
-            public void onNewEvent(@NonNull TeakEvent event) {
-                if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
-                    final RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
-                    onRemoteConfigurationReady(remoteConfiguration);
-                }
+        TeakEvent.addEventListener(event -> {
+            if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
+                final RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
+                onRemoteConfigurationReady(remoteConfiguration);
             }
         });
 
         // If < API 26, the manifest checker will work properly, otherwise it will not
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
-                @Override
-                public void onConfigurationReady(@NonNull TeakConfiguration configuration) {
-                    ThreadFactory.autoStart(new Runnable() {
-                        @Override
-                        public void run() {
-                            checkAndroidManifest();
-                        }
-                    });
-                }
-            });
+            TeakConfiguration.addEventListener(configuration -> ThreadFactory.autoStart(this::checkAndroidManifest));
         }
     }
 
@@ -309,16 +266,6 @@ public class IntegrationChecker {
                 // Error if no Teak GCM receiver
                 if (teakFcmService == null) {
                     addErrorToReport("io.teak.sdk.push.FCMPushProvider", "Push notifications will not work because there is no \"io.teak.sdk.push.FCMPushProvider\" <service> in your AndroidManifest.xml.\n\nTo fix this, add the io.teak.sdk.push.FCMPushProvider <service>");
-                }
-            }
-
-            // Check to make sure the Teak job service is present
-            {
-                Teak.log.i("integration.manifest.JobService", "Checking AndroidManifest.xml for Teak Job Service.");
-                final List<ManifestParser.XmlTag> teakDeviceStateService = applications.get(0).find("service",
-                    new HashMap.SimpleEntry<>("name", "io.teak.sdk.service.JobService"));
-                if (teakDeviceStateService.size() < 1) {
-                    addErrorToReport("io.teak.sdk.service.JobService", "Animated notifications will not work on Android 8+ because there is no \"io.teak.sdk.service.DeviceStateService\" <service> in your AndroidManifest.xml.\n\nTo fix this, add the \"io.teak.sdk.service.DeviceStateService\" <service>");
                 }
             }
 
@@ -404,46 +351,19 @@ public class IntegrationChecker {
     }
 
     private void displayError(@NonNull final String description, @Nullable final String title) {
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                AlertDialog.Builder builder;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    builder = new AlertDialog.Builder(IntegrationChecker.this.activity, android.R.style.Theme_Material_Dialog_Alert);
-                } else {
-                    builder = new AlertDialog.Builder(IntegrationChecker.this.activity);
-                }
-
-                builder.setTitle(title == null ? "Human, your assistance is needed" : title)
-                    .setMessage(description)
-                    .setPositiveButton(android.R.string.yes, null)
-                    .setIcon(android.R.drawable.ic_dialog_alert)
-                    .show();
+        new Handler(Looper.getMainLooper()).post(() -> {
+            AlertDialog.Builder builder;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                builder = new AlertDialog.Builder(IntegrationChecker.this.activity, android.R.style.Theme_Material_Dialog_Alert);
+            } else {
+                builder = new AlertDialog.Builder(IntegrationChecker.this.activity);
             }
+
+            builder.setTitle(title == null ? "Human, your assistance is needed" : title)
+                .setMessage(description)
+                .setPositiveButton(android.R.string.yes, null)
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .show();
         });
-    }
-
-    private void checkSupportv4Version() {
-        // Skip if AndroidX is present, we'll use that
-        try {
-            final Class<?> androidXNotificationCompat = Class.forName("androidx.core.app.NotificationCompat");
-            if (androidXNotificationCompat != null) return;
-        } catch (Exception ignored) {
-        }
-
-        try {
-            final ApplicationInfo appInfo = this.activity.getPackageManager().getApplicationInfo(this.activity.getPackageName(), PackageManager.GET_META_DATA);
-            final int targetSdkVersion = appInfo.targetSdkVersion;
-            try {
-                Class<?> notificationCompatBuilderClass = Class.forName("android.support.v4.app.NotificationCompat$Builder");
-                notificationCompatBuilderClass.getMethod("setChannelId", String.class);
-            } catch (ClassNotFoundException ignored) {
-                // This is fine, it will get caught by the
-            } catch (Exception ignored) {
-                addErrorToReport("support-v4.less-than.26.1", "App is targeting SDK version " + targetSdkVersion +
-                                                                  " but support-v4 library needs to be updated to at least version 26.1.0 to support notification categories.");
-            }
-        } catch (Exception ignored) {
-        }
     }
 }

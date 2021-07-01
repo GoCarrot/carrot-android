@@ -32,9 +32,7 @@ import android.widget.ImageView;
 import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.ViewFlipper;
-import io.teak.sdk.json.JSONArray;
-import io.teak.sdk.json.JSONObject;
-import io.teak.sdk.support.INotificationBuilder;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,12 +44,16 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.Random;
-import java.util.concurrent.Callable;
+import java.util.UUID;
 import java.util.concurrent.FutureTask;
+
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
+
+import androidx.core.app.NotificationCompat;
+import io.teak.sdk.json.JSONArray;
+import io.teak.sdk.json.JSONObject;
 
 public class NotificationBuilder {
     public static class AssetLoadException extends Exception {
@@ -186,7 +188,22 @@ public class NotificationBuilder {
         }
         final IdHelper R = new IdHelper(); // Declaring local as 'R' ensures we don't accidentally use the other R
 
-        INotificationBuilder builder = DefaultObjectFactory.createNotificationBuilder(context, getNotificationChannelId(context));
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
+        builder.setGroup(UUID.randomUUID().toString());
+
+        // Set visibility of our notifications to public
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+            try {
+                builder.setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+            } catch (Exception ignored) {
+            }
+        }
+
+        // Configure notification behavior
+        builder.setPriority(NotificationCompat.PRIORITY_MAX);
+        builder.setDefaults(NotificationCompat.DEFAULT_ALL);
+        builder.setOnlyAlertOnce(true);
+        builder.setAutoCancel(true);
 
         // Rich text message
         Spanned richMessageText = new SpannedString(teakNotificaton.message);
@@ -209,9 +226,7 @@ public class NotificationBuilder {
         // Icon accent color (added in API 21 version of Notification builder, so use reflection)
         try {
             Method setColor = builder.getClass().getMethod("setColor", int.class);
-            if (setColor != null) {
-                setColor.invoke(builder, R.integer("io_teak_notification_accent_color"));
-            }
+            setColor.invoke(builder, R.integer("io_teak_notification_accent_color"));
         } catch (Exception ignored) {
         }
 
@@ -312,12 +327,7 @@ public class NotificationBuilder {
                 }
 
                 // ViewFlipper must inflate on main thread
-                FutureTask<View> viewInflaterRunnable = new FutureTask<>(new Callable<View>() {
-                    @Override
-                    public View call() throws Exception {
-                        return factory.inflate(viewLayout, null);
-                    }
-                });
+                FutureTask<View> viewInflaterRunnable = new FutureTask<>(() -> factory.inflate(viewLayout, null));
                 new Handler(Looper.getMainLooper()).post(viewInflaterRunnable);
                 View inflatedView = viewInflaterRunnable.get();
 
@@ -342,7 +352,6 @@ public class NotificationBuilder {
                     final int viewElementId = tempViewElementId;
                     final View viewElement = inflatedView.findViewById(viewElementId);
 
-                    //noinspection StatementWithEmptyBody
                     if (isUIType(viewElement, Button.class)) {
                         // Button must go before TextView, because Button is a TextView
 
@@ -371,7 +380,7 @@ public class NotificationBuilder {
                         } else if (value.equalsIgnoreCase("NONE")) {
                             remoteViews.setViewVisibility(viewElementId, View.GONE);
                         } else {
-                            final Bitmap bitmap = loadNotificationBackgroundWithOOMFallbacks(viewConfig);
+                            final Bitmap bitmap = loadBitmapWithOOMFallbacks(key, viewConfig);
                             if (bitmap == null) {
                                 if ("left_image".equals(key)) {
                                     remoteViews.setViewVisibility(viewElementId, View.GONE);
@@ -509,13 +518,14 @@ public class NotificationBuilder {
                 return null;
             }
 
-            private Bitmap loadNotificationBackgroundWithOOMFallbacks(JSONObject viewConfig) throws OutOfMemoryError {
+            private Bitmap loadBitmapWithOOMFallbacks(String key, JSONObject viewConfig) throws OutOfMemoryError {
                 try {
-                    return loadBitmapFromUriString(viewConfig.getString("notification_background"));
+                    return loadBitmapFromUriString(viewConfig.getString(key));
                 } catch (OutOfMemoryError e) {
-                    Teak.log.e("oom.image.initial", viewConfig.getString("notification_background"));
+                    Teak.log.e("oom.image.initial", viewConfig.getString(key));
 
-                    final JSONArray oomFallbacks = viewConfig.optJSONArray("oom_notification_background");
+                    final String oom_key = "oom_" + key;
+                    final JSONArray oomFallbacks = viewConfig.optJSONArray(oom_key);
                     if (oomFallbacks != null) {
                         for (int i = 0; i < oomFallbacks.length(); i++) {
                             try {

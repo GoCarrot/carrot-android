@@ -1,10 +1,11 @@
 package io.teak.sdk.io;
 
-import androidx.annotation.Nullable;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
+
+import androidx.annotation.Nullable;
 
 public interface IHttpRequest {
     class Response {
@@ -22,5 +23,5 @@ public interface IHttpRequest {
     }
 
     @Nullable
-    Response synchronousRequest(URL url, String requestBody) throws IOException;
+    Response synchronousRequest(URL url, String requestBody, String sig) throws IOException;
 }

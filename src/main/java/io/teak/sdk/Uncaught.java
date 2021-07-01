@@ -2,14 +2,16 @@ package io.teak.sdk;
 
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 class Uncaught implements Thread.UncaughtExceptionHandler {
     private static final String LOG_TAG = "Teak.Uncaught";
 
-    private Thread.UncaughtExceptionHandler previousUncaughtExceptionHandler;
-    private Thread createdOnThread;
+    private final Thread.UncaughtExceptionHandler previousUncaughtExceptionHandler;
+    private final Thread createdOnThread;
 
     @Override
-    public void uncaughtException(Thread thread, Throwable ex) {
+    public void uncaughtException(@NonNull Thread thread, @NonNull Throwable ex) {
         if (!createdOnThread.equals(thread)) {
             Log.d(LOG_TAG, "TeakExceptionHandler created on " + createdOnThread.toString() + " getting exception from " + thread.toString());
         }

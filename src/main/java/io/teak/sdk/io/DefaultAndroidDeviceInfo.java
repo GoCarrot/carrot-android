@@ -1,16 +1,32 @@
 package io.teak.sdk.io;
 
 import android.annotation.SuppressLint;
+import android.app.ActivityManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.provider.Settings;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import android.util.DisplayMetrics;
+
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.FutureTask;
+import java.util.regex.Pattern;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.RetriableTask;
@@ -18,14 +34,6 @@ import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.core.ThreadFactory;
 import io.teak.sdk.event.AdvertisingInfoEvent;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.FutureTask;
 
 public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
     private final Context context;
@@ -83,7 +91,7 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
         if (Build.VERSION.SDK_INT < 28) {
             try {
                 @SuppressWarnings("deprecation")
-                final byte[] buildSerial = android.os.Build.SERIAL.getBytes("utf8");
+                final byte[] buildSerial = android.os.Build.SERIAL.getBytes(StandardCharsets.UTF_8);
                 tempDeviceId = UUID.nameUUIDFromBytes(buildSerial).toString();
             } catch (Exception e) {
                 Teak.log.e("getDeviceId", "android.os.Build.SERIAL not available, falling back to Settings.Secure.ANDROID_ID.");
@@ -97,7 +105,7 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
                 if ("9774d56d682e549c".equals(androidId)) {
                     Teak.log.e("getDeviceId", "Settings.Secure.ANDROID_ID == '9774d56d682e549c', falling back to random UUID stored in preferences.");
                 } else {
-                    tempDeviceId = UUID.nameUUIDFromBytes(androidId.getBytes("utf8")).toString();
+                    tempDeviceId = UUID.nameUUIDFromBytes(androidId.getBytes(StandardCharsets.UTF_8)).toString();
                 }
             } catch (Exception e) {
                 Teak.log.e("getDeviceId", "Error generating device id from Settings.Secure.ANDROID_ID, falling back to random UUID stored in preferences.");
@@ -141,31 +149,25 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
         // First try to use Google Play
         boolean usingGooglePlayForAdId = false;
         try {
-            final FutureTask<AdvertisingIdClient.Info> adInfoFuture = new FutureTask<>(new RetriableTask<>(10, 7000L, new Callable<AdvertisingIdClient.Info>() {
-                @Override
-                public AdvertisingIdClient.Info call() throws Exception {
-                    if (isGooglePlayServicesAvailable()) {
-                        return AdvertisingIdClient.getAdvertisingIdInfo(context);
-                    }
-                    throw new Exception("Retrying GooglePlayServicesUtil.isGooglePlayServicesAvailable()");
+            final FutureTask<AdvertisingIdClient.Info> adInfoFuture = new FutureTask<>(new RetriableTask<>(10, 7000L, () -> {
+                if (isGooglePlayServicesAvailable()) {
+                    return AdvertisingIdClient.getAdvertisingIdInfo(context);
                 }
+                throw new Exception("Retrying GooglePlayServicesUtil.isGooglePlayServicesAvailable()");
             }));
 
             if (isGooglePlayServicesAvailable()) {
-                ThreadFactory.autoStart(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            final AdvertisingIdClient.Info adInfo = adInfoFuture.get();
-                            if (adInfo != null) {
-                                final String advertisingId = adInfo.getId();
-                                final boolean limitAdTracking = adInfo.isLimitAdTrackingEnabled();
+                ThreadFactory.autoStart(() -> {
+                    try {
+                        final AdvertisingIdClient.Info adInfo = adInfoFuture.get();
+                        if (adInfo != null) {
+                            final String advertisingId = adInfo.getId();
+                            final boolean limitAdTracking = adInfo.isLimitAdTrackingEnabled();
 
-                                TeakEvent.postEvent(new AdvertisingInfoEvent(advertisingId, limitAdTracking));
-                            }
-                        } catch (Exception e) {
-                            Teak.log.exception(e);
+                            TeakEvent.postEvent(new AdvertisingInfoEvent(advertisingId, limitAdTracking));
                         }
+                    } catch (Exception e) {
+                        Teak.log.exception(e);
                     }
                 });
 
@@ -235,5 +237,55 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
             }
         }
         return line;
+    }
+
+    /**
+     * Gets the number of cores available in this device, across all processors.
+     * Requires: Ability to peruse the filesystem at "/sys/devices/system/cpu"
+     * <p>
+     * http://forums.makingmoneywithandroid.com/android-development/280-%5Bhow-%5D-get-number-cpu-cores-android-device.html
+     *
+     * @return The number of cores, or 1 if failed to get result
+     */
+    @Override
+    public int getNumCores() {
+        //Private Class to display only CPU devices in the directory listing
+        class CpuFilter implements FileFilter {
+            @Override
+            public boolean accept(File pathname) {
+                //Check if filename is "cpu", followed by a single digit number
+                return Pattern.matches("cpu[0-9]+", pathname.getName());
+            }
+        }
+
+        try {
+            //Get directory containing CPU info
+            File dir = new File("/sys/devices/system/cpu/");
+
+            //Filter to only list the devices we care about
+            File[] files = dir.listFiles(new CpuFilter());
+
+            //Return the number of cores (virtual CPU devices)
+            return files.length;
+        } catch (Exception e) {
+            Teak.log.exception(e);
+            return 1;
+        }
+    }
+
+    public long totalMemoryInBytes() {
+        final ActivityManager actManager = (ActivityManager) this.context.getSystemService(Context.ACTIVITY_SERVICE);
+        final ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
+        actManager.getMemoryInfo(memInfo);
+        return memInfo.totalMem;
+    }
+
+    public Map<String, Object> displayMetrics() {
+        final DisplayMetrics displayMetrics = this.context.getResources().getDisplayMetrics();
+        final HashMap<String, Object> map = new HashMap<>();
+        map.put("width", displayMetrics.widthPixels);
+        map.put("height", displayMetrics.heightPixels);
+        map.put("dpi", displayMetrics.densityDpi);
+        return map;
     }
 }

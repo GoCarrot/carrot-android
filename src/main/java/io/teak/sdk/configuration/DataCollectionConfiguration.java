@@ -4,6 +4,12 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.teak.sdk.Teak;
@@ -11,10 +17,6 @@ import io.teak.sdk.TeakEvent;
 import io.teak.sdk.event.AdvertisingInfoEvent;
 import io.teak.sdk.io.IAndroidResources;
 import io.teak.sdk.json.JSONObject;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
 
 public class DataCollectionConfiguration {
     private boolean enableIDFA;
@@ -46,14 +48,11 @@ public class DataCollectionConfiguration {
         this.enablePushKey = checkFeatureConfiguration(TEAK_ENABLE_PUSH_KEY_RESOURCE, androidResources, metaData);
 
         // Listen for Ad Info event and update enableIDFA
-        TeakEvent.addEventListener(new TeakEvent.EventListener() {
-            @Override
-            public void onNewEvent(@NonNull TeakEvent event) {
-                switch (event.eventType) {
-                    case AdvertisingInfoEvent.Type: {
-                        DataCollectionConfiguration.this.enableIDFA &= !((AdvertisingInfoEvent) event).limitAdTracking;
-                    } break;
-                }
+        TeakEvent.addEventListener(event -> {
+            switch (event.eventType) {
+                case AdvertisingInfoEvent.Type: {
+                    DataCollectionConfiguration.this.enableIDFA &= !((AdvertisingInfoEvent) event).limitAdTracking;
+                } break;
             }
         });
     }
@@ -83,6 +82,7 @@ public class DataCollectionConfiguration {
     }
 
     @Override
+    @NonNull
     public String toString() {
         try {
             return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toMap())));

@@ -1,10 +1,5 @@
 package io.teak.sdk;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import io.teak.sdk.core.Executors;
-import io.teak.sdk.json.JSONObject;
-import io.teak.sdk.raven.Raven;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -17,7 +12,14 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
+
 import javax.net.ssl.HttpsURLConnection;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import io.teak.sdk.core.Executors;
+import io.teak.sdk.json.JSONObject;
+import io.teak.sdk.raven.Raven;
 
 // Things I assume
 // - Remote log space is not an issue
@@ -61,7 +63,7 @@ public class Log {
     // endregion
 
     private final Map<String, Object> commonPayload = new HashMap<>();
-    private ThreadLocal<Integer> exceptionDepth = new ThreadLocal<>();
+    private final ThreadLocal<Integer> exceptionDepth = new ThreadLocal<>();
 
     // region Public API
     public void trace(@NonNull String method, Object... va) {
@@ -191,34 +193,31 @@ public class Log {
         this.commonPayload.put("run_id", this.runId);
         this.eventCounter = new AtomicLong(0);
 
-        TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
-            @Override
-            public void onConfigurationReady(@NonNull TeakConfiguration configuration) {
-                synchronized (commonPayload) {
-                    // Add sdk version to common payload, and log init message
-                    commonPayload.put("sdk_version", Teak.Version);
-                    log(Level.Info, "sdk_init", null);
+        TeakConfiguration.addEventListener(configuration -> {
+            synchronized (commonPayload) {
+                // Add sdk version to common payload, and log init message
+                commonPayload.put("sdk_version", Teak.Version);
+                log(Level.Info, "sdk_init", null);
 
-                    // Log full device configuration, then add common payload after
-                    log(Level.Info, "configuration.device", configuration.deviceConfiguration.toMap());
-                    commonPayload.put("device_id", configuration.deviceConfiguration.deviceId);
+                // Log full device configuration, then add common payload after
+                log(Level.Info, "configuration.device", configuration.deviceConfiguration.toMap());
+                commonPayload.put("device_id", configuration.deviceConfiguration.deviceId);
 
-                    // Log full app configuration, then add common payload after
-                    log(Level.Info, "configuration.app", configuration.appConfiguration.toMap());
-                    commonPayload.put("bundle_id", configuration.appConfiguration.bundleId);
-                    commonPayload.put("app_id", configuration.appConfiguration.appId);
-                    commonPayload.put("client_app_version", configuration.appConfiguration.appVersion);
-                    commonPayload.put("client_app_version_name", configuration.appConfiguration.appVersionName);
+                // Log full app configuration, then add common payload after
+                log(Level.Info, "configuration.app", configuration.appConfiguration.toMap());
+                commonPayload.put("bundle_id", configuration.appConfiguration.bundleId);
+                commonPayload.put("app_id", configuration.appConfiguration.appId);
+                commonPayload.put("client_app_version", configuration.appConfiguration.appVersion);
+                commonPayload.put("client_app_version_name", configuration.appConfiguration.appVersionName);
 
-                    // Log data collection configuration
-                    log(Level.Info, "configuration.data_collection", configuration.dataCollectionConfiguration.toMap());
+                // Log data collection configuration
+                log(Level.Info, "configuration.data_collection", configuration.dataCollectionConfiguration.toMap());
 
-                    synchronized (queuedLogEvents) {
-                        for (LogEvent event : queuedLogEvents) {
-                            logEvent(event);
-                        }
-                        processedQueuedLogEvents = true;
+                synchronized (queuedLogEvents) {
+                    for (LogEvent event : queuedLogEvents) {
+                        logEvent(event);
                     }
+                    processedQueuedLogEvents = true;
                 }
             }
         });
@@ -241,7 +240,7 @@ public class Log {
         this.logListener = logListener;
     }
 
-    protected class LogEvent {
+    protected static class LogEvent {
         final Level logLevel;
         final String eventType;
         final Map<String, Object> eventData;
@@ -297,46 +296,43 @@ public class Log {
 
         // Remote logging
         if (this.logRemotely) {
-            this.remoteLogQueue.execute(new Runnable() {
-                @Override
-                public void run() {
-                    HttpsURLConnection connection = null;
-                    try {
-                        URL endpoint = sendToRapidIngestion ? new URL("https://logs.gocarrot.com/dev.sdk.log." + logEvent.logLevel.name)
-                                                            : new URL("https://logs.gocarrot.com/sdk.log." + logEvent.logLevel.name);
-                        connection = (HttpsURLConnection) endpoint.openConnection();
-                        connection.setRequestProperty("Accept-Charset", "UTF-8");
-                        connection.setUseCaches(false);
-                        connection.setDoOutput(true);
-                        connection.setRequestProperty("Content-Type", "application/json");
-                        //connection.setRequestProperty("Content-Encoding", "gzip");
+            this.remoteLogQueue.execute(() -> {
+                HttpsURLConnection connection = null;
+                try {
+                    URL endpoint = sendToRapidIngestion ? new URL("https://logs.gocarrot.com/dev.sdk.log." + logEvent.logLevel.name)
+                                                        : new URL("https://logs.gocarrot.com/sdk.log." + logEvent.logLevel.name);
+                    connection = (HttpsURLConnection) endpoint.openConnection();
+                    connection.setRequestProperty("Accept-Charset", "UTF-8");
+                    connection.setUseCaches(false);
+                    connection.setDoOutput(true);
+                    connection.setRequestProperty("Content-Type", "application/json");
+                    //connection.setRequestProperty("Content-Encoding", "gzip");
 
-                        //GZIPOutputStream wr = new GZIPOutputStream(connection.getOutputStream());
-                        OutputStream wr = connection.getOutputStream();
-                        wr.write(new JSONObject(payload).toString().getBytes());
-                        wr.flush();
-                        wr.close();
+                    //GZIPOutputStream wr = new GZIPOutputStream(connection.getOutputStream());
+                    OutputStream wr = connection.getOutputStream();
+                    wr.write(new JSONObject(payload).toString().getBytes());
+                    wr.flush();
+                    wr.close();
 
-                        InputStream is;
-                        if (connection.getResponseCode() < 400) {
-                            is = connection.getInputStream();
-                        } else {
-                            is = connection.getErrorStream();
-                        }
-                        BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-                        String line;
-                        //noinspection MismatchedQueryAndUpdateOfStringBuilder
-                        StringBuilder response = new StringBuilder();
-                        while ((line = rd.readLine()) != null) {
-                            response.append(line);
-                            response.append('\r');
-                        }
-                        rd.close();
-                    } catch (Exception ignored) {
-                    } finally {
-                        if (connection != null) {
-                            connection.disconnect();
-                        }
+                    InputStream is;
+                    if (connection.getResponseCode() < 400) {
+                        is = connection.getInputStream();
+                    } else {
+                        is = connection.getErrorStream();
+                    }
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+                    String line;
+                    //noinspection MismatchedQueryAndUpdateOfStringBuilder
+                    StringBuilder response = new StringBuilder();
+                    while ((line = rd.readLine()) != null) {
+                        response.append(line);
+                        response.append('\r');
+                    }
+                    rd.close();
+                } catch (Exception ignored) {
+                } finally {
+                    if (connection != null) {
+                        connection.disconnect();
                     }
                 }
             });

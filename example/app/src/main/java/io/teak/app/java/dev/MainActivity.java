@@ -3,35 +3,27 @@ package io.teak.app.java.dev;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
-import android.os.IBinder;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.util.DisplayMetrics;
 import android.util.Log;
-
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import io.teak.sdk.Teak;
-import io.teak.sdk.TeakEvent;
-import io.teak.sdk.TeakNotification;
-import io.teak.sdk.event.PushNotificationEvent;
-
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
 
 import com.android.vending.billing.IInAppBillingService;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
@@ -42,66 +34,55 @@ import java.net.SocketException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
 import javax.net.ssl.SSLException;
 
+import androidx.appcompat.app.AppCompatActivity;
+import io.teak.sdk.Teak;
+import io.teak.sdk.TeakEvent;
+import io.teak.sdk.TeakNotification;
+import io.teak.sdk.event.PushNotificationEvent;
+
 public class MainActivity extends AppCompatActivity {
     public static final String LOG_TAG = "Teak.Example";
 
-    // This is an example of a BroadcastReceiver that listens for launches from push notifications
-    // and any rewards or deep links attached to them.
-    BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            final String action = intent.getAction();
-            final Bundle bundle = intent.getExtras();
-            if (Teak.LAUNCHED_FROM_NOTIFICATION_INTENT.equals(action)) {
-                try {
-                    if (bundle.getString("teakDeepLinkPath") != null) {
-                        Log.d(LOG_TAG, bundle.getString("teakDeepLinkPath"));
-                        HashMap<String, Object> teakDeepLinkQueryParameters = (HashMap<String, Object>) bundle.getSerializable("teakDeepLinkQueryParameters");
-                        if (teakDeepLinkQueryParameters != null) {
-                            Log.d(LOG_TAG, teakDeepLinkQueryParameters.toString());
-                        }
-                    }
-                } catch (Exception e) {
-                    Log.e(LOG_TAG, Log.getStackTraceString(e));
-                }
-            } else if (Teak.REWARD_CLAIM_ATTEMPT.equals(action)) {
-                HashMap<String, Object> reward = (HashMap<String, Object>) ((HashMap<String, Object>) bundle.getSerializable("reward")).get("reward");
-                if (reward != null) {
-                    final StringBuilder rewardString = new StringBuilder("You got ");
-                    boolean isFirstEntry = true;
-                    for (Map.Entry<String, Object> entry : reward.entrySet()) {
-                        if (isFirstEntry) {
-                            isFirstEntry = false;
-                        } else {
-                            rewardString.append(", ");
-                        }
-                        rewardString.append(String.valueOf(entry.getValue()));
-                        rewardString.append(" ");
-                        rewardString.append(entry.getKey());
-                    }
-                    rewardString.append(".");
+    @Subscribe
+    public void onNotification(Teak.NotificationEvent event) {
+        Log.d(LOG_TAG, event.toString());
+    }
 
-                    AlertDialog.Builder builder;
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        builder = new AlertDialog.Builder(MainActivity.this, android.R.style.Theme_Material_Dialog_Alert);
-                    } else {
-                        builder = new AlertDialog.Builder(MainActivity.this);
-                    }
-                    builder.setTitle("Reward!")
-                            .setMessage(rewardString.toString())
-                            .setPositiveButton(android.R.string.yes, null)
-                            .setIcon(android.R.drawable.ic_dialog_alert)
-                            .show();
+    @Subscribe
+    public void onRewardClaim(Teak.RewardClaimEvent event) {
+        if (event.rewardAsMap != null) {
+            final StringBuilder rewardString = new StringBuilder("You got ");
+            boolean isFirstEntry = true;
+            for (Map.Entry<String, Object> entry : event.rewardAsMap.entrySet()) {
+                if (isFirstEntry) {
+                    isFirstEntry = false;
+                } else {
+                    rewardString.append(", ");
                 }
+                rewardString.append(String.valueOf(entry.getValue()));
+                rewardString.append(" ");
+                rewardString.append(entry.getKey());
             }
+            rewardString.append(".");
+
+            AlertDialog.Builder builder;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                builder = new AlertDialog.Builder(MainActivity.this, android.R.style.Theme_Material_Dialog_Alert);
+            } else {
+                builder = new AlertDialog.Builder(MainActivity.this);
+            }
+            builder.setTitle("Reward!")
+                    .setMessage(rewardString.toString())
+                    .setPositiveButton(android.R.string.yes, null)
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .show();
         }
-    };
+    }
 
     // If this is not overridden, it will destroy the activity when the Back button is pressed.
     //
@@ -119,12 +100,8 @@ public class MainActivity extends AppCompatActivity {
         // Set up view
         setupViewThings();
 
-        // Register the BroadcastReceiver defined above to listen for notification launches
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
-        filter.addAction(Teak.REWARD_CLAIM_ATTEMPT);
-        filter.addAction(Teak.FOREGROUND_NOTIFICATION_INTENT);
-        LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, filter);
+        // Register with EventBus
+        EventBus.getDefault().register(this);
 
         // Create a deep link route that opens the Google Play store to a specific SKU in your game
         Teak.registerDeepLink("/store/:sku", "Store", "Link directly to purchase an item", new Teak.DeepLink() {
@@ -186,8 +163,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        // Call onActivityResult() for Teak
-        Teak.onActivityResult(requestCode, resultCode, data);
         super.onActivityResult(requestCode, resultCode, data);
 
         // If your In App Purchase activity needs to be modified to call Teak, you can do this
@@ -198,6 +173,8 @@ public class MainActivity extends AppCompatActivity {
             Method m = cls.getMethod("checkActivityResultForPurchase", int.class, Intent.class);
             m.invoke(null, resultCode, data);
         } catch (Exception ignored) {} */
+
+        // TODO: Update this to new google billing
 
         if (requestCode == 1001) {
             int responseCode = data.getIntExtra("RESPONSE_CODE", 0);
@@ -310,6 +287,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+
+        EventBus.getDefault().unregister(this);
 
         if (mService != null) {
             unbindService(mServiceConn);

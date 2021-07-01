@@ -71,7 +71,7 @@ public class TeakConfiguration {
     }
 
     private static final Object eventListenersMutex = new Object();
-    private static ArrayList<EventListener> eventListeners = new ArrayList<>();
+    private static final ArrayList<EventListener> eventListeners = new ArrayList<>();
 
     public static void addEventListener(EventListener e) {
         synchronized (eventListenersMutex) {

@@ -1,16 +1,17 @@
 package io.teak.sdk.core;
 
+import java.security.InvalidParameterException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 import androidx.annotation.NonNull;
 import io.teak.sdk.Request;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.json.JSONObject;
-import java.security.InvalidParameterException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 public class UserProfile extends Request {
     private final Map<String, Object> stringAttributes;
@@ -21,7 +22,7 @@ public class UserProfile extends Request {
     private ScheduledFuture<?> scheduledSend;
 
     UserProfile(@NonNull Session session, @NonNull Map<String, Object> userProfile) {
-        super(RemoteConfiguration.getHostnameForEndpoint("/me/profile", Request.remoteConfiguration), "/me/profile", new HashMap<String, Object>(), session, null, true);
+        super(RemoteConfiguration.getHostnameForEndpoint("/me/profile", Request.remoteConfiguration), "/me/profile", new HashMap<>(), session, null, true);
 
         if (!(userProfile.get("context") instanceof String)) {
             throw new InvalidParameterException("User Profile value 'context' is not a String");
@@ -89,38 +90,32 @@ public class UserProfile extends Request {
                 this.firstSetTime = System.nanoTime();
             }
 
-            TeakCore.operationQueue.execute(new Runnable() {
-                @Override
-                public void run() {
-                    boolean safeNotEqual = true;
-                    try {
-                        safeNotEqual = !value.equals(map.get(key));
-                    } catch (Exception ignored) {
+            TeakCore.operationQueue.execute(() -> {
+                boolean safeNotEqual = true;
+                try {
+                    safeNotEqual = !value.equals(map.get(key));
+                } catch (Exception ignored) {
+                }
+
+                if (safeNotEqual) {
+                    if (UserProfile.this.scheduledSend != null) {
+                        UserProfile.this.scheduledSend.cancel(false);
                     }
 
-                    if (safeNotEqual) {
-                        if (UserProfile.this.scheduledSend != null) {
-                            UserProfile.this.scheduledSend.cancel(false);
-                        }
+                    // Update value
+                    map.put(key, value);
 
-                        // Update value
-                        map.put(key, value);
-
-                        UserProfile.this.scheduledSend = TeakCore.operationQueue.schedule(UserProfile.this,
-                            (long) (UserProfile.this.batch.time * 1000.0f), TimeUnit.MILLISECONDS);
-                    }
+                    UserProfile.this.scheduledSend = TeakCore.operationQueue.schedule(UserProfile.this,
+                        (long) (UserProfile.this.batch.time * 1000.0f), TimeUnit.MILLISECONDS);
                 }
             });
         }
     }
 
     static {
-        TeakEvent.addEventListener(new TeakEvent.EventListener() {
-            @Override
-            public void onNewEvent(@NonNull TeakEvent event) {
-                if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
-                    RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
-                }
+        TeakEvent.addEventListener(event -> {
+            if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
+                RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
             }
         });
     }

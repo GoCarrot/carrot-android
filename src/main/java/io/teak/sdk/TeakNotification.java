@@ -2,23 +2,26 @@ package io.teak.sdk;
 
 import android.content.Intent;
 import android.os.Bundle;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import androidx.annotation.NonNull;
 import io.teak.sdk.Helpers.mm;
 import io.teak.sdk.core.Session;
 import io.teak.sdk.core.ThreadFactory;
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONException;
 import io.teak.sdk.json.JSONObject;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * An app-to-user notification received from Teak via GCM.
@@ -157,6 +160,7 @@ public class TeakNotification implements Unobfuscable {
         }
 
         @Override
+        @NonNull
         public String toString() {
             return String.format(Locale.US, "%s{status: %d, json: %s}", super.toString(), status, json == null ? "null" : json.toString());
         }
@@ -187,70 +191,62 @@ public class TeakNotification implements Unobfuscable {
             }
 
             final ArrayBlockingQueue<Reward> q = new ArrayBlockingQueue<>(1);
-            final FutureTask<Reward> ret = new FutureTask<>(new Callable<Reward>() {
-                public Reward call() {
-                    try {
-                        return q.take();
-                    } catch (InterruptedException e) {
-                        Teak.log.exception(e);
-                    }
-                    return null;
+            final FutureTask<Reward> ret = new FutureTask<>(() -> {
+                try {
+                    return q.take();
+                } catch (InterruptedException e) {
+                    Teak.log.exception(e);
                 }
+                return null;
             });
             ThreadFactory.autoStart(ret);
 
-            Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
-                @Override
-                public void run(Session session) {
-                    Teak.log.i("reward.claim.request", mm.h("teakRewardId", teakRewardId));
+            Session.whenUserIdIsReadyRun(session -> {
+                Teak.log.i("reward.claim.request", mm.h("teakRewardId", teakRewardId));
 
-                    try {
-                        // https://rewards.gocarrot.com/<<teak_reward_id>>/clicks?clicking_user_id=<<your_user_id>>
-                        //String requestBody = "clicking_user_id=" + URLEncoder.encode(session.userId(), "UTF-8");
-                        HashMap<String, Object> payload = new HashMap<>();
-                        payload.put("clicking_user_id", session.userId());
+                try {
+                    // https://rewards.gocarrot.com/<<teak_reward_id>>/clicks?clicking_user_id=<<your_user_id>>
+                    //String requestBody = "clicking_user_id=" + URLEncoder.encode(session.userId(), "UTF-8");
+                    HashMap<String, Object> payload = new HashMap<>();
+                    payload.put("clicking_user_id", session.userId());
 
-                        Request.submit("rewards.gocarrot.com", "/" + teakRewardId + "/clicks", payload, session,
-                            new Request.Callback() {
-                                @Override
-                                public void onRequestCompleted(int responseCode, String responseBody) {
-                                    try {
-                                        JSONObject responseJson = new JSONObject(responseBody);
+                    Request.submit("rewards.gocarrot.com", "/" + teakRewardId + "/clicks", payload, session,
+                            (responseCode, responseBody) -> {
+                                try {
+                                    JSONObject responseJson = new JSONObject(responseBody);
 
-                                        // https://sentry.io/organizations/teak/issues/1354507192/?project=141792&referrer=alert_email
-                                        if (responseBody == null) {
-                                            q.offer(null);
-                                            return;
-                                        }
-
-                                        JSONObject rewardResponse = responseJson.optJSONObject("response");
-
-                                        JSONObject fullParsedResponse = new JSONObject();
-                                        fullParsedResponse.put("teakRewardId", teakRewardId);
-                                        fullParsedResponse.put("status", rewardResponse.get("status"));
-                                        if (rewardResponse.optJSONObject("reward") != null) {
-                                            fullParsedResponse.put("reward", rewardResponse.get("reward"));
-                                        } else if (rewardResponse.opt("reward") != null) {
-                                            fullParsedResponse.put("reward", new JSONObject(rewardResponse.getString("reward")));
-                                        }
-                                        Reward reward = new Reward(fullParsedResponse);
-
-                                        Teak.log.i("reward.claim.response", responseJson.toMap());
-
-                                        q.offer(reward);
-                                    } catch (JSONException e) {
-                                        Teak.log.exception(e, false);
+                                    // https://sentry.io/organizations/teak/issues/1354507192/?project=141792&referrer=alert_email
+                                    if (responseBody == null) {
                                         q.offer(null);
-                                    } catch (Exception e) {
-                                        Teak.log.exception(e);
-                                        q.offer(null); // TODO: Fix this?
+                                        return;
                                     }
+
+                                    JSONObject rewardResponse = responseJson.optJSONObject("response");
+
+                                    JSONObject fullParsedResponse = new JSONObject();
+                                    fullParsedResponse.put("teakRewardId", teakRewardId);
+                                    fullParsedResponse.put("status", rewardResponse.get("status"));
+                                    if (rewardResponse.optJSONObject("reward") != null) {
+                                        fullParsedResponse.put("reward", rewardResponse.get("reward"));
+                                    } else if (rewardResponse.opt("reward") != null) {
+                                        fullParsedResponse.put("reward", new JSONObject(rewardResponse.getString("reward")));
+                                    }
+                                    Reward reward = new Reward(fullParsedResponse);
+
+                                    Teak.log.i("reward.claim.response", responseJson.toMap());
+
+                                    q.offer(reward);
+                                } catch (JSONException e) {
+                                    Teak.log.exception(e, false);
+                                    q.offer(null);
+                                } catch (Exception e) {
+                                    Teak.log.exception(e);
+                                    q.offer(null); // TODO: Fix this?
                                 }
                             });
-                    } catch (Exception e) {
-                        Teak.log.exception(e);
-                        q.offer(null); // TODO: Fix this?
-                    }
+                } catch (Exception e) {
+                    Teak.log.exception(e);
+                    q.offer(null); // TODO: Fix this?
                 }
             });
 
@@ -276,12 +272,7 @@ public class TeakNotification implements Unobfuscable {
             final Map<String, Object> ret = new HashMap<>();
             ret.put("status", "error.teak.disabled");
 
-            return new FutureTask<>(new Callable<String>() {
-                @Override
-                public String call() throws Exception {
-                    return new JSONObject(ret).toString();
-                }
-            });
+            return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
 
         if (creativeId == null || creativeId.isEmpty()) {
@@ -290,12 +281,7 @@ public class TeakNotification implements Unobfuscable {
             final Map<String, Object> ret = new HashMap<>();
             ret.put("status", "error.parameter.creativeId");
 
-            return new FutureTask<>(new Callable<String>() {
-                @Override
-                public String call() throws Exception {
-                    return new JSONObject(ret).toString();
-                }
-            });
+            return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
 
         if (defaultMessage == null || defaultMessage.isEmpty()) {
@@ -304,12 +290,7 @@ public class TeakNotification implements Unobfuscable {
             final Map<String, Object> ret = new HashMap<>();
             ret.put("status", "error.parameter.defaultMessage");
 
-            return new FutureTask<>(new Callable<String>() {
-                @Override
-                public String call() throws Exception {
-                    return new JSONObject(ret).toString();
-                }
-            });
+            return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
 
         if (delayInSeconds > 2630000 /* one month in seconds */ || delayInSeconds < 0) {
@@ -318,77 +299,64 @@ public class TeakNotification implements Unobfuscable {
             final Map<String, Object> ret = new HashMap<>();
             ret.put("status", "error.parameter.delayInSeconds");
 
-            return new FutureTask<>(new Callable<String>() {
-                @Override
-                public String call() throws Exception {
-                    return new JSONObject(ret).toString();
-                }
-            });
+            return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
 
         final ArrayBlockingQueue<String> q = new ArrayBlockingQueue<>(1);
-        final FutureTask<String> ret = new FutureTask<>(new Callable<String>() {
-            public String call() {
-                try {
-                    return q.take();
-                } catch (InterruptedException e) {
-                    Teak.log.exception(e);
+        final FutureTask<String> ret = new FutureTask<>(() -> {
+            try {
+                return q.take();
+            } catch (InterruptedException e) {
+                Teak.log.exception(e);
 
-                    final Map<String, Object> err = new HashMap<>();
-                    err.put("status", "error.exception.exception");
-                    return new JSONObject(err).toString();
-                }
+                final Map<String, Object> err = new HashMap<>();
+                err.put("status", "error.exception.exception");
+                return new JSONObject(err).toString();
             }
         });
 
-        Session.whenUserIdIsOrWasReadyRun(new Session.SessionRunnable() {
-            @Override
-            public void run(Session session) {
-                HashMap<String, Object> payload = new HashMap<>();
-                payload.put("identifier", creativeId);
-                payload.put("message", defaultMessage);
-                payload.put("offset", delayInSeconds);
+        Session.whenUserIdIsOrWasReadyRun(session -> {
+            HashMap<String, Object> payload = new HashMap<>();
+            payload.put("identifier", creativeId);
+            payload.put("message", defaultMessage);
+            payload.put("offset", delayInSeconds);
 
-                Request.submit("/me/local_notify.json", payload, session,
-                    new Request.Callback() {
-                        @Override
-                        public void onRequestCompleted(int responseCode, String responseBody) {
-                            try {
-                                JSONObject response = new JSONObject(responseBody);
+            Request.submit("/me/local_notify.json", payload, session,
+                    (responseCode, responseBody) -> {
+                        try {
+                            JSONObject response = new JSONObject(responseBody);
 
-                                final Map<String, Object> contents = new HashMap<>();
-                                if (response.has("status")) {
-                                    contents.put("status", response.getString("status"));
+                            final Map<String, Object> contents = new HashMap<>();
+                            if (response.has("status")) {
+                                contents.put("status", response.getString("status"));
 
-                                    if (response.getString("status").equals("ok")) {
-                                        Teak.log.i("notification.schedule", "Scheduled notification.", mm.h("notification", response.getJSONObject("event").get("id")));
-                                        contents.put("data", response.getJSONObject("event").get("id").toString());
-                                    } else {
-                                        Teak.log.e("notification.schedule.error", "Error scheduling notification.", mm.h("response", response.toString()));
-                                    }
+                                if (response.getString("status").equals("ok")) {
+                                    Teak.log.i("notification.schedule", "Scheduled notification.", mm.h("notification", response.getJSONObject("event").get("id")));
+                                    contents.put("data", response.getJSONObject("event").get("id").toString());
                                 } else {
-                                    Teak.log.e("notification.schedule.error", "JSON does not contain 'status' element.");
-                                    contents.put("status", "error.internal");
+                                    Teak.log.e("notification.schedule.error", "Error scheduling notification.", mm.h("response", response.toString()));
                                 }
-
-                                q.offer(new JSONObject(contents).toString());
-                            } catch (JSONException e) {
-                                Teak.log.e("notification.schedule.error", "Error parsing JSON: " + e.toString());
-                                final Map<String, Object> contents = new HashMap<>();
+                            } else {
+                                Teak.log.e("notification.schedule.error", "JSON does not contain 'status' element.");
                                 contents.put("status", "error.internal");
-                                q.offer(new JSONObject(contents).toString());
-                            } catch (Exception e) {
-                                Teak.log.exception(e, mm.h("teakCreativeId", creativeId));
-
-                                final Map<String, Object> contents = new HashMap<>();
-                                contents.put("status", "error.internal");
-                                q.offer(new JSONObject(contents).toString());
                             }
 
-                            ret.run();
+                            q.offer(new JSONObject(contents).toString());
+                        } catch (JSONException e) {
+                            Teak.log.e("notification.schedule.error", "Error parsing JSON: " + e.toString());
+                            final Map<String, Object> contents = new HashMap<>();
+                            contents.put("status", "error.internal");
+                            q.offer(new JSONObject(contents).toString());
+                        } catch (Exception e) {
+                            Teak.log.exception(e, mm.h("teakCreativeId", creativeId));
+
+                            final Map<String, Object> contents = new HashMap<>();
+                            contents.put("status", "error.internal");
+                            q.offer(new JSONObject(contents).toString());
                         }
+
+                        ret.run();
                     });
-            }
         });
         return ret;
     }
@@ -403,7 +371,7 @@ public class TeakNotification implements Unobfuscable {
      */
     @SuppressWarnings({"unused", "WeakerAccess"})
     public static FutureTask<String> scheduleNotification(final String creativeId, final long delayInSeconds, final String[] userIds) {
-        Teak.log.trace("TeakNotification.scheduleNotification", "creativeId", creativeId, "delayInSeconds", delayInSeconds, "userIds", userIds.toString());
+        Teak.log.trace("TeakNotification.scheduleNotification", "creativeId", creativeId, "delayInSeconds", delayInSeconds, "userIds", Arrays.toString(userIds));
 
         if (Teak.Instance == null || !Teak.Instance.isEnabled()) {
             Teak.log.e("notification.schedule.disabled", "Teak is disabled, ignoring scheduleNotification().");
@@ -411,12 +379,7 @@ public class TeakNotification implements Unobfuscable {
             final Map<String, Object> ret = new HashMap<>();
             ret.put("status", "error.teak.disabled");
 
-            return new FutureTask<>(new Callable<String>() {
-                @Override
-                public String call() throws Exception {
-                    return new JSONObject(ret).toString();
-                }
-            });
+            return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
 
         if (creativeId == null || creativeId.isEmpty()) {
@@ -425,12 +388,7 @@ public class TeakNotification implements Unobfuscable {
             final Map<String, Object> ret = new HashMap<>();
             ret.put("status", "error.parameter.creativeId");
 
-            return new FutureTask<>(new Callable<String>() {
-                @Override
-                public String call() throws Exception {
-                    return new JSONObject(ret).toString();
-                }
-            });
+            return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
 
         if (userIds == null || userIds.length < 1) {
@@ -439,12 +397,7 @@ public class TeakNotification implements Unobfuscable {
             final Map<String, Object> ret = new HashMap<>();
             ret.put("status", "error.parameter.userIds");
 
-            return new FutureTask<>(new Callable<String>() {
-                @Override
-                public String call() throws Exception {
-                    return new JSONObject(ret).toString();
-                }
-            });
+            return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
 
         if (delayInSeconds > 2630000 /* one month in seconds */ || delayInSeconds < 0) {
@@ -453,77 +406,64 @@ public class TeakNotification implements Unobfuscable {
             final Map<String, Object> ret = new HashMap<>();
             ret.put("status", "error.parameter.delayInSeconds");
 
-            return new FutureTask<>(new Callable<String>() {
-                @Override
-                public String call() throws Exception {
-                    return new JSONObject(ret).toString();
-                }
-            });
+            return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
 
         final ArrayBlockingQueue<String> q = new ArrayBlockingQueue<>(1);
-        final FutureTask<String> ret = new FutureTask<>(new Callable<String>() {
-            public String call() {
-                try {
-                    return q.take();
-                } catch (InterruptedException e) {
-                    Teak.log.exception(e);
+        final FutureTask<String> ret = new FutureTask<>(() -> {
+            try {
+                return q.take();
+            } catch (InterruptedException e) {
+                Teak.log.exception(e);
 
-                    final Map<String, Object> err = new HashMap<>();
-                    err.put("status", "error.exception.exception");
-                    return new JSONObject(err).toString();
-                }
+                final Map<String, Object> err = new HashMap<>();
+                err.put("status", "error.exception.exception");
+                return new JSONObject(err).toString();
             }
         });
 
-        Session.whenUserIdIsOrWasReadyRun(new Session.SessionRunnable() {
-            @Override
-            public void run(Session session) {
-                HashMap<String, Object> payload = new HashMap<>();
-                payload.put("identifier", creativeId);
-                payload.put("offset", delayInSeconds);
-                payload.put("user_ids", userIds);
+        Session.whenUserIdIsOrWasReadyRun(session -> {
+            HashMap<String, Object> payload = new HashMap<>();
+            payload.put("identifier", creativeId);
+            payload.put("offset", delayInSeconds);
+            payload.put("user_ids", userIds);
 
-                Request.submit("/me/long_distance_notify.json", payload, session,
-                    new Request.Callback() {
-                        @Override
-                        public void onRequestCompleted(int responseCode, String responseBody) {
-                            try {
-                                JSONObject response = new JSONObject(responseBody);
+            Request.submit("/me/long_distance_notify.json", payload, session,
+                    (responseCode, responseBody) -> {
+                        try {
+                            JSONObject response = new JSONObject(responseBody);
 
-                                final Map<String, Object> contents = new HashMap<>();
-                                if (response.has("status")) {
-                                    contents.put("status", response.getString("status"));
+                            final Map<String, Object> contents = new HashMap<>();
+                            if (response.has("status")) {
+                                contents.put("status", response.getString("status"));
 
-                                    if (response.getString("status").equals("ok")) {
-                                        Teak.log.i("notification.schedule", "Scheduled notification.", mm.h("notification", response.getJSONArray("ids").toString()));
-                                        contents.put("data", response.getJSONArray("ids").toString());
-                                    } else {
-                                        Teak.log.e("notification.schedule.error", "Error scheduling notification.", mm.h("response", response.toString()));
-                                    }
+                                if (response.getString("status").equals("ok")) {
+                                    Teak.log.i("notification.schedule", "Scheduled notification.", mm.h("notification", response.getJSONArray("ids").toString()));
+                                    contents.put("data", response.getJSONArray("ids").toString());
                                 } else {
-                                    Teak.log.e("notification.schedule.error", "JSON does not contain 'status' element.");
-                                    contents.put("status", "error.internal");
+                                    Teak.log.e("notification.schedule.error", "Error scheduling notification.", mm.h("response", response.toString()));
                                 }
-
-                                q.offer(new JSONObject(contents).toString());
-                            } catch (JSONException e) {
-                                Teak.log.e("notification.schedule.error", "Error parsing JSON: " + e.toString());
-                                final Map<String, Object> contents = new HashMap<>();
+                            } else {
+                                Teak.log.e("notification.schedule.error", "JSON does not contain 'status' element.");
                                 contents.put("status", "error.internal");
-                                q.offer(new JSONObject(contents).toString());
-                            } catch (Exception e) {
-                                Teak.log.exception(e, mm.h("teakCreativeId", creativeId));
-
-                                final Map<String, Object> contents = new HashMap<>();
-                                contents.put("status", "error.internal");
-                                q.offer(new JSONObject(contents).toString());
                             }
 
-                            ret.run();
+                            q.offer(new JSONObject(contents).toString());
+                        } catch (JSONException e) {
+                            Teak.log.e("notification.schedule.error", "Error parsing JSON: " + e.toString());
+                            final Map<String, Object> contents = new HashMap<>();
+                            contents.put("status", "error.internal");
+                            q.offer(new JSONObject(contents).toString());
+                        } catch (Exception e) {
+                            Teak.log.exception(e, mm.h("teakCreativeId", creativeId));
+
+                            final Map<String, Object> contents = new HashMap<>();
+                            contents.put("status", "error.internal");
+                            q.offer(new JSONObject(contents).toString());
                         }
+
+                        ret.run();
                     });
-            }
         });
         return ret;
     }
@@ -544,12 +484,7 @@ public class TeakNotification implements Unobfuscable {
             final Map<String, Object> ret = new HashMap<>();
             ret.put("status", "error.teak.disabled");
 
-            return new FutureTask<>(new Callable<String>() {
-                @Override
-                public String call() throws Exception {
-                    return new JSONObject(ret).toString();
-                }
-            });
+            return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
 
         if (scheduleId == null || scheduleId.isEmpty()) {
@@ -558,69 +493,56 @@ public class TeakNotification implements Unobfuscable {
             final Map<String, Object> ret = new HashMap<>();
             ret.put("status", "error.parameter.creativeId");
 
-            return new FutureTask<>(new Callable<String>() {
-                @Override
-                public String call() throws Exception {
-                    return new JSONObject(ret).toString();
-                }
-            });
+            return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
 
         final ArrayBlockingQueue<String> q = new ArrayBlockingQueue<>(1);
-        final FutureTask<String> ret = new FutureTask<>(new Callable<String>() {
-            public String call() {
-                try {
-                    return q.take();
-                } catch (InterruptedException e) {
-                    Teak.log.exception(e);
-                }
-                return null;
+        final FutureTask<String> ret = new FutureTask<>(() -> {
+            try {
+                return q.take();
+            } catch (InterruptedException e) {
+                Teak.log.exception(e);
             }
+            return null;
         });
 
-        Session.whenUserIdIsOrWasReadyRun(new Session.SessionRunnable() {
-            @Override
-            public void run(Session session) {
-                HashMap<String, Object> payload = new HashMap<>();
-                payload.put("id", scheduleId);
+        Session.whenUserIdIsOrWasReadyRun(session -> {
+            HashMap<String, Object> payload = new HashMap<>();
+            payload.put("id", scheduleId);
 
-                Request.submit("/me/cancel_local_notify.json", payload, session,
-                    new Request.Callback() {
-                        @Override
-                        public void onRequestCompleted(int responseCode, String responseBody) {
-                            try {
-                                JSONObject response = new JSONObject(responseBody);
+            Request.submit("/me/cancel_local_notify.json", payload, session,
+                    (responseCode, responseBody) -> {
+                        try {
+                            JSONObject response = new JSONObject(responseBody);
 
-                                final Map<String, Object> contents = new HashMap<>();
-                                if (response.has("status")) {
-                                    contents.put("status", response.getString("status"));
+                            final Map<String, Object> contents = new HashMap<>();
+                            if (response.has("status")) {
+                                contents.put("status", response.getString("status"));
 
-                                    if (response.getString("status").equals("ok")) {
-                                        Teak.log.i("notification.cancel", "Canceled notification.", mm.h("notification", scheduleId));
-                                        contents.put("data", response.getJSONObject("event").get("id").toString());
-                                    } else {
-                                        Teak.log.e("notification.cancel.error", "Error canceling notification.", mm.h("response", response.toString()));
-                                    }
+                                if (response.getString("status").equals("ok")) {
+                                    Teak.log.i("notification.cancel", "Canceled notification.", mm.h("notification", scheduleId));
+                                    contents.put("data", response.getJSONObject("event").get("id").toString());
                                 } else {
-                                    Teak.log.e("notification.cancel.error", "Timed out while canceling notification.");
-                                    contents.put("status", "error.internal");
+                                    Teak.log.e("notification.cancel.error", "Error canceling notification.", mm.h("response", response.toString()));
                                 }
-                                q.offer(new JSONObject(contents).toString());
-                            } catch (JSONException e) {
+                            } else {
                                 Teak.log.e("notification.cancel.error", "Timed out while canceling notification.");
-                                final Map<String, Object> contents = new HashMap<>();
                                 contents.put("status", "error.internal");
-                                q.offer(new JSONObject(contents).toString());
-                            } catch (Exception e) {
-                                final Map<String, Object> contents = new HashMap<>();
-                                contents.put("status", "error.internal");
-                                q.offer(new JSONObject(contents).toString());
-                                Teak.log.exception(e, mm.h("scheduleId", scheduleId));
                             }
-                            ret.run();
+                            q.offer(new JSONObject(contents).toString());
+                        } catch (JSONException e) {
+                            Teak.log.e("notification.cancel.error", "Timed out while canceling notification.");
+                            final Map<String, Object> contents = new HashMap<>();
+                            contents.put("status", "error.internal");
+                            q.offer(new JSONObject(contents).toString());
+                        } catch (Exception e) {
+                            final Map<String, Object> contents = new HashMap<>();
+                            contents.put("status", "error.internal");
+                            q.offer(new JSONObject(contents).toString());
+                            Teak.log.exception(e, mm.h("scheduleId", scheduleId));
                         }
+                        ret.run();
                     });
-            }
         });
 
         return ret;
@@ -636,75 +558,62 @@ public class TeakNotification implements Unobfuscable {
             final Map<String, Object> ret = new HashMap<>();
             ret.put("status", "error.teak.disabled");
 
-            return new FutureTask<>(new Callable<String>() {
-                @Override
-                public String call() throws Exception {
-                    return new JSONObject(ret).toString();
-                }
-            });
+            return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
 
         final ArrayBlockingQueue<String> q = new ArrayBlockingQueue<>(1);
-        final FutureTask<String> ret = new FutureTask<>(new Callable<String>() {
-            public String call() {
-                try {
-                    return q.take();
-                } catch (InterruptedException e) {
-                    Teak.log.exception(e);
-                }
-                return null;
+        final FutureTask<String> ret = new FutureTask<>(() -> {
+            try {
+                return q.take();
+            } catch (InterruptedException e) {
+                Teak.log.exception(e);
             }
+            return null;
         });
 
-        Session.whenUserIdIsOrWasReadyRun(new Session.SessionRunnable() {
-            @Override
-            public void run(Session session) {
-                HashMap<String, Object> payload = new HashMap<>();
+        Session.whenUserIdIsOrWasReadyRun(session -> {
+            HashMap<String, Object> payload = new HashMap<>();
 
-                Request.submit("/me/cancel_all_local_notifications.json", payload, session,
-                    new Request.Callback() {
-                        @Override
-                        public void onRequestCompleted(int responseCode, String responseBody) {
-                            try {
-                                JSONObject response = new JSONObject(responseBody);
+            Request.submit("/me/cancel_all_local_notifications.json", payload, session,
+                    (responseCode, responseBody) -> {
+                        try {
+                            JSONObject response = new JSONObject(responseBody);
 
-                                final Map<String, Object> contents = new HashMap<>();
-                                if (response.has("status")) {
-                                    contents.put("status", response.getString("status"));
+                            final Map<String, Object> contents = new HashMap<>();
+                            if (response.has("status")) {
+                                contents.put("status", response.getString("status"));
 
-                                    if (response.getString("status").equals("ok")) {
-                                        ArrayList<Map<String, Object>> canceled = new ArrayList<>();
-                                        JSONArray jArray = response.getJSONArray("canceled");
-                                        if (jArray != null) {
-                                            for (int i = 0; i < jArray.length(); i++) {
-                                                canceled.add(jArray.getJSONObject(i).toMap());
-                                            }
+                                if (response.getString("status").equals("ok")) {
+                                    ArrayList<Map<String, Object>> canceled = new ArrayList<>();
+                                    JSONArray jArray = response.getJSONArray("canceled");
+                                    if (jArray != null) {
+                                        for (int i = 0; i < jArray.length(); i++) {
+                                            canceled.add(jArray.getJSONObject(i).toMap());
                                         }
-                                        contents.put("data", canceled);
-                                        Teak.log.i("notification.cancel_all", "Canceled all notifications.");
-                                    } else {
-                                        Teak.log.e("notification.cancel_all.error", "Error canceling all notifications.", mm.h("response", response.toString()));
                                     }
+                                    contents.put("data", canceled);
+                                    Teak.log.i("notification.cancel_all", "Canceled all notifications.");
                                 } else {
-                                    Teak.log.e("notification.cancel.error", "Timed out while canceling all notifications.");
-                                    contents.put("status", "error.internal");
+                                    Teak.log.e("notification.cancel_all.error", "Error canceling all notifications.", mm.h("response", response.toString()));
                                 }
-                                q.offer(new JSONObject(contents).toString());
-                            } catch (JSONException e) {
+                            } else {
                                 Teak.log.e("notification.cancel.error", "Timed out while canceling all notifications.");
-                                final Map<String, Object> contents = new HashMap<>();
                                 contents.put("status", "error.internal");
-                                q.offer(new JSONObject(contents).toString());
-                            } catch (Exception e) {
-                                final Map<String, Object> contents = new HashMap<>();
-                                contents.put("status", "error.internal");
-                                q.offer(new JSONObject(contents).toString());
-                                Teak.log.exception(e, mm.h("responseBody", responseBody));
                             }
-                            ret.run();
+                            q.offer(new JSONObject(contents).toString());
+                        } catch (JSONException e) {
+                            Teak.log.e("notification.cancel.error", "Timed out while canceling all notifications.");
+                            final Map<String, Object> contents = new HashMap<>();
+                            contents.put("status", "error.internal");
+                            q.offer(new JSONObject(contents).toString());
+                        } catch (Exception e) {
+                            final Map<String, Object> contents = new HashMap<>();
+                            contents.put("status", "error.internal");
+                            q.offer(new JSONObject(contents).toString());
+                            Teak.log.exception(e, mm.h("responseBody", responseBody));
                         }
+                        ret.run();
                     });
-            }
         });
 
         return ret;

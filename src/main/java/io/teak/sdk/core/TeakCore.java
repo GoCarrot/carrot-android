@@ -1,14 +1,19 @@
 package io.teak.sdk.core;
 
 import android.app.Notification;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+
 import androidx.annotation.NonNull;
-import io.teak.sdk.DefaultObjectFactory;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.NotificationBuilder;
@@ -19,30 +24,19 @@ import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.configuration.RemoteConfiguration;
-import io.teak.sdk.event.ExternalBroadcastEvent;
-import io.teak.sdk.event.LaunchedFromLinkEvent;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.NotificationDisplayEvent;
 import io.teak.sdk.event.PurchaseEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.event.TrackEventEvent;
-import io.teak.sdk.event.UserAdditionalDataEvent;
 import io.teak.sdk.io.DefaultAndroidNotification;
 import io.teak.sdk.io.DefaultAndroidResources;
 import io.teak.sdk.json.JSONObject;
-import io.teak.sdk.support.ILocalBroadcastManager;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
 
-public class TeakCore implements ITeakCore {
+public class TeakCore {
     private static TeakCore Instance = null;
-    public static TeakCore get(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
+    public static TeakCore get(@NonNull Context context) {
         if (Instance == null) {
             Instance = new TeakCore(context);
         }
@@ -57,9 +51,7 @@ public class TeakCore implements ITeakCore {
         return null;
     }
 
-    public TeakCore(@NonNull Context context) throws IntegrationChecker.MissingDependencyException {
-        this.localBroadcastManager = DefaultObjectFactory.createLocalBroadcastManager(context);
-
+    public TeakCore(@NonNull Context context) {
         TeakEvent.addEventListener(this.teakEventListener);
 
         registerStaticTeakEventListeners();
@@ -77,11 +69,6 @@ public class TeakCore implements ITeakCore {
         @Override
         public void onNewEvent(@NonNull TeakEvent event) {
             switch (event.eventType) {
-                case ExternalBroadcastEvent.Type: {
-                    final Intent intent = ((ExternalBroadcastEvent) event).intent;
-                    sendLocalBroadcast(intent);
-                    break;
-                }
                 case LifecycleEvent.Resumed: {
                     final Intent intent = ((LifecycleEvent) event).intent;
                     if (!intent.getBooleanExtra("teakProcessedForPush", false)) {
@@ -93,34 +80,14 @@ public class TeakCore implements ITeakCore {
                 case TrackEventEvent.Type: {
                     final Map<String, Object> payload = ((TrackEventEvent) event).payload;
 
-                    asyncExecutor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
-                                @Override
-                                public void run(Session session) {
-                                    Request.submit("/me/events", payload, session);
-                                }
-                            });
-                        }
-                    });
+                    asyncExecutor.execute(() -> Session.whenUserIdIsReadyRun(session -> Request.submit("/me/events", payload, session)));
                     break;
                 }
                 case PurchaseEvent.Type: {
                     final Map<String, Object> payload = ((PurchaseEvent) event).payload;
                     Teak.log.i("purchase.succeeded", payload);
 
-                    asyncExecutor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
-                                @Override
-                                public void run(Session session) {
-                                    Request.submit("/me/purchase", payload, session);
-                                }
-                            });
-                        }
-                    });
+                    asyncExecutor.execute(() -> Session.whenUserIdIsReadyRun(session -> Request.submit("/me/purchase", payload, session)));
                     break;
                 }
                 case PurchaseFailedEvent.Type: {
@@ -128,17 +95,7 @@ public class TeakCore implements ITeakCore {
                     payload.put("errorCode", ((PurchaseFailedEvent) event).errorCode);
                     Teak.log.i("purchase.failed", payload);
 
-                    asyncExecutor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
-                                @Override
-                                public void run(Session session) {
-                                    Request.submit("/me/purchase", payload, session);
-                                }
-                            });
-                        }
-                    });
+                    asyncExecutor.execute(() -> Session.whenUserIdIsReadyRun(session -> Request.submit("/me/purchase", payload, session)));
                     break;
                 }
                 case PushNotificationEvent.Received: {
@@ -147,6 +104,8 @@ public class TeakCore implements ITeakCore {
 
                     final Bundle bundle = intent.getExtras();
                     if (bundle == null || !bundle.containsKey("teakNotifId")) break;
+
+                    final boolean isUnitTest = bundle.getBoolean("teakUnitTest");
 
                     // Debug output
                     HashMap<String, Object> debugHash = new HashMap<>();
@@ -170,26 +129,7 @@ public class TeakCore implements ITeakCore {
                     final boolean gameIsInForeground = !Session.isExpiringOrExpired();
                     final boolean showInForeground = Helpers.getBooleanFromBundle(bundle, "teakShowInForeground");
                     if (gameIsInForeground) {
-                        if (TeakCore.this.localBroadcastManager != null) {
-                            final String teakRewardId = bundle.getString("teakRewardId");
-
-                            final HashMap<String, Object> eventDataDict = new HashMap<>();
-                            eventDataDict.put("teakNotifId", bundle.getString("teakNotifId"));
-                            eventDataDict.put("teakRewardId", teakRewardId);
-                            eventDataDict.put("incentivized", teakRewardId != null);
-                            eventDataDict.put("teakScheduleName", bundle.getString("teakScheduleName"));
-                            eventDataDict.put("teakCreativeName", bundle.getString("teakCreativeName"));
-                            eventDataDict.put("teakChannelName", bundle.getString("teakChannelName"));
-                            eventDataDict.put("teakDeepLink", bundle.getString("teakDeepLink"));
-
-                            // Notification content
-                            eventDataDict.put("message", bundle.getString("message"));
-
-                            final Intent broadcastEvent = new Intent(Teak.FOREGROUND_NOTIFICATION_INTENT);
-                            broadcastEvent.putExtras(bundle);
-                            broadcastEvent.putExtra("eventData", eventDataDict);
-                            sendLocalBroadcast(broadcastEvent);
-                        }
+                        Session.whenUserIdIsReadyPost(new Teak.NotificationEvent(bundle, true));
                     }
 
                     // Create Teak Notification
@@ -203,53 +143,50 @@ public class TeakCore implements ITeakCore {
 
                     // Create & display native notification asynchronously, image downloads etc
                     final Context context = ((PushNotificationEvent) event).context;
-                    asyncExecutor.submit(new RetriableTask<>(3, 2000L, 2, new Callable<Object>() {
-                        @Override
-                        public Object call() throws NotificationBuilder.AssetLoadException {
-                            // Send metric
-                            final String teakUserId = bundle.getString("teakUserId", null);
-                            final String teakAppId = bundle.getString("teakAppId", null);
-                            if (teakAppId != null && teakUserId != null) {
-                                HashMap<String, Object> payload = new HashMap<>();
-                                payload.put("app_id", teakAppId);
-                                payload.put("user_id", teakUserId);
-                                payload.put("platform_id", teakNotification.teakNotifId);
+                    asyncExecutor.submit(new RetriableTask<>(3, 2000L, 2, () -> {
+                        // Send metric
+                        final String teakUserId = bundle.getString("teakUserId", null);
+                        final String teakAppId = bundle.getString("teakAppId", null);
+                        if (teakAppId != null && teakUserId != null) {
+                            HashMap<String, Object> payload = new HashMap<>();
+                            payload.put("app_id", teakAppId);
+                            payload.put("user_id", teakUserId);
+                            payload.put("platform_id", teakNotification.teakNotifId);
 
-                                if (gameIsInForeground) {
-                                    payload.put("notification_placement", "foreground");
-                                }
+                            if (gameIsInForeground) {
+                                payload.put("notification_placement", "foreground");
+                            }
 
-                                if (teakNotification.teakNotifId == 0) {
-                                    payload.put("impression", false);
-                                }
+                            if (teakNotification.teakNotifId == 0) {
+                                payload.put("impression", false);
+                            }
 
-                                // If the API key is null, assign that
-                                if (!bundle.getBoolean("teakUnitTest")) {
-                                    try {
-                                        if (!Request.hasTeakApiKey()) {
-                                            AppConfiguration tempAppConfiguration = new AppConfiguration(context, new DefaultAndroidResources(context));
-                                            Request.setTeakApiKey(tempAppConfiguration.apiKey);
-                                        }
-                                        Request.submit("parsnip.gocarrot.com", "/notification_received", payload, Session.NullSession);
-                                    } catch (IntegrationChecker.InvalidConfigurationException ignored) {
+                            // If the API key is null, assign that
+                            if (!isUnitTest) {
+                                try {
+                                    if (!Request.hasTeakApiKey()) {
+                                        AppConfiguration tempAppConfiguration = new AppConfiguration(context, new DefaultAndroidResources(context));
+                                        Request.setTeakApiKey(tempAppConfiguration.apiKey);
                                     }
+                                    Request.submit("parsnip.gocarrot.com", "/notification_received", payload, Session.NullSession);
+                                } catch (IntegrationChecker.InvalidConfigurationException ignored) {
                                 }
                             }
-
-                            // If the game is backgrounded, or we can show in foreground, display notification
-                            if (!gameIsInForeground || showInForeground) {
-                                // Create native notification
-                                Notification nativeNotification = NotificationBuilder.createNativeNotification(context, bundle, teakNotification);
-                                if (nativeNotification == null) return null;
-
-                                // Ensure that DefaultAndroidNotification instance exists.
-                                if (DefaultAndroidNotification.get(context) == null) return null;
-
-                                // Send display event
-                                TeakEvent.postEvent(new NotificationDisplayEvent(teakNotification, nativeNotification));
-                            }
-                            return null;
                         }
+
+                        // If the game is backgrounded, or we can show in foreground, display notification
+                        if (!gameIsInForeground || showInForeground) {
+                            // Create native notification
+                            final Notification nativeNotification = NotificationBuilder.createNativeNotification(context, bundle, teakNotification);
+                            if (nativeNotification == null) return null;
+
+                            // Ensure that DefaultAndroidNotification instance exists.
+                            if (DefaultAndroidNotification.get(context) == null) return null;
+
+                            // Send display event
+                            TeakEvent.postEvent(new NotificationDisplayEvent(teakNotification, nativeNotification));
+                        }
+                        return null;
                     }));
                     break;
                 }
@@ -289,85 +226,48 @@ public class TeakCore implements ITeakCore {
                     }
                     break;
                 }
-
-                case UserAdditionalDataEvent.Type: {
-                    Teak.log.i("additional_data.received", ((UserAdditionalDataEvent) event).additionalData.toString());
-                    final Intent intent = new Intent(Teak.ADDITIONAL_DATA_INTENT);
-                    intent.putExtra("additional_data", ((UserAdditionalDataEvent) event).additionalData.toString());
-                    sendLocalBroadcast(intent);
-                } break;
-
-                case LaunchedFromLinkEvent.Type: {
-                    final Intent intent = new Intent(Teak.LAUNCHED_FROM_LINK_INTENT);
-                    intent.putExtra("linkInfo", ((LaunchedFromLinkEvent) event).linkInfo.toString());
-                    sendLocalBroadcast(intent);
-                }
             }
         }
     };
-
-    @Override
-    public void registerLocalBroadcastReceiver(BroadcastReceiver broadcastReceiver, IntentFilter filter) {
-        this.localBroadcastManager.registerReceiver(broadcastReceiver, filter);
-    }
-
-    private void sendLocalBroadcast(final Intent intent) {
-        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
-            @Override
-            public void run(Session session) {
-                localBroadcastManager.sendBroadcast(intent);
-            }
-        });
-    }
 
     private void checkIntentForPushLaunchAndSendBroadcasts(Intent intent) {
         if (intent.hasExtra("teakNotifId") && intent.getExtras() != null) {
             final Bundle bundle = intent.getExtras();
 
             // Send broadcast
-            if (bundle != null && this.localBroadcastManager != null) {
+            if (bundle != null) {
                 final String teakRewardId = bundle.getString("teakRewardId");
-
-                final HashMap<String, Object> eventDataDict = new HashMap<>();
-                eventDataDict.put("teakNotifId", bundle.getString("teakNotifId"));
-                eventDataDict.put("teakRewardId", teakRewardId);
-                eventDataDict.put("incentivized", teakRewardId != null);
-                eventDataDict.put("teakScheduleName", bundle.getString("teakScheduleName"));
-                eventDataDict.put("teakCreativeName", bundle.getString("teakCreativeName"));
-                eventDataDict.put("teakChannelName", bundle.getString("teakChannelName"));
-                eventDataDict.put("teakNotificationPlacement", bundle.getString("teakNotificationPlacement"));
 
                 if (teakRewardId != null) {
                     final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
                     if (rewardFuture != null) {
-                        this.asyncExecutor.execute(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    TeakNotification.Reward reward = rewardFuture.get();
-                                    HashMap<String, Object> rewardMap = new HashMap<>(reward.json.toMap());
-                                    eventDataDict.putAll(rewardMap);
+                        this.asyncExecutor.execute(() -> {
+                            Teak.NotificationEvent notificationEvent = new Teak.NotificationEvent(bundle, false);
+                            try {
+                                final TeakNotification.Reward reward = rewardFuture.get();
 
-                                    // Broadcast reward only if everything goes well
-                                    final Intent rewardIntent = new Intent(Teak.REWARD_CLAIM_ATTEMPT);
-                                    rewardIntent.putExtra("reward", eventDataDict);
-                                    sendLocalBroadcast(rewardIntent);
-                                } catch (Exception e) {
-                                    Teak.log.exception(e);
-                                } finally {
-                                    final Intent broadcastEvent = new Intent(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
-                                    broadcastEvent.putExtras(bundle);
-                                    broadcastEvent.putExtra("eventData", eventDataDict);
-                                    sendLocalBroadcast(broadcastEvent);
-                                }
+                                final HashMap<String, Object> rewardMap = new HashMap<>(reward.json.toMap());
+                                rewardMap.put("teakNotifId", notificationEvent.teakNotifId);
+                                rewardMap.put("incentivized", true);
+                                rewardMap.put("teakRewardId", notificationEvent.teakRewardId);
+                                rewardMap.put("teakScheduleName", notificationEvent.teakScheduleName);
+                                rewardMap.put("teakScheduleId", notificationEvent.teakScheduleId);
+                                rewardMap.put("teakCreativeName", notificationEvent.teakCreativeName);
+                                rewardMap.put("teakCreativeId", notificationEvent.teakCreativeId);
+                                rewardMap.put("teakChannelName", notificationEvent.teakChannelName);
+
+                                notificationEvent = new Teak.NotificationEvent(bundle, false, rewardMap);
+
+                                Session.whenUserIdIsReadyPost(new Teak.RewardClaimEvent(rewardMap));
+                            } catch (Exception e) {
+                                Teak.log.exception(e);
+                            } finally {
+                                Session.whenUserIdIsReadyPost(notificationEvent);
                             }
                         });
                     }
                 } else {
-                    final Intent broadcastEvent = new Intent(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
-                    broadcastEvent.putExtras(bundle);
-                    broadcastEvent.putExtra("eventData", eventDataDict);
-                    sendLocalBroadcast(broadcastEvent);
+                    Session.whenUserIdIsReadyPost(new Teak.NotificationEvent(bundle, false));
                 }
             }
         }
@@ -376,7 +276,6 @@ public class TeakCore implements ITeakCore {
     ///// Data Members
 
     private final ExecutorService asyncExecutor = Executors.newCachedThreadPool();
-    private final ILocalBroadcastManager localBroadcastManager;
 
-    public static final ScheduledExecutorService operationQueue = Executors.newSingleThreadScheduledExecutor();
+    static final ScheduledExecutorService operationQueue = Executors.newSingleThreadScheduledExecutor();
 }

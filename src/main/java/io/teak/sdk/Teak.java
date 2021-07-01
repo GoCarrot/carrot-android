@@ -6,9 +6,21 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.net.Uri;
+import android.os.Bundle;
+
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.FutureTask;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.core.Executors;
 import io.teak.sdk.core.InstrumentableReentrantLock;
@@ -18,14 +30,6 @@ import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.io.AndroidResources;
 import io.teak.sdk.json.JSONException;
 import io.teak.sdk.json.JSONObject;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.FutureTask;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Teak
@@ -46,9 +50,9 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     public static final String SDKVersion = io.teak.sdk.BuildConfig.VERSION_NAME;
 
     /**
-     * Version of the Teak SDK, and Unity/Air SDK if applicable.
+     * Version of the Teak SDK, and Unity/Cocos2dx SDK if applicable.
      * <p>
-     * You must call {@link Teak#onCreate(Activity)} in order to get Unity/Air SDK version info.
+     * You must call {@link Teak#onCreate(Activity)} in order to get Unity/Cocos2dx SDK version info.
      */
     public static final Map<String, Object> Version;
 
@@ -143,16 +147,20 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             }
         }
 
-        final AndroidResources androidResources = new AndroidResources(activity.getApplicationContext(), objectFactory.getAndroidResources());
-        //noinspection ConstantConditions
-        if (androidResources != null) {
-            // Add version info for Unity/Air
-            String wrapperSDKName = androidResources.getStringResource("io_teak_wrapper_sdk_name");
-            String wrapperSDKVersion = androidResources.getStringResource("io_teak_wrapper_sdk_version");
-            if (wrapperSDKName != null && wrapperSDKVersion != null) {
-                Teak.sdkMap.put(wrapperSDKName, wrapperSDKVersion);
+        // Add version info for Unity
+        try {
+            Class<?> clazz = Class.forName("io.teak.sdk.wrapper.Version");
+            Method m = clazz.getDeclaredMethod("map");
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> wrapperVersion = (Map<String, Object>)m.invoke(null);
+            if (wrapperVersion != null) {
+                Teak.sdkMap.putAll(wrapperVersion);
             }
+        } catch (Exception ignored) {
+        }
 
+        final AndroidResources androidResources = new AndroidResources(activity.getApplicationContext(), objectFactory.getAndroidResources());
+        if (androidResources != null) {
             // Check for 'trace' log mode
             final Boolean traceLog = androidResources.getTeakBoolResource(AppConfiguration.TEAK_TRACE_LOG_RESOURCE, false);
             if (traceLog != null) {
@@ -164,38 +172,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         if (Instance == null) {
             try {
                 Instance = new TeakInstance(activity, objectFactory);
-            } catch (Exception e) {
-                return;
+            } catch (Exception ignored) {
             }
-        }
-    }
-
-    /**
-     * Tell Teak about the result of an {@link Activity} started by your app.
-     * <br>
-     * <p>This allows Teak to automatically get the results of In-App Purchase events.</p>
-     *
-     * @param requestCode The <code>requestCode</code> parameter received from {@link Activity#onActivityResult}
-     * @param resultCode  The <code>resultCode</code> parameter received from {@link Activity#onActivityResult}
-     * @param data        The <code>data</code> parameter received from {@link Activity#onActivityResult}
-     */
-    @SuppressWarnings("unused")
-    public static void onActivityResult(@SuppressWarnings("unused") int requestCode, int resultCode, Intent data) {
-        Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityResult"));
-
-        if (data != null) {
-            checkActivityResultForPurchase(resultCode, data);
-        }
-    }
-
-    /**
-     * @deprecated call {@link Activity#setIntent(Intent)} inside your {@link Activity#onNewIntent(Intent)}.
-     */
-    @Deprecated
-    @SuppressWarnings("unused")
-    public static void onNewIntent(Intent intent) {
-        if (!Teak.sdkMap.containsKey("adobeAir")) {
-            Teak.log.e("deprecation.onNewIntent", "Teak.onNewIntent is deprecated, call Activity.onNewIntent() instead.");
         }
     }
 
@@ -277,18 +255,13 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static void identifyUser(final String userIdentifier, final String[] optOut, final String email) {
-        Teak.log.trace("Teak.identifyUser", "userIdentifier", userIdentifier, "optOut", optOut.toString(), "email", email);
+        Teak.log.trace("Teak.identifyUser", "userIdentifier", userIdentifier, "optOut", Arrays.toString(optOut), "email", email);
 
         // Always process deep links when identifyUser is called
         Teak.processDeepLinks();
 
         if (Instance != null) {
-            asyncExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Instance.identifyUser(userIdentifier, optOut != null ? optOut : new String[] {}, email);
-                }
-            });
+            asyncExecutor.submit(() -> Instance.identifyUser(userIdentifier, optOut != null ? optOut : new String[] {}, email));
         }
     }
 
@@ -300,12 +273,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         Teak.log.trace("Teak.logout");
 
         if (Instance != null) {
-            asyncExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Instance.logout();
-                }
-            });
+            asyncExecutor.submit(() -> Instance.logout());
         }
     }
 
@@ -321,12 +289,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         Teak.log.trace("Teak.trackEvent", "actionId", actionId, "objectTypeId", objectTypeId, "objectInstanceId", objectInstanceId);
 
         if (Instance != null) {
-            asyncExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Instance.trackEvent(actionId, objectTypeId, objectInstanceId);
-                }
-            });
+            asyncExecutor.submit(() -> Instance.trackEvent(actionId, objectTypeId, objectInstanceId));
         }
     }
 
@@ -343,12 +306,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         Teak.log.trace("Teak.incrementEvent", "actionId", actionId, "objectTypeId", objectTypeId, "objectInstanceId", objectInstanceId);
 
         if (Instance != null) {
-            asyncExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Instance.trackEvent(actionId, objectTypeId, objectInstanceId, count);
-                }
-            });
+            asyncExecutor.submit(() -> Instance.trackEvent(actionId, objectTypeId, objectInstanceId, count));
         }
     }
 
@@ -436,12 +394,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         Teak.log.trace("Teak.setNumericAttribute", "attributeName", attributeName, "attributeValue", attributeValue);
 
         if (Instance != null) {
-            asyncExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Instance.setNumericAttribute(attributeName, attributeValue);
-                }
-            });
+            asyncExecutor.submit(() -> Instance.setNumericAttribute(attributeName, attributeValue));
         }
     }
 
@@ -456,12 +409,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         Teak.log.trace("Teak.setStringAttribute", "attributeName", attributeName, "attributeValue", attributeValue);
 
         if (Instance != null) {
-            asyncExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Instance.setStringAttribute(attributeName, attributeValue);
-                }
-            });
+            asyncExecutor.submit(() -> Instance.setStringAttribute(attributeName, attributeValue));
         }
     }
 
@@ -550,78 +498,199 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     }
 
     /**
-     * Intent action used by Teak to notify you that the app was launched from a notification.
-     * <br>
-     * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
-     * <pre>
-     * {@code
-     *     IntentFilter filter = new IntentFilter();
-     *     filter.addAction(Teak.LAUNCHED_FROM_NOTIFICATION_INTENT);
-     *     LocalBroadcastManager.getInstance(context).registerReceiver(yourBroadcastListener, filter);
-     * }
-     * </pre>
+     * Event posted when a notification was received either in the foreground, or that launched the app.
      */
-    @SuppressWarnings("unused")
-    public static final String LAUNCHED_FROM_NOTIFICATION_INTENT = "io.teak.sdk.Teak.intent.LAUNCHED_FROM_NOTIFICATION";
+    public static class NotificationEvent {
+        /**
+         * True if the notification was received when the app was in the foreground.
+         */
+        public final boolean isForeground;
+
+        /**
+         * The reward id, or null if there was no reward attached.
+         */
+        public final String teakRewardId;
+
+        /**
+         * The notification id.
+         */
+        public final String teakNotifId;
+
+        /**
+         * True if there was a reward attached; false otherwise.
+         */
+        public final boolean incentivized;
+
+        /**
+         * The name of the schedule responsible on the Teak dashboard, if this was a scheduled notification; null otherwise.
+         */
+        public final String teakScheduleName;
+
+        /**
+         * The id of the schedule responsible on the Teak dashboard, if this was a scheduled notification; null otherwise.
+         */
+        public final String teakScheduleId;
+
+        /**
+         * The name of the notification creative on the Teak dashboard.
+         */
+        public final String teakCreativeName;
+
+        /**
+         * The id of the notification creative on the Teak dashboard.
+         */
+        public final String teakCreativeId;
+
+        /**
+         * TODO
+         */
+        public final String teakChannelName;
+
+        /**
+         * The deep link attached to the notification; null if there was no deep link.
+         */
+        public final String teakDeepLink;
+
+        /**
+         * The text in the body of the notification.
+         */
+        public final String message;
+
+        /**
+         * Attached reward, or null.
+         */
+        public final Map<String, Object> reward;
+
+        // TODO: Is this needed?
+        public final String teakNotificationPlacement;
+
+        public NotificationEvent(final Bundle bundle, final boolean isForeground) {
+            this(bundle, isForeground, null);
+        }
+
+        public NotificationEvent(final Bundle bundle, final boolean isForeground, final Map<String, Object> reward) {
+            this.isForeground = isForeground;
+            this.teakRewardId = bundle.getString("teakRewardId");
+            this.teakNotifId = bundle.getString("teakNotifId");
+            this.incentivized = this.teakRewardId != null;
+            this.teakScheduleName = bundle.getString("teakScheduleName");
+            this.teakScheduleId = bundle.getString("teakScheduleId");
+            this.teakCreativeName = bundle.getString("teakCreativeName");
+            this.teakCreativeId = bundle.getString("teakCreativeId");
+            this.teakChannelName = bundle.getString("teakChannelName");
+            this.teakDeepLink = bundle.getString("teakDeepLink");
+            this.teakNotificationPlacement = bundle.getString("teakNotificationPlacement");
+            this.message = bundle.getString("message");
+            this.reward = reward;
+        }
+
+        public Map<String, Object> toMap() {
+            final HashMap<String, Object> map = new HashMap<>();
+            map.put("teakNotifId", this.teakNotifId);
+            map.put("teakRewardId", this.teakRewardId);
+            map.put("incentivized", this.incentivized);
+            map.put("teakScheduleName", this.teakScheduleName);
+            map.put("teakCreativeName", this.teakCreativeName);
+            map.put("teakChannelName", this.teakCreativeName);
+            map.put("teakDeepLink", this.teakDeepLink);
+            map.put("teakNotificationPlacement", this.teakNotificationPlacement);
+            map.put("message", this.message);
+
+            if (this.reward != null) {
+                map.putAll(reward);
+            }
+
+            return map;
+        }
+    }
 
     /**
-     * Intent action used by Teak to notify you that the a reward claim attempt has occured.
-     * <br>
-     * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
-     * <pre>
-     * {@code
-     *     IntentFilter filter = new IntentFilter();
-     *     filter.addAction(Teak.REWARD_CLAIM_ATTEMPT);
-     *     LocalBroadcastManager.getInstance(context).registerReceiver(yourBroadcastListener, filter);
-     * }
-     * </pre>
+     * Event posted when a reward claim attempt has occurred.
      */
-    @SuppressWarnings("unused")
-    public static final String REWARD_CLAIM_ATTEMPT = "io.teak.sdk.Teak.intent.REWARD_CLAIM_ATTEMPT";
+    public static class RewardClaimEvent {
+        /**
+         * The reward id.
+         */
+        public final String teakRewardId;
+
+        /**
+         * The notification id, if the reward came from a notification.
+         */
+        public final String teakNotifId;
+
+        /**
+         * The name of the schedule responsible on the Teak dashboard, if this was a scheduled notification; null otherwise.
+         */
+        public final String teakScheduleName;
+
+        /**
+         * The id of the schedule responsible on the Teak dashboard, if this was a scheduled notification; null otherwise.
+         */
+        public final String teakScheduleId;
+
+        /**
+         * The name of the notification creative on the Teak dashboard.
+         */
+        public final String teakCreativeName;
+
+        /**
+         * The id of the notification creative on the Teak dashboard.
+         */
+        public final String teakCreativeId;
+
+        /**
+         * TODO
+         */
+        public final String teakChannelName;
+
+        /**
+         * The full contents of the reward.
+         */
+        public final Map<String, Object> rewardAsMap;
+
+        public RewardClaimEvent(@NonNull final Map<String, Object> rewardMap) {
+            this.rewardAsMap = rewardMap;
+            this.teakNotifId = (String) rewardMap.get("teakNotifId");
+            this.teakRewardId = (String) rewardMap.get("teakRewardId");
+            this.teakScheduleName = (String) rewardMap.get("teakScheduleName");
+            this.teakScheduleId = (String) rewardMap.get("teakScheduleId");
+            this.teakCreativeName = (String) rewardMap.get("teakCreativeName");
+            this.teakCreativeId = (String) rewardMap.get("teakCreativeId");
+            this.teakChannelName = (String) rewardMap.get("teakChannelName");
+        }
+
+        public Map<String, Object> toMap() {
+            return this.rewardAsMap;
+        }
+    }
 
     /**
-     * Intent action used by Teak to notify you that a notification was received while the app is
-     * in the foreground.
-     * <br>
-     * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
-     * <pre>
-     * {@code
-     *     IntentFilter filter = new IntentFilter();
-     *     filter.addAction(Teak.FOREGROUND_NOTIFICATION_INTENT);
-     *     LocalBroadcastManager.getInstance(context).registerReceiver(yourBroadcastListener, filter);
-     * }
-     * </pre>
+     * Event sent when "additional data" is available for the user.
      */
-    @SuppressWarnings("unused")
-    public static final String FOREGROUND_NOTIFICATION_INTENT = "io.teak.sdk.Teak.intent.FOREGROUND_NOTIFICATION_INTENT";
+    public static class AdditionalDataEvent {
+        /**
+         * A JSON object containing user-defined data received from the server.
+         */
+        public final JSONObject additionalData;
+
+        public AdditionalDataEvent(final JSONObject additionalData) {
+            this.additionalData = additionalData;
+        }
+    }
 
     /**
-     * Intent action used by Teak to notify you that "additional data" is available for the user.
-     * <br>
-     * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
-     * <pre>
-     * {@code
-     *     IntentFilter filter = new IntentFilter();
-     *     filter.addAction(Teak.ADDITIONAL_DATA_INTENT);
-     *     LocalBroadcastManager.getInstance(context).registerReceiver(yourBroadcastListener, filter);
-     * }
-     * </pre>
+     * Event sent when the app was launched from a link created by the Teak dashboard.
      */
-    public static final String ADDITIONAL_DATA_INTENT = "io.teak.sdk.Teak.intent.ADDITIONAL_DATA_INTENT";
+    public static class LaunchFromLinkEvent {
+        /**
+         * TODO: This should be expanded out into data members
+         */
+        public final JSONObject todoExpandThis;
 
-    /**
-     * Intent action used by Teak to notify you that the app was launched from a link created by the Teak dashboard.
-     * <br>
-     * You can listen for this using a {@link BroadcastReceiver} and the {@link LocalBroadcastManager}.
-     * <pre>
-     * {@code
-     *     IntentFilter filter = new IntentFilter();
-     *     filter.addAction(Teak.LAUNCHED_FROM_LINK_INTENT);
-     *     LocalBroadcastManager.getInstance(context).registerReceiver(yourBroadcastListener, filter);
-     * }
-     * </pre>
-     */
-    public static final String LAUNCHED_FROM_LINK_INTENT = "io.teak.sdk.Teak.intent.LAUNCHED_FROM_LINK_INTENT";
+        public LaunchFromLinkEvent(final JSONObject linkData) {
+            this.todoExpandThis = linkData;
+        }
+    }
 
     ///// LogListener
 
@@ -663,59 +732,6 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         }
     }
 
-    ///// Purchase Code
-
-    // Called by Unity integration
-    @SuppressWarnings("unused")
-    public static void pluginPurchaseSucceeded(final String json, final String pluginName) {
-        try {
-            final JSONObject originalJson = new JSONObject(json);
-            Teak.log.i("purchase." + pluginName, originalJson.toMap());
-
-            if (Instance != null) {
-                asyncExecutor.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        final Map<String, Object> extras = new HashMap<>();
-                        extras.put("iap_plugin", pluginName);
-                        Instance.purchaseSucceeded(json, extras);
-                    }
-                });
-            }
-        } catch (Exception e) {
-            Teak.log.exception(e);
-        }
-    }
-
-    // Called by Unity integration
-    @SuppressWarnings("unused")
-    public static void pluginPurchaseFailed(final int errorCode, final String pluginName) {
-        if (Instance != null) {
-            final Map<String, Object> extras = new HashMap<>();
-            extras.put("iap_plugin", pluginName);
-
-            asyncExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Instance.purchaseFailed(errorCode, extras);
-                }
-            });
-        }
-    }
-
-    // Called by onActivityResult, as well as via reflection/directly in external purchase
-    // activity code.
-    public static void checkActivityResultForPurchase(final int resultCode, final Intent data) {
-        if (Instance != null) {
-            asyncExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Instance.checkActivityResultForPurchase(resultCode, data);
-                }
-            });
-        }
-    }
-
     ///// Logging
 
     public static int jsonLogIndentation = 0;
@@ -750,12 +766,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         }
     }
 
-    private static final FutureTask<Void> waitForDeepLink = new FutureTask<>(new Runnable() {
-        @Override
-        public void run() {
-            TeakEvent.postEvent(new DeepLinksReadyEvent());
-        }
-    }, null);
+    private static final FutureTask<Void> waitForDeepLink = new FutureTask<>(() -> TeakEvent.postEvent(new DeepLinksReadyEvent()), null);
 
     /**
      * Block until deep links are ready for processing.

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.os.Bundle;
 
 import org.junit.Test;
@@ -50,11 +51,14 @@ public class NotificationBroadcastReceivers {
 
         final PackageManager packageManager = mock(PackageManager.class);
         when(packageManager.getApplicationInfo(any(String.class), any(int.class))).thenReturn(applicationInfo);
+        
+        final Resources resources = mock(Resources.class);
+        when(resources.getIdentifier("config_notificationStripRemoteViewSizeBytes", "integer", "android")).thenReturn(0);
 
         final Context context = mock(Context.class);
-        when(context.getApplicationContext()).thenReturn(context);
         when(context.getPackageManager()).thenReturn(packageManager);
         when(context.getPackageName()).thenReturn("test_package_name");
+        when(context.getResources()).thenReturn(resources);
 
         final Bundle extras = mock(Bundle.class);
         when(extras.containsKey("teakNotifId")).thenReturn(true);

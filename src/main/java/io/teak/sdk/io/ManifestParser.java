@@ -4,16 +4,19 @@ import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.content.res.XmlResourceParser;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import io.teak.sdk.Teak;
+
+import org.xmlpull.v1.XmlPullParser;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
-import org.xmlpull.v1.XmlPullParser;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import io.teak.sdk.Teak;
 
 public class ManifestParser {
     public final XmlTag tags;
@@ -66,6 +69,7 @@ public class ManifestParser {
         }
 
         @Override
+        @NonNull
         public String toString() {
             return this.toString("");
         }

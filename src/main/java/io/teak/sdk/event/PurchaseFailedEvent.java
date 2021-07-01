@@ -13,6 +13,6 @@ public class PurchaseFailedEvent extends TeakEvent {
     public PurchaseFailedEvent(int errorCode, @Nullable Map<String, Object> extras) {
         super(Type);
         this.errorCode = errorCode;
-        this.extras = extras == null ? new HashMap<String, Object>() : extras;
+        this.extras = extras == null ? new HashMap<>() : extras;
     }
 }

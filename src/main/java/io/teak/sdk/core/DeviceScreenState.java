@@ -1,31 +1,31 @@
 package io.teak.sdk.core;
 
 import android.content.Context;
-import android.content.Intent;
 import android.hardware.display.DisplayManager;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.PowerManager;
 import android.view.Display;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+
+import java.util.Date;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.firebase.jobdispatcher.Job;
-import com.firebase.jobdispatcher.JobParameters;
-import com.firebase.jobdispatcher.Trigger;
+import androidx.work.Data;
+import androidx.work.ExistingWorkPolicy;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkManager;
+import androidx.work.Worker;
+import androidx.work.WorkerParameters;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.Teak;
 import io.teak.sdk.io.IAndroidNotification;
-import io.teak.sdk.service.JobService;
-import java.util.Date;
-import java.util.concurrent.Callable;
+import io.teak.sdk.raven.Sender;
 
 public class DeviceScreenState {
-    //    public static final String SCREEN_STATE = "DeviceScreenState.SCREEN_STATE";
-
-    public static final String SCREEN_STATE_JOB_TAG = "DeviceScreenState.Job";
     public static final String DELAY_INDEX_KEY = "DeviceScreenState.DelayIndex";
-    public static final String SCREEN_ON = "DeviceScreenState.SCREEN_ON";
-    public static final String SCREEN_OFF = "DeviceScreenState.SCREEN_OFF";
 
     public enum State {
         Unknown("Unknown"),
@@ -55,22 +55,43 @@ public class DeviceScreenState {
         }
     }
 
-    public interface Callbacks {
-        void onStateChanged(State oldState, State newState);
+    public static class ScreenStateEvent {
+        public final State state;
+
+        public ScreenStateEvent(final State state) {
+            this.state = state;
+        }
+    }
+
+    public static class ScreenStateChangeEvent {
+        public final State newState;
+        public final State oldState;
+        public final Context context;
+
+        public ScreenStateChangeEvent(final State newState, final State oldState, final Context context) {
+            this.newState = newState;
+            this.oldState = oldState;
+            this.context = context;
+        }
     }
 
     private State state = State.Unknown;
     private final Object stateMutex = new Object();
+    private final Context context;
 
-    public void setState(State newState, Callbacks callbacks) {
+    public DeviceScreenState(final Context context) {
+        this.context = context;
+        EventBus.getDefault().register(this);
+    }
+
+    @Subscribe
+    public void onScreenState(final ScreenStateEvent event) {
         synchronized (this.stateMutex) {
-            if (this.state.canTransitionTo(newState)) {
+            if (this.state.canTransitionTo(event.state)) {
                 State oldState = this.state;
-                this.state = newState;
-                if (callbacks != null) {
-                    callbacks.onStateChanged(oldState, newState);
-                }
-                Teak.log.i("teak.animation", Helpers.mm.h("old_state", oldState, "new_state", newState));
+                this.state = event.state;
+                EventBus.getDefault().post(new ScreenStateChangeEvent(event.state, oldState, this.context));
+                Teak.log.i("teak.animation", Helpers.mm.h("old_state", oldState, "new_state", event.state));
             }
         }
     }
@@ -86,67 +107,63 @@ public class DeviceScreenState {
         {150, 300},
         {600, 900}};
 
-    public static void scheduleScreenStateJob(@Nullable JobParameters jobParameters) {
-        final Bundle bundle = new Bundle();
-        bundle.putString(JobService.JOB_TYPE_KEY, DeviceScreenState.SCREEN_STATE_JOB_TAG);
-
+    public void scheduleScreenStateWork(@Nullable Data data) {
         int delayIndex = 0;
-        if (jobParameters != null && jobParameters.getExtras() != null) {
-            final Bundle extras = jobParameters.getExtras();
-
-            // Do not schedule if there is no remaining
-            if (extras.containsKey(IAndroidNotification.ANIMATED_NOTIFICATION_COUNT_KEY) &&
-                extras.getInt(IAndroidNotification.ANIMATED_NOTIFICATION_COUNT_KEY) < 1) {
+        if (data != null) {
+            // Do not schedule if there is no remaining animated notifications
+            if (data.getInt(IAndroidNotification.ANIMATED_NOTIFICATION_COUNT_KEY, 0) < 1) {
                 return;
             }
-            delayIndex = extras.getInt(DeviceScreenState.DELAY_INDEX_KEY, -1) + 1;
+            delayIndex = data.getInt(DeviceScreenState.DELAY_INDEX_KEY, -1) + 1;
         }
         delayIndex = Math.max(0, Math.min(delayIndex, ExecutionWindow.length - 1));
-        bundle.putInt(DeviceScreenState.DELAY_INDEX_KEY, delayIndex);
+
+        final Data.Builder dataBuilder = new Data.Builder();
+        if (data != null) {
+            dataBuilder.putAll(data);
+        }
+        dataBuilder.putInt(DeviceScreenState.DELAY_INDEX_KEY, delayIndex);
 
         Teak.log.i("teak.animation", Helpers.mm.h("delay_index", delayIndex, "timestamp", new Date().getTime() / 1000));
 
         int[] executionWindow = DeviceScreenState.ExecutionWindow[delayIndex];
-        try {
-            final Job job = Teak.Instance.jobBuilder(DeviceScreenState.SCREEN_STATE_JOB_TAG, bundle)
-                                .setTrigger(Trigger.executionWindow(executionWindow[0], executionWindow[1]))
-                                .build();
-            Teak.Instance.dispatcher.mustSchedule(job);
-        } catch (Exception e) {
-            Teak.log.exception(e, false);
-        }
+        final OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(Sender.class)
+                                               .setInputData(dataBuilder.build())
+                                               .build();
+        WorkManager.getInstance(this.context)
+            .enqueueUniqueWork("io.teak.sdk.screenState", ExistingWorkPolicy.REPLACE, request);
     }
 
-    public static Callable<Boolean> isDeviceScreenOn(@NonNull final Context context, @NonNull final JobParameters jobParameters) {
-        return new Callable<Boolean>() {
-            @Override
-            public Boolean call() {
-                boolean isScreenOn = false;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-                    final DisplayManager dm = (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
-                    if (dm != null && dm.getDisplays() != null) {
-                        for (Display display : dm.getDisplays()) {
-                            final int displayState = display.getState();
-                            isScreenOn |= (displayState == Display.STATE_ON);
-                        }
+    public class DeviceScreenStateWorker extends Worker {
+        public DeviceScreenStateWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
+            super(context, workerParams);
+        }
+
+        @NonNull
+        @Override
+        public Result doWork() {
+            boolean isScreenOn = false;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+                final DisplayManager dm = (DisplayManager) this.getApplicationContext().getSystemService(Context.DISPLAY_SERVICE);
+                if (dm != null && dm.getDisplays() != null) {
+                    for (Display display : dm.getDisplays()) {
+                        final int displayState = display.getState();
+                        isScreenOn |= (displayState == Display.STATE_ON);
                     }
-                } else {
-                    final PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-                    @SuppressWarnings("deprecation")
-                    final boolean suppressDeprecation = powerManager != null && powerManager.isScreenOn();
-                    isScreenOn = suppressDeprecation;
                 }
-
-                // Broadcast to DefaultAndroidNotification
-                final Intent intent = isScreenOn ? new Intent(DeviceScreenState.SCREEN_ON) : new Intent(DeviceScreenState.SCREEN_OFF);
-                context.sendBroadcast(intent);
-
-                // Re-schedule ourselves
-                DeviceScreenState.scheduleScreenStateJob(jobParameters);
-
-                // Do not need re-schedule
-                return true;
+            } else {
+                final PowerManager powerManager = (PowerManager) this.getApplicationContext().getSystemService(Context.POWER_SERVICE);
+                @SuppressWarnings("deprecation")
+                final boolean suppressDeprecation = powerManager != null && powerManager.isScreenOn();
+                isScreenOn = suppressDeprecation;
             }
-        };
+
+            EventBus.getDefault().post(new ScreenStateEvent(isScreenOn ? State.ScreenOn : State.ScreenOff));
+
+            // Re-schedule ourselves
+            DeviceScreenState.this.scheduleScreenStateWork(this.getInputData());
+
+            return Result.success();
+        }
     }
 }

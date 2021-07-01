@@ -5,13 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import androidx.annotation.NonNull;
-import io.teak.sdk.Helpers;
-import io.teak.sdk.IntegrationChecker;
-import io.teak.sdk.Teak;
-import io.teak.sdk.io.AndroidResources;
-import io.teak.sdk.io.IAndroidResources;
-import io.teak.sdk.json.JSONObject;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -20,23 +14,19 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import androidx.annotation.NonNull;
+import io.teak.sdk.Helpers;
+import io.teak.sdk.IntegrationChecker;
+import io.teak.sdk.Teak;
+import io.teak.sdk.io.AndroidResources;
+import io.teak.sdk.io.IAndroidResources;
+import io.teak.sdk.json.JSONObject;
+
 public class AppConfiguration {
     @SuppressWarnings("WeakerAccess")
     public final String appId;
     @SuppressWarnings("WeakerAccess")
     public final String apiKey;
-    @SuppressWarnings("WeakerAccess")
-    public final String gcmSenderId;
-    @SuppressWarnings("WeakerAccess")
-    public final String firebaseAppId;
-    @SuppressWarnings("WeakerAccess")
-    public final String firebaseApiKey;
-    @SuppressWarnings("WeakerAccess")
-    public final String firebaseProjectId;
-    @SuppressWarnings("WeakerAccess")
-    public final boolean ignoreDefaultFirebaseConfiguration;
-    @SuppressWarnings("WeakerAccess")
-    public final int jobId;
     @SuppressWarnings("WeakerAccess")
     public final long appVersion;
     @SuppressWarnings("WeakerAccess")
@@ -62,18 +52,6 @@ public class AppConfiguration {
     public static final String TEAK_API_KEY_RESOURCE = "io_teak_api_key";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_APP_ID_RESOURCE = "io_teak_app_id";
-    @SuppressWarnings("WeakerAccess")
-    public static final String TEAK_GCM_SENDER_ID_RESOURCE = "io_teak_gcm_sender_id";
-    @SuppressWarnings("WeakerAccess")
-    public static final String TEAK_FIREBASE_APP_ID_RESOURCE = "io_teak_firebase_app_id";
-    @SuppressWarnings("WeakerAccess")
-    public static final String TEAK_FIREBASE_API_KEY_RESOURCE = "io_teak_firebase_api_key";
-    @SuppressWarnings("WeakerAccess")
-    public static final String TEAK_FIREBASE_PROJECT_ID_RESOURCE = "io_teak_firebase_project_id";
-    @SuppressWarnings("WeakerAccess")
-    public static final String TEAK_IGNORE_DEFAULT_FIREBASE_CONFIGURATION_RESOURCE = "io_teak_ignore_default_firebase_configuration";
-    @SuppressWarnings("WeakerAccess")
-    public static final String TEAK_JOB_ID_RESOURCE = "io_teak_job_id";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_STORE_ID = "io_teak_store_id";
     @SuppressWarnings("WeakerAccess")
@@ -127,100 +105,6 @@ public class AppConfiguration {
             } else if (this.apiKey.trim().length() < 1) {
                 throw new IntegrationChecker.InvalidConfigurationException("R.string." + TEAK_API_KEY_RESOURCE + " is empty.");
             }
-        }
-
-        // Push Sender Id
-        {
-            String tempPushSenderId = androidResources.getTeakStringResource(TEAK_GCM_SENDER_ID_RESOURCE);
-
-            // If the google-services.json file was included and processed, gcm_defaultSenderId will be present
-            // https://developers.google.com/android/guides/google-services-plugin#processing_the_json_file
-            if (tempPushSenderId == null) {
-                tempPushSenderId = androidResources.getStringResource("gcm_defaultSenderId");
-            }
-
-            this.gcmSenderId = tempPushSenderId;
-            if (this.gcmSenderId == null || this.gcmSenderId.trim().length() < 1) {
-                android.util.Log.e(IntegrationChecker.LOG_TAG, "R.string." + TEAK_GCM_SENDER_ID_RESOURCE + " not present or empty, push notifications disabled");
-            }
-        }
-
-        // Firebase App Id
-        {
-            String tempFirebaseAppId = androidResources.getTeakStringResource(TEAK_FIREBASE_APP_ID_RESOURCE);
-
-            // If the google-services.json file was included and processed, google_app_id will be present
-            // https://developers.google.com/android/guides/google-services-plugin#processing_the_json_file
-            if (tempFirebaseAppId == null) {
-                tempFirebaseAppId = androidResources.getStringResource("google_app_id");
-            }
-
-            this.firebaseAppId = tempFirebaseAppId;
-            if (this.firebaseAppId == null || this.firebaseAppId.trim().length() < 1) {
-                android.util.Log.e(IntegrationChecker.LOG_TAG, "R.string." + TEAK_FIREBASE_APP_ID_RESOURCE + " not present or empty, push notifications disabled");
-            }
-        }
-
-        // Firebase API Key
-        {
-            String tempFirebaseApiKey = androidResources.getTeakStringResource(TEAK_FIREBASE_API_KEY_RESOURCE);
-
-            // If the google-services.json file was included and processed, google_api_key will be present
-            // https://developers.google.com/android/guides/google-services-plugin#processing_the_json_file
-            if (tempFirebaseApiKey == null) {
-                tempFirebaseApiKey = androidResources.getStringResource("google_api_key");
-            }
-
-            this.firebaseApiKey = tempFirebaseApiKey;
-            if (this.firebaseApiKey == null || this.firebaseApiKey.trim().length() < 1) {
-                android.util.Log.e(IntegrationChecker.LOG_TAG, "R.string." + TEAK_FIREBASE_API_KEY_RESOURCE + " not present or empty, push notifications disabled");
-            }
-        }
-
-        // Firebase Project Id
-        {
-            String tempFirebaseProjectId = androidResources.getTeakStringResource(TEAK_FIREBASE_PROJECT_ID_RESOURCE);
-
-            // If the google-services.json file was included and processed, project_id will be present
-            // https://developers.google.com/android/guides/google-services-plugin#processing_the_json_file
-            if (tempFirebaseProjectId == null) {
-                tempFirebaseProjectId = androidResources.getStringResource("project_id");
-            }
-
-            this.firebaseProjectId = tempFirebaseProjectId;
-            if (this.firebaseProjectId == null || this.firebaseProjectId.trim().length() < 1) {
-                android.util.Log.e(IntegrationChecker.LOG_TAG, "R.string." + TEAK_FIREBASE_PROJECT_ID_RESOURCE + " not present or empty, push notifications disabled");
-            }
-        }
-
-        // Ignore the default Firebase configuration?
-        {
-            final Boolean ignoreDefaultFirebaseConfiguration = androidResources.getTeakBoolResource(TEAK_IGNORE_DEFAULT_FIREBASE_CONFIGURATION_RESOURCE, false);
-            this.ignoreDefaultFirebaseConfiguration = ignoreDefaultFirebaseConfiguration == null ? false : ignoreDefaultFirebaseConfiguration;
-        }
-
-        // Do some simple sanity checks on Firebase configuration
-        {
-            // GCM Sender Id should be contained within the Firebase App Id
-            if (this.firebaseAppId != null && this.gcmSenderId != null) {
-                final String[] parts = this.firebaseAppId.split(":");
-                if (!parts[1].equalsIgnoreCase(this.gcmSenderId)) {
-                    android.util.Log.e(IntegrationChecker.LOG_TAG, "Firebase App Id (" + this.firebaseAppId + ") mismatched with GCM Sender Id (" + this.gcmSenderId + ")");
-                    IntegrationChecker.addErrorToReport("app_configuration.gcm.mismatch", "Firebase App Id (" + this.firebaseAppId + ") mismatched with GCM Sender Id (" + this.gcmSenderId + ")");
-                }
-            }
-        }
-
-        // Job Id
-        {
-            String tempJobId = androidResources.getTeakStringResource(TEAK_JOB_ID_RESOURCE);
-
-            int jobIdAsInt = Teak.JOB_ID;
-            if (tempJobId != null && tempJobId.trim().length() > 0) {
-                jobIdAsInt = Integer.parseInt(tempJobId.trim());
-            }
-
-            this.jobId = jobIdAsInt;
         }
 
         // Store
@@ -303,12 +187,6 @@ public class AppConfiguration {
         HashMap<String, Object> ret = new HashMap<>();
         ret.put("appId", this.appId);
         ret.put("apiKey", this.apiKey);
-        ret.put("gcmSenderId", this.gcmSenderId);
-        ret.put("firebaseAppId", this.firebaseAppId);
-        ret.put("firebaseApiKey", this.firebaseApiKey);
-        ret.put("firebaseProjectId", this.firebaseProjectId);
-        ret.put("ignoreDefaultFirebaseConfiguration", this.ignoreDefaultFirebaseConfiguration);
-        ret.put("jobId", this.jobId);
         ret.put("appVersion", this.appVersion);
         ret.put("bundleId", this.bundleId);
         ret.put("installerPackage", this.installerPackage);
@@ -319,6 +197,7 @@ public class AppConfiguration {
     }
 
     @Override
+    @NonNull
     public String toString() {
         try {
             return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toMap())));

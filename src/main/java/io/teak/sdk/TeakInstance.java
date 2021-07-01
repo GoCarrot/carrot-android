@@ -11,27 +11,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import com.firebase.jobdispatcher.FirebaseJobDispatcher;
-import com.firebase.jobdispatcher.GooglePlayDriver;
-import com.firebase.jobdispatcher.Job;
-import com.firebase.jobdispatcher.RetryStrategy;
-import com.firebase.jobdispatcher.Trigger;
-import io.teak.sdk.configuration.RemoteConfiguration;
-import io.teak.sdk.core.Session;
-import io.teak.sdk.event.LifecycleEvent;
-import io.teak.sdk.event.LogoutEvent;
-import io.teak.sdk.event.PurchaseFailedEvent;
-import io.teak.sdk.event.RemoteConfigurationEvent;
-import io.teak.sdk.event.TrackEventEvent;
-import io.teak.sdk.event.UserIdEvent;
-import io.teak.sdk.json.JSONObject;
-import io.teak.sdk.push.PushState;
-import io.teak.sdk.raven.Raven;
-import io.teak.sdk.service.JobService;
-import io.teak.sdk.shortcutbadger.ShortcutBadger;
-import io.teak.sdk.store.IStore;
+
 import java.net.URLEncoder;
 import java.security.InvalidParameterException;
 import java.util.Date;
@@ -39,15 +19,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import androidx.annotation.NonNull;
+import io.teak.sdk.configuration.RemoteConfiguration;
+import io.teak.sdk.core.Session;
+import io.teak.sdk.core.TeakCore;
+import io.teak.sdk.event.LifecycleEvent;
+import io.teak.sdk.event.LogoutEvent;
+import io.teak.sdk.event.RemoteConfigurationEvent;
+import io.teak.sdk.event.TrackEventEvent;
+import io.teak.sdk.event.UserIdEvent;
+import io.teak.sdk.facebook.AccessTokenTracker;
+import io.teak.sdk.json.JSONObject;
+import io.teak.sdk.push.PushState;
+import io.teak.sdk.raven.Raven;
+import io.teak.sdk.shortcutbadger.ShortcutBadger;
+import io.teak.sdk.store.IStore;
+
 public class TeakInstance implements Unobfuscable {
     public final IObjectFactory objectFactory;
     private final Context context;
-    public final FirebaseJobDispatcher dispatcher;
+    private final TeakCore teakCore;
+    private AccessTokenTracker facebookAccessTokenTracker;
 
     private static final String PREFERENCE_FIRST_RUN = "io.teak.sdk.Preferences.FirstRun";
 
     @SuppressLint("ObsoleteSdkInt")
-    TeakInstance(@NonNull Activity activity, @NonNull final IObjectFactory objectFactory) throws IntegrationChecker.MissingDependencyException {
+    TeakInstance(@NonNull Activity activity, @NonNull final IObjectFactory objectFactory) {
         //noinspection all -- Disable warning on the null check
         if (activity == null) {
             throw new InvalidParameterException("null Activity passed to Teak.onCreate");
@@ -56,42 +53,27 @@ public class TeakInstance implements Unobfuscable {
         this.context = activity.getApplicationContext();
         this.activityHashCode = activity.hashCode();
         this.objectFactory = objectFactory;
+        this.teakCore = new TeakCore(this.context);
         PushState.init(this.context);
 
-        // Start Teak job dispatcher
-        FirebaseJobDispatcher dispatcher = null;
-        try {
-            Class.forName("com.firebase.jobdispatcher.FirebaseJobDispatcher");
-            dispatcher = new FirebaseJobDispatcher(new GooglePlayDriver(this.context));
-        } catch (Exception e) {
-            Teak.log.exception(e, false);
-        }
-        this.dispatcher = dispatcher;
-
         // Ravens
-        TeakConfiguration.addEventListener(new TeakConfiguration.EventListener() {
-            @Override
-            public void onConfigurationReady(@NonNull TeakConfiguration configuration) {
-                TeakInstance.this.sdkRaven = new Raven(context, "sdk", configuration, objectFactory);
-                TeakInstance.this.appRaven = new Raven(context, configuration.appConfiguration.bundleId, configuration, objectFactory);
-            }
+        TeakConfiguration.addEventListener(configuration -> {
+            TeakInstance.this.sdkRaven = new Raven(context, "sdk", configuration, objectFactory);
+            TeakInstance.this.appRaven = new Raven(context, configuration.appConfiguration.bundleId, configuration, objectFactory);
         });
 
-        TeakEvent.addEventListener(new TeakEvent.EventListener() {
-            @Override
-            public void onNewEvent(@NonNull TeakEvent event) {
-                if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
-                    final RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
+        TeakEvent.addEventListener(event -> {
+            if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
+                final RemoteConfiguration remoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
 
-                    if (remoteConfiguration.sdkSentryDsn != null && TeakInstance.this.sdkRaven != null) {
-                        TeakInstance.this.sdkRaven.setDsn(remoteConfiguration.sdkSentryDsn);
-                    }
+                if (remoteConfiguration.sdkSentryDsn != null && TeakInstance.this.sdkRaven != null) {
+                    TeakInstance.this.sdkRaven.setDsn(remoteConfiguration.sdkSentryDsn);
+                }
 
-                    if (remoteConfiguration.appSentryDsn != null && TeakInstance.this.appRaven != null) {
-                        TeakInstance.this.appRaven.setDsn(remoteConfiguration.appSentryDsn);
-                        if (!android.os.Debug.isDebuggerConnected()) {
-                            TeakInstance.this.appRaven.setAsUncaughtExceptionHandler();
-                        }
+                if (remoteConfiguration.appSentryDsn != null && TeakInstance.this.appRaven != null) {
+                    TeakInstance.this.appRaven.setDsn(remoteConfiguration.appSentryDsn);
+                    if (!android.os.Debug.isDebuggerConnected()) {
+                        TeakInstance.this.appRaven.setAsUncaughtExceptionHandler();
                     }
                 }
             }
@@ -120,12 +102,12 @@ public class TeakInstance implements Unobfuscable {
 
     private void cleanup(Activity activity) {
         if (this.appStore != null) {
-            this.appStore.dispose();
             this.appStore = null;
         }
 
-        if (this.facebookAccessTokenBroadcast != null) {
-            this.facebookAccessTokenBroadcast.unregister();
+        if (this.facebookAccessTokenTracker != null) {
+            this.facebookAccessTokenTracker.stopTracking();
+            this.facebookAccessTokenTracker = null;
         }
 
         activity.getApplication().unregisterActivityLifecycleCallbacks(this.lifecycleCallbacks);
@@ -149,7 +131,7 @@ public class TeakInstance implements Unobfuscable {
     ///// logout
 
     void logout() {
-        Teak.log.i("logout", new HashMap<String, Object>());
+        Teak.log.i("logout", new HashMap<>());
 
         if (this.isEnabled()) {
             TeakEvent.postEvent(new LogoutEvent());
@@ -190,23 +172,17 @@ public class TeakInstance implements Unobfuscable {
     ///// Player profile
 
     void setNumericAttribute(final String attributeName, final double attributeValue) {
-        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
-            @Override
-            public void run(Session session) {
-                if (session.userProfile != null) {
-                    session.userProfile.setNumericAttribute(attributeName, attributeValue);
-                }
+        Session.whenUserIdIsReadyRun(session -> {
+            if (session.userProfile != null) {
+                session.userProfile.setNumericAttribute(attributeName, attributeValue);
             }
         });
     }
 
     void setStringAttribute(final String attributeName, final String attributeValue) {
-        Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
-            @Override
-            public void run(Session session) {
-                if (session.userProfile != null) {
-                    session.userProfile.setStringAttribute(attributeName, attributeValue);
-                }
+        Session.whenUserIdIsReadyRun(session -> {
+            if (session.userProfile != null) {
+                session.userProfile.setStringAttribute(attributeName, attributeValue);
             }
         });
     }
@@ -327,38 +303,15 @@ public class TeakInstance implements Unobfuscable {
         }
     }
 
-    ///// Purchase
+    ///// Purchase Tracking
 
     private IStore appStore;
-
-    void purchaseSucceeded(String purchaseString, @Nullable Map<String, Object> extras) {
-        if (this.appStore != null) {
-            this.appStore.processPurchase(purchaseString, extras);
-        } else {
-            Teak.log.e("purchase.succeeded.error", "Unable to process purchaseSucceeded, no active app store.");
-        }
-    }
-
-    void purchaseFailed(int errorCode, @Nullable Map<String, Object> extras) {
-        TeakEvent.postEvent(new PurchaseFailedEvent(errorCode, extras));
-    }
-
-    void checkActivityResultForPurchase(int resultCode, Intent data) {
-        if (this.isEnabled()) {
-            if (this.appStore != null) {
-                this.appStore.checkActivityResultForPurchase(resultCode, data);
-            } else {
-                Teak.log.e("purchase.failed.error", "Unable to checkActivityResultForPurchase, no active app store.");
-            }
-        }
-    }
 
     ///// Activity Lifecycle
 
     private final int activityHashCode;
-    private FacebookAccessTokenBroadcast facebookAccessTokenBroadcast;
 
-    // Needs to be public for Adobe Air Application workaround
+    // Needs to be public for TeakInitProvider
     @SuppressWarnings("WeakerAccess")
     public final Application.ActivityLifecycleCallbacks lifecycleCallbacks = new Application.ActivityLifecycleCallbacks() {
         @Override
@@ -368,14 +321,15 @@ public class TeakInstance implements Unobfuscable {
 
                 final Context context = activity.getApplicationContext();
 
-                // Create IStore
+                // Get IStore
                 appStore = objectFactory.getIStore();
-                if (appStore != null) {
-                    appStore.init(context);
-                }
 
-                // Facebook Access Token Broadcaster
-                facebookAccessTokenBroadcast = new FacebookAccessTokenBroadcast(context);
+                // Facebook Access Token Tracker
+                try {
+                    Class.forName("com.facebook.AccessTokenTracker");
+                    TeakInstance.this.facebookAccessTokenTracker = new AccessTokenTracker();
+                } catch (Exception ignored) {
+                }
 
                 Intent intent = activity.getIntent();
                 if (intent == null) {
@@ -442,6 +396,10 @@ public class TeakInstance implements Unobfuscable {
         public void onActivityDestroyed(Activity activity) {
             if (activity.hashCode() == activityHashCode && setState(State.Destroyed)) {
                 Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityDestroyed"));
+
+                if (TeakInstance.this.facebookAccessTokenTracker != null) {
+                    TeakInstance.this.facebookAccessTokenTracker.stopTracking();
+                }
             }
         }
 
@@ -464,50 +422,38 @@ public class TeakInstance implements Unobfuscable {
     ///// Built-in deep links
 
     private void registerTeakInternalDeepLinks() {
-        Teak.registerDeepLink("/teak_internal/store/:sku", "", "", new Teak.DeepLink() {
-            @Override
-            public void call(Map<String, Object> params) {
-                if (TeakInstance.this.appStore != null) {
-                    TeakInstance.this.appStore.launchPurchaseFlowForSKU((String) params.get("sku"));
-                }
-            }
-        });
-
         Teak.registerDeepLink("/teak_internal/companion", "", "", new Teak.DeepLink() {
             @Override
             public void call(Map<String, Object> params) {
-                Session.whenUserIdIsReadyRun(new Session.SessionRunnable() {
-                    @Override
-                    public void run(Session session) {
-                        final TeakConfiguration teakConfiguration = TeakConfiguration.get();
-                        String key;
-                        String value;
-                        try {
-                            JSONObject params = new JSONObject();
-                            params.put("user_id", session.userId());
-                            params.put("device_id", teakConfiguration.deviceConfiguration.deviceId);
-                            key = "response";
-                            value = params.toString();
-                        } catch (Exception e) {
-                            key = "error";
-                            value = e.toString();
-                            Teak.log.exception(e);
-                        }
+                Session.whenUserIdIsReadyRun(session -> {
+                    final TeakConfiguration teakConfiguration = TeakConfiguration.get();
+                    String key;
+                    String value;
+                    try {
+                        JSONObject params1 = new JSONObject();
+                        params1.put("user_id", session.userId());
+                        params1.put("device_id", teakConfiguration.deviceConfiguration.deviceId);
+                        key = "response";
+                        value = params1.toString();
+                    } catch (Exception e) {
+                        key = "error";
+                        value = e.toString();
+                        Teak.log.exception(e);
+                    }
 
-                        try {
-                            final String uriString = "teak:///callback?" + key + "=" + URLEncoder.encode(value, "UTF-8");
-                            final Intent uriIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(uriString));
-                            uriIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            final List<ResolveInfo> resolvedActivities = teakConfiguration.appConfiguration.packageManager.queryIntentActivities(uriIntent, 0);
-                            for (ResolveInfo info : resolvedActivities) {
-                                if ("io.teak.app.Teak".equalsIgnoreCase(info.activityInfo.packageName)) {
-                                    teakConfiguration.appConfiguration.applicationContext.startActivity(uriIntent);
-                                    break;
-                                }
+                    try {
+                        final String uriString = "teak:///callback?" + key + "=" + URLEncoder.encode(value, "UTF-8");
+                        final Intent uriIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(uriString));
+                        uriIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        final List<ResolveInfo> resolvedActivities = teakConfiguration.appConfiguration.packageManager.queryIntentActivities(uriIntent, 0);
+                        for (ResolveInfo info : resolvedActivities) {
+                            if ("io.teak.app.Teak".equalsIgnoreCase(info.activityInfo.packageName)) {
+                                teakConfiguration.appConfiguration.applicationContext.startActivity(uriIntent);
+                                break;
                             }
-                        } catch (Exception e) {
-                            Teak.log.exception(e);
                         }
+                    } catch (Exception e) {
+                        Teak.log.exception(e);
                     }
                 });
             }
@@ -521,17 +467,5 @@ public class TeakInstance implements Unobfuscable {
                 }
             }
         });
-    }
-
-    ///// JobService
-
-    public Job.Builder jobBuilder(@NonNull String tag, @NonNull Bundle extras) {
-        return this.dispatcher.newJobBuilder()
-            .setService(JobService.class)
-            .setTag(tag)
-            .setExtras(extras)
-            .setTrigger(Trigger.NOW)
-            .setReplaceCurrent(true)
-            .setRetryStrategy(RetryStrategy.DEFAULT_LINEAR);
     }
 }
