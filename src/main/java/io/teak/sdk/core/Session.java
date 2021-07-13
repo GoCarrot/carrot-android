@@ -1100,20 +1100,21 @@ public class Session {
 
                             Teak.log.i("deep_link.request.reply", response.toString());
 
-                        try {
-                            JSONObject teakData = new JSONObject(response.toString());
-                            if (teakData.getString("AndroidPath") != null) {
-                                final String androidPath = teakData.getString("AndroidPath");
-                                final Pattern pattern = Pattern.compile("^[a-zA-Z0-9+.\\-_]*:");
-                                final Matcher matcher = pattern.matcher(androidPath);
-                                if(matcher.find()) {
-                                    uri = Uri.parse(androidPath);
-                                } else {
-                                    uri = Uri.parse(String.format(Locale.US, "teak%s://%s", teakConfiguration.appConfiguration.appId, androidPath));
-                                }
+                            try {
+                                JSONObject teakData = new JSONObject(response.toString());
+                                if (teakData.getString("AndroidPath") != null) {
+                                    final String androidPath = teakData.getString("AndroidPath");
+                                    final Pattern pattern = Pattern.compile("^[a-zA-Z0-9+.\\-_]*:");
+                                    final Matcher matcher = pattern.matcher(androidPath);
+                                    if(matcher.find()) {
+                                        uri = Uri.parse(androidPath);
+                                    } else {
+                                        uri = Uri.parse(String.format(Locale.US, "teak%s://%s", teakConfiguration.appConfiguration.appId, androidPath));
+                                    }
 
-                                Teak.log.i("deep_link.request.resolve", uri.toString());
-                                TeakEvent.postEvent(new LaunchedFromLinkEvent(teakData));
+                                    Teak.log.i("deep_link.request.resolve", uri.toString());
+                                    TeakEvent.postEvent(new LaunchedFromLinkEvent(teakData));
+                                }
                             } catch (Exception e) {
                                 Teak.log.exception(e);
                             }
