@@ -71,7 +71,8 @@
 
         <!-- FCM ID Listener Service -->
         <service android:name="io.teak.sdk.push.FCMPushProvider"
-                 android:stopWithTask="false">
+                 android:stopWithTask="false"
+                 android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
                 <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
@@ -96,7 +97,8 @@
         <!-- ADM -->
         <receiver
             android:name="io.teak.sdk.push.ADMPushProvider$MessageAlertReceiver"
-            android:permission="com.amazon.device.messaging.permission.SEND" >
+            android:permission="com.amazon.device.messaging.permission.SEND"
+            android:exported="true">
             <intent-filter>
                 <action android:name="com.amazon.device.messaging.intent.REGISTRATION" />
                 <action android:name="com.amazon.device.messaging.intent.RECEIVE" />
