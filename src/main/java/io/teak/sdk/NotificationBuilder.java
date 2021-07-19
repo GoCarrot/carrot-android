@@ -276,7 +276,7 @@ public class NotificationBuilder {
                 Intent pushOpenedIntent = new Intent(action);
                 pushOpenedIntent.putExtras(bundleCopy);
                 pushOpenedIntent.setComponent(cn);
-                return PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
+                return PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
             }
 
             PendingIntent get(String action) {

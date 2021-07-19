@@ -212,13 +212,13 @@ public class DefaultAndroidNotification implements IAndroidNotification {
                         Intent pushClearedIntent = new Intent(event.context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX);
                         pushClearedIntent.putExtras(entry.bundle);
                         pushClearedIntent.setComponent(cn);
-                        entry.notification.deleteIntent = PendingIntent.getBroadcast(event.context, rng.nextInt(), pushClearedIntent, PendingIntent.FLAG_ONE_SHOT);
+                        entry.notification.deleteIntent = PendingIntent.getBroadcast(event.context, rng.nextInt(), pushClearedIntent, PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
 
                         // Create intent to fire if/when notification is opened, attach bundle info
                         Intent pushOpenedIntent = new Intent(event.context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX);
                         pushOpenedIntent.putExtras(entry.bundle);
                         pushOpenedIntent.setComponent(cn);
-                        entry.notification.contentIntent = PendingIntent.getBroadcast(event.context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
+                        entry.notification.contentIntent = PendingIntent.getBroadcast(event.context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
 
                         DefaultAndroidNotification.this.notificationManager.notify(NOTIFICATION_TAG, entry.bundle.getInt("platformId"), entry.notification);
                         TeakEvent.postEvent(new NotificationReDisplayEvent(entry.bundle, entry.notification));
