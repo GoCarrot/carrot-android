@@ -4,6 +4,7 @@ import android.app.Notification;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
 import java.util.HashMap;
@@ -219,9 +220,11 @@ public class TeakCore {
                             }
                             context.startActivity(launchIntent);
 
-                            // Close notification tray
-                            final Intent it = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
-                            context.sendBroadcast(it);
+                            // Close notification tray if we are not on Android 12+
+                            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                                final Intent it = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
+                                context.sendBroadcast(it);
+                            }
                         }
                     }
                     break;
