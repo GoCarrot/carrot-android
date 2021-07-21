@@ -6,7 +6,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Debug;
+import android.os.StrictMode;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -125,11 +128,20 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
             if (intentData.getBooleanQueryParameter("teak_debug", false) &&
                 (activity.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
-                android.os.Debug.waitForDebugger();
+                Debug.waitForDebugger();
             }
 
             if (intentData.getBooleanQueryParameter("teak_mutex_report", false)) {
                 InstrumentableReentrantLock.interruptLongLocksAndReport = true;
+            }
+
+            if (intentData.getBooleanQueryParameter("teak_strict_mode", false)) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+                            .detectNonSdkApiUsage()
+                            .penaltyLog()
+                            .build());
+                }
             }
         }
 
