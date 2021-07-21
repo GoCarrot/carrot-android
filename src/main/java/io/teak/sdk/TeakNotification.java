@@ -30,7 +30,6 @@ import io.teak.sdk.json.JSONObject;
  * <pre>
  * {@code
  * {
- *   [noAutolaunch] : boolean - automatically launch the app when a push notification is 'opened',
  *   [teakRewardId] : string  - associated Teak Reward Id,
  *   [deepLink]     : string  - a deep link to navigate to on launch,
  *   teakNotifId    : string  - associated Teak Notification Id,
