@@ -100,6 +100,10 @@ public class ADMPushProvider implements IPushProvider, Unobfuscable {
             Teak.log.e("amazon.adm.null_teak_core", "TeakCore.getWithoutThrow returned null.");
         }
 
+        // "external" is used to chain FCM receivers and so ADM output should match, even though
+        // we do not support chaining ADM receivers.
+        Teak.log.i("amazon.adm.received", Helpers.mm.h("external", false));
+
         if (intent.hasExtra("teakAdm")) {
             JSONObject teakAdm = new JSONObject(intent.getStringExtra("teakAdm"));
             intent.putExtras(Helpers.jsonToGCMBundle(teakAdm));

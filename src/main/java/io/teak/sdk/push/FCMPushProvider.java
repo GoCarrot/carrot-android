@@ -97,6 +97,12 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
      */
     @SuppressWarnings("unused")
     public static void onMessageReceivedExternal(RemoteMessage remoteMessage, Context context) {
+        FCMPushProvider.onMessageReceivedExternal(remoteMessage, context, true);
+    }
+
+    private static void onMessageReceivedExternal(RemoteMessage remoteMessage, Context context, boolean wasActuallyExternal) {
+        Teak.log.i("google.fcm.received", Helpers.mm.h("external", wasActuallyExternal));
+
         // Future-Pat, the RemoteMessage.toIntent method doesn't seem to exist all the time
         // so don't rely on it.
         final Intent intent = new Intent().putExtras(welcomeToTheBundle(remoteMessage.getData()));
@@ -120,7 +126,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
 
         // Future-Pat, this method will only be invoked via an incoming message,
         // in which case getApplicationContext() will work
-        FCMPushProvider.onMessageReceivedExternal(remoteMessage, getApplicationContext());
+        FCMPushProvider.onMessageReceivedExternal(remoteMessage, getApplicationContext(), false);
     }
 
     //// IPushProvider
