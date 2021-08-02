@@ -1031,7 +1031,9 @@ public class Session {
 
                 if (rewardFuture != null) {
                     final String teakNotifId = attribution.containsKey("teak_notif_id") ? attribution.get("teak_notif_id").toString() : null;
-                    final String teakRewardLinkName = attribution.containsKey("teak_rewardlink_name") ? attribution.get("teak_rewardlink_name").toString() : null;
+                    final String teakRewardLinkName = attribution.containsKey("teak_rewardlink_name") ?
+                            attribution.get("teak_rewardlink_name").toString() :
+                            (attribution.containsKey("teak_creative_name") ? attribution.get("teak_creative_name").toString() : null);
                     final String teakRewardLinkId = attribution.containsKey("teak_rewardlink_id") ? attribution.get("teak_rewardlink_id").toString() : null;
                     final String teakChannelName = attribution.containsKey("teak_channel_name") ? attribution.get("teak_channel_name").toString() : null;
                     // Future-Pat: Attribution can also contain 'teak_rewardlink_id' if we ever need it
