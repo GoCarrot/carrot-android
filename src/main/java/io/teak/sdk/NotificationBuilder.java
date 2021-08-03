@@ -22,10 +22,8 @@ import android.os.Looper;
 import android.text.Html;
 import android.text.Spanned;
 import android.text.SpannedString;
-import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -137,12 +135,6 @@ public class NotificationBuilder {
         // Get the memory class here, don't rely on TeakConfiguration
         final ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         final int deviceMemoryClass = am == null ? 0 : am.getMemoryClass();
-
-        final DisplayMetrics displayMetrics = new DisplayMetrics();
-        final WindowManager wm = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE));
-        if (wm != null) {
-            wm.getDefaultDisplay().getMetrics(displayMetrics);
-        }
 
         // For Android 11+ it will remove RemoteViews over a certain size, get that size
         final int config_notificationStripRemoteViewSizeBytes_Id = context.getResources().getIdentifier("config_notificationStripRemoteViewSizeBytes", "integer", "android");
@@ -563,7 +555,6 @@ public class NotificationBuilder {
                         // Add the "well behaved heap size" as a query param
                         final Uri.Builder uriBuilder = Uri.parse(bitmapUriString).buildUpon();
                         uriBuilder.appendQueryParameter("device_memory_class", String.valueOf(deviceMemoryClass));
-                        uriBuilder.appendQueryParameter("scaled_density", String.valueOf(displayMetrics.scaledDensity));
                         if (config_notificationStripRemoteViewSizeBytes > 0) {
                             uriBuilder.appendQueryParameter("remote_view_byte_limit", String.valueOf(config_notificationStripRemoteViewSizeBytes));
                         }
