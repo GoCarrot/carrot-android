@@ -73,10 +73,27 @@ public class Helpers {
         return b.getBoolean(key);
     }
 
-    public static boolean isAmazonDevice(final @NonNull Context context) {
+    @SuppressWarnings("deprecation")
+    public static String getInstallerPackage(final @NonNull Context context) {
         final String bundleId = context.getPackageName();
         final PackageManager packageManager = context.getPackageManager();
-        final String installerPackage = packageManager == null ? null : packageManager.getInstallerPackageName(bundleId);
+        if (packageManager == null) {
+            return null;
+        }
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                return packageManager.getInstallSourceInfo(bundleId).getInstallingPackageName();
+            }
+
+            return packageManager.getInstallerPackageName(bundleId);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    public static boolean isAmazonDevice(final @NonNull Context context) {
+        final String installerPackage = Helpers.getInstallerPackage(context);
         return "amazon".equalsIgnoreCase(Build.MANUFACTURER) ||
             "com.amazon.venezia".equals(installerPackage);
     }

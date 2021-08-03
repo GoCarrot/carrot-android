@@ -157,7 +157,7 @@ public class AppConfiguration {
 
         // Get the installer package
         {
-            this.installerPackage = this.packageManager.getInstallerPackageName(this.bundleId);
+            this.installerPackage = Helpers.getInstallerPackage(context);
         }
 
         // Trace log mode
