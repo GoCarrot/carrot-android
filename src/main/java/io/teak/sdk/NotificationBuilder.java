@@ -34,7 +34,6 @@ import android.widget.ViewFlipper;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -334,21 +333,6 @@ public class NotificationBuilder {
             }
         }
 
-        // Notification builder
-        Notification tempNotification;
-        try {
-            tempNotification = builder.build();
-        } catch (Exception e) {
-            if (!bundle.getBoolean("teakUnitTest")) {
-                throw e;
-            } else {
-                final Notification notification = new Notification();
-                notification.flags = Integer.MAX_VALUE;
-                return notification;
-            }
-        }
-        final Notification nativeNotification = tempNotification;
-
         class ViewBuilder {
             private RemoteViews buildViews(String name, boolean isLargeView) throws Exception {
                 // Run the GC
@@ -644,18 +628,16 @@ public class NotificationBuilder {
                 }
             }
         }
-        ViewBuilder viewBuilder = new ViewBuilder();
+        final ViewBuilder viewBuilder = new ViewBuilder();
 
-        // Configure 'contentView'
-        class Deprecated {
-            @SuppressWarnings("deprecation")
-            private void assignDeprecated(RemoteViews remoteViews) {
-                nativeNotification.contentView = remoteViews;
-            }
-        }
-        final Deprecated deprecated = new Deprecated();
-        deprecated.assignDeprecated(viewBuilder.buildViews(teakNotificaton.display.getString("contentView")));
+        // Build small content view
+        final String contentView = teakNotificaton.display.getString("contentView");
+        final RemoteViews smallContentView = viewBuilder.buildViews(contentView);
 
+        // Assign content view
+        builder.setCustomContentView(smallContentView);
+
+        // Build big content view
         RemoteViews bigContentView = null;
         if (teakNotificaton.display.has("bigContentView")) {
             try {
@@ -679,11 +661,20 @@ public class NotificationBuilder {
 
         // Assign expanded view if it's there
         if (bigContentView != null) {
-            try {
-                // Use reflection to avoid compile-time issues
-                final Field bigContentViewField = nativeNotification.getClass().getField("bigContentView");
-                bigContentViewField.set(nativeNotification, bigContentView);
-            } catch (Exception ignored) {
+            builder.setCustomBigContentView(bigContentView);
+        }
+
+        // Notification builder
+        Notification nativeNotification;
+        try {
+            nativeNotification = builder.build();
+        } catch (Exception e) {
+            if (!bundle.getBoolean("teakUnitTest")) {
+                throw e;
+            } else {
+                final Notification notification = new Notification();
+                notification.flags = Integer.MAX_VALUE;
+                return notification;
             }
         }
 
