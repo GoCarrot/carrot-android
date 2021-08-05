@@ -656,9 +656,8 @@ public class NotificationBuilder {
         final Deprecated deprecated = new Deprecated();
         deprecated.assignDeprecated(viewBuilder.buildViews(teakNotificaton.display.getString("contentView")));
 
-        // Check for Jellybean (API 16, 4.1)+ for expanded view
         RemoteViews bigContentView = null;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && teakNotificaton.display.has("bigContentView")) {
+        if (teakNotificaton.display.has("bigContentView")) {
             try {
                 bigContentView = viewBuilder.buildLargeViews(teakNotificaton.display.getString("bigContentView"));
 
