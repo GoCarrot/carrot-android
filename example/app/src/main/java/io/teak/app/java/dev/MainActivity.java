@@ -308,9 +308,8 @@ public class MainActivity extends AppCompatActivity {
         // Schedule Notification
         scheduleTestNotification("Animated", "Default text", "5");
 
-        final Intent i = new Intent(Intent.ACTION_MAIN);
-        i.addCategory(Intent.CATEGORY_HOME);
-        this.startActivity(i);
+        // Background the app
+        moveTaskToBack(true);
 
         // Simulate Notification
 //        final Handler handler = new Handler();
