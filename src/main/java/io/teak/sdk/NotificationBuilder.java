@@ -179,7 +179,7 @@ public class NotificationBuilder {
         }
         final IdHelper R = new IdHelper(); // Declaring local as 'R' ensures we don't accidentally use the other R
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
+        final NotificationCompat.Builder builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
         builder.setGroup(UUID.randomUUID().toString());
 
         // Set visibility of our notifications to public
@@ -662,6 +662,10 @@ public class NotificationBuilder {
         // Assign expanded view if it's there
         if (bigContentView != null) {
             builder.setCustomBigContentView(bigContentView);
+        } else {
+            // All notifications are expandable for apps targeting Android 12.
+            // This will ensure the view is the same if it gets expanded.
+            builder.setCustomBigContentView(smallContentView);
         }
 
         // Notification builder
