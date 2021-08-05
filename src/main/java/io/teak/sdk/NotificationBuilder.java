@@ -50,6 +50,7 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
 
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.TaskStackBuilder;
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONObject;
 
@@ -259,30 +260,71 @@ public class NotificationBuilder {
         final Random rng = new Random();
         final ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
         class PendingIntentHelper {
-            PendingIntent forActionButton(String action, String deepLink) {
-                Bundle bundleCopy = new Bundle(bundle);
+            PendingIntent getTrampolineIntent(String deepLink) {
+                final String action = context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX;
+                final Bundle bundleCopy = new Bundle(bundle);
                 if (deepLink != null) {
                     bundleCopy.putString("teakDeepLink", deepLink);
                     bundleCopy.putBoolean("closeSystemDialogs", true);
                 }
-                Intent pushOpenedIntent = new Intent(action);
+                final Intent pushOpenedIntent = new Intent(action);
                 pushOpenedIntent.putExtras(bundleCopy);
                 pushOpenedIntent.setComponent(cn);
-                return PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
+                int flags = PendingIntent.FLAG_ONE_SHOT;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    flags |= PendingIntent.FLAG_IMMUTABLE;
+                }
+                return PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, flags);
             }
 
-            PendingIntent get(String action) {
-                return forActionButton(action, null);
+            PendingIntent getDeleteIntent() {
+                final String action = context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX;
+                final Bundle bundleCopy = new Bundle(bundle);
+                final Intent deleteIntent = new Intent(action);
+                deleteIntent.putExtras(bundleCopy);
+                deleteIntent.setComponent(cn);
+                int flags = PendingIntent.FLAG_ONE_SHOT;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    flags |= PendingIntent.FLAG_IMMUTABLE;
+                }
+                return PendingIntent.getBroadcast(context, rng.nextInt(), deleteIntent, flags);
+            }
+
+            PendingIntent getLaunchIntent(String deepLink) {
+                final Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+                if (launchIntent == null) {
+                    return null;
+                }
+
+                final Bundle bundleCopy = new Bundle(bundle);
+                bundleCopy.putBoolean("closeSystemDialogs", true);
+
+                launchIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+                launchIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                launchIntent.putExtras(bundleCopy);
+                if (deepLink != null) {
+                    Uri teakDeepLink = Uri.parse(deepLink);
+                    launchIntent.setData(teakDeepLink);
+                }
+
+                TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
+                stackBuilder.addNextIntentWithParentStack(launchIntent);
+                return stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
             }
         }
         final PendingIntentHelper pendingIntent = new PendingIntentHelper();
 
         try {
             // Create intent to fire if/when notification is cleared
-            builder.setDeleteIntent(pendingIntent.get(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX));
+            builder.setDeleteIntent(pendingIntent.getDeleteIntent());
 
-            // Create intent to fire if/when notification is opened, attach bundle info
-            builder.setContentIntent(pendingIntent.get(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX));
+            // If this is Android 11 or 12, direct-launch the app
+            if (true || Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                builder.setContentIntent(pendingIntent.getLaunchIntent(null));
+            } else {
+                // Create intent to fire if/when notification is opened, attach bundle info
+                builder.setContentIntent(pendingIntent.getTrampolineIntent(null));
+            }
         } catch (Exception e) {
             if (!bundle.getBoolean("teakUnitTest")) {
                 throw e;
@@ -357,8 +399,7 @@ public class NotificationBuilder {
                         final JSONObject buttonConfig = viewConfig.getJSONObject(key);
                         remoteViews.setTextViewText(viewElementId, buttonConfig.getString("text"));
                         String deepLink = buttonConfig.has("deepLink") ? buttonConfig.getString("deepLink") : null;
-                        remoteViews.setOnClickPendingIntent(viewElementId, pendingIntent.forActionButton(
-                                                                               context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX, deepLink));
+                        remoteViews.setOnClickPendingIntent(viewElementId, pendingIntent.getTrampolineIntent(deepLink));
                     } else if (isUIType(viewElement, TextView.class)) {
                         final String value = viewConfig.getString(key);
                         remoteViews.setTextViewText(viewElementId, fromHtml(value));
