@@ -199,15 +199,13 @@ public class TeakCore {
                     final Bundle bundle = intent.getExtras();
                     if (bundle == null) break;
 
-                    final boolean autoLaunch = !Helpers.getBooleanFromBundle(bundle, "noAutolaunch");
                     Teak.log.i("notification.opened",
                         Helpers.mm.h("teakNotifId", bundle.getString("teakNotifId"),
-                            "autoLaunch", autoLaunch,
                             "teakNotificationPlacement", bundle.getString("teakNotificationPlacement")));
 
                     // Launch the app
                     final Context context = ((PushNotificationEvent) event).context;
-                    if (context != null && autoLaunch) {
+                    if (context != null) {
                         final Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
 
                         if (launchIntent != null) {
