@@ -50,7 +50,6 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
 
 import androidx.core.app.NotificationCompat;
-import androidx.core.app.TaskStackBuilder;
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONObject;
 
@@ -298,18 +297,22 @@ public class NotificationBuilder {
 
                 final Bundle bundleCopy = new Bundle(bundle);
                 bundleCopy.putBoolean("closeSystemDialogs", true);
-
-                launchIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-                launchIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 launchIntent.putExtras(bundleCopy);
+
+                // https://stackoverflow.com/questions/5502427/resume-application-and-stack-from-notification/5502950#5502950
+                launchIntent.setPackage(null);
+                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+
                 if (deepLink != null) {
                     Uri teakDeepLink = Uri.parse(deepLink);
                     launchIntent.setData(teakDeepLink);
                 }
 
-                TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
-                stackBuilder.addNextIntentWithParentStack(launchIntent);
-                return stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+                int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    flags |= PendingIntent.FLAG_IMMUTABLE;
+                }
+                return PendingIntent.getActivity(context, 0, launchIntent, flags);
             }
         }
         final PendingIntentHelper pendingIntent = new PendingIntentHelper();
@@ -319,7 +322,7 @@ public class NotificationBuilder {
             builder.setDeleteIntent(pendingIntent.getDeleteIntent());
 
             // If this is Android 11 or 12, direct-launch the app
-            if (true || Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 builder.setContentIntent(pendingIntent.getLaunchIntent(null));
             } else {
                 // Create intent to fire if/when notification is opened, attach bundle info
