@@ -84,7 +84,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
     @SuppressWarnings("unused")
     public static boolean isTeakNotification(RemoteMessage remoteMessage) {
         final Map<String, String> data = remoteMessage.getData();
-        return data != null && data.containsKey("teakNotifId");
+        return data.containsKey("teakNotifId");
     }
 
     /**
@@ -146,9 +146,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
         } else {
             try {
                 final Task<String> instanceIdTask = FirebaseMessaging.getInstance().getToken();
-                instanceIdTask.addOnSuccessListener(registrationId -> {
-                    this.onNewToken(registrationId.toString());
-                });
+                instanceIdTask.addOnSuccessListener(this::onNewToken);
 
                 instanceIdTask.addOnFailureListener(e -> Teak.log.exception(e));
             } catch (Exception e) {
