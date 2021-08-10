@@ -423,13 +423,16 @@ public class Session {
                     payload.put("android_ad_id", "");
                 }
 
-                if (teakConfiguration.dataCollectionConfiguration.enableFacebookAccessToken()) {
-                    if (Session.this.facebookAccessToken == null) {
-                        Session.this.facebookAccessToken = Helpers.getCurrentFacebookAccessToken();
-                    }
+                // Reporting Facebook Access Token will be removed in SDK 5
+                if (!teakConfiguration.appConfiguration.sdk5Behaviors) {
+                    if (teakConfiguration.dataCollectionConfiguration.enableFacebookAccessToken()) {
+                        if (Session.this.facebookAccessToken == null) {
+                            Session.this.facebookAccessToken = Helpers.getCurrentFacebookAccessToken();
+                        }
 
-                    if (Session.this.facebookAccessToken != null) {
-                        payload.put("access_token", Session.this.facebookAccessToken);
+                        if (Session.this.facebookAccessToken != null) {
+                            payload.put("access_token", Session.this.facebookAccessToken);
+                        }
                     }
                 }
 

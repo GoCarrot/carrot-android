@@ -325,10 +325,14 @@ public class TeakInstance implements Unobfuscable {
                 appStore = objectFactory.getIStore();
 
                 // Facebook Access Token Tracker
-                try {
-                    Class.forName("com.facebook.AccessTokenTracker");
-                    TeakInstance.this.facebookAccessTokenTracker = new AccessTokenTracker();
-                } catch (Exception ignored) {
+                // This will be removed in SDK 5
+                final TeakConfiguration teakConfiguration = TeakConfiguration.get();
+                if (!teakConfiguration.appConfiguration.sdk5Behaviors) {
+                    try {
+                        Class.forName("com.facebook.AccessTokenTracker");
+                        TeakInstance.this.facebookAccessTokenTracker = new AccessTokenTracker();
+                    } catch (Exception ignored) {
+                    }
                 }
 
                 Intent intent = activity.getIntent();
