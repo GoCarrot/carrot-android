@@ -125,6 +125,7 @@ public class Session {
     private ScheduledExecutorService heartbeatService;
     private String countryCode;
     private String facebookAccessToken;
+    private String facebookId;
 
     public UserProfile userProfile;
 
@@ -138,6 +139,7 @@ public class Session {
     // For cases where setUserId() is called before a Session has been created
     private static String pendingUserId;
     private static String pendingEmail;
+    private static String pendingFacebookId;
 
     // Used specifically for creating the "null session" which is just used for code-intent clarity
     private Session(@NonNull String nullSessionId) {
@@ -161,6 +163,7 @@ public class Session {
         if (session != null) {
             this.userId = session.userId;
             this.facebookAccessToken = session.facebookAccessToken;
+            this.facebookId = session.facebookId;
         }
         TeakEvent.addEventListener(this.teakEventListener);
 
@@ -436,6 +439,13 @@ public class Session {
                     }
                 }
 
+                // Report Facebook Id if it was specified
+                {
+                    if (Session.this.facebookId != null) {
+                        payload.put("facebook_id", Session.this.facebookId);
+                    }
+                }
+
                 // Report additional device information
                 {
                     payload.put("device_num_cores", teakConfiguration.deviceConfiguration.numCores);
@@ -624,10 +634,10 @@ public class Session {
                     break;
                 case UserIdEvent.Type:
                     final UserIdEvent userIdEvent = (UserIdEvent) event;
-                    final TeakConfiguration teakConfiguration = TeakConfiguration.get();
-
-                    // Assign user id
-                    setUserId(userIdEvent.userId, userIdEvent.email);
+                    final String userId = (String) userIdEvent.configuration.get(Teak.UserConfiguration.UserId.key);
+                    final String email = (String) userIdEvent.configuration.get(Teak.UserConfiguration.Email.key);
+                    final String facebookId = (String) userIdEvent.configuration.get(Teak.UserConfiguration.FacebookId.key);
+                    setUserId(userId, email, facebookId);
                     break;
                 case LifecycleEvent.Paused:
                     // Set state to 'Expiring'
@@ -662,13 +672,14 @@ public class Session {
         }
     }
 
-    private static void setUserId(@NonNull String userId, @Nullable String email) {
+    private static void setUserId(@NonNull String userId, @Nullable String email, @Nullable String facebookId) {
         // If the user id has changed, create a new session
         currentSessionLock.lock();
         try {
             if (currentSession == null) {
                 Session.pendingUserId = userId;
                 Session.pendingEmail = email;
+                Session.pendingFacebookId = facebookId;
             } else {
                 if (currentSession.userId != null && !currentSession.userId.equals(userId)) {
                     Session.logout(true);
@@ -681,11 +692,16 @@ public class Session {
                     (currentSession.state == State.UserIdentified || currentSession.state == State.IdentifyingUser)) {
                     needsIdentifyUser = true;
                 }
+                if (!Helpers.stringsAreEqual(currentSession.facebookId, facebookId) &&
+                        (currentSession.state == State.UserIdentified || currentSession.state == State.IdentifyingUser)) {
+                    needsIdentifyUser = true;
+                }
 
                 currentSession.stateLock.unlock();
 
                 currentSession.userId = userId;
                 currentSession.email = email;
+                currentSession.facebookId = facebookId;
 
                 if (needsIdentifyUser) {
                     currentSession.identifyUser();
@@ -1236,12 +1252,13 @@ public class Session {
                     // If the old session had a user id assigned, it needs to be passed to the newly created
                     // session. When setState(State.Configured) happens, it will call identifyUser()
                     if (oldSession.userId != null) {
-                        setUserId(oldSession.userId, oldSession.email);
+                        setUserId(oldSession.userId, oldSession.email, oldSession.facebookId);
                     }
                 } else if (Session.pendingUserId != null) {
-                    setUserId(Session.pendingUserId, Session.pendingEmail);
+                    setUserId(Session.pendingUserId, Session.pendingEmail, Session.pendingFacebookId);
                     Session.pendingUserId = null;
                     Session.pendingEmail = null;
+                    Session.pendingFacebookId = null;
                 }
             }
         } finally {
