@@ -115,16 +115,17 @@ public class TeakInstance implements Unobfuscable {
 
     ///// identifyUser
 
-    void identifyUser(String userIdentifier, String[] optOut, String email) {
+    void identifyUser(final Map<String, Object> userConfiguration) {
+        final String userIdentifier = (String) userConfiguration.get(Teak.UserConfiguration.UserId.key);
         if (userIdentifier == null || userIdentifier.isEmpty()) {
             Teak.log.e("identify_user.error", "User identifier can not be null or empty.");
             return;
         }
 
-        Teak.log.i("identify_user", Helpers.mm.h("userId", userIdentifier, "optOut", optOut, "email", email));
+        Teak.log.i("identify_user", userConfiguration);
 
         if (this.isEnabled()) {
-            TeakEvent.postEvent(new UserIdEvent(userIdentifier, optOut, email));
+            TeakEvent.postEvent(new UserIdEvent(userConfiguration));
         }
     }
 

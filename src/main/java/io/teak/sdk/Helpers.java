@@ -73,6 +73,16 @@ public class Helpers {
         return b.getBoolean(key);
     }
 
+    public static boolean getBooleanFromMap(final Map<String, Object> map, final String key) {
+        if (map.containsKey(key)) {
+            Boolean bool = (Boolean) map.get(key);
+            if (bool != null) {
+                return bool;
+            }
+        }
+        return false;
+    }
+
     @SuppressWarnings("deprecation")
     public static String getInstallerPackage(final @NonNull Context context) {
         final String bundleId = context.getPackageName();

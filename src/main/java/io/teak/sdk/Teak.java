@@ -15,7 +15,9 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
@@ -222,7 +224,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * If you prevent Teak from collecting the Identifier For Advertisers (IDFA), Teak will no longer be able to add this user to Facebook Ad Audiences.
      */
     @SuppressWarnings("unused")
-    public static final String OPT_OUT_IDFA = "opt_out_idfa";
+    public static final String OPT_OUT_IDFA = UserConfiguration.OptOutIDFA.key;
 
     /**
      * Value provided to {@link #identifyUser(String, String[])} to opt out of
@@ -231,7 +233,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * If you prevent Teak from collecting the Facebook Access Token, Teak will no longer be able to correlate this user across multiple devices.
      */
     @SuppressWarnings("unused")
-    public static final String OPT_OUT_FACEBOOK = "opt_out_facebook";
+    public static final String OPT_OUT_FACEBOOK = UserConfiguration.OptOutFacebook.key;
 
     /**
      * Value provided to {@link #identifyUser(String, String[])} to opt out of
@@ -240,7 +242,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * If you prevent Teak from collecting the Push Key, Teak will no longer be able to send Local Notifications or Push Notifications for this user.
      */
     @SuppressWarnings("unused")
-    public static final String OPT_OUT_PUSH_KEY = "opt_out_push_key";
+    public static final String OPT_OUT_PUSH_KEY = UserConfiguration.OptOutPushKey.key;
 
     /**
      * Tell Teak how it should identify the current user, with data collection opt-out.
@@ -268,13 +270,63 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static void identifyUser(final String userIdentifier, final String[] optOut, final String email) {
-        Teak.log.trace("Teak.identifyUser", "userIdentifier", userIdentifier, "optOut", Arrays.toString(optOut), "email", email);
+        final HashMap<String, Object> userConfiguration = new HashMap<>();
+        if (email != null) {
+            userConfiguration.put("email", email);
+        }
+
+        if (optOut != null) {
+            final Set<String> optOutSet = new HashSet<>(Arrays.asList(optOut));
+            if (optOutSet.contains(OPT_OUT_PUSH_KEY)) {
+                userConfiguration.put(UserConfiguration.OptOutPushKey.key, true);
+            }
+            if (optOutSet.contains(OPT_OUT_IDFA)) {
+                userConfiguration.put(UserConfiguration.OptOutIDFA.key, true);
+            }
+            if (optOutSet.contains(OPT_OUT_FACEBOOK)) {
+                userConfiguration.put(UserConfiguration.OptOutFacebook.key, true);
+            }
+        }
+
+        identifyUser(userIdentifier, userConfiguration);
+    }
+
+    public enum UserConfiguration {
+        UserId("user_id"),
+        Email("email"),
+        FacebookId("facebook_id"),
+        OptOutPushKey("opt_out_push_key"),
+        OptOutFacebook("opt_out_facebook"),
+        OptOutIDFA("opt_out_idfa");
+
+        public final String key;
+
+        UserConfiguration(String key) {
+            this.key = key;
+        }
+    }
+
+    /**
+     * Tell Teak how it should identify the current user, with additional options and configuration.
+     * <br>
+     * <p>This should be the same way you identify the user in your backend.</p>
+     *
+     * @param userIdentifier An identifier which is unique for the current user.
+     * @param userConfiguration A set of configuration keys and value, @see UserConfiguration
+     */
+    @SuppressWarnings("unused")
+    public static void identifyUser(final String userIdentifier, final Map<String, Object> userConfiguration) {
+        Teak.log.trace("Teak.identifyUser", userIdentifier, userConfiguration);
+
+        // Make our own copy before modifying
+        final Map<String, Object> userConfigurationCopy = new HashMap<>(userConfiguration);
+        userConfigurationCopy.put(UserConfiguration.UserId.key, userIdentifier);
 
         // Always process deep links when identifyUser is called
         Teak.processDeepLinks();
 
         if (Instance != null) {
-            asyncExecutor.submit(() -> Instance.identifyUser(userIdentifier, optOut != null ? optOut : new String[] {}, email));
+            asyncExecutor.submit(() -> Instance.identifyUser(userConfigurationCopy));
         }
     }
 

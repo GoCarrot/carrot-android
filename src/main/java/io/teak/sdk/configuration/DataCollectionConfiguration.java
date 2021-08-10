@@ -8,13 +8,14 @@ import android.os.Bundle;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import io.teak.sdk.Helpers;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.event.AdvertisingInfoEvent;
+import io.teak.sdk.event.UserIdEvent;
 import io.teak.sdk.io.IAndroidResources;
 import io.teak.sdk.json.JSONObject;
 
@@ -53,6 +54,15 @@ public class DataCollectionConfiguration {
                 case AdvertisingInfoEvent.Type: {
                     DataCollectionConfiguration.this.enableIDFA &= !((AdvertisingInfoEvent) event).limitAdTracking;
                 } break;
+
+                // Future-Pat: No, we do *not* want to ever configure what data is collected as the result of a server call,
+                //             because that would change us from being a "data processor" to a "data controller" under the GDPR
+                case UserIdEvent.Type: {
+                    final UserIdEvent userIdEvent = (UserIdEvent) event;
+                    this.enablePushKey &= !Helpers.getBooleanFromMap(userIdEvent.configuration, Teak.UserConfiguration.OptOutPushKey.key);
+                    this.enableIDFA &= !Helpers.getBooleanFromMap(userIdEvent.configuration, Teak.UserConfiguration.OptOutIDFA.key);
+                    this.enableFacebookAccessToken &= !Helpers.getBooleanFromMap(userIdEvent.configuration, Teak.UserConfiguration.OptOutFacebook.key);
+                } break;
             }
         });
     }
@@ -63,14 +73,6 @@ public class DataCollectionConfiguration {
             enableFeature = metaData.getBoolean(featureName, true);
         }
         return (enableFeature == null || enableFeature);
-    }
-
-    // Future-Pat: No, we do *not* want to ever configure what data is collected as the result of a server call,
-    //             because that would change us from being a "data processor" to a "data controller" under the GDPR
-    public void addConfigurationFromDeveloper(Set<String> optOut) {
-        this.enablePushKey &= !optOut.contains(Teak.OPT_OUT_PUSH_KEY);
-        this.enableIDFA &= !optOut.contains(Teak.OPT_OUT_IDFA);
-        this.enableFacebookAccessToken &= !optOut.contains(Teak.OPT_OUT_FACEBOOK);
     }
 
     public Map<String, Object> toMap() {

@@ -626,12 +626,6 @@ public class Session {
                     final UserIdEvent userIdEvent = (UserIdEvent) event;
                     final TeakConfiguration teakConfiguration = TeakConfiguration.get();
 
-                    // Data-collection opt-out
-                    //noinspection ConstantConditions
-                    if (teakConfiguration != null) {
-                        teakConfiguration.dataCollectionConfiguration.addConfigurationFromDeveloper(userIdEvent.optOut);
-                    }
-
                     // Assign user id
                     setUserId(userIdEvent.userId, userIdEvent.email);
                     break;
