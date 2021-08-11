@@ -7,6 +7,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import io.teak.sdk.Teak;
 import io.teak.sdk.event.UserIdEvent;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -31,7 +32,7 @@ public class TeakEventListener extends TeakUnitTest {
     @Test
     public void a_verify_setupReset() throws Exception {
         io.teak.sdk.TeakEvent.addEventListener(verifyResetListener);
-        io.teak.sdk.TeakEvent.postEvent(new UserIdEvent("test", new String[]{}, null));
+        io.teak.sdk.TeakEvent.postEvent(new UserIdEvent("test", new Teak.UserConfiguration()));
         verify(verifyResetListener, timeout(5000).times(1)).eventRecieved(any(Class.class), anyString());
     }
 
