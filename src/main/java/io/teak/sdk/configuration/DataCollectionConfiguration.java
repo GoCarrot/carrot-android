@@ -11,7 +11,6 @@ import java.util.Map;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import io.teak.sdk.Helpers;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.event.AdvertisingInfoEvent;
@@ -59,9 +58,9 @@ public class DataCollectionConfiguration {
                 //             because that would change us from being a "data processor" to a "data controller" under the GDPR
                 case UserIdEvent.Type: {
                     final UserIdEvent userIdEvent = (UserIdEvent) event;
-                    this.enablePushKey &= !Helpers.getBooleanFromMap(userIdEvent.configuration, Teak.UserConfiguration.OptOutPushKey.key);
-                    this.enableIDFA &= !Helpers.getBooleanFromMap(userIdEvent.configuration, Teak.UserConfiguration.OptOutIDFA.key);
-                    this.enableFacebookAccessToken &= !Helpers.getBooleanFromMap(userIdEvent.configuration, Teak.UserConfiguration.OptOutFacebook.key);
+                    this.enablePushKey &= !userIdEvent.userConfiguration.optOutPushKey;
+                    this.enableIDFA &= !userIdEvent.userConfiguration.optOutIDFA;
+                    this.enableFacebookAccessToken &= !userIdEvent.userConfiguration.optOutFacebook;
                 } break;
             }
         });

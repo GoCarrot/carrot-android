@@ -35,7 +35,6 @@ import java.net.SocketException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
@@ -149,12 +148,9 @@ public class MainActivity extends AppCompatActivity {
         //
         // These user ids should be unique, no two players should have the same user id.
         final String userId = "native-" + Build.MODEL.toLowerCase();
-        final Map<String, Object> userConfig = new HashMap<>();
-//        userConfig.put(Teak.UserConfiguration.OptOutIDFA.key, true);
-//        userConfig.put(Teak.UserConfiguration.OptOutFacebook.key, true);
-//        userConfig.put(Teak.UserConfiguration.OptOutPushKey.key, true);
-//        userConfig.put(Teak.UserConfiguration.FacebookId.key, "12345");
-        Teak.identifyUser(userId, userConfig);
+
+        final Teak.UserConfiguration userConfiguration = new Teak.UserConfiguration();
+        Teak.identifyUser(userId, userConfiguration);
 
         // Binding the in app billing service
         Intent serviceIntent = new Intent("com.android.vending.billing.InAppBillingService.BIND");

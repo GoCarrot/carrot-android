@@ -200,6 +200,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * @param userIdentifier An identifier which is unique for the current user.
      */
     @SuppressWarnings("unused")
+    @Deprecated
     public static void identifyUser(final String userIdentifier) {
         Teak.identifyUser(userIdentifier, new String[0], null);
     }
@@ -213,6 +214,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * @param email          The email address for the user.
      */
     @SuppressWarnings("unused")
+    @Deprecated
     public static void identifyUser(final String userIdentifier, final String email) {
         Teak.identifyUser(userIdentifier, new String[0], email);
     }
@@ -224,7 +226,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * If you prevent Teak from collecting the Identifier For Advertisers (IDFA), Teak will no longer be able to add this user to Facebook Ad Audiences.
      */
     @SuppressWarnings("unused")
-    public static final String OPT_OUT_IDFA = UserConfiguration.OptOutIDFA.key;
+    public static final String OPT_OUT_IDFA = "opt_out_idfa";
 
     /**
      * Value provided to {@link #identifyUser(String, String[])} to opt out of
@@ -233,7 +235,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * If you prevent Teak from collecting the Facebook Access Token, Teak will no longer be able to correlate this user across multiple devices.
      */
     @SuppressWarnings("unused")
-    public static final String OPT_OUT_FACEBOOK = UserConfiguration.OptOutFacebook.key;
+    public static final String OPT_OUT_FACEBOOK = "opt_out_facebook";
 
     /**
      * Value provided to {@link #identifyUser(String, String[])} to opt out of
@@ -242,7 +244,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * If you prevent Teak from collecting the Push Key, Teak will no longer be able to send Local Notifications or Push Notifications for this user.
      */
     @SuppressWarnings("unused")
-    public static final String OPT_OUT_PUSH_KEY = UserConfiguration.OptOutPushKey.key;
+    public static final String OPT_OUT_PUSH_KEY = "opt_out_push_key";
 
     /**
      * Tell Teak how it should identify the current user, with data collection opt-out.
@@ -254,6 +256,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      *                          {@link #OPT_OUT_IDFA}, {@link #OPT_OUT_FACEBOOK}, {@link #OPT_OUT_PUSH_KEY}
      */
     @SuppressWarnings("unused")
+    @Deprecated
     public static void identifyUser(final String userIdentifier, final String[] optOut) {
         identifyUser(userIdentifier, optOut, null);
     }
@@ -269,40 +272,73 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * @param email          The email address for the user.
      */
     @SuppressWarnings("unused")
+    @Deprecated
     public static void identifyUser(final String userIdentifier, final String[] optOut, final String email) {
-        final HashMap<String, Object> userConfiguration = new HashMap<>();
-        if (email != null) {
-            userConfiguration.put("email", email);
-        }
-
-        if (optOut != null) {
-            final Set<String> optOutSet = new HashSet<>(Arrays.asList(optOut));
-            if (optOutSet.contains(OPT_OUT_PUSH_KEY)) {
-                userConfiguration.put(UserConfiguration.OptOutPushKey.key, true);
-            }
-            if (optOutSet.contains(OPT_OUT_IDFA)) {
-                userConfiguration.put(UserConfiguration.OptOutIDFA.key, true);
-            }
-            if (optOutSet.contains(OPT_OUT_FACEBOOK)) {
-                userConfiguration.put(UserConfiguration.OptOutFacebook.key, true);
-            }
-        }
+        final Set<String> optOutSet = optOut == null ? new HashSet<>() : new HashSet<>(Arrays.asList(optOut));
+        final UserConfiguration userConfiguration = new UserConfiguration(email, null,
+                optOutSet.contains(OPT_OUT_FACEBOOK),
+                optOutSet.contains(OPT_OUT_IDFA),
+                optOutSet.contains(OPT_OUT_PUSH_KEY));
 
         identifyUser(userIdentifier, userConfiguration);
     }
 
-    public enum UserConfiguration {
-        UserId("user_id"),
-        Email("email"),
-        FacebookId("facebook_id"),
-        OptOutPushKey("opt_out_push_key"),
-        OptOutFacebook("opt_out_facebook"),
-        OptOutIDFA("opt_out_idfa");
+    public static class UserConfiguration {
+        public final String email;
+        public final String facebookId;
 
-        public final String key;
+        /**
+         * Opt out of collecting a Facebook Access Token for this specific user.
+         * <br>
+         * If you prevent Teak from collecting the Facebook Access Token, Teak will no longer be able to correlate this user across multiple devices.
+         */
+        @Deprecated
+        public final boolean optOutFacebook;
 
-        UserConfiguration(String key) {
-            this.key = key;
+        /**
+         * Opt out of collecting an IDFA for this specific user.
+         * <br>
+         * If you prevent Teak from collecting the Identifier For Advertisers (IDFA), Teak will no longer be able to add this user to Facebook Ad Audiences.
+         */
+        public final boolean optOutIDFA;
+
+        /**
+         * Opt out of collecting a Push Key for this specific user.
+         * <br>
+         * If you prevent Teak from collecting the Push Key, Teak will no longer be able to send Local Notifications or Push Notifications for this user.
+         */
+        public final boolean optOutPushKey;
+
+        public UserConfiguration() {
+            this(null, null, false, false, false);
+        }
+
+        public UserConfiguration(final String email) {
+            this(email, null, false, false, false);
+        }
+
+        public UserConfiguration(final String email, final String facebookId) {
+            this(email, facebookId, false, false, false);
+        }
+
+        public UserConfiguration(final String email, final String facebookId,
+                                 final boolean optOutFacebook, final boolean optOutIDFA,
+                                 final boolean optOutPushKey) {
+            this.email = email;
+            this.facebookId = facebookId;
+            this.optOutFacebook = optOutFacebook;
+            this.optOutIDFA = optOutIDFA;
+            this.optOutPushKey = optOutPushKey;
+        }
+
+        public Map<String, Object> toHash() {
+            final Map<String, Object> map = new HashMap<>();
+            map.put("email", this.email);
+            map.put("facebook_id", this.facebookId);
+            map.put("opt_out_facebook", this.optOutFacebook);
+            map.put("opt_out_idfa", this.optOutIDFA);
+            map.put("opt_out_push_key", this.optOutPushKey);
+            return map;
         }
     }
 
@@ -315,18 +351,14 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * @param userConfiguration A set of configuration keys and value, @see UserConfiguration
      */
     @SuppressWarnings("unused")
-    public static void identifyUser(final String userIdentifier, final Map<String, Object> userConfiguration) {
+    public static void identifyUser(final String userIdentifier, final UserConfiguration userConfiguration) {
         Teak.log.trace("Teak.identifyUser", userIdentifier, userConfiguration);
-
-        // Make our own copy before modifying
-        final Map<String, Object> userConfigurationCopy = new HashMap<>(userConfiguration);
-        userConfigurationCopy.put(UserConfiguration.UserId.key, userIdentifier);
 
         // Always process deep links when identifyUser is called
         Teak.processDeepLinks();
 
         if (Instance != null) {
-            asyncExecutor.submit(() -> Instance.identifyUser(userConfigurationCopy));
+            asyncExecutor.submit(() -> Instance.identifyUser(userIdentifier, userConfiguration));
         }
     }
 

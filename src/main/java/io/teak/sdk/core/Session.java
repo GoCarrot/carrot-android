@@ -634,9 +634,9 @@ public class Session {
                     break;
                 case UserIdEvent.Type:
                     final UserIdEvent userIdEvent = (UserIdEvent) event;
-                    final String userId = (String) userIdEvent.configuration.get(Teak.UserConfiguration.UserId.key);
-                    final String email = (String) userIdEvent.configuration.get(Teak.UserConfiguration.Email.key);
-                    final String facebookId = (String) userIdEvent.configuration.get(Teak.UserConfiguration.FacebookId.key);
+                    final String userId = userIdEvent.userId;
+                    final String email = userIdEvent.userConfiguration.email;
+                    final String facebookId = userIdEvent.userConfiguration.facebookId;
                     setUserId(userId, email, facebookId);
                     break;
                 case LifecycleEvent.Paused:

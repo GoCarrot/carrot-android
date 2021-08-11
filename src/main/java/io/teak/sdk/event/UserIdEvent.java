@@ -1,7 +1,5 @@
 package io.teak.sdk.event;
 
-import java.util.Map;
-
 import androidx.annotation.NonNull;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
@@ -10,13 +8,11 @@ public class UserIdEvent extends TeakEvent {
     public static final String Type = "UserIdEvent";
 
     public final String userId;
-    public final String email;
-    public final Map<String, Object> configuration;
+    public final Teak.UserConfiguration userConfiguration;
 
-    public UserIdEvent(@NonNull final Map<String, Object> userConfiguration) {
+    public UserIdEvent(@NonNull String userId, @NonNull Teak.UserConfiguration userConfiguration) {
         super(Type);
-        this.userId = (String) userConfiguration.get(Teak.UserConfiguration.UserId.key);
-        this.email = (String) userConfiguration.get(Teak.UserConfiguration.Email.key);
-        this.configuration = userConfiguration;
+        this.userId = userId;
+        this.userConfiguration = userConfiguration;
     }
 }
