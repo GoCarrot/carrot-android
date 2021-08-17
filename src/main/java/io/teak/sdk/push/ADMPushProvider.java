@@ -180,7 +180,7 @@ public class ADMPushProvider implements IPushProvider, Unobfuscable {
                                 String sigMd5 = Helpers.formatSig(sig, "MD5");
                                 String sigSha256 = Helpers.formatSig(sig, "SHA-256");
                                 Teak.log.w("amazon.adm.registration_error.debugging", "Couldn't find 'appsigSha256' or 'appsig' please ensure that your API key matches one of the included signatures.",
-                                        Helpers.mm.h("md5", sigMd5, "sha256", sigSha256));
+                                    Helpers.mm.h("md5", sigMd5, "sha256", sigSha256));
                             }
                         }
                         Teak.log.i("amazon.adm.registration_error.debugging", "[✓] App signature matches signature inside 'api_key.txt'");

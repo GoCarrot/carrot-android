@@ -43,61 +43,61 @@ public class Amazon implements IStore, PurchasingListener {
         }
     }
 
-        @Override
-        public void onUserDataResponse(UserDataResponse userDataResponse) {
-//            if (userDataResponse.getRequestStatus() == UserDataResponse.RequestStatus.SUCCESSFUL) {
-//                final UserData userData = userDataResponse.getUserData();
-//
-//                final String storeUserId = userData.getUserId();
-//                final String storeMarketplace = userData.getMarketplace();
-//            }
-        }
+    @Override
+    public void onUserDataResponse(UserDataResponse userDataResponse) {
+        //            if (userDataResponse.getRequestStatus() == UserDataResponse.RequestStatus.SUCCESSFUL) {
+        //                final UserData userData = userDataResponse.getUserData();
+        //
+        //                final String storeUserId = userData.getUserId();
+        //                final String storeMarketplace = userData.getMarketplace();
+        //            }
+    }
 
-        @Override
-        public void onProductDataResponse(ProductDataResponse productDataResponse) {
-            final RequestId requestId = productDataResponse.getRequestId();
-            final Map<String, Object> payload = skuDetailsRequestMap.remove(requestId);
+    @Override
+    public void onProductDataResponse(ProductDataResponse productDataResponse) {
+        final RequestId requestId = productDataResponse.getRequestId();
+        final Map<String, Object> payload = skuDetailsRequestMap.remove(requestId);
 
-            if (productDataResponse.getRequestStatus() == ProductDataResponse.RequestStatus.SUCCESSFUL && payload != null) {
-                final Map<String, Product> skuMap = productDataResponse.getProductData();
+        if (productDataResponse.getRequestStatus() == ProductDataResponse.RequestStatus.SUCCESSFUL && payload != null) {
+            final Map<String, Product> skuMap = productDataResponse.getProductData();
 
-                for (Map.Entry<String, Product> entry : skuMap.entrySet()) {
-                    final String price = entry.getValue().getPrice();
-                    Teak.log.i("billing.amazon.v2.sku", "SKU Details retrieved.", mm.h(entry.getKey(), price));
-                    payload.put("price_string",price);
+            for (Map.Entry<String, Product> entry : skuMap.entrySet()) {
+                final String price = entry.getValue().getPrice();
+                Teak.log.i("billing.amazon.v2.sku", "SKU Details retrieved.", mm.h(entry.getKey(), price));
+                payload.put("price_string", price);
 
-                    TeakEvent.postEvent(new PurchaseEvent(payload));
-                }
-            } else {
-                Teak.log.e("billing.amazon.v2.sku", "SKU Details query failed.");
+                TeakEvent.postEvent(new PurchaseEvent(payload));
             }
+        } else {
+            Teak.log.e("billing.amazon.v2.sku", "SKU Details query failed.");
         }
+    }
 
-        @Override
-        public void onPurchaseResponse(PurchaseResponse purchaseResponse) {
-            if (purchaseResponse.getRequestStatus() == PurchaseResponse.RequestStatus.SUCCESSFUL) {
-                try {
-                    final Receipt receipt = purchaseResponse.getReceipt();
-                    final UserData userData = purchaseResponse.getUserData();
+    @Override
+    public void onPurchaseResponse(PurchaseResponse purchaseResponse) {
+        if (purchaseResponse.getRequestStatus() == PurchaseResponse.RequestStatus.SUCCESSFUL) {
+            try {
+                final Receipt receipt = purchaseResponse.getReceipt();
+                final UserData userData = purchaseResponse.getUserData();
 
-                    final Map<String, Object> payload = new HashMap<>();
-                    payload.put("purchase_token", receipt.getReceiptId());
-                    payload.put("purchase_time_string", receipt.getPurchaseDate());
-                    payload.put("product_id", receipt.getSku());
-                    payload.put("store_marketplace", userData.getMarketplace());
+                final Map<String, Object> payload = new HashMap<>();
+                payload.put("purchase_token", receipt.getReceiptId());
+                payload.put("purchase_time_string", receipt.getPurchaseDate());
+                payload.put("product_id", receipt.getSku());
+                payload.put("store_marketplace", userData.getMarketplace());
 
-                    final HashSet<String> skus = new HashSet<>();
-                    skus.add(receipt.getSku());
-                    this.skuDetailsRequestMap.put(PurchasingService.getProductData(skus), payload);
-                } catch (Exception e) {
-                    Teak.log.exception(e);
-                }
-            } else {
-                TeakEvent.postEvent(new PurchaseFailedEvent(-1, null));
+                final HashSet<String> skus = new HashSet<>();
+                skus.add(receipt.getSku());
+                this.skuDetailsRequestMap.put(PurchasingService.getProductData(skus), payload);
+            } catch (Exception e) {
+                Teak.log.exception(e);
             }
+        } else {
+            TeakEvent.postEvent(new PurchaseFailedEvent(-1, null));
         }
+    }
 
-        @Override
-        public void onPurchaseUpdatesResponse(PurchaseUpdatesResponse purchaseUpdatesResponse) {
-        }
+    @Override
+    public void onPurchaseUpdatesResponse(PurchaseUpdatesResponse purchaseUpdatesResponse) {
+    }
 }

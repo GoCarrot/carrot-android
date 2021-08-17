@@ -471,67 +471,67 @@ public class Session {
                 Teak.log.i("session.identify_user", mm.h("userId", Session.this.userId, "timezone", tzOffset, "locale", locale, "session_id", Session.this.sessionId));
 
                 Request.submit("/games/" + teakConfiguration.appConfiguration.appId + "/users.json", payload, Session.this,
-                        (responseCode, responseBody) -> {
-                            Session.this.stateLock.lock();
-                            try {
-                                JSONObject response = new JSONObject(responseBody);
+                    (responseCode, responseBody) -> {
+                        Session.this.stateLock.lock();
+                        try {
+                            JSONObject response = new JSONObject(responseBody);
 
-                                // TODO: Grab 'id' and 'game_id' from response and store for Parsnip
+                            // TODO: Grab 'id' and 'game_id' from response and store for Parsnip
 
-                                // Enable verbose logging if flagged
-                                boolean logLocal = response.optBoolean("verbose_logging");
-                                boolean logRemote = response.optBoolean("log_remote");
-                                teakConfiguration.debugConfiguration.setLogPreferences(logLocal, logRemote);
+                            // Enable verbose logging if flagged
+                            boolean logLocal = response.optBoolean("verbose_logging");
+                            boolean logRemote = response.optBoolean("log_remote");
+                            teakConfiguration.debugConfiguration.setLogPreferences(logLocal, logRemote);
 
-                                // Server requesting new push key.
-                                if (response.optBoolean("reset_push_key", false)) {
-                                    teakConfiguration.deviceConfiguration.requestNewPushToken();
-                                }
-
-                                // Assign country code from server if it sends it
-                                if (!response.isNull("country_code")) {
-                                    Session.this.countryCode = response.getString("country_code");
-                                }
-
-                                // Assign deep link to launch, if it is provided
-                                if (!response.isNull("deep_link")) {
-                                    final String deepLink = response.getString("deep_link");
-                                    Map<String, Object> merge = new HashMap<>();
-                                    merge.put("deep_link", deepLink);
-                                    Session.this.launchAttribution = Session.attributionFutureMerging(Session.this.launchAttribution, merge);
-                                    Teak.log.i("deep_link.processed", deepLink);
-                                }
-
-                                // Grab user profile
-                                JSONObject profile = response.optJSONObject("user_profile");
-                                if (profile != null) {
-                                    try {
-                                        Session.this.userProfile = new UserProfile(Session.this, profile.toMap());
-                                    } catch (Exception ignored) {
-                                    }
-                                }
-
-                                // Grab additional data
-                                final JSONObject additionalData = response.optJSONObject("additional_data");
-                                if (additionalData != null) {
-                                    Teak.log.i("additional_data.received", additionalData.toString());
-                                    whenUserIdIsReadyPost(new Teak.AdditionalDataEvent(additionalData));
-                                }
-
-                                // Assign new state
-                                // Prevent warning for 'do_not_track_event'
-                                if (Session.this.state == State.Expiring) {
-                                    Session.this.previousState = State.UserIdentified;
-                                } else if (Session.this.state != State.UserIdentified) {
-                                    Session.this.setState(State.UserIdentified);
-                                }
-
-                            } catch (Exception e) {
-                                Teak.log.exception(e);
-                            } finally {
-                                Session.this.stateLock.unlock();
+                            // Server requesting new push key.
+                            if (response.optBoolean("reset_push_key", false)) {
+                                teakConfiguration.deviceConfiguration.requestNewPushToken();
                             }
-                        });
+
+                            // Assign country code from server if it sends it
+                            if (!response.isNull("country_code")) {
+                                Session.this.countryCode = response.getString("country_code");
+                            }
+
+                            // Assign deep link to launch, if it is provided
+                            if (!response.isNull("deep_link")) {
+                                final String deepLink = response.getString("deep_link");
+                                Map<String, Object> merge = new HashMap<>();
+                                merge.put("deep_link", deepLink);
+                                Session.this.launchAttribution = Session.attributionFutureMerging(Session.this.launchAttribution, merge);
+                                Teak.log.i("deep_link.processed", deepLink);
+                            }
+
+                            // Grab user profile
+                            JSONObject profile = response.optJSONObject("user_profile");
+                            if (profile != null) {
+                                try {
+                                    Session.this.userProfile = new UserProfile(Session.this, profile.toMap());
+                                } catch (Exception ignored) {
+                                }
+                            }
+
+                            // Grab additional data
+                            final JSONObject additionalData = response.optJSONObject("additional_data");
+                            if (additionalData != null) {
+                                Teak.log.i("additional_data.received", additionalData.toString());
+                                whenUserIdIsReadyPost(new Teak.AdditionalDataEvent(additionalData));
+                            }
+
+                            // Assign new state
+                            // Prevent warning for 'do_not_track_event'
+                            if (Session.this.state == State.Expiring) {
+                                Session.this.previousState = State.UserIdentified;
+                            } else if (Session.this.state != State.UserIdentified) {
+                                Session.this.setState(State.UserIdentified);
+                            }
+
+                        } catch (Exception e) {
+                            Teak.log.exception(e);
+                        } finally {
+                            Session.this.stateLock.unlock();
+                        }
+                    });
             } finally {
                 Session.this.stateLock.unlock();
             }
@@ -693,7 +693,7 @@ public class Session {
                     needsIdentifyUser = true;
                 }
                 if (!Helpers.stringsAreEqual(currentSession.facebookId, facebookId) &&
-                        (currentSession.state == State.UserIdentified || currentSession.state == State.IdentifyingUser)) {
+                    (currentSession.state == State.UserIdentified || currentSession.state == State.IdentifyingUser)) {
                     needsIdentifyUser = true;
                 }
 
@@ -1044,9 +1044,7 @@ public class Session {
 
                 if (rewardFuture != null) {
                     final String teakNotifId = attribution.containsKey("teak_notif_id") ? attribution.get("teak_notif_id").toString() : null;
-                    final String teakRewardLinkName = attribution.containsKey("teak_rewardlink_name") ?
-                            attribution.get("teak_rewardlink_name").toString() :
-                            (attribution.containsKey("teak_creative_name") ? attribution.get("teak_creative_name").toString() : null);
+                    final String teakRewardLinkName = attribution.containsKey("teak_rewardlink_name") ? attribution.get("teak_rewardlink_name").toString() : (attribution.containsKey("teak_creative_name") ? attribution.get("teak_creative_name").toString() : null);
                     final String teakRewardLinkId = attribution.containsKey("teak_rewardlink_id") ? attribution.get("teak_rewardlink_id").toString() : null;
                     final String teakChannelName = attribution.containsKey("teak_channel_name") ? attribution.get("teak_channel_name").toString() : null;
                     // Future-Pat: Attribution can also contain 'teak_rewardlink_id' if we ever need it
@@ -1142,7 +1140,7 @@ public class Session {
                                 final String androidPath = teakData.getString("AndroidPath");
                                 final Pattern pattern = Pattern.compile("^[a-zA-Z0-9+.\\-_]*:");
                                 final Matcher matcher = pattern.matcher(androidPath);
-                                if(matcher.find()) {
+                                if (matcher.find()) {
                                     uri = Uri.parse(androidPath);
                                 } else {
                                     uri = Uri.parse(String.format(Locale.US, "teak%s://%s", teakConfiguration.appConfiguration.appId, androidPath));

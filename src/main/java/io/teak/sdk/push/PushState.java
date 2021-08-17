@@ -207,55 +207,55 @@ public class PushState {
                 SharedPreferences.Editor editor = preferences.edit();
                 editor.putString(PUSH_STATE_CHAIN_KEY, jsonStateChain.toString());
                 editor.apply();
-            }
-        });
+    }
+});
+}
+
+public int getNotificationStatus() {
+    return this.notificationManager.areNotificationsEnabled() ? Teak.TEAK_NOTIFICATIONS_ENABLED : Teak.TEAK_NOTIFICATIONS_DISABLED;
+}
+
+private StateChainEntry determineStateFromSystem(@NonNull Context context) {
+    State tmpState;
+    switch (this.getNotificationStatus()) {
+        case Teak.TEAK_NOTIFICATIONS_ENABLED:
+            tmpState = State.Authorized;
+            break;
+        case Teak.TEAK_NOTIFICATIONS_DISABLED:
+            tmpState = State.Denied;
+            break;
+        default:
+            tmpState = State.Unknown;
+            break;
+    }
+    final State newState = tmpState;
+    boolean canBypassDnd = false;
+    boolean canShowOnLockscreen = true;
+    boolean canShowBadge = true;
+
+    final String notificationChannelId = NotificationBuilder.getNotificationChannelId(context);
+    final NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationChannelId != null && notificationManager != null) {
+        final NotificationChannel channel = notificationManager.getNotificationChannel(notificationChannelId);
+        final int channelImportance = channel.getImportance();
+        canBypassDnd = channel.canBypassDnd();
+        // Future-Pat: The name of the settings does not line up with the constant names.
+        //             'Low' in settings == IMPORTANCE_MIN
+        canShowOnLockscreen = (channelImportance > NotificationManager.IMPORTANCE_MIN);
+        canShowBadge = channel.canShowBadge();
+    }
+    return new StateChainEntry(newState, canBypassDnd, canShowOnLockscreen, canShowBadge);
+}
+
+public Map<String, Object> toMap() {
+    List<StateChainEntry> currentStateChain = this.stateChain;
+    List<Map<String, Object>> genericStateChain = new ArrayList<>();
+    for (StateChainEntry entry : currentStateChain) {
+        genericStateChain.add(entry.toMap());
     }
 
-    public int getNotificationStatus() {
-        return this.notificationManager.areNotificationsEnabled() ? Teak.TEAK_NOTIFICATIONS_ENABLED : Teak.TEAK_NOTIFICATIONS_DISABLED;
-    }
-
-    private StateChainEntry determineStateFromSystem(@NonNull Context context) {
-        State tmpState;
-        switch (this.getNotificationStatus()) {
-            case Teak.TEAK_NOTIFICATIONS_ENABLED:
-                tmpState = State.Authorized;
-                break;
-            case Teak.TEAK_NOTIFICATIONS_DISABLED:
-                tmpState = State.Denied;
-                break;
-            default:
-                tmpState = State.Unknown;
-                break;
-        }
-        final State newState = tmpState;
-        boolean canBypassDnd = false;
-        boolean canShowOnLockscreen = true;
-        boolean canShowBadge = true;
-
-        final String notificationChannelId = NotificationBuilder.getNotificationChannelId(context);
-        final NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationChannelId != null && notificationManager != null) {
-            final NotificationChannel channel = notificationManager.getNotificationChannel(notificationChannelId);
-            final int channelImportance = channel.getImportance();
-            canBypassDnd = channel.canBypassDnd();
-            // Future-Pat: The name of the settings does not line up with the constant names.
-            //             'Low' in settings == IMPORTANCE_MIN
-            canShowOnLockscreen = (channelImportance > NotificationManager.IMPORTANCE_MIN);
-            canShowBadge = channel.canShowBadge();
-        }
-        return new StateChainEntry(newState, canBypassDnd, canShowOnLockscreen, canShowBadge);
-    }
-
-    public Map<String, Object> toMap() {
-        List<StateChainEntry> currentStateChain = this.stateChain;
-        List<Map<String, Object>> genericStateChain = new ArrayList<>();
-        for (StateChainEntry entry : currentStateChain) {
-            genericStateChain.add(entry.toMap());
-        }
-
-        HashMap<String, Object> ret = new HashMap<>();
-        ret.put("push_state_chain", genericStateChain);
-        return ret;
-    }
+    HashMap<String, Object> ret = new HashMap<>();
+    ret.put("push_state_chain", genericStateChain);
+    return ret;
+}
 }

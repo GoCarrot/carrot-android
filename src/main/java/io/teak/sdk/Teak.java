@@ -140,9 +140,9 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             if (intentData.getBooleanQueryParameter("teak_strict_mode", false)) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
-                            .detectNonSdkApiUsage()
-                            .penaltyLog()
-                            .build());
+                                               .detectNonSdkApiUsage()
+                                               .penaltyLog()
+                                               .build());
                 }
             }
         }
@@ -166,7 +166,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             Class<?> clazz = Class.forName("io.teak.sdk.wrapper.Version");
             Method m = clazz.getDeclaredMethod("map");
             @SuppressWarnings("unchecked")
-            final Map<String, Object> wrapperVersion = (Map<String, Object>)m.invoke(null);
+            final Map<String, Object> wrapperVersion = (Map<String, Object>) m.invoke(null);
             if (wrapperVersion != null) {
                 Teak.sdkMap.putAll(wrapperVersion);
             }
@@ -276,9 +276,9 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     public static void identifyUser(final String userIdentifier, final String[] optOut, final String email) {
         final Set<String> optOutSet = optOut == null ? new HashSet<>() : new HashSet<>(Arrays.asList(optOut));
         final UserConfiguration userConfiguration = new UserConfiguration(email, null,
-                optOutSet.contains(OPT_OUT_FACEBOOK),
-                optOutSet.contains(OPT_OUT_IDFA),
-                optOutSet.contains(OPT_OUT_PUSH_KEY));
+            optOutSet.contains(OPT_OUT_FACEBOOK),
+            optOutSet.contains(OPT_OUT_IDFA),
+            optOutSet.contains(OPT_OUT_PUSH_KEY));
 
         identifyUser(userIdentifier, userConfiguration);
     }
@@ -322,8 +322,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         }
 
         public UserConfiguration(final String email, final String facebookId,
-                                 final boolean optOutFacebook, final boolean optOutIDFA,
-                                 final boolean optOutPushKey) {
+            final boolean optOutFacebook, final boolean optOutIDFA,
+            final boolean optOutPushKey) {
             this.email = email;
             this.facebookId = facebookId;
             this.optOutFacebook = optOutFacebook;
