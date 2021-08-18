@@ -85,6 +85,7 @@ public class Amazon implements IStore, PurchasingListener {
                 payload.put("purchase_time_string", receipt.getPurchaseDate());
                 payload.put("product_id", receipt.getSku());
                 payload.put("store_marketplace", userData.getMarketplace());
+                payload.put("is_sandbox", PurchasingService.IS_SANDBOX_MODE);
 
                 final HashSet<String> skus = new HashSet<>();
                 skus.add(receipt.getSku());
