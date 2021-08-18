@@ -179,8 +179,23 @@ public class NotificationBuilder {
         }
         final IdHelper R = new IdHelper(); // Declaring local as 'R' ensures we don't accidentally use the other R
 
+        // If an app is targeting Android 12, it is supposed to modify the style of custom notifications
+        // to use the 'DecoratedCustomViewStyle' automatically. We have not been able to reproduce this
+        // and so this flag will assign that style, and disable the "left_image" icon if it is assigned
+        // the builtin app icon.
+        //
+        // If we want to enable emulating this, simply replace the below with:
+        //    Build.VERSION.SDK_INT >= Build.VERSION_CODES.S;
+        final boolean useAndroid12NotificationStyle = false;
+
         final NotificationCompat.Builder builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
         builder.setGroup(UUID.randomUUID().toString());
+
+        // Assign DecoratedCustomViewStyle, the way an app targeting Android 12 is supposed to do
+        // when running on Android 12.
+        if (useAndroid12NotificationStyle) {
+            builder.setStyle(new NotificationCompat.DecoratedCustomViewStyle());
+        }
 
         // Set visibility of our notifications to public
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
@@ -396,7 +411,14 @@ public class NotificationBuilder {
                     } else if (isUIType(viewElement, ImageView.class)) {
                         final String value = viewConfig.getString(key);
                         if (value.equalsIgnoreCase("BUILTIN_APP_ICON")) {
-                            remoteViews.setImageViewResource(viewElementId, appIconResourceId);
+                            // If we are using the Android 12 notification style, with the
+                            // 'DecoratedCustomViewStyle', then skip the "left_image" key
+                            // since that view style already places the app icon on the left
+                            if ("left_image".equals(key) && useAndroid12NotificationStyle) {
+                                remoteViews.setViewVisibility(viewElementId, View.GONE);
+                            } else {
+                                remoteViews.setImageViewResource(viewElementId, appIconResourceId);
+                            }
                         } else if (value.equalsIgnoreCase("NONE")) {
                             remoteViews.setViewVisibility(viewElementId, View.GONE);
                         } else {
