@@ -19,20 +19,22 @@
             android:value="ca-app-pub-3940256099942544~3347511713"/>
 
         <service android:name="io.teak.app.java.dev.FirebaseMessagingServicePassthru"
-            android:stopWithTask="false">
+            android:stopWithTask="false"
+            android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
 
-        <activity android:name=".LauncherActivity" android:launchMode="singleTask">
+        <activity android:name=".LauncherActivity" android:launchMode="singleTask" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <activity android:name=".MainActivity" android:launchMode="singleTask">
+        <activity android:name=".MainActivity" android:launchMode="singleTask"
+            android:exported="true">
             <meta-data android:name="io.teak.sdk.initialize" android:value="true"/>
 
             <intent-filter>
