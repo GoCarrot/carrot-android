@@ -23,6 +23,12 @@ android {
     }
 }
 
+gradle.projectsEvaluated {
+    if (android.defaultConfig.targetSdkVersion.apiLevel < android.compileSdkVersion.split(/\-/)[1] as Integer) {
+        throw new GradleException('targetSdkVersion is less than compileSdkVersion')
+    }
+}
+
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     testImplementation 'junit:junit:4.13.2'
