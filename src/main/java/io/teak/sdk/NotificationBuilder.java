@@ -179,8 +179,21 @@ public class NotificationBuilder {
         }
         final IdHelper R = new IdHelper(); // Declaring local as 'R' ensures we don't accidentally use the other R
 
+        // Logic for the Android 12 notification style
+        final boolean isRunningOn12Plus = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S;
+        final boolean isTargeting12Plus = TeakConfiguration.get().appConfiguration.targetSdkVersion >= 31;
+        final boolean willAutomaticallyUse12PlusStyle = isRunningOn12Plus && isTargeting12Plus;
+        final boolean serverRequests12PlusStyle = teakNotificaton.useDecoratedCustomView;
+        final boolean isAndroid12NotificationStyle = serverRequests12PlusStyle || willAutomaticallyUse12PlusStyle;
+
         final NotificationCompat.Builder builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
         builder.setGroup(UUID.randomUUID().toString());
+
+        // Assign DecoratedCustomViewStyle if the server requests the Android 12 style, and it would
+        // not automatically assign that style
+        if (serverRequests12PlusStyle && !willAutomaticallyUse12PlusStyle) {
+            builder.setStyle(new NotificationCompat.DecoratedCustomViewStyle());
+        }
 
         // Set visibility of our notifications to public
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
@@ -396,7 +409,13 @@ public class NotificationBuilder {
                     } else if (isUIType(viewElement, ImageView.class)) {
                         final String value = viewConfig.getString(key);
                         if (value.equalsIgnoreCase("BUILTIN_APP_ICON")) {
-                            remoteViews.setImageViewResource(viewElementId, appIconResourceId);
+                            // If we are using the Android 12 notification style, then skip the "left_image" key
+                            // since that view style already places the app icon on the left
+                            if ("left_image".equals(key) && isAndroid12NotificationStyle) {
+                                remoteViews.setViewVisibility(viewElementId, View.GONE);
+                            } else {
+                                remoteViews.setImageViewResource(viewElementId, appIconResourceId);
+                            }
                         } else if (value.equalsIgnoreCase("NONE")) {
                             remoteViews.setViewVisibility(viewElementId, View.GONE);
                         } else {
@@ -662,7 +681,7 @@ public class NotificationBuilder {
         // Assign expanded view if it's there
         if (bigContentView != null) {
             builder.setCustomBigContentView(bigContentView);
-        } else {
+        } else if(isAndroid12NotificationStyle) {
             // All notifications are expandable for apps targeting Android 12.
             // This will ensure the view is the same if it gets expanded.
             builder.setCustomBigContentView(smallContentView);

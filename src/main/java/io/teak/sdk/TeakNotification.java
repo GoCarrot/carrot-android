@@ -37,6 +37,7 @@ import io.teak.sdk.json.JSONObject;
  *   longText       : string  - text displayed when the notification is expanded,
  *   imageAssetA    : string  - URI of an image asset to use for a banner image,
  *   [extras]       : string  - JSON encoded extra data
+ *   [useDecoratedCustomView] : boolean - Use the Android 12 notification style on non-Android 12 devices
  * }
  * }
  * </pre>
@@ -643,6 +644,7 @@ public class TeakNotification implements Unobfuscable {
 
     // v2+
     final JSONObject display;
+    final boolean useDecoratedCustomView;
 
     // Animation
     public boolean isAnimated;
@@ -735,6 +737,8 @@ public class TeakNotification implements Unobfuscable {
         } catch (Exception ignored) {
         }
         this.teakNotifId = tempTeakNotifId;
+
+        this.useDecoratedCustomView = bundle.getBoolean("useDecoratedCustomView", false);
 
         this.platformId = new Random().nextInt();
     }
