@@ -11,8 +11,8 @@ android {
         versionName "1.0"
 
         manifestPlaceholders = [
-                teakShortDomain:"teak-prod.jckpt.me",
-                teakAppId:"1136371193060244"
+                teakShortDomain:"teak-dev.freechips.link",
+                teakAppId:"613659812345256"
         ]
     }
     buildTypes {
