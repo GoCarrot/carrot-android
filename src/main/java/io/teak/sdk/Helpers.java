@@ -17,6 +17,8 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -263,5 +265,34 @@ public class Helpers {
             hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
         }
         return new String(hexChars);
+    }
+
+    public static <T> Future<T> futureForValue(final T value) {
+        return new Future<T>() {
+            @Override
+            public boolean cancel(boolean b) {
+                return false;
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return false;
+            }
+
+            @Override
+            public boolean isDone() {
+                return true;
+            }
+
+            @Override
+            public T get() {
+                return value;
+            }
+
+            @Override
+            public T get(long l, TimeUnit timeUnit) {
+                return get();
+            }
+        };
     }
 }

@@ -897,32 +897,7 @@ public class Session {
             final String intentDataString = intent.getDataString();
             if (intentDataString != null && !intentDataString.isEmpty()) {
                 Teak.log.i("session.attribution", Helpers.mm.h("deep_link", intentDataString));
-                deepLinkURL = new Future<String>() {
-                    @Override
-                    public boolean cancel(boolean b) {
-                        return false;
-                    }
-
-                    @Override
-                    public boolean isCancelled() {
-                        return false;
-                    }
-
-                    @Override
-                    public boolean isDone() {
-                        return true;
-                    }
-
-                    @Override
-                    public String get() {
-                        return intentDataString;
-                    }
-
-                    @Override
-                    public String get(long l, @NonNull TimeUnit timeUnit) {
-                        return get();
-                    }
-                };
+                deepLinkURL = Helpers.futureForValue(intentDataString);
             } else if (isFirstLaunch) {
                 deepLinkURL = InstallReferrerFuture.get(teakConfiguration.appConfiguration.applicationContext);
             }
@@ -942,35 +917,11 @@ public class Session {
                 sessionAttribution = deepLinkAttribution;
             } else if (teakNotifId != null) {
                 Teak.log.i("session.attribution", Helpers.mm.h("teak_notif_id", teakNotifId));
-                sessionAttribution = new Future<Map<String, Object>>() {
-                    @Override
-                    public boolean cancel(boolean b) {
-                        return false;
-                    }
 
-                    @Override
-                    public boolean isCancelled() {
-                        return false;
-                    }
-
-                    @Override
-                    public boolean isDone() {
-                        return true;
-                    }
-
-                    @Override
-                    public Map<String, Object> get() {
-                        Map<String, Object> returnValue = new HashMap<>();
-                        returnValue.put("teak_notif_id", teakNotifId);
-                        returnValue.put("notification_placement", Helpers.getStringOrNullFromIntentExtra(intent, "teakNotificationPlacement"));
-                        return returnValue;
-                    }
-
-                    @Override
-                    public Map<String, Object> get(long l, @NonNull TimeUnit timeUnit) {
-                        return get();
-                    }
-                };
+                final Map<String, Object> returnValue = new HashMap<>();
+                returnValue.put("teak_notif_id", teakNotifId);
+                returnValue.put("notification_placement", Helpers.getStringOrNullFromIntentExtra(intent, "teakNotificationPlacement"));
+                sessionAttribution = Helpers.futureForValue(returnValue);
             } else {
                 sessionAttribution = null;
             }
