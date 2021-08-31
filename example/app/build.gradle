@@ -4,7 +4,7 @@ android {
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId "com.teakio.pushtest"
+        applicationId "io.teak.app.unity.dev"
         minSdkVersion 16
         targetSdkVersion 31
         versionCode 1

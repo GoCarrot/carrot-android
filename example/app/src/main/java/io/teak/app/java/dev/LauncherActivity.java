@@ -12,8 +12,10 @@ public class LauncherActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         final Intent launchMainActivity = new Intent(this, MainActivity.class);
-        if (getIntent() != null) {
-            launchMainActivity.putExtras(getIntent());
+        final Intent launchIntent = getIntent();
+        if (launchIntent != null) {
+            launchMainActivity.setData(launchIntent.getData());
+            launchMainActivity.putExtras(launchIntent);
         }
         this.startActivity(launchMainActivity);
         this.finish();
