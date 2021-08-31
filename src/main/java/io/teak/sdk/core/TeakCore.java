@@ -248,7 +248,7 @@ public class TeakCore {
                                 final TeakNotification.Reward reward = rewardFuture.get();
 
                                 final HashMap<String, Object> rewardMap = new HashMap<>(reward.json.toMap());
-                                rewardMap.put("teakNotifId", notificationEvent.teakNotifId);
+                                rewardMap.put("teakNotifId", notificationEvent.teakSourceSendId);
                                 rewardMap.put("incentivized", true);
                                 rewardMap.put("teakRewardId", notificationEvent.teakRewardId);
                                 rewardMap.put("teakScheduleName", notificationEvent.teakScheduleName);

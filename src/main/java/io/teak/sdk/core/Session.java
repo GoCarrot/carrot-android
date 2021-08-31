@@ -1100,7 +1100,7 @@ public class Session {
                             }
 
                             Teak.log.i("deep_link.request.resolve", uri.toString());
-                            whenUserIdIsReadyPost(new Teak.LaunchFromLinkEvent(teakData));
+                            whenUserIdIsReadyPost(new Teak.LaunchFromLinkEvent(uri));
                         } catch (Exception e) {
                             Teak.log.exception(e);
                         }

@@ -1,10 +1,11 @@
 package io.teak.sdk.wrapper;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+
 import io.teak.sdk.Teak;
 import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.json.JSONObject;
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
 
 public class TeakInterface implements Unobfuscable {
     private final ISDKWrapper sdkWrapper;
@@ -46,7 +47,7 @@ public class TeakInterface implements Unobfuscable {
     public void onLaunchedFromLink(Teak.LaunchFromLinkEvent event) {
         String eventData = "{}";
         try {
-            eventData = event.todoExpandThis.toString(0);
+            eventData = new JSONObject(event.toMap()).toString(0);
         } catch (Exception e) {
             Teak.log.exception(e);
         } finally {
