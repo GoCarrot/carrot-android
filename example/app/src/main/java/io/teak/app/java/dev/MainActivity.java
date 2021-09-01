@@ -56,10 +56,10 @@ public class MainActivity extends AppCompatActivity {
 
     @Subscribe
     public void onRewardClaim(Teak.RewardClaimEvent event) {
-        if (event.rewardAsMap != null) {
+        if (event.reward != null) {
             final StringBuilder rewardString = new StringBuilder("You got ");
             boolean isFirstEntry = true;
-            for (Map.Entry<String, Object> entry : event.rewardAsMap.entrySet()) {
+            for (Map.Entry<String, Object> entry : event.reward.json.toMap().entrySet()) {
                 if (isFirstEntry) {
                     isFirstEntry = false;
                 } else {

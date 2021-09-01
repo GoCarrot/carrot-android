@@ -58,7 +58,7 @@ public class TeakInterface implements Unobfuscable {
     @Subscribe
     public void onRewardClaim(Teak.RewardClaimEvent event) {
         try {
-            String eventData = new JSONObject(event.rewardAsMap).toString(0);
+            String eventData = new JSONObject(event.toMap()).toString(0);
             sdkWrapper.sdkSendMessage(ISDKWrapper.EventType.RewardClaim, eventData);
         } catch (Exception e) {
             Teak.log.exception(e);

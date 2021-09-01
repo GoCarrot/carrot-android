@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -635,7 +636,12 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         /**
          * The deep link; null if there was no deep link.
          */
-        public final String teakDeepLink;
+        public final Uri teakDeepLink;
+
+        /**
+         * The Teak short link that resolved to this attribution; or null.
+         */
+        public final Uri teakShortLink;
 
         /**
          * TODO: Should this be parsed into an enum? Probably?
@@ -647,6 +653,19 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          */
         public final String teakChannelName;
 
+        public AttributionData(@NonNull final AttributionData attribution) {
+            this.teakScheduleName = attribution.teakScheduleName;
+            this.teakScheduleId = attribution.teakScheduleId;
+            this.teakCreativeName = attribution.teakCreativeName;
+            this.teakCreativeId = attribution.teakCreativeId;
+            this.teakChannelName = attribution.teakChannelName;
+            this.teakRewardId = attribution.teakRewardId;
+            this.incentivized = attribution.incentivized;
+            this.teakSourceSendId = attribution.teakSourceSendId;
+            this.teakDeepLink = attribution.teakDeepLink;
+            this.teakShortLink = attribution.teakShortLink;
+        }
+
         public AttributionData(@NonNull final Bundle bundle) {
             this.teakScheduleName = bundle.getString("teakScheduleName");
             this.teakScheduleId = bundle.getString("teakScheduleId");
@@ -656,22 +675,13 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             this.teakRewardId = bundle.getString("teakRewardId");
             this.incentivized = this.teakRewardId != null;
             this.teakSourceSendId = bundle.getString("teakNotifId");
-            this.teakDeepLink = bundle.getString("teakDeepLink");
+            this.teakShortLink = null;
+
+            final String deepLinkString = bundle.getString("teakDeepLink");
+            this.teakDeepLink = deepLinkString!= null ? Uri.parse(deepLinkString) : null;
         }
 
-        public AttributionData(@NonNull final Map<String, Object> rewardMap) {
-            this.teakScheduleName = (String) rewardMap.get("teakScheduleName");
-            this.teakScheduleId = (String) rewardMap.get("teakScheduleId");
-            this.teakCreativeName = (String) rewardMap.get("teakCreativeName");
-            this.teakCreativeId = (String) rewardMap.get("teakCreativeId");
-            this.teakChannelName = (String) rewardMap.get("teakChannelName");
-            this.teakRewardId = (String) rewardMap.get("teakRewardId");
-            this.incentivized = this.teakRewardId != null;
-            this.teakSourceSendId = (String) rewardMap.get("teakNotifId");
-            this.teakDeepLink = (String) rewardMap.get("teakDeepLink");
-        }
-
-        public AttributionData(@NonNull final Uri uri) {
+        public AttributionData(@NonNull final Uri uri, @Nullable final Uri teakShortLink) {
             this.teakScheduleName = uri.getQueryParameter("teak_schedule_name");
             this.teakScheduleId = uri.getQueryParameter("teak_schedule_id");
             this.teakChannelName = uri.getQueryParameter("teak_channel_name");
@@ -687,8 +697,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             this.incentivized = this.teakRewardId != null;
             this.teakSourceSendId = uri.getQueryParameter("teak_notif_id");
 
-            // TODO: Test this for certain
-            this.teakDeepLink = uri.getPath();
+            this.teakDeepLink = uri;
+            this.teakShortLink = teakShortLink;
         }
 
         public Map<String, Object> toMap() {
@@ -701,7 +711,36 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             map.put("teakSourceSendId", this.teakSourceSendId);
             map.put("teakRewardId", this.teakRewardId);
             map.put("incentivized", this.incentivized);
-            map.put("teakDeepLink", this.teakDeepLink);
+            map.put("teakDeepLink", this.teakDeepLink.toString());
+            return map;
+        }
+
+        public Map<String, Object> toSessionAttributionMap() {
+            final HashMap<String, Object> map = new HashMap<>();
+            if (this.teakSourceSendId != null) {
+                map.put("teak_notif_id", this.teakSourceSendId);
+            }
+
+            // Always assign 'launch_link'
+            map.put("launch_link", this.teakDeepLink.toString());
+
+            final boolean wasTeakDeepLink = this.teakShortLink != null || io.teak.sdk.core.DeepLink.willProcessUri(this.teakDeepLink);
+
+            // Put the URI and any query parameters that start with 'teak_' into 'deep_link'
+            // but only if this was a Teak deep link
+            if (wasTeakDeepLink) {
+                map.put("deep_link", this.teakDeepLink.toString());
+                for (String name : this.teakDeepLink.getQueryParameterNames()) {
+                    if (name.startsWith("teak_")) {
+                        List<String> values = this.teakDeepLink.getQueryParameters(name);
+                        if (values.size() > 1) {
+                            map.put(name, values);
+                        } else {
+                            map.put(name, values.get(0));
+                        }
+                    }
+                }
+            }
             return map;
         }
     }
@@ -716,39 +755,28 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         public final boolean isForeground;
 
         /**
-         * The text in the body of the notification.
-         */
-        public final String message;
-
-        /**
          * Attached reward, or null.
          */
-        public final Map<String, Object> reward;
+        public final TeakNotification.Reward  reward;
 
-        // TODO: Is this needed?
-        public final String teakNotificationPlacement;
-
-        public NotificationEvent(final Bundle bundle, final boolean isForeground) {
-            this(bundle, isForeground, null);
+        public NotificationEvent(@NonNull final AttributionData attribution, final boolean isForeground) {
+            this(attribution, isForeground, null);
         }
 
-        public NotificationEvent(@NonNull final Bundle bundle, final boolean isForeground, final Map<String, Object> reward) {
-            super(bundle);
+        public NotificationEvent(@NonNull final AttributionData attribution, final boolean isForeground, final TeakNotification.Reward reward) {
+            super(attribution);
 
             this.isForeground = isForeground;
-            this.teakNotificationPlacement = bundle.getString("teakNotificationPlacement");
-            this.message = bundle.getString("message");
             this.reward = reward;
         }
 
         @Override
         public Map<String, Object> toMap() {
             final Map<String, Object> map = super.toMap();
-            map.put("teakNotificationPlacement", this.teakNotificationPlacement);
-            map.put("message", this.message);
 
+            map.put("isForeground", this.isForeground);
             if (this.reward != null) {
-                map.putAll(reward);
+                map.putAll(reward.json.toMap());
             }
 
             return map;
@@ -759,16 +787,11 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * Event posted when a reward claim attempt has occurred.
      */
     public static class RewardClaimEvent extends AttributionData {
+        public final TeakNotification.Reward reward;
 
-        /**
-         * The full contents of the reward.
-         */
-        public final Map<String, Object> rewardAsMap;
-
-        public RewardClaimEvent(@NonNull final Map<String, Object> rewardMap) {
-            super(rewardMap);
-
-            this.rewardAsMap = rewardMap;
+        public RewardClaimEvent(@NonNull final AttributionData attribution, @NonNull final TeakNotification.Reward reward) {
+            super(attribution);
+            this.reward = reward;
         }
     }
 
@@ -790,14 +813,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * Event sent when the app was launched from a link created by the Teak dashboard.
      */
     public static class LaunchFromLinkEvent extends AttributionData {
-        /**
-         * The uri used to launch the app.
-         */
-        public final Uri uri;
-
-        public LaunchFromLinkEvent(@NonNull final Uri uri) {
-            super(uri);
-            this.uri = uri;
+        public LaunchFromLinkEvent(@NonNull final AttributionData attribution) {
+            super(attribution);
         }
     }
 
