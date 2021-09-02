@@ -967,8 +967,7 @@ public class Session {
                     uriIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     uriIntent.putExtra("teakSessionProcessed", true);
                     teakConfiguration.appConfiguration.applicationContext.startActivity(uriIntent);
-                } else if (!"email".equalsIgnoreCase(attribution.teakChannelName)) {
-                    // Else, if this is not an email launch, then we launched from a link
+                } else if (Helpers.isNullOrEmpty(attribution.teakRewardlinkId)) {
                     Session.whenUserIdIsReadyPost(new Teak.LaunchFromLinkEvent(attribution));
                 }
             }

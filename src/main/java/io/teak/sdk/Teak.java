@@ -622,6 +622,11 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         public final String teakRewardId;
 
         /**
+         * The rewardlink id, or null;
+         */
+        public final String teakRewardlinkId;
+
+        /**
          * The id of the send responsible.
          *
          * This is also known as 'teakNotifId'
@@ -660,6 +665,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             this.teakCreativeId = attribution.teakCreativeId;
             this.teakChannelName = attribution.teakChannelName;
             this.teakRewardId = attribution.teakRewardId;
+            this.teakRewardlinkId = attribution.teakRewardlinkId;
             this.incentivized = attribution.incentivized;
             this.teakSourceSendId = attribution.teakSourceSendId;
             this.teakDeepLink = attribution.teakDeepLink;
@@ -675,6 +681,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             this.teakCreativeId = Helpers.oldIfNotNew(attribution.teakCreativeId, updatedAttributionData.teakCreativeId);
             this.teakChannelName = Helpers.oldIfNotNew(attribution.teakChannelName, updatedAttributionData.teakChannelName);
             this.teakRewardId = Helpers.oldIfNotNew(attribution.teakRewardId, updatedAttributionData.teakRewardId);
+            this.teakRewardlinkId = Helpers.oldIfNotNew(attribution.teakRewardlinkId, updatedAttributionData.teakRewardlinkId);
             this.incentivized = Helpers.oldIfNotNew(attribution.incentivized, updatedAttributionData.incentivized);
             this.teakSourceSendId = Helpers.oldIfNotNew(attribution.teakSourceSendId, updatedAttributionData.teakSourceSendId);
             this.teakDeepLink = Helpers.oldIfNotNew(attribution.teakDeepLink, updatedAttributionData.teakDeepLink);
@@ -688,6 +695,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             this.teakCreativeId = bundle.getString("teakCreativeId");
             this.teakChannelName = bundle.getString("teakChannelName");
             this.teakRewardId = bundle.getString("teakRewardId");
+            this.teakRewardlinkId = bundle.getString("teakRewardlinkId");
             this.incentivized = this.teakRewardId != null;
             this.teakSourceSendId = bundle.getString("teakNotifId");
             this.teakShortLink = null;
@@ -706,7 +714,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             final String urlCreativeName = uri.getQueryParameter("teak_creative_name");
             this.teakCreativeName = urlCreativeName != null ? urlCreativeName : uri.getQueryParameter("teak_rewardlink_name");
             final String urlCreativeId = uri.getQueryParameter("teak_creative_id");
-            this.teakCreativeId = urlCreativeId != null ? urlCreativeId : uri.getQueryParameter("teak_rewardlink_id");
+            this.teakRewardlinkId = uri.getQueryParameter("teak_rewardlink_id");
+            this.teakCreativeId = urlCreativeId != null ? urlCreativeId : this.teakRewardlinkId;
 
             this.teakRewardId = uri.getQueryParameter("teak_reward_id");
             this.incentivized = this.teakRewardId != null;
@@ -729,6 +738,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             map.put("teakChannelName", this.teakCreativeName);
             map.put("teakSourceSendId", this.teakSourceSendId);
             map.put("teakRewardId", this.teakRewardId);
+            map.put("teakRewardlinkId", this.teakRewardlinkId);
             map.put("incentivized", this.incentivized);
             map.put("teakDeepLink", this.teakDeepLink.toString());
             return map;
@@ -738,6 +748,9 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             final HashMap<String, Object> map = new HashMap<>();
             if (this.teakSourceSendId != null) {
                 map.put("teak_notif_id", this.teakSourceSendId);
+            }
+            if (this.teakRewardlinkId != null) {
+                map.put("teak_rewardlink_id", this.teakRewardlinkId);
             }
             if (this.teakDeepLink != null) {
                 map.put("launch_link", this.teakDeepLink.toString());
