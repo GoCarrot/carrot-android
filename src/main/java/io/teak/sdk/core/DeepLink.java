@@ -2,6 +2,7 @@ package io.teak.sdk.core;
 
 import android.net.Uri;
 
+import java.net.URI;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -81,11 +82,19 @@ public class DeepLink {
 }
 
 public static boolean willProcessUri(Uri uri) {
+    return DeepLink.willProcessUri(URI.create(uri.toString()));
+}
+
+public static boolean willProcessUri(URI uri) {
     if (uri == null) return false;
     return TeakConfiguration.get().appConfiguration.urlSchemes.contains(uri.getScheme());
 }
 
 public static boolean processUri(Uri uri) {
+    return DeepLink.processUri(URI.create(uri.toString()));
+}
+
+public static boolean processUri(URI uri) {
     if (!DeepLink.willProcessUri(uri)) return false;
 
     synchronized (routes) {

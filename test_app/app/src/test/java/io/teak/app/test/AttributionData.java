@@ -22,7 +22,7 @@ public class AttributionData {
 
     @Test
     public void ConstructFromUri() {
-        final Teak.AttributionData data = new Teak.AttributionData(getGenericUri());
+        final Teak.AttributionData data = new Teak.AttributionData(getGenericUri(), null);
 
         // Make sure that the correct items go into the correct variables
         assertTrue(Helpers.stringsAreEqual(data.teakScheduleName, teakScheduleName));
