@@ -666,6 +666,21 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             this.teakShortLink = attribution.teakShortLink;
         }
 
+        private AttributionData(@NonNull final AttributionData attribution, @NonNull Uri updatedDeepLink) {
+            final AttributionData updatedAttributionData = new AttributionData(updatedDeepLink, null);
+
+            this.teakScheduleName = Helpers.oldIfNotNew(attribution.teakScheduleName, updatedAttributionData.teakScheduleName);
+            this.teakScheduleId = Helpers.oldIfNotNew(attribution.teakScheduleId, updatedAttributionData.teakScheduleId);
+            this.teakCreativeName = Helpers.oldIfNotNew(attribution.teakCreativeName, updatedAttributionData.teakCreativeName);
+            this.teakCreativeId = Helpers.oldIfNotNew(attribution.teakCreativeId, updatedAttributionData.teakCreativeId);
+            this.teakChannelName = Helpers.oldIfNotNew(attribution.teakChannelName, updatedAttributionData.teakChannelName);
+            this.teakRewardId = Helpers.oldIfNotNew(attribution.teakRewardId, updatedAttributionData.teakRewardId);
+            this.incentivized = Helpers.oldIfNotNew(attribution.incentivized, updatedAttributionData.incentivized);
+            this.teakSourceSendId = Helpers.oldIfNotNew(attribution.teakSourceSendId, updatedAttributionData.teakSourceSendId);
+            this.teakDeepLink = Helpers.oldIfNotNew(attribution.teakDeepLink, updatedAttributionData.teakDeepLink);
+            this.teakShortLink = Helpers.oldIfNotNew(attribution.teakShortLink, updatedAttributionData.teakShortLink);
+        }
+
         public AttributionData(@NonNull final Bundle bundle) {
             this.teakScheduleName = bundle.getString("teakScheduleName");
             this.teakScheduleId = bundle.getString("teakScheduleId");
@@ -701,6 +716,10 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             this.teakShortLink = teakShortLink;
         }
 
+        public AttributionData copyWithUpdatedDeepLink(@NonNull Uri updatedDeepLink) {
+            return new AttributionData(this, updatedDeepLink);
+        }
+
         public Map<String, Object> toMap() {
             final HashMap<String, Object> map = new HashMap<>();
             map.put("teakScheduleName", this.teakScheduleName);
@@ -720,11 +739,12 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             if (this.teakSourceSendId != null) {
                 map.put("teak_notif_id", this.teakSourceSendId);
             }
+            if (this.teakDeepLink != null) {
+                map.put("launch_link", this.teakDeepLink.toString());
+            }
 
-            // Always assign 'launch_link'
-            map.put("launch_link", this.teakDeepLink.toString());
-
-            final boolean wasTeakDeepLink = this.teakShortLink != null || io.teak.sdk.core.DeepLink.willProcessUri(this.teakDeepLink);
+            final boolean wasTeakDeepLink = this.teakShortLink != null ||
+                    (this.teakDeepLink != null && io.teak.sdk.core.DeepLink.willProcessUri(this.teakDeepLink));
 
             // Put the URI and any query parameters that start with 'teak_' into 'deep_link'
             // but only if this was a Teak deep link

@@ -295,4 +295,8 @@ public class Helpers {
             }
         };
     }
+
+    public static <T> T oldIfNotNew(final T oldValue, final T newValue) {
+        return newValue == null ? oldValue : newValue;
+    }
 }

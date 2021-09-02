@@ -1,6 +1,7 @@
 package io.teak.sdk.core;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -18,12 +19,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -446,16 +445,17 @@ public class Session {
                 }
 
                 // Put the AttributionData into the payload, if it exists
+                Teak.AttributionData tempAttributionData = null;
                 if (Session.this.launchAttribution != null) {
                     try {
-                        final Teak.AttributionData attributionData = Session.this.launchAttribution.get(5, TimeUnit.SECONDS);
-                        if (attributionData != null) {
-                            payload.putAll(attributionData.toSessionAttributionMap());
+                        tempAttributionData = Session.this.launchAttribution.get(5, TimeUnit.SECONDS);
+                        if (tempAttributionData != null) {
+                            payload.putAll(tempAttributionData.toSessionAttributionMap());
                         }
                     } catch (Exception ignored) {
                     }
                 }
-
+                final Teak.AttributionData attributionData = tempAttributionData;
 
                 if (teakConfiguration.deviceConfiguration.pushRegistration != null &&
                     teakConfiguration.dataCollectionConfiguration.enablePushKey()) {
@@ -490,10 +490,13 @@ public class Session {
 
                             // Assign deep link to launch, if it is provided
                             if (!response.isNull("deep_link")) {
-                                final String deepLink = response.getString("deep_link");
-                                // Session.this.launchAttribution = Session.attributionFutureMerging(Session.this.launchAttribution, merge);
-                                // HAX HAX HAX
-                                Teak.log.i("deep_link.processed", deepLink);
+                                try {
+                                    final String updatedDeepLink = response.getString("deep_link");
+                                    Session.this.launchAttribution = new AttributionSource(attributionData, Uri.parse(updatedDeepLink));
+                                    Teak.log.i("deep_link.processed", updatedDeepLink);
+                                } catch (Exception e) {
+                                    Teak.log.exception(e);
+                                }
                             }
 
                             // Grab user profile
@@ -997,39 +1000,6 @@ public class Session {
         }
 
         return null;
-    }
-
-    private static Future<Map<String, Object>> attributionFutureMerging(@Nullable final Future<Map<String, Object>> previousAttribution, @NonNull final Map<String, Object> merging) {
-        return new Future<Map<String, Object>>() {
-            @Override
-            public boolean cancel(boolean mayInterruptIfRunning) {
-                return previousAttribution == null || previousAttribution.cancel(mayInterruptIfRunning);
-            }
-
-            @Override
-            public boolean isCancelled() {
-                return previousAttribution != null && previousAttribution.isCancelled();
-            }
-
-            @Override
-            public boolean isDone() {
-                return previousAttribution == null || previousAttribution.isDone();
-            }
-
-            @Override
-            public Map<String, Object> get() throws InterruptedException, ExecutionException {
-                Map<String, Object> ret = previousAttribution == null ? new HashMap<>() : previousAttribution.get();
-                ret.putAll(merging);
-                return ret;
-            }
-
-            @Override
-            public Map<String, Object> get(long timeout, @NonNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-                Map<String, Object> ret = previousAttribution == null ? new HashMap<>() : previousAttribution.get(timeout, unit);
-                ret.putAll(merging);
-                return ret;
-            }
-        };
     }
 
     // region Accessors

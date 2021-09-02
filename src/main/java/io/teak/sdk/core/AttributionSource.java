@@ -31,6 +31,11 @@ public class AttributionSource implements Future<Teak.AttributionData> {
     private final Future<Teak.AttributionData> attributionDataFuture;
     public final boolean isEmpty;
 
+    public AttributionSource(@NonNull Teak.AttributionData attributionData, @NonNull Uri deepLinkFromIdentifyUser) {
+        this.isEmpty = false;
+        this.attributionDataFuture = Helpers.futureForValue(attributionData.copyWithUpdatedDeepLink(deepLinkFromIdentifyUser));
+    }
+
     public AttributionSource(@NonNull final Intent intent) {
         // If is is not a "first launch" then we can take the easy path of not needing to wait for
         // the possibility of an install referrer.
