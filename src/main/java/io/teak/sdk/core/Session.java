@@ -966,7 +966,7 @@ public class Session {
                     uriIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     uriIntent.putExtra("teakSessionProcessed", true);
                     teakConfiguration.appConfiguration.applicationContext.startActivity(uriIntent);
-                } else if (Helpers.isNullOrEmpty(attribution.teakRewardlinkId)) {
+                } else if (!Helpers.isNullOrEmpty(attribution.teakRewardlinkId)) {
                     Session.whenUserIdIsReadyPost(new Teak.LaunchFromLinkEvent(attribution));
                 }
             }
