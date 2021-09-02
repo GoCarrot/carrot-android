@@ -672,20 +672,20 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             this.teakShortLink = attribution.teakShortLink;
         }
 
-        private AttributionData(@NonNull final AttributionData attribution, @NonNull Uri updatedDeepLink) {
-            final AttributionData updatedAttributionData = new AttributionData(updatedDeepLink, null);
+        private AttributionData(@NonNull final AttributionData oldAttribution, @NonNull Uri updatedDeepLink) {
+            final AttributionData newAttribution = new AttributionData(updatedDeepLink, null);
 
-            this.teakScheduleName = Helpers.oldIfNotNew(attribution.teakScheduleName, updatedAttributionData.teakScheduleName);
-            this.teakScheduleId = Helpers.oldIfNotNew(attribution.teakScheduleId, updatedAttributionData.teakScheduleId);
-            this.teakCreativeName = Helpers.oldIfNotNew(attribution.teakCreativeName, updatedAttributionData.teakCreativeName);
-            this.teakCreativeId = Helpers.oldIfNotNew(attribution.teakCreativeId, updatedAttributionData.teakCreativeId);
-            this.teakChannelName = Helpers.oldIfNotNew(attribution.teakChannelName, updatedAttributionData.teakChannelName);
-            this.teakRewardId = Helpers.oldIfNotNew(attribution.teakRewardId, updatedAttributionData.teakRewardId);
-            this.teakRewardlinkId = Helpers.oldIfNotNew(attribution.teakRewardlinkId, updatedAttributionData.teakRewardlinkId);
-            this.incentivized = Helpers.oldIfNotNew(attribution.incentivized, updatedAttributionData.incentivized);
-            this.teakSourceSendId = Helpers.oldIfNotNew(attribution.teakSourceSendId, updatedAttributionData.teakSourceSendId);
-            this.teakDeepLink = Helpers.oldIfNotNew(attribution.teakDeepLink, updatedAttributionData.teakDeepLink);
-            this.teakShortLink = Helpers.oldIfNotNew(attribution.teakShortLink, updatedAttributionData.teakShortLink);
+            this.teakScheduleName = Helpers.newIfNotOld(oldAttribution.teakScheduleName, newAttribution.teakScheduleName);
+            this.teakScheduleId = Helpers.newIfNotOld(oldAttribution.teakScheduleId, newAttribution.teakScheduleId);
+            this.teakCreativeName = Helpers.newIfNotOld(oldAttribution.teakCreativeName, newAttribution.teakCreativeName);
+            this.teakCreativeId = Helpers.newIfNotOld(oldAttribution.teakCreativeId, newAttribution.teakCreativeId);
+            this.teakChannelName = Helpers.newIfNotOld(oldAttribution.teakChannelName, newAttribution.teakChannelName);
+            this.teakRewardId = Helpers.newIfNotOld(oldAttribution.teakRewardId, newAttribution.teakRewardId);
+            this.teakRewardlinkId = Helpers.newIfNotOld(oldAttribution.teakRewardlinkId, newAttribution.teakRewardlinkId);
+            this.incentivized = Helpers.newIfNotOld(oldAttribution.incentivized, newAttribution.incentivized);
+            this.teakSourceSendId = Helpers.newIfNotOld(oldAttribution.teakSourceSendId, newAttribution.teakSourceSendId);
+            this.teakDeepLink = Helpers.newIfNotOld(oldAttribution.teakDeepLink, newAttribution.teakDeepLink);
+            this.teakShortLink = Helpers.newIfNotOld(oldAttribution.teakShortLink, newAttribution.teakShortLink);
         }
 
         public AttributionData(@NonNull final Bundle bundle) {
