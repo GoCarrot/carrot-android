@@ -122,7 +122,6 @@ public class Session {
 
     // State Independent
     private AttributionSource launchAttribution = null;
-    private boolean launchAttributionProcessed = false;
 
     // For cases where setUserId() is called before a Session has been created
     private static String pendingUserId;
@@ -574,8 +573,8 @@ public class Session {
 
     private synchronized void processAttributionAndDispatchEvents() {
         // If there is no launch attribution, bail.
-        if (this.launchAttribution == null || this.launchAttributionProcessed) return;
-        this.launchAttributionProcessed = true;
+        if (this.launchAttribution == null || this.launchAttribution.isProcessed) return;
+        this.launchAttribution.isProcessed = true;
 
         this.executionQueue.execute(() -> {
             try {

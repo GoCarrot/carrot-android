@@ -31,6 +31,8 @@ public class AttributionSource implements Future<Teak.AttributionData> {
     private final Future<Teak.AttributionData> attributionDataFuture;
     public final boolean isEmpty;
 
+    public boolean isProcessed = false;
+
     public AttributionSource(@NonNull Teak.AttributionData attributionData, @NonNull Uri deepLinkFromIdentifyUser) {
         this.isEmpty = false;
         this.attributionDataFuture = Helpers.futureForValue(attributionData.copyWithUpdatedDeepLink(deepLinkFromIdentifyUser));
