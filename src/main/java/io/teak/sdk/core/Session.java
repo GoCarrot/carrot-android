@@ -1,7 +1,6 @@
 package io.teak.sdk.core;
 
 import android.content.Intent;
-import android.content.pm.ResolveInfo;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -15,7 +14,6 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
@@ -599,8 +597,6 @@ public class Session {
 
                     // Process any deep links
                     Session.this.checkAttributionForDeepLinkAndPostEvents(attribution);
-
-
                 }
             } catch (Exception e) {
                 Teak.log.exception(e);
@@ -960,16 +956,14 @@ public class Session {
                 // Otherwise, if this was a deep link then it was either a universal
                 // link or came in from a Teak Notification
                 if (!deepLinkWasProcessedByTeak && !attribution.teakDeepLink.getScheme().startsWith("teak")) {
-                    Intent uriIntent = new Intent(Intent.ACTION_VIEW, attribution.teakDeepLink);
+                    // In API 30+ using 'queryIntentActivities' requires a list of queried schemes
+                    // in AndroidManifest.xml. Instead, add 'teakSessionProcessed' and the existing
+                    // code in Session.onActivityResumed will check for that flag, and not cause
+                    // an infinite loop.
+                    final Intent uriIntent = new Intent(Intent.ACTION_VIEW, attribution.teakDeepLink);
                     uriIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    List<ResolveInfo> resolvedActivities = teakConfiguration.appConfiguration.packageManager.queryIntentActivities(uriIntent, 0);
-                    boolean safeToRedirect = true;
-                    for (ResolveInfo info : resolvedActivities) {
-                        safeToRedirect &= !teakConfiguration.appConfiguration.bundleId.equalsIgnoreCase(info.activityInfo.packageName);
-                    }
-                    if (resolvedActivities.size() > 0 && safeToRedirect) {
-                        teakConfiguration.appConfiguration.applicationContext.startActivity(uriIntent);
-                    }
+                    uriIntent.putExtra("teakSessionProcessed", true);
+                    teakConfiguration.appConfiguration.applicationContext.startActivity(uriIntent);
                 } else if (!"email".equalsIgnoreCase(attribution.teakChannelName)) {
                     // Else, if this is not an email launch, then we launched from a link
                     Session.whenUserIdIsReadyPost(new Teak.LaunchFromLinkEvent(attribution));
