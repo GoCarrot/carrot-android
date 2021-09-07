@@ -5,7 +5,6 @@ import org.greenrobot.eventbus.Subscribe;
 
 import io.teak.sdk.Teak;
 import io.teak.sdk.Unobfuscable;
-import io.teak.sdk.json.JSONObject;
 
 public class TeakInterface implements Unobfuscable {
     private final ISDKWrapper sdkWrapper;
@@ -20,7 +19,7 @@ public class TeakInterface implements Unobfuscable {
     public void onNotification(Teak.NotificationEvent event) {
         String eventData = "{}";
         try {
-            eventData = new JSONObject(event.toMap()).toString(0);
+            eventData = event.toJSON().toString(0);
         } catch (Exception e) {
             Teak.log.exception(e);
         } finally {
@@ -47,7 +46,7 @@ public class TeakInterface implements Unobfuscable {
     public void onLaunchedFromLink(Teak.LaunchFromLinkEvent event) {
         String eventData = "{}";
         try {
-            eventData = new JSONObject(event.toMap()).toString(0);
+            eventData = event.toJSON().toString(0);
         } catch (Exception e) {
             Teak.log.exception(e);
         } finally {
@@ -58,7 +57,7 @@ public class TeakInterface implements Unobfuscable {
     @Subscribe
     public void onRewardClaim(Teak.RewardClaimEvent event) {
         try {
-            String eventData = new JSONObject(event.toMap()).toString(0);
+            final String eventData = event.toJSON().toString(0);
             sdkWrapper.sdkSendMessage(ISDKWrapper.EventType.RewardClaim, eventData);
         } catch (Exception e) {
             Teak.log.exception(e);

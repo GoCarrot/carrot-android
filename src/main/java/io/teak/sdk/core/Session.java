@@ -121,7 +121,7 @@ public class Session {
     private Date endDate;
 
     // State Independent
-    private AttributionSource launchAttribution = null;
+    private LaunchDataSource launchDataSource = null;
 
     // For cases where setUserId() is called before a Session has been created
     private static String pendingUserId;
@@ -138,7 +138,7 @@ public class Session {
         this(null, null);
     }
 
-    private Session(@Nullable Session session, @Nullable AttributionSource launchAttribution) {
+    private Session(@Nullable Session session, @Nullable LaunchDataSource launchDataSource) {
         // State: Created
         // Valid data:
         // - startDate
@@ -146,7 +146,7 @@ public class Session {
         // - deviceConfiguration
         this.startDate = new Date();
         this.sessionId = UUID.randomUUID().toString().replace("-", "");
-        this.launchAttribution = launchAttribution;
+        this.launchDataSource = launchDataSource;
         if (session != null) {
             this.userId = session.userId;
             this.facebookAccessToken = session.facebookAccessToken;
@@ -444,17 +444,17 @@ public class Session {
                 }
 
                 // Put the AttributionData into the payload, if it exists
-                Teak.AttributionData tempAttributionData = null;
-                if (Session.this.launchAttribution != null) {
+                Teak.LaunchData tempLaunchData = null;
+                if (Session.this.launchDataSource != null) {
                     try {
-                        tempAttributionData = Session.this.launchAttribution.get(5, TimeUnit.SECONDS);
-                        if (tempAttributionData != null) {
-                            payload.putAll(tempAttributionData.toSessionAttributionMap());
+                        tempLaunchData = Session.this.launchDataSource.get(5, TimeUnit.SECONDS);
+                        if (tempLaunchData != null) {
+                            payload.putAll(tempLaunchData.toSessionAttributionMap());
                         }
                     } catch (Exception ignored) {
                     }
                 }
-                final Teak.AttributionData attributionData = tempAttributionData;
+                final Teak.LaunchData launchData = tempLaunchData;
 
                 if (teakConfiguration.deviceConfiguration.pushRegistration != null &&
                     teakConfiguration.dataCollectionConfiguration.enablePushKey()) {
@@ -491,7 +491,7 @@ public class Session {
                             if (!response.isNull("deep_link")) {
                                 try {
                                     final String updatedDeepLink = response.getString("deep_link");
-                                    Session.this.launchAttribution = new AttributionSource(attributionData, Uri.parse(updatedDeepLink));
+                                    Session.this.launchDataSource = LaunchDataSource.sourceWithUpdatedDeepLink(launchData, Uri.parse(updatedDeepLink));
                                     Teak.log.i("deep_link.processed", updatedDeepLink);
                                 } catch (Exception e) {
                                     Teak.log.exception(e);
@@ -573,8 +573,8 @@ public class Session {
 
     private synchronized void processAttributionAndDispatchEvents() {
         // If there is no launch attribution, bail.
-        if (this.launchAttribution == null || this.launchAttribution.isProcessed) return;
-        this.launchAttribution.isProcessed = true;
+        if (this.launchDataSource == null || this.launchDataSource.isProcessed) return;
+        this.launchDataSource.isProcessed = true;
 
         this.executionQueue.execute(() -> {
             try {
@@ -589,16 +589,17 @@ public class Session {
 
             try {
                 // Resolve attribution Future
-                final Teak.AttributionData attribution = Session.this.launchAttribution.get(15, TimeUnit.SECONDS);
-                if (attribution != null) {
+                final Teak.LaunchData launchData = Session.this.launchDataSource.get(15, TimeUnit.SECONDS);
+                if (launchData instanceof Teak.AttributedLaunchData) {
+                    final Teak.AttributedLaunchData attributedLaunchData = (Teak.AttributedLaunchData) launchData;
                     // Process any rewards
-                    final Future<TeakNotification.Reward> rewardFuture = Session.this.checkAttributionForRewardAndPostEvents(attribution);
+                    final Future<TeakNotification.Reward> rewardFuture = Session.this.checkLaunchDataForRewardAndPostEvents(attributedLaunchData);
 
                     // Process any notifications
-                    Session.this.checkAttributionForNotificationAndPostEvents(attribution, rewardFuture);
+                    Session.this.checkLaunchDataForNotificationAndPostEvents(attributedLaunchData, rewardFuture);
 
                     // Process any deep links
-                    Session.this.checkAttributionForDeepLinkAndPostEvents(attribution);
+                    Session.this.checkLaunchDataForDeepLinkAndPostEvents(attributedLaunchData, rewardFuture);
                 }
             } catch (Exception e) {
                 Teak.log.exception(e);
@@ -889,7 +890,7 @@ public class Session {
             }
             intent.putExtra("teakSessionProcessed", true);
 
-            final AttributionSource sessionAttribution = new AttributionSource(intent);
+            final LaunchDataSource launchDataSource = LaunchDataSource.sourceFromIntent(intent);
 
             // TODO:
             // Teak.log.i("session.attribution", Helpers.mm.h("deep_link", intentDataString));
@@ -898,10 +899,10 @@ public class Session {
 
             // If the current session has a launch different attribution, it's a new session
             if (currentSession.state == State.Allocated || currentSession.state == State.Created) {
-                currentSession.launchAttribution = sessionAttribution;
-            } else if (!sessionAttribution.isEmpty) {
+                currentSession.launchDataSource = launchDataSource;
+            } else if (launchDataSource != LaunchDataSource.Unattributed) {
                 Session oldSession = currentSession;
-                currentSession = new Session(oldSession, sessionAttribution);
+                currentSession = new Session(oldSession, launchDataSource);
                 oldSession.stateLock.lock();
                 try {
                     oldSession.setState(State.Expiring);
@@ -926,15 +927,16 @@ public class Session {
         }
     }
 
-    private void checkAttributionForNotificationAndPostEvents(final Teak.AttributionData attribution, final Future<TeakNotification.Reward> rewardFuture) {
-        if (attribution.teakSourceSendId != null) {
+    private void checkLaunchDataForNotificationAndPostEvents(final Teak.AttributedLaunchData attributedLaunchData, final Future<TeakNotification.Reward> rewardFuture) {
+        if (attributedLaunchData instanceof Teak.NotificationLaunchData) {
+            final Teak.NotificationLaunchData notificationLaunchData = (Teak.NotificationLaunchData) attributedLaunchData;
             if (rewardFuture != null) {
                 Session.this.executionQueue.execute(() -> {
-                    Teak.NotificationEvent notificationEvent = new Teak.NotificationEvent(attribution, false);
+                    Teak.NotificationEvent notificationEvent = new Teak.NotificationEvent(notificationLaunchData, false);
                     try {
                         final TeakNotification.Reward reward = rewardFuture.get();
                         if (reward != null) {
-                            notificationEvent = new Teak.NotificationEvent(attribution, false, reward);
+                            notificationEvent = new Teak.NotificationEvent(notificationLaunchData, false, reward);
                         }
                     } catch (Exception e) {
                         Teak.log.exception(e);
@@ -943,31 +945,50 @@ public class Session {
                     }
                 });
             } else {
-                Session.whenUserIdIsReadyPost(new Teak.NotificationEvent(attribution, false));
+                // No reward
+                Session.whenUserIdIsReadyPost(new Teak.NotificationEvent(notificationLaunchData, false));
             }
         }
     }
 
-    private void checkAttributionForDeepLinkAndPostEvents(final Teak.AttributionData attribution) {
+    private void checkLaunchDataForDeepLinkAndPostEvents(final Teak.AttributedLaunchData launchData, final Future<TeakNotification.Reward> rewardFuture) {
         try {
             final TeakConfiguration teakConfiguration = TeakConfiguration.get();
-            if (attribution.teakDeepLink != null) {
+            if (launchData.launchLink != null) {
                 // See if TeakLinks can do anything with the deep link
-                final boolean deepLinkWasProcessedByTeak = DeepLink.processUri(attribution.teakDeepLink);
+                final boolean deepLinkWasProcessedByTeak = DeepLink.processUri(launchData.launchLink);
 
                 // Otherwise, if this was a deep link then it was either a universal
                 // link or came in from a Teak Notification
-                if (!deepLinkWasProcessedByTeak && !attribution.teakDeepLink.getScheme().startsWith("teak")) {
+                if (!deepLinkWasProcessedByTeak && !launchData.launchLink.getScheme().startsWith("teak")) {
                     // In API 30+ using 'queryIntentActivities' requires a list of queried schemes
                     // in AndroidManifest.xml. Instead, add 'teakSessionProcessed' and the existing
                     // code in Session.onActivityResumed will check for that flag, and not cause
                     // an infinite loop.
-                    final Intent uriIntent = new Intent(Intent.ACTION_VIEW, attribution.teakDeepLink);
+                    final Intent uriIntent = new Intent(Intent.ACTION_VIEW, launchData.launchLink);
                     uriIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     uriIntent.putExtra("teakSessionProcessed", true);
                     teakConfiguration.appConfiguration.applicationContext.startActivity(uriIntent);
-                } else if (!Helpers.isNullOrEmpty(attribution.teakRewardlinkId)) {
-                    Session.whenUserIdIsReadyPost(new Teak.LaunchFromLinkEvent(attribution));
+                } else if (launchData instanceof Teak.RewardlinkLaunchData) {
+                    final Teak.RewardlinkLaunchData rewardlinkLaunchData = (Teak.RewardlinkLaunchData) launchData;
+                    if (rewardFuture != null) {
+                        Session.this.executionQueue.execute(() -> {
+                            Teak.LaunchFromLinkEvent linkLaunchEvent = new Teak.LaunchFromLinkEvent(rewardlinkLaunchData, null);
+                            try {
+                                final TeakNotification.Reward reward = rewardFuture.get();
+                                if (reward != null) {
+                                    linkLaunchEvent = new Teak.LaunchFromLinkEvent(rewardlinkLaunchData, reward);
+                                }
+                            } catch (Exception e) {
+                                Teak.log.exception(e);
+                            } finally {
+                                Session.whenUserIdIsReadyPost(linkLaunchEvent);
+                            }
+                        });
+                    } else {
+                        // No reward
+                        Session.whenUserIdIsReadyPost(new Teak.LaunchFromLinkEvent(rewardlinkLaunchData, null));
+                    }
                 }
             }
         } catch (Exception e) {
@@ -975,16 +996,16 @@ public class Session {
         }
     }
 
-    private Future<TeakNotification.Reward> checkAttributionForRewardAndPostEvents(final Teak.AttributionData attribution) {
+    private Future<TeakNotification.Reward> checkLaunchDataForRewardAndPostEvents(final Teak.AttributedLaunchData attributedLaunchData) {
         try {
-            if (attribution.teakRewardId != null) {
-                final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(attribution.teakRewardId);
+            if (attributedLaunchData.rewardId != null) {
+                final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(attributedLaunchData.rewardId);
 
                 if (rewardFuture != null) {
                     Session.this.executionQueue.execute(() -> {
                         try {
                             final TeakNotification.Reward reward = rewardFuture.get();
-                            Session.whenUserIdIsReadyPost(new Teak.RewardClaimEvent(attribution, reward));
+                            Session.whenUserIdIsReadyPost(new Teak.RewardClaimEvent(attributedLaunchData, reward));
                         } catch (Exception e) {
                             Teak.log.exception(e);
                         }

@@ -27,18 +27,21 @@ import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.referrer.InstallReferrerFuture;
 
-public class AttributionSource implements Future<Teak.AttributionData> {
-    private final Future<Teak.AttributionData> attributionDataFuture;
-    public final boolean isEmpty;
+public class LaunchDataSource implements Future<Teak.LaunchData> {
+    public static final LaunchDataSource Unattributed = new LaunchDataSource(Helpers.futureForValue(Teak.LaunchData.Unattributed));
 
     public boolean isProcessed = false;
+    private final Future<Teak.LaunchData> launchDataFuture;
 
-    public AttributionSource(@NonNull Teak.AttributionData attributionData, @NonNull Uri deepLinkFromIdentifyUser) {
-        this.isEmpty = false;
-        this.attributionDataFuture = Helpers.futureForValue(attributionData.copyWithUpdatedDeepLink(deepLinkFromIdentifyUser));
+    private LaunchDataSource(@NonNull final Future<Teak.LaunchData> launchDataFuture) {
+        this.launchDataFuture = launchDataFuture;
     }
 
-    public AttributionSource(@NonNull final Intent intent) {
+    public static LaunchDataSource sourceWithUpdatedDeepLink(@NonNull final Teak.LaunchData launchData, @NonNull final Uri deepLink) {
+        return new LaunchDataSource(Helpers.futureForValue(launchData.mergeDeepLink(deepLink)));
+    }
+
+    public static LaunchDataSource sourceFromIntent(@NonNull final Intent intent) {
         // If is is not a "first launch" then we can take the easy path of not needing to wait for
         // the possibility of an install referrer.
         final boolean isFirstLaunch = intent.getBooleanExtra("teakIsFirstLaunch", false);
@@ -50,27 +53,22 @@ public class AttributionSource implements Future<Teak.AttributionData> {
             final String teakNotifId = Helpers.getStringOrNullFromIntentExtra(intent, "teakNotifId");
 
             if (teakNotifId != null) {
-                this.isEmpty = false;
-
                 // This is the fast and easy path. There is a teakNotifId, meaning we launched via a push
                 // notification, and it's not the first launch, so we do not need to worry about any
                 // install referrer.
-                this.attributionDataFuture = Helpers.futureForValue(new Teak.AttributionData(intent.getExtras()));
+                return new LaunchDataSource(Helpers.futureForValue(new Teak.NotificationLaunchData(intent.getExtras())));
             } else {
                 // This is not the first launch, but we will need to wait for a link resolution
                 final String intentDataString = intent.getDataString();
 
+                // If there's no launch url, this is a completely unattributed launch
                 if (Helpers.isNullOrEmpty(intentDataString)) {
-                    this.isEmpty = true;
-                    this.attributionDataFuture = Helpers.futureForValue(null);
+                    return LaunchDataSource.Unattributed;
                 } else {
-                    this.isEmpty = false;
-                    this.attributionDataFuture = AttributionSource.futureFromLinkResolution(Helpers.futureForValue(intentDataString));
+                    return new LaunchDataSource(LaunchDataSource.futureFromLinkResolution(Helpers.futureForValue(intentDataString)));
                 }
             }
         } else {
-            this.isEmpty = false;
-
             // This is the first launch, which means we need to check for an install referrer.
             //
             // The install referrer may be something like a link from an email, which means that it
@@ -80,16 +78,16 @@ public class AttributionSource implements Future<Teak.AttributionData> {
             // first launch, and Teak therefor cannot possibly know about the device.
             final TeakConfiguration teakConfiguration = TeakConfiguration.get();
             final Future<String> installReferrer = InstallReferrerFuture.get(teakConfiguration.appConfiguration.applicationContext);
-            this.attributionDataFuture = AttributionSource.futureFromLinkResolution(installReferrer);
+            return new LaunchDataSource(LaunchDataSource.futureFromLinkResolution(installReferrer));
         }
     }
 
     ////// Create a Future which will contain AttributionData from a resolved link
 
-    protected static Future<Teak.AttributionData> futureFromLinkResolution(@NonNull final Future<String> futureForUriOrNull) {
+    protected static Future<Teak.LaunchData> futureFromLinkResolution(@NonNull final Future<String> futureForUriOrNull) {
         final TeakConfiguration teakConfiguration = TeakConfiguration.get();
 
-        final FutureTask<Teak.AttributionData> returnTask = new FutureTask<Teak.AttributionData>(() -> {
+        final FutureTask<Teak.LaunchData> returnTask = new FutureTask<Teak.LaunchData>(() -> {
             Uri httpsUri = null;
 
             // Wait on the incoming Future
@@ -169,8 +167,12 @@ public class AttributionSource implements Future<Teak.AttributionData> {
                 }
             }
 
-
-            return new Teak.AttributionData(uri, httpsUri);
+            // If this is a link from a Teak email, then it's a notification launch data
+            if (Teak.NotificationLaunchData.isTeakEmailUri(uri)) {
+                return new Teak.NotificationLaunchData(uri);
+            } else {
+                return new Teak.RewardlinkLaunchData(uri, httpsUri);
+            }
         });
 
         // Start it running, and return the Future
@@ -182,26 +184,26 @@ public class AttributionSource implements Future<Teak.AttributionData> {
 
     @Override
     public boolean cancel(boolean b) {
-        return this.attributionDataFuture.cancel(b);
+        return this.launchDataFuture.cancel(b);
     }
 
     @Override
     public boolean isCancelled() {
-        return this.attributionDataFuture.isCancelled();
+        return this.launchDataFuture.isCancelled();
     }
 
     @Override
     public boolean isDone() {
-        return this.attributionDataFuture.isDone();
+        return this.launchDataFuture.isDone();
     }
 
     @Override
-    public Teak.AttributionData get() throws ExecutionException, InterruptedException {
-        return this.attributionDataFuture.get();
+    public Teak.LaunchData get() throws ExecutionException, InterruptedException {
+        return this.launchDataFuture.get();
     }
 
     @Override
-    public Teak.AttributionData get(long l, TimeUnit timeUnit) throws ExecutionException, InterruptedException, TimeoutException {
-        return this.attributionDataFuture.get(l, timeUnit);
+    public Teak.LaunchData get(long l, TimeUnit timeUnit) throws ExecutionException, InterruptedException, TimeoutException {
+        return this.launchDataFuture.get(l, timeUnit);
     }
 }

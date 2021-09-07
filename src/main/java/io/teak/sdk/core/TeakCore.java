@@ -129,7 +129,9 @@ public class TeakCore {
                     final boolean gameIsInForeground = !Session.isExpiringOrExpired();
                     final boolean showInForeground = Helpers.getBooleanFromBundle(bundle, "teakShowInForeground");
                     if (gameIsInForeground) {
-                        Session.whenUserIdIsReadyPost(new Teak.NotificationEvent(new Teak.AttributionData(bundle), true));
+                        // Note: This is the only case where an attributed event is sent from somewhere
+                        // outside of Session#processAttributionAndDispatchEvents.
+                        Session.whenUserIdIsReadyPost(new Teak.NotificationEvent(new Teak.NotificationLaunchData(bundle), true));
                     }
 
                     // Create Teak Notification
