@@ -14,22 +14,22 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class AttributionData {
+public class LaunchData {
     static final String teakScheduleName = "some_schedule_name";
     static final String teakScheduleId = "some_schedule_id";
     static final String teakCreativeName = "some_creative_name";
     static final String teakCreativeId = "some_creative_id";
 
     @Test
-    public void ConstructFromUri() {
-        final Teak.AttributionData data = new Teak.AttributionData(getGenericUri(), null);
+    public void RewardlinkLaunchData() {
+        final Teak.RewardlinkLaunchData data = new Teak.RewardlinkLaunchData(getGenericUri(), null);
 
         // Make sure that the correct items go into the correct variables
-        assertTrue(Helpers.stringsAreEqual(data.teakScheduleName, teakScheduleName));
-        assertTrue(Helpers.stringsAreEqual(data.teakScheduleId, teakScheduleId));
-        assertTrue(Helpers.stringsAreEqual(data.teakCreativeName, teakCreativeName));
-        assertTrue(Helpers.stringsAreEqual(data.teakCreativeId, teakCreativeId));
-        assertTrue(Helpers.stringsAreEqual(data.teakChannelName, "generic_link"));
+        assertTrue(Helpers.stringsAreEqual(data.scheduleName, teakScheduleName));
+        assertTrue(Helpers.stringsAreEqual(data.scheduleId, teakScheduleId));
+        assertTrue(Helpers.stringsAreEqual(data.creativeName, teakCreativeName));
+        assertTrue(Helpers.stringsAreEqual(data.creativeId, teakCreativeId));
+        assertTrue(Helpers.stringsAreEqual(data.channelName, "generic_link"));
     }
 
     private Uri getGenericUri() {
