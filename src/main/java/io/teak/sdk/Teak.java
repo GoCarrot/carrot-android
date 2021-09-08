@@ -634,13 +634,6 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         }
 
         /**
-         * @return true if the link associated with this launch a Teak deep link; false otherwise.
-         */
-        public boolean isTeakLaunchLink() {
-            return io.teak.sdk.core.DeepLink.willProcessUri(this.launchLink);
-        }
-
-        /**
          * Used by {@link io.teak.sdk.core.LaunchDataSource#sourceWithUpdatedDeepLink}
          * @param uri Updated deep link
          * @return A merged LaunchData
@@ -660,22 +653,6 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             if (this.launchLink != null) {
                 map.put("launch_link", this.launchLink.toString());
             }
-
-            // Put the URI and any query parameters that start with 'teak_' into 'deep_link'
-            // but only if this was a Teak deep link
-            if (this.isTeakLaunchLink()) {
-                map.put("deep_link", this.launchLink.toString());
-                for (final String name : this.launchLink.getQueryParameterNames()) {
-                    if (name.startsWith("teak_")) {
-                        final List<String> values = this.launchLink.getQueryParameters(name);
-                        if (values.size() > 1) {
-                            map.put(name, values);
-                        } else {
-                            map.put(name, values.get(0));
-                        }
-                    }
-                }
-            }
             return map;
         }
 
@@ -687,7 +664,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          */
         public Map<String, Object> toMap() {
             final HashMap<String, Object> map = new HashMap<>();
-            map.put("teakDeepLink", this.isTeakLaunchLink() ? this.launchLink.toString() : null);
+            map.put("launch_link",  this.launchLink != null ? this.launchLink.toString() : null);
             return map;
         }
     }
@@ -800,6 +777,26 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             return this.rewardId != null;
         }
 
+        @Override
+        public Map<String, Object> toSessionAttributionMap() {
+            final Map<String, Object> map = super.toSessionAttributionMap();
+
+            // Put the URI and any query parameters that start with 'teak_' into 'deep_link'
+            map.put("deep_link", this.launchLink.toString());
+            for (final String name : this.launchLink.getQueryParameterNames()) {
+                if (name.startsWith("teak_")) {
+                    final List<String> values = this.launchLink.getQueryParameters(name);
+                    if (values.size() > 1) {
+                        map.put(name, values);
+                    } else {
+                        map.put(name, values.get(0));
+                    }
+                }
+            }
+
+            return map;
+        }
+
         /**
          * Convert to a Map, intended to be converted to JSON and
          * consumed by the Teak Unity SDK.
@@ -815,6 +812,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             map.put("teakCreativeId", this.creativeId);
             map.put("teakRewardId", this.rewardId);
             map.put("teakChannelName", this.channelName);
+            map.put("teakDeepLink", io.teak.sdk.core.DeepLink.willProcessUri(this.launchLink) ? this.launchLink.toString() : null);
             return map;
         }
     }
@@ -915,11 +913,6 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         @Override
         public LaunchData mergeDeepLink(@NonNull Uri uri) {
             return new RewardlinkLaunchData(this, uri);
-        }
-
-        @Override
-        public boolean isTeakLaunchLink() {
-            return this.shortLink != null || super.isTeakLaunchLink();
         }
     }
 
