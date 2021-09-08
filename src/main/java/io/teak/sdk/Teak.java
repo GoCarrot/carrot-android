@@ -782,14 +782,16 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             final Map<String, Object> map = super.toSessionAttributionMap();
 
             // Put the URI and any query parameters that start with 'teak_' into 'deep_link'
-            map.put("deep_link", this.launchLink.toString());
-            for (final String name : this.launchLink.getQueryParameterNames()) {
-                if (name.startsWith("teak_")) {
-                    final List<String> values = this.launchLink.getQueryParameters(name);
-                    if (values.size() > 1) {
-                        map.put(name, values);
-                    } else {
-                        map.put(name, values.get(0));
+            if (this.launchLink != null) {
+                map.put("deep_link", this.launchLink.toString());
+                for (final String name : this.launchLink.getQueryParameterNames()) {
+                    if (name.startsWith("teak_")) {
+                        final List<String> values = this.launchLink.getQueryParameters(name);
+                        if (values.size() > 1) {
+                            map.put(name, values);
+                        } else {
+                            map.put(name, values.get(0));
+                        }
                     }
                 }
             }
