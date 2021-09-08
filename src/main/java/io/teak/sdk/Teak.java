@@ -925,9 +925,9 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     public static class Event {
         /**
-         * Attribution data associated with this launch.
+         * Data associated with this launch.
          */
-        public final AttributedLaunchData launchData;
+        public final LaunchData launchData;
 
         /**
          * The {@link TeakNotification.Reward} attached, or null.
@@ -939,7 +939,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          * @param launchData Attribution data for launch.
          * @param reward Reward, if available.
          */
-        public Event(@NonNull final AttributedLaunchData launchData, @Nullable final TeakNotification.Reward reward) {
+        public Event(@NonNull final LaunchData launchData, @Nullable final TeakNotification.Reward reward) {
             this.launchData = launchData;
             this.reward = reward;
         }
@@ -996,6 +996,15 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          */
         public LaunchFromLinkEvent(@NonNull final RewardlinkLaunchData launchData, @Nullable final TeakNotification.Reward reward) {
             super(launchData, reward);
+        }
+    }
+
+    /**
+     * Event posted whenever the app launches.
+     */
+    public static class PostLaunchSummaryEvent extends Event {
+        public PostLaunchSummaryEvent(@NonNull final LaunchData launchData) {
+            super(launchData, null);
         }
     }
 

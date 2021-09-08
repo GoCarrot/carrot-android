@@ -601,6 +601,9 @@ public class Session {
                     // Process any deep links
                     Session.this.checkLaunchDataForDeepLinkAndPostEvents(attributedLaunchData, rewardFuture);
                 }
+
+                // Always send PostLaunchSummary
+                Session.whenUserIdIsReadyPost(new Teak.PostLaunchSummaryEvent(launchData));
             } catch (Exception e) {
                 Teak.log.exception(e);
             }

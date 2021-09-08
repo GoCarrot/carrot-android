@@ -51,7 +51,12 @@ public class MainActivity extends AppCompatActivity {
 
     @Subscribe
     public void onNotification(Teak.NotificationEvent event) {
-        Log.d(LOG_TAG, event.toString());
+        Log.d(LOG_TAG, event.toJSON().toString());
+    }
+
+    @Subscribe
+    public void onPostLaunchSummary(Teak.PostLaunchSummaryEvent event) {
+        Log.d(LOG_TAG, event.toJSON().toString());
     }
 
     @Subscribe
