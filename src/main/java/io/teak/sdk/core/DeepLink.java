@@ -82,6 +82,7 @@ public class DeepLink {
 }
 
 public static boolean willProcessUri(Uri uri) {
+    if (uri == null) return false;
     return DeepLink.willProcessUri(URI.create(uri.toString()));
 }
 
