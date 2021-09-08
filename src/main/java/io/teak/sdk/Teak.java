@@ -664,7 +664,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          */
         public Map<String, Object> toMap() {
             final HashMap<String, Object> map = new HashMap<>();
-            map.put("launch_link",  this.launchLink != null ? this.launchLink.toString() : null);
+            map.put("launch_link", this.launchLink != null ? this.launchLink.toString() : null);
             return map;
         }
     }
@@ -844,7 +844,6 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             this.sourceSendId = uri.getQueryParameter("teak_notif_id");
         }
 
-
         /**
          * For use in {@link NotificationLaunchData#mergeDeepLink(Uri)}
          * @param oldLaunchData The old attribution
@@ -919,8 +918,6 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             this.shortLink = oldLaunchData.shortLink;
         }
 
-
-
         @Override
         public LaunchData mergeDeepLink(@NonNull Uri uri) {
             return new RewardlinkLaunchData(this, uri);
@@ -936,7 +933,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         /**
          * The {@link TeakNotification.Reward} attached, or null.
          */
-        public final TeakNotification.Reward  reward;
+        public final TeakNotification.Reward reward;
 
         /**
          * Event base class.

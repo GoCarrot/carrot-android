@@ -681,7 +681,7 @@ public class NotificationBuilder {
         // Assign expanded view if it's there
         if (bigContentView != null) {
             builder.setCustomBigContentView(bigContentView);
-        } else if(isAndroid12NotificationStyle) {
+        } else if (isAndroid12NotificationStyle) {
             // All notifications are expandable for apps targeting Android 12.
             // This will ensure the view is the same if it gets expanded.
             builder.setCustomBigContentView(smallContentView);

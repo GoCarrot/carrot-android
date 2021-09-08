@@ -244,7 +244,7 @@ public class Session {
                     }
 
                     // Run EventBus on the main thread
-                    new Handler(Looper.getMainLooper()).post(()-> {
+                    new Handler(Looper.getMainLooper()).post(() -> {
                         userIdReadyEventBusQueueLock.lock();
                         try {
                             for (Object event : userIdReadyEventBusQueue) {
@@ -782,7 +782,7 @@ public class Session {
                 try {
                     if (currentSession.state == State.UserIdentified) {
                         // Run EventBus on the main thread
-                        new Handler(Looper.getMainLooper()).post(()-> {
+                        new Handler(Looper.getMainLooper()).post(() -> {
                             EventBus.getDefault().post(event);
                         });
                     } else {
