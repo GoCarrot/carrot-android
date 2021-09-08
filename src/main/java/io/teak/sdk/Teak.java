@@ -622,7 +622,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          * Constructor with {@link Uri}.
          * @param launchLink Link as a Uri.
          */
-        protected LaunchData(@Nullable Uri launchLink) {
+        public LaunchData(@Nullable Uri launchLink) {
             this.launchLink = launchLink;
         }
 
@@ -901,6 +901,15 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         }
 
         /**
+         * For internal use.
+         * @param uri The Uri to test.
+         * @return true if the Uri is a Teak reward link.
+         */
+        public static boolean isTeakRewardLink(@NonNull final Uri uri) {
+            return !Helpers.isNullOrEmpty(uri.getQueryParameter("teak_rewardlink_id"));
+        }
+
+        /**
          * For use in {@link RewardlinkLaunchData#mergeDeepLink(Uri)}
          * @param oldLaunchData The old attribution
          * @param updatedDeepLink The deep link in the reply from the identify user request.
@@ -909,6 +918,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             super(oldLaunchData, updatedDeepLink);
             this.shortLink = oldLaunchData.shortLink;
         }
+
+
 
         @Override
         public LaunchData mergeDeepLink(@NonNull Uri uri) {

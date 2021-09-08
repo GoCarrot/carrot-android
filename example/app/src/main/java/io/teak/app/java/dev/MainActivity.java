@@ -60,6 +60,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Subscribe
+    public void onRewardlink(Teak.LaunchFromLinkEvent event) {
+        Log.d(LOG_TAG, event.toJSON().toString());
+    }
+
+    @Subscribe
     public void onRewardClaim(Teak.RewardClaimEvent event) {
         if (event.reward != null) {
             final StringBuilder rewardString = new StringBuilder("You got ");

@@ -170,9 +170,12 @@ public class LaunchDataSource implements Future<Teak.LaunchData> {
             // If this is a link from a Teak email, then it's a notification launch data
             if (Teak.NotificationLaunchData.isTeakEmailUri(uri)) {
                 return new Teak.NotificationLaunchData(uri);
-            } else {
+            } else if (Teak.RewardlinkLaunchData.isTeakRewardLink(uri)) {
                 return new Teak.RewardlinkLaunchData(uri, httpsUri);
             }
+
+            // Otherwise this is not a Teak attributed launch
+            return new Teak.LaunchData(uri);
         });
 
         // Start it running, and return the Future

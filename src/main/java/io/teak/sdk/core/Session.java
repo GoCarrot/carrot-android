@@ -590,19 +590,21 @@ public class Session {
             try {
                 // Resolve attribution Future
                 final Teak.LaunchData launchData = Session.this.launchDataSource.get(15, TimeUnit.SECONDS);
+                Future<TeakNotification.Reward> rewardFuture = null;
                 if (launchData instanceof Teak.AttributedLaunchData) {
                     final Teak.AttributedLaunchData attributedLaunchData = (Teak.AttributedLaunchData) launchData;
+
                     // Process any rewards
-                    final Future<TeakNotification.Reward> rewardFuture = Session.this.checkLaunchDataForRewardAndPostEvents(attributedLaunchData);
+                    rewardFuture = Session.this.checkLaunchDataForRewardAndPostEvents(attributedLaunchData);
 
                     // Process any notifications
                     Session.this.checkLaunchDataForNotificationAndPostEvents(attributedLaunchData, rewardFuture);
-
-                    // Process any deep links
-                    Session.this.checkLaunchDataForDeepLinkAndPostEvents(attributedLaunchData, rewardFuture);
                 }
 
-                // Always send PostLaunchSummary
+                // Process deep links even if this isn't attributed
+                Session.this.checkLaunchDataForDeepLinkAndPostEvents(launchData, rewardFuture);
+
+                // Send PostLaunchSummary
                 Session.whenUserIdIsReadyPost(new Teak.PostLaunchSummaryEvent(launchData));
             } catch (Exception e) {
                 Teak.log.exception(e);
@@ -954,7 +956,7 @@ public class Session {
         }
     }
 
-    private void checkLaunchDataForDeepLinkAndPostEvents(final Teak.AttributedLaunchData launchData, final Future<TeakNotification.Reward> rewardFuture) {
+    private void checkLaunchDataForDeepLinkAndPostEvents(final Teak.LaunchData launchData, final Future<TeakNotification.Reward> rewardFuture) {
         try {
             final TeakConfiguration teakConfiguration = TeakConfiguration.get();
             if (launchData.launchLink != null) {
