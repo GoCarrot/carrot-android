@@ -897,11 +897,6 @@ public class Session {
 
             final LaunchDataSource launchDataSource = LaunchDataSource.sourceFromIntent(intent);
 
-            // TODO:
-            // Teak.log.i("session.attribution", Helpers.mm.h("deep_link", intentDataString));
-            //
-            // Teak.log.i("session.attribution", Helpers.mm.h("teak_notif_id", teakNotifId));
-
             // If the current session has a launch different attribution, it's a new session
             if (currentSession.state == State.Allocated || currentSession.state == State.Created) {
                 currentSession.launchDataSource = launchDataSource;
