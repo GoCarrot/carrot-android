@@ -8,7 +8,8 @@ public interface ISDKWrapper {
         RewardClaim,
         ForegroundNotification,
         AdditionalData,
-        LaunchedFromLink
+        LaunchedFromLink,
+        PostLaunchSummary
     }
     void sdkSendMessage(@NonNull EventType eventType, @NonNull String eventData);
 }

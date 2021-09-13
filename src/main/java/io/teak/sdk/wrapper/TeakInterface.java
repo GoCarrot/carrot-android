@@ -63,4 +63,14 @@ public class TeakInterface implements Unobfuscable {
             Teak.log.exception(e);
         }
     }
+
+    @Subscribe
+    public void onPostLaunchSummary(Teak.PostLaunchSummaryEvent event) {
+        try {
+            final String eventData = event.toJSON().toString(0);
+            sdkWrapper.sdkSendMessage(ISDKWrapper.EventType.PostLaunchSummary, eventData);
+        } catch (Exception e) {
+            Teak.log.exception(e);
+        }
+    }
 }
