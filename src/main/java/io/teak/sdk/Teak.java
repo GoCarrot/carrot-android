@@ -972,11 +972,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         public final boolean isForeground;
 
         public NotificationEvent(@NonNull final NotificationLaunchData launchData, final boolean isForeground) {
-            this(launchData, isForeground, null);
-        }
-
-        public NotificationEvent(@NonNull final NotificationLaunchData launchData, final boolean isForeground, @Nullable final TeakNotification.Reward reward) {
-            super(launchData, reward);
+            super(launchData, null);
             this.isForeground = isForeground;
         }
 
@@ -995,10 +991,9 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         /**
          * Constructor
          * @param launchData Launch attribution data.
-         * @param reward Reward.
          */
-        public LaunchFromLinkEvent(@NonNull final RewardlinkLaunchData launchData, @Nullable final TeakNotification.Reward reward) {
-            super(launchData, reward);
+        public LaunchFromLinkEvent(@NonNull final RewardlinkLaunchData launchData) {
+            super(launchData, null);
         }
     }
 
