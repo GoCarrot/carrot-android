@@ -942,7 +942,9 @@ public class Session {
 
                 // Otherwise, if this was a deep link then it was either a universal
                 // link or came in from a Teak Notification
-                if (!deepLinkWasProcessedByTeak && !launchData.launchLink.getScheme().startsWith("teak")) {
+                if (!deepLinkWasProcessedByTeak &&
+                        launchData.launchLink.getScheme() != null &&
+                        !launchData.launchLink.getScheme().startsWith("teak")) {
                     // In API 30+ using 'queryIntentActivities' requires a list of queried schemes
                     // in AndroidManifest.xml. Instead, add 'teakSessionProcessed' and the existing
                     // code in Session.onActivityResumed will check for that flag, and not cause
