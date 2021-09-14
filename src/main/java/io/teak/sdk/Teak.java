@@ -953,11 +953,11 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          * @return Teak wrapper SDK consumable JSON.
          */
         public JSONObject toJSON() {
-            final JSONObject json = new JSONObject(this.launchData.toMap());
-            if (this.reward != null) {
-                json.put("reward", this.reward.json);
+            final Map<String, Object> map = this.launchData.toMap();
+            if (this.reward != null && this.reward.json != null) {
+                map.putAll(this.reward.json.toMap());
             }
-            return json;
+            return new JSONObject(map);
         }
     }
 
