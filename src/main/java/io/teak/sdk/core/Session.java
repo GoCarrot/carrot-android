@@ -590,6 +590,13 @@ public class Session {
             try {
                 // Resolve attribution Future
                 final Teak.LaunchData launchData = Session.this.launchDataSource.get(15, TimeUnit.SECONDS);
+
+                // LaunchData should never be null, but in case it is...
+                if(launchData == null) {
+                    Session.whenUserIdIsReadyPost(new Teak.PostLaunchSummaryEvent(Teak.LaunchData.Unattributed));
+                    return;
+                }
+
                 if (launchData instanceof Teak.AttributedLaunchData) {
                     final Teak.AttributedLaunchData attributedLaunchData = (Teak.AttributedLaunchData) launchData;
 
