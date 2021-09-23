@@ -68,11 +68,16 @@ public class Helpers {
     }
 
     public static boolean getBooleanFromBundle(Bundle b, String key) {
-        String boolAsStringMaybe = b.getString(key);
-        if (boolAsStringMaybe != null) {
-            return Boolean.parseBoolean(boolAsStringMaybe);
+        try {
+            final Object value = b.get(key);
+            if (value instanceof Boolean) {
+                return (Boolean) value;
+            }
+            return Boolean.parseBoolean(value.toString());
+        } catch (Exception ignored) {
         }
-        return b.getBoolean(key);
+
+        return false;
     }
 
     public static boolean getBooleanFromMap(final Map<String, Object> map, final String key) {
