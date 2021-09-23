@@ -598,7 +598,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     /**
      * Base class for providing data about the launch of the app.
      */
-    public static class LaunchData {
+    public static class LaunchData implements Unobfuscable {
         /**
          * If this launch is not attributed to anything, this constant is used instead of
          * a null LaunchData.
@@ -672,7 +672,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     /**
      * Base class for describing a Teak-attributed launch of the app.
      */
-    public static class AttributedLaunchData extends LaunchData {
+    public static class AttributedLaunchData extends LaunchData implements Unobfuscable {
         /**
          * The name of the schedule responsible on the Teak dashboard; or null if this was not a scheduled channel.
          */
@@ -822,7 +822,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     /**
      * Launch data for a Teak push notification or email.
      */
-    public static class NotificationLaunchData extends AttributedLaunchData {
+    public static class NotificationLaunchData extends AttributedLaunchData implements Unobfuscable {
         /**
          * The send-id of the notification.
          */
@@ -890,7 +890,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     /**
      * Launch data for a Teak reward link.
      */
-    public static class RewardlinkLaunchData extends AttributedLaunchData {
+    public static class RewardlinkLaunchData extends AttributedLaunchData implements Unobfuscable {
         /**
          * The Teak short link that resolved to this attribution; or null.
          */
@@ -926,7 +926,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         }
     }
 
-    public static class Event {
+    public static class Event implements Unobfuscable {
         /**
          * Data associated with this launch.
          */
@@ -965,7 +965,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * Event posted when a foreground notification was received, or the game was launched from a
      * Teak email, or Teak push notification.
      */
-    public static class NotificationEvent extends Event {
+    public static class NotificationEvent extends Event implements Unobfuscable {
         /**
          * True if this push notification was received when the app was in the foreground.
          */
@@ -987,7 +987,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     /**
      * Event posted when the app was launched from a link created by the Teak dashboard.
      */
-    public static class LaunchFromLinkEvent extends Event {
+    public static class LaunchFromLinkEvent extends Event implements Unobfuscable {
         /**
          * Constructor
          * @param launchData Launch attribution data.
@@ -1000,7 +1000,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     /**
      * Event posted whenever the app launches.
      */
-    public static class PostLaunchSummaryEvent extends Event {
+    public static class PostLaunchSummaryEvent extends Event implements Unobfuscable {
         public PostLaunchSummaryEvent(@NonNull final LaunchData launchData) {
             super(launchData, null);
         }
@@ -1009,7 +1009,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     /**
      * Event posted when a reward claim attempt has occurred.
      */
-    public static class RewardClaimEvent extends Event {
+    public static class RewardClaimEvent extends Event implements Unobfuscable {
         /**
          * Constructor
          * @param launchData Launch attribution data.
@@ -1023,7 +1023,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     /**
      * Event sent when "additional data" is available for the user.
      */
-    public static class AdditionalDataEvent {
+    public static class AdditionalDataEvent implements Unobfuscable {
         /**
          * A JSON object containing user-defined data received from the server.
          */
