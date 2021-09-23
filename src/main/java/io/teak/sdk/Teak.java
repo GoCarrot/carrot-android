@@ -284,7 +284,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         identifyUser(userIdentifier, userConfiguration);
     }
 
-    public static class UserConfiguration {
+    public static class UserConfiguration implements Unobfuscable {
         public final String email;
         public final String facebookId;
 
