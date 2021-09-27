@@ -4,6 +4,7 @@ import android.app.Notification;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
 import java.util.HashMap;
@@ -73,7 +74,6 @@ public class TeakCore {
                     final Intent intent = ((LifecycleEvent) event).intent;
                     if (!intent.getBooleanExtra("teakProcessedForPush", false)) {
                         intent.putExtra("teakProcessedForPush", true);
-                        checkIntentForPushLaunchAndSendBroadcasts(intent);
                     }
                     break;
                 }
@@ -129,7 +129,9 @@ public class TeakCore {
                     final boolean gameIsInForeground = !Session.isExpiringOrExpired();
                     final boolean showInForeground = Helpers.getBooleanFromBundle(bundle, "teakShowInForeground");
                     if (gameIsInForeground) {
-                        Session.whenUserIdIsReadyPost(new Teak.NotificationEvent(bundle, true));
+                        // Note: This is the only case where an attributed event is sent from somewhere
+                        // outside of Session#processAttributionAndDispatchEvents.
+                        Session.whenUserIdIsReadyPost(new Teak.NotificationEvent(new Teak.NotificationLaunchData(bundle), true));
                     }
 
                     // Create Teak Notification
@@ -198,15 +200,13 @@ public class TeakCore {
                     final Bundle bundle = intent.getExtras();
                     if (bundle == null) break;
 
-                    final boolean autoLaunch = !Helpers.getBooleanFromBundle(bundle, "noAutolaunch");
                     Teak.log.i("notification.opened",
                         Helpers.mm.h("teakNotifId", bundle.getString("teakNotifId"),
-                            "autoLaunch", autoLaunch,
                             "teakNotificationPlacement", bundle.getString("teakNotificationPlacement")));
 
                     // Launch the app
                     final Context context = ((PushNotificationEvent) event).context;
-                    if (context != null && autoLaunch) {
+                    if (context != null) {
                         final Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
 
                         if (launchIntent != null) {
@@ -219,9 +219,11 @@ public class TeakCore {
                             }
                             context.startActivity(launchIntent);
 
-                            // Close notification tray
-                            final Intent it = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
-                            context.sendBroadcast(it);
+                            // Close notification tray if we are not on Android 12+
+                            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                                final Intent it = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
+                                context.sendBroadcast(it);
+                            }
                         }
                     }
                     break;
@@ -229,49 +231,6 @@ public class TeakCore {
             }
         }
     };
-
-    private void checkIntentForPushLaunchAndSendBroadcasts(Intent intent) {
-        if (intent.hasExtra("teakNotifId") && intent.getExtras() != null) {
-            final Bundle bundle = intent.getExtras();
-
-            // Send broadcast
-            if (bundle != null) {
-                final String teakRewardId = bundle.getString("teakRewardId");
-
-                if (teakRewardId != null) {
-                    final Future<TeakNotification.Reward> rewardFuture = TeakNotification.Reward.rewardFromRewardId(teakRewardId);
-                    if (rewardFuture != null) {
-                        this.asyncExecutor.execute(() -> {
-                            Teak.NotificationEvent notificationEvent = new Teak.NotificationEvent(bundle, false);
-                            try {
-                                final TeakNotification.Reward reward = rewardFuture.get();
-
-                                final HashMap<String, Object> rewardMap = new HashMap<>(reward.json.toMap());
-                                rewardMap.put("teakNotifId", notificationEvent.teakNotifId);
-                                rewardMap.put("incentivized", true);
-                                rewardMap.put("teakRewardId", notificationEvent.teakRewardId);
-                                rewardMap.put("teakScheduleName", notificationEvent.teakScheduleName);
-                                rewardMap.put("teakScheduleId", notificationEvent.teakScheduleId);
-                                rewardMap.put("teakCreativeName", notificationEvent.teakCreativeName);
-                                rewardMap.put("teakCreativeId", notificationEvent.teakCreativeId);
-                                rewardMap.put("teakChannelName", notificationEvent.teakChannelName);
-
-                                notificationEvent = new Teak.NotificationEvent(bundle, false, rewardMap);
-
-                                Session.whenUserIdIsReadyPost(new Teak.RewardClaimEvent(rewardMap));
-                            } catch (Exception e) {
-                                Teak.log.exception(e);
-                            } finally {
-                                Session.whenUserIdIsReadyPost(notificationEvent);
-                            }
-                        });
-                    }
-                } else {
-                    Session.whenUserIdIsReadyPost(new Teak.NotificationEvent(bundle, false));
-                }
-            }
-        }
-    }
 
     ///// Data Members
 

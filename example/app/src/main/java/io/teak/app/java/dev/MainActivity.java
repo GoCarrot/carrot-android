@@ -14,6 +14,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.StrictMode;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
@@ -50,15 +51,25 @@ public class MainActivity extends AppCompatActivity {
 
     @Subscribe
     public void onNotification(Teak.NotificationEvent event) {
-        Log.d(LOG_TAG, event.toString());
+        Log.d(LOG_TAG, event.toJSON().toString());
+    }
+
+    @Subscribe
+    public void onPostLaunchSummary(Teak.PostLaunchSummaryEvent event) {
+        Log.d(LOG_TAG, event.toJSON().toString());
+    }
+
+    @Subscribe
+    public void onRewardlink(Teak.LaunchFromLinkEvent event) {
+        Log.d(LOG_TAG, event.toJSON().toString());
     }
 
     @Subscribe
     public void onRewardClaim(Teak.RewardClaimEvent event) {
-        if (event.rewardAsMap != null) {
+        if (event.reward != null) {
             final StringBuilder rewardString = new StringBuilder("You got ");
             boolean isFirstEntry = true;
-            for (Map.Entry<String, Object> entry : event.rewardAsMap.entrySet()) {
+            for (Map.Entry<String, Object> entry : event.reward.json.toMap().entrySet()) {
                 if (isFirstEntry) {
                     isFirstEntry = false;
                 } else {
@@ -96,6 +107,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // For debugging
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+                    .detectNonSdkApiUsage()
+                    .penaltyLog()
+                    .build());
+        }
 
         // Set up view
         setupViewThings();
@@ -139,7 +158,9 @@ public class MainActivity extends AppCompatActivity {
         //
         // These user ids should be unique, no two players should have the same user id.
         final String userId = "native-" + Build.MODEL.toLowerCase();
-        Teak.identifyUser(userId);
+
+        final Teak.UserConfiguration userConfiguration = new Teak.UserConfiguration();
+        Teak.identifyUser(userId, userConfiguration);
 
         // Binding the in app billing service
         Intent serviceIntent = new Intent("com.android.vending.billing.InAppBillingService.BIND");
@@ -299,9 +320,8 @@ public class MainActivity extends AppCompatActivity {
         // Schedule Notification
         scheduleTestNotification("Animated", "Default text", "5");
 
-        final Intent i = new Intent(Intent.ACTION_MAIN);
-        i.addCategory(Intent.CATEGORY_HOME);
-        this.startActivity(i);
+        // Background the app
+        moveTaskToBack(true);
 
         // Simulate Notification
 //        final Handler handler = new Handler();

@@ -22,10 +22,8 @@ import android.os.Looper;
 import android.text.Html;
 import android.text.Spanned;
 import android.text.SpannedString;
-import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -36,7 +34,6 @@ import android.widget.ViewFlipper;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -138,12 +135,6 @@ public class NotificationBuilder {
         final ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         final int deviceMemoryClass = am == null ? 0 : am.getMemoryClass();
 
-        final DisplayMetrics displayMetrics = new DisplayMetrics();
-        final WindowManager wm = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE));
-        if (wm != null) {
-            wm.getDefaultDisplay().getMetrics(displayMetrics);
-        }
-
         // For Android 11+ it will remove RemoteViews over a certain size, get that size
         final int config_notificationStripRemoteViewSizeBytes_Id = context.getResources().getIdentifier("config_notificationStripRemoteViewSizeBytes", "integer", "android");
         final int config_notificationStripRemoteViewSizeBytes = config_notificationStripRemoteViewSizeBytes_Id > 0 ? context.getResources().getInteger(config_notificationStripRemoteViewSizeBytes_Id) : 0;
@@ -188,8 +179,21 @@ public class NotificationBuilder {
         }
         final IdHelper R = new IdHelper(); // Declaring local as 'R' ensures we don't accidentally use the other R
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
+        // Logic for the Android 12 notification style
+        final boolean isRunningOn12Plus = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S;
+        final boolean isTargeting12Plus = TeakConfiguration.get().appConfiguration.targetSdkVersion >= 31;
+        final boolean willAutomaticallyUse12PlusStyle = isRunningOn12Plus && isTargeting12Plus;
+        final boolean serverRequests12PlusStyle = teakNotificaton.useDecoratedCustomView;
+        final boolean isAndroid12NotificationStyle = serverRequests12PlusStyle || willAutomaticallyUse12PlusStyle;
+
+        final NotificationCompat.Builder builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
         builder.setGroup(UUID.randomUUID().toString());
+
+        // Assign DecoratedCustomViewStyle if the server requests the Android 12 style, and it would
+        // not automatically assign that style
+        if (serverRequests12PlusStyle && !willAutomaticallyUse12PlusStyle) {
+            builder.setStyle(new NotificationCompat.DecoratedCustomViewStyle());
+        }
 
         // Set visibility of our notifications to public
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
@@ -267,50 +271,80 @@ public class NotificationBuilder {
         final Random rng = new Random();
         final ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
         class PendingIntentHelper {
-            PendingIntent forActionButton(String action, String deepLink) {
-                Bundle bundleCopy = new Bundle(bundle);
+            PendingIntent getTrampolineIntent(String deepLink) {
+                final String action = context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX;
+                final Bundle bundleCopy = new Bundle(bundle);
                 if (deepLink != null) {
                     bundleCopy.putString("teakDeepLink", deepLink);
                     bundleCopy.putBoolean("closeSystemDialogs", true);
                 }
-                Intent pushOpenedIntent = new Intent(action);
+                final Intent pushOpenedIntent = new Intent(action);
                 pushOpenedIntent.putExtras(bundleCopy);
                 pushOpenedIntent.setComponent(cn);
-                return PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, PendingIntent.FLAG_ONE_SHOT);
+                int flags = PendingIntent.FLAG_ONE_SHOT;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    flags |= PendingIntent.FLAG_IMMUTABLE;
+                }
+                return PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, flags);
             }
 
-            PendingIntent get(String action) {
-                return forActionButton(action, null);
+            PendingIntent getDeleteIntent() {
+                final String action = context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX;
+                final Bundle bundleCopy = new Bundle(bundle);
+                final Intent deleteIntent = new Intent(action);
+                deleteIntent.putExtras(bundleCopy);
+                deleteIntent.setComponent(cn);
+                int flags = PendingIntent.FLAG_ONE_SHOT;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    flags |= PendingIntent.FLAG_IMMUTABLE;
+                }
+                return PendingIntent.getBroadcast(context, rng.nextInt(), deleteIntent, flags);
+            }
+
+            PendingIntent getLaunchIntent(String deepLink) {
+                final Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+                if (launchIntent == null) {
+                    return null;
+                }
+
+                final Bundle bundleCopy = new Bundle(bundle);
+                bundleCopy.putBoolean("closeSystemDialogs", true);
+                launchIntent.putExtras(bundleCopy);
+
+                // https://stackoverflow.com/questions/5502427/resume-application-and-stack-from-notification/5502950#5502950
+                launchIntent.setPackage(null);
+                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+
+                if (deepLink != null) {
+                    Uri teakDeepLink = Uri.parse(deepLink);
+                    launchIntent.setData(teakDeepLink);
+                }
+
+                int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    flags |= PendingIntent.FLAG_IMMUTABLE;
+                }
+                return PendingIntent.getActivity(context, 0, launchIntent, flags);
             }
         }
         final PendingIntentHelper pendingIntent = new PendingIntentHelper();
 
         try {
             // Create intent to fire if/when notification is cleared
-            builder.setDeleteIntent(pendingIntent.get(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX));
+            builder.setDeleteIntent(pendingIntent.getDeleteIntent());
 
-            // Create intent to fire if/when notification is opened, attach bundle info
-            builder.setContentIntent(pendingIntent.get(context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX));
-        } catch (Exception e) {
-            if (!bundle.getBoolean("teakUnitTest")) {
-                throw e;
-            }
-        }
-
-        // Notification builder
-        Notification tempNotification;
-        try {
-            tempNotification = builder.build();
-        } catch (Exception e) {
-            if (!bundle.getBoolean("teakUnitTest")) {
-                throw e;
+            // If this is Android 11 or 12, direct-launch the app
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                builder.setContentIntent(pendingIntent.getLaunchIntent(null));
             } else {
-                final Notification notification = new Notification();
-                notification.flags = Integer.MAX_VALUE;
-                return notification;
+                // Create intent to fire if/when notification is opened, attach bundle info
+                builder.setContentIntent(pendingIntent.getTrampolineIntent(null));
+            }
+        } catch (Exception e) {
+            if (!bundle.getBoolean("teakUnitTest")) {
+                throw e;
             }
         }
-        final Notification nativeNotification = tempNotification;
 
         class ViewBuilder {
             private RemoteViews buildViews(String name, boolean isLargeView) throws Exception {
@@ -365,8 +399,7 @@ public class NotificationBuilder {
                         final JSONObject buttonConfig = viewConfig.getJSONObject(key);
                         remoteViews.setTextViewText(viewElementId, buttonConfig.getString("text"));
                         String deepLink = buttonConfig.has("deepLink") ? buttonConfig.getString("deepLink") : null;
-                        remoteViews.setOnClickPendingIntent(viewElementId, pendingIntent.forActionButton(
-                                                                               context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX, deepLink));
+                        remoteViews.setOnClickPendingIntent(viewElementId, pendingIntent.getTrampolineIntent(deepLink));
                     } else if (isUIType(viewElement, TextView.class)) {
                         final String value = viewConfig.getString(key);
                         remoteViews.setTextViewText(viewElementId, fromHtml(value));
@@ -376,7 +409,13 @@ public class NotificationBuilder {
                     } else if (isUIType(viewElement, ImageView.class)) {
                         final String value = viewConfig.getString(key);
                         if (value.equalsIgnoreCase("BUILTIN_APP_ICON")) {
-                            remoteViews.setImageViewResource(viewElementId, appIconResourceId);
+                            // If we are using the Android 12 notification style, then skip the "left_image" key
+                            // since that view style already places the app icon on the left
+                            if ("left_image".equals(key) && isAndroid12NotificationStyle) {
+                                remoteViews.setViewVisibility(viewElementId, View.GONE);
+                            } else {
+                                remoteViews.setImageViewResource(viewElementId, appIconResourceId);
+                            }
                         } else if (value.equalsIgnoreCase("NONE")) {
                             remoteViews.setViewVisibility(viewElementId, View.GONE);
                         } else {
@@ -563,7 +602,6 @@ public class NotificationBuilder {
                         // Add the "well behaved heap size" as a query param
                         final Uri.Builder uriBuilder = Uri.parse(bitmapUriString).buildUpon();
                         uriBuilder.appendQueryParameter("device_memory_class", String.valueOf(deviceMemoryClass));
-                        uriBuilder.appendQueryParameter("scaled_density", String.valueOf(displayMetrics.scaledDensity));
                         if (config_notificationStripRemoteViewSizeBytes > 0) {
                             uriBuilder.appendQueryParameter("remote_view_byte_limit", String.valueOf(config_notificationStripRemoteViewSizeBytes));
                         }
@@ -609,21 +647,18 @@ public class NotificationBuilder {
                 }
             }
         }
-        ViewBuilder viewBuilder = new ViewBuilder();
+        final ViewBuilder viewBuilder = new ViewBuilder();
 
-        // Configure 'contentView'
-        class Deprecated {
-            @SuppressWarnings("deprecation")
-            private void assignDeprecated(RemoteViews remoteViews) {
-                nativeNotification.contentView = remoteViews;
-            }
-        }
-        final Deprecated deprecated = new Deprecated();
-        deprecated.assignDeprecated(viewBuilder.buildViews(teakNotificaton.display.getString("contentView")));
+        // Build small content view
+        final String contentView = teakNotificaton.display.getString("contentView");
+        final RemoteViews smallContentView = viewBuilder.buildViews(contentView);
 
-        // Check for Jellybean (API 16, 4.1)+ for expanded view
+        // Assign content view
+        builder.setCustomContentView(smallContentView);
+
+        // Build big content view
         RemoteViews bigContentView = null;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && teakNotificaton.display.has("bigContentView")) {
+        if (teakNotificaton.display.has("bigContentView")) {
             try {
                 bigContentView = viewBuilder.buildLargeViews(teakNotificaton.display.getString("bigContentView"));
 
@@ -645,11 +680,24 @@ public class NotificationBuilder {
 
         // Assign expanded view if it's there
         if (bigContentView != null) {
-            try {
-                // Use reflection to avoid compile-time issues
-                final Field bigContentViewField = nativeNotification.getClass().getField("bigContentView");
-                bigContentViewField.set(nativeNotification, bigContentView);
-            } catch (Exception ignored) {
+            builder.setCustomBigContentView(bigContentView);
+        } else if (isAndroid12NotificationStyle) {
+            // All notifications are expandable for apps targeting Android 12.
+            // This will ensure the view is the same if it gets expanded.
+            builder.setCustomBigContentView(smallContentView);
+        }
+
+        // Notification builder
+        Notification nativeNotification;
+        try {
+            nativeNotification = builder.build();
+        } catch (Exception e) {
+            if (!bundle.getBoolean("teakUnitTest")) {
+                throw e;
+            } else {
+                final Notification notification = new Notification();
+                notification.flags = Integer.MAX_VALUE;
+                return notification;
             }
         }
 

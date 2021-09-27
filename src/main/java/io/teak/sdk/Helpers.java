@@ -17,6 +17,8 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -66,17 +68,49 @@ public class Helpers {
     }
 
     public static boolean getBooleanFromBundle(Bundle b, String key) {
-        String boolAsStringMaybe = b.getString(key);
-        if (boolAsStringMaybe != null) {
-            return Boolean.parseBoolean(boolAsStringMaybe);
+        try {
+            final Object value = b.get(key);
+            if (value instanceof Boolean) {
+                return (Boolean) value;
+            }
+            return Boolean.parseBoolean(value.toString());
+        } catch (Exception ignored) {
         }
-        return b.getBoolean(key);
+
+        return false;
+    }
+
+    public static boolean getBooleanFromMap(final Map<String, Object> map, final String key) {
+        if (map.containsKey(key)) {
+            Boolean bool = (Boolean) map.get(key);
+            if (bool != null) {
+                return bool;
+            }
+        }
+        return false;
+    }
+
+    @SuppressWarnings("deprecation")
+    public static String getInstallerPackage(final @NonNull Context context) {
+        final String bundleId = context.getPackageName();
+        final PackageManager packageManager = context.getPackageManager();
+        if (packageManager == null) {
+            return null;
+        }
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                return packageManager.getInstallSourceInfo(bundleId).getInstallingPackageName();
+            }
+
+            return packageManager.getInstallerPackageName(bundleId);
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     public static boolean isAmazonDevice(final @NonNull Context context) {
-        final String bundleId = context.getPackageName();
-        final PackageManager packageManager = context.getPackageManager();
-        final String installerPackage = packageManager == null ? null : packageManager.getInstallerPackageName(bundleId);
+        final String installerPackage = Helpers.getInstallerPackage(context);
         return "amazon".equalsIgnoreCase(Build.MANUFACTURER) ||
             "com.amazon.venezia".equals(installerPackage);
     }
@@ -236,5 +270,38 @@ public class Helpers {
             hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
         }
         return new String(hexChars);
+    }
+
+    public static <T> Future<T> futureForValue(final T value) {
+        return new Future<T>() {
+            @Override
+            public boolean cancel(boolean b) {
+                return false;
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return false;
+            }
+
+            @Override
+            public boolean isDone() {
+                return true;
+            }
+
+            @Override
+            public T get() {
+                return value;
+            }
+
+            @Override
+            public T get(long l, TimeUnit timeUnit) {
+                return get();
+            }
+        };
+    }
+
+    public static <T> T newIfNotOld(final T oldValue, final T newValue) {
+        return oldValue == null ? newValue : oldValue;
     }
 }

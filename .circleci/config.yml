@@ -48,6 +48,9 @@ jobs:
       - sentry_persist_proguard
       - sentry_upload_proguard:
           sentry_cli_args: --no-upload
+      - store_artifacts:
+          path: build/outputs/mapping/release/mapping.txt
+          destination: mapping.txt
       - run:
           name: Make sure we're not using Executors or Threads
           command: ./check_thread_use

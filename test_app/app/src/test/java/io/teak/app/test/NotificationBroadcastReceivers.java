@@ -32,7 +32,7 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class NotificationBroadcastReceivers {
     @Test
     public void FcmMessageReceieved() throws PackageManager.NameNotFoundException, NoSuchFieldException, IllegalAccessException {
@@ -78,7 +78,6 @@ public class NotificationBroadcastReceivers {
         fcmPushProvider.postEvent(context, intent);
 
         verify(eventListener, timeout(500).times(1)).eventRecieved(PushNotificationEvent.class, PushNotificationEvent.Received);
-        verify(eventListener, timeout(500).times(1)).eventRecieved(NotificationDisplayEvent.class, NotificationDisplayEvent.Type);
 
         ArgumentCaptor<Throwable> thrown = ArgumentCaptor.forClass(Throwable.class);
         verify(teakLog, timeout(1000).times(0)).exception(thrown.capture());

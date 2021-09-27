@@ -170,50 +170,50 @@ public class RemoteConfiguration {
                 payload.put("deep_link_routes", DeepLink.getRouteNamesAndDescriptions());
 
                 Request.submit("gocarrot.com", "/games/" + teakConfiguration.appConfiguration.appId + "/settings.json", payload, Session.NullSession,
-                        (responseCode, responseBody) -> {
-                            try {
-                                final JSONObject response = new JSONObject((responseBody == null || responseBody.trim().isEmpty()) ? "{}" : responseBody);
+                    (responseCode, responseBody) -> {
+                        try {
+                            final JSONObject response = new JSONObject((responseBody == null || responseBody.trim().isEmpty()) ? "{}" : responseBody);
 
-                                class ResponseHelper {
-                                    private String nullInsteadOfEmpty(String input) {
-                                        if (input != null && !input.trim().isEmpty()) {
-                                            return input;
-                                        }
-                                        return null;
+                            class ResponseHelper {
+                                private String nullInsteadOfEmpty(String input) {
+                                    if (input != null && !input.trim().isEmpty()) {
+                                        return input;
                                     }
-                                    private String strOrNull(String key) {
-                                        return nullInsteadOfEmpty(response.isNull(key) ? null : response.getString(key));
-                                    }
-                                    private boolean boolOrFalse(String key) {
-                                        return response.optBoolean(key, false);
-                                    }
-                                    private JSONObject jsonOrNull(String key) {
-                                        return response.has(key) ? response.getJSONObject(key) : null;
-                                    }
+                                    return null;
                                 }
-                                final ResponseHelper helper = new ResponseHelper();
-
-                                // Future-Pat: This looks ugly, the reason we aren't moving it into the constructor itself is
-                                // so that it can be easily mocked for the functional tests.
-                                final RemoteConfiguration configuration = new RemoteConfiguration(teakConfiguration.appConfiguration,
-                                    response.isNull("auth") ? RemoteConfiguration.defaultHostname : response.getString("auth"),
-                                    helper.strOrNull("sdk_sentry_dsn"),
-                                    helper.strOrNull("app_sentry_dsn"),
-                                    helper.strOrNull("gcm_sender_id"),
-                                    helper.strOrNull("firebase_app_id"),
-                                    helper.boolOrFalse("ignore_default_firebase_configuration"),
-                                    helper.boolOrFalse("enhanced_integration_checks"),
-                                    helper.jsonOrNull("endpoint_configurations"),
-                                    helper.jsonOrNull("dynamic_parameters"),
-                                    response.optInt("heartbeat_interval", 60),
-                                    false);
-
-                                Teak.log.i("configuration.remote", configuration.toHash());
-                                TeakEvent.postEvent(new RemoteConfigurationEvent(configuration));
-                            } catch (Exception e) {
-                                Teak.log.exception(e);
+                                private String strOrNull(String key) {
+                                    return nullInsteadOfEmpty(response.isNull(key) ? null : response.getString(key));
+                                }
+                                private boolean boolOrFalse(String key) {
+                                    return response.optBoolean(key, false);
+                                }
+                                private JSONObject jsonOrNull(String key) {
+                                    return response.has(key) ? response.getJSONObject(key) : null;
+                                }
                             }
-                        });
+                            final ResponseHelper helper = new ResponseHelper();
+
+                            // Future-Pat: This looks ugly, the reason we aren't moving it into the constructor itself is
+                            // so that it can be easily mocked for the functional tests.
+                            final RemoteConfiguration configuration = new RemoteConfiguration(teakConfiguration.appConfiguration,
+                                response.isNull("auth") ? RemoteConfiguration.defaultHostname : response.getString("auth"),
+                                helper.strOrNull("sdk_sentry_dsn"),
+                                helper.strOrNull("app_sentry_dsn"),
+                                helper.strOrNull("gcm_sender_id"),
+                                helper.strOrNull("firebase_app_id"),
+                                helper.boolOrFalse("ignore_default_firebase_configuration"),
+                                helper.boolOrFalse("enhanced_integration_checks"),
+                                helper.jsonOrNull("endpoint_configurations"),
+                                helper.jsonOrNull("dynamic_parameters"),
+                                response.optInt("heartbeat_interval", 60),
+                                false);
+
+                            Teak.log.i("configuration.remote", configuration.toHash());
+                            TeakEvent.postEvent(new RemoteConfigurationEvent(configuration));
+                        } catch (Exception e) {
+                            Teak.log.exception(e);
+                        }
+                    });
             } else if (event.eventType.equals(RemoteConfigurationEvent.Type)) {
                 RemoteConfiguration.activeRemoteConfiguration = ((RemoteConfigurationEvent) event).remoteConfiguration;
             }

@@ -27,9 +27,9 @@ public class GooglePlayBillingV3 implements IStore, PurchasesUpdatedListener, Bi
 
     public GooglePlayBillingV3(Context context) {
         this.billingClient = BillingClient.newBuilder(context)
-                .setListener(this)
-                .enablePendingPurchases()
-                .build();
+                                 .setListener(this)
+                                 .enablePendingPurchases()
+                                 .build();
         Teak.log.i("billing.google.v3", "Google Play Billing v3 registered.");
 
         this.billingClient.startConnection(this);
@@ -45,7 +45,7 @@ public class GooglePlayBillingV3 implements IStore, PurchasesUpdatedListener, Bi
 
     @Override
     public void onPurchasesUpdated(@NonNull BillingResult billingResult, @Nullable List<Purchase> purchaseList) {
-        for(Purchase purchase : purchaseList) {
+        for (Purchase purchase : purchaseList) {
             final Map<String, Object> payload = new HashMap<>();
             payload.put("purchase_token", purchase.getPurchaseToken());
             payload.put("purchase_time", purchase.getPurchaseTime());
@@ -53,10 +53,10 @@ public class GooglePlayBillingV3 implements IStore, PurchasesUpdatedListener, Bi
             payload.put("order_id", purchase.getOrderId());
 
             final SkuDetailsParams params = SkuDetailsParams
-                    .newBuilder()
-                    .setType(BillingClient.SkuType.INAPP)
-                    .setSkusList(Collections.singletonList(purchase.getSku()))
-                    .build();
+                                                .newBuilder()
+                                                .setType(BillingClient.SkuType.INAPP)
+                                                .setSkusList(Collections.singletonList(purchase.getSku()))
+                                                .build();
 
             this.billingClient.querySkuDetailsAsync(params, (ignored, skuDetailsList) -> {
                 if (skuDetailsList != null && !skuDetailsList.isEmpty()) {

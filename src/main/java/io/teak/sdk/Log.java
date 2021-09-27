@@ -214,133 +214,133 @@ public class Log {
                 log(Level.Info, "configuration.data_collection", configuration.dataCollectionConfiguration.toMap());
 
                 synchronized (queuedLogEvents) {
-                    for (LogEvent event : queuedLogEvents) {
-                        logEvent(event);
-                    }
-                    processedQueuedLogEvents = true;
+            for (LogEvent event : queuedLogEvents) {
+                logEvent(event);
+            }
+            processedQueuedLogEvents = true;
+                }
+    }
+});
+}
+
+public void useRapidIngestionEndpoint(boolean useRapidIngestionEndpoint) {
+    this.sendToRapidIngestion = useRapidIngestionEndpoint;
+}
+
+public void setLoggingEnabled(boolean logLocally, boolean logRemotely) {
+    this.logLocally = logLocally;
+    this.logRemotely = logRemotely;
+}
+
+public void setLogTrace(boolean logTrace) {
+    this.logTrace = logTrace;
+}
+
+public void setLogListener(Teak.LogListener logListener) {
+    this.logListener = logListener;
+}
+
+protected static class LogEvent {
+    final Level logLevel;
+    final String eventType;
+    final Map<String, Object> eventData;
+
+    LogEvent(final @NonNull Level logLevel, final @NonNull String eventType, @Nullable Map<String, Object> eventData) {
+        this.logLevel = logLevel;
+        this.eventType = eventType;
+        this.eventData = eventData;
+    }
+}
+
+private boolean processedQueuedLogEvents = false;
+private final ArrayList<LogEvent> queuedLogEvents = new ArrayList<>();
+
+protected void log(final @NonNull Level logLevel, final @NonNull String eventType, @Nullable Map<String, Object> eventData) {
+    LogEvent logEvent = new LogEvent(logLevel, eventType, eventData);
+    synchronized (queuedLogEvents) {
+        if (processedQueuedLogEvents) {
+            this.logEvent(logEvent);
+        } else {
+            queuedLogEvents.add(logEvent);
+        }
+    }
+}
+
+private void logEvent(final @NonNull LogEvent logEvent) {
+    // Payload including common payload
+    final Map<String, Object> payload = new HashMap<>(this.commonPayload);
+
+    payload.put("event_id", this.eventCounter.getAndAdd(1));
+    payload.put("timestamp", new Date().getTime() / 1000); // Milliseconds -> Seconds
+    payload.put("log_level", logEvent.logLevel.name);
+
+    // Event-specific payload
+    payload.put("event_type", logEvent.eventType);
+    if (logEvent.eventData != null) {
+        payload.put("event_data", logEvent.eventData);
+    }
+
+    // Log to Android log
+    if (this.logLocally && android.util.Log.isLoggable(this.androidLogTag, logEvent.logLevel.androidLogPriority)) {
+        String jsonStringForAndroidLog = "{}";
+        try {
+            if (this.jsonIndentation > 0) {
+                jsonStringForAndroidLog = new JSONObject(payload).toString(this.jsonIndentation);
+            } else {
+                jsonStringForAndroidLog = new JSONObject(payload).toString();
+            }
+        } catch (Exception ignored) {
+        }
+        android.util.Log.println(logEvent.logLevel.androidLogPriority, this.androidLogTag, jsonStringForAndroidLog);
+    }
+
+    // Remote logging
+    if (this.logRemotely) {
+        this.remoteLogQueue.execute(() -> {
+            HttpsURLConnection connection = null;
+            try {
+                URL endpoint = sendToRapidIngestion ? new URL("https://logs.gocarrot.com/dev.sdk.log." + logEvent.logLevel.name)
+                                                    : new URL("https://logs.gocarrot.com/sdk.log." + logEvent.logLevel.name);
+                connection = (HttpsURLConnection) endpoint.openConnection();
+                connection.setRequestProperty("Accept-Charset", "UTF-8");
+                connection.setUseCaches(false);
+                connection.setDoOutput(true);
+                connection.setRequestProperty("Content-Type", "application/json");
+                //connection.setRequestProperty("Content-Encoding", "gzip");
+
+                //GZIPOutputStream wr = new GZIPOutputStream(connection.getOutputStream());
+                OutputStream wr = connection.getOutputStream();
+                wr.write(new JSONObject(payload).toString().getBytes());
+                wr.flush();
+                wr.close();
+
+                InputStream is;
+                if (connection.getResponseCode() < 400) {
+                    is = connection.getInputStream();
+                } else {
+                    is = connection.getErrorStream();
+                }
+                BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+                String line;
+                //noinspection MismatchedQueryAndUpdateOfStringBuilder
+                StringBuilder response = new StringBuilder();
+                while ((line = rd.readLine()) != null) {
+                    response.append(line);
+                    response.append('\r');
+                }
+                rd.close();
+            } catch (Exception ignored) {
+            } finally {
+                if (connection != null) {
+                    connection.disconnect();
                 }
             }
         });
     }
 
-    public void useRapidIngestionEndpoint(boolean useRapidIngestionEndpoint) {
-        this.sendToRapidIngestion = useRapidIngestionEndpoint;
+    // Log to listeners
+    if (this.logListener != null) {
+        this.logListener.logEvent(logEvent.eventType, logEvent.logLevel.name, payload);
     }
-
-    public void setLoggingEnabled(boolean logLocally, boolean logRemotely) {
-        this.logLocally = logLocally;
-        this.logRemotely = logRemotely;
-    }
-
-    public void setLogTrace(boolean logTrace) {
-        this.logTrace = logTrace;
-    }
-
-    public void setLogListener(Teak.LogListener logListener) {
-        this.logListener = logListener;
-    }
-
-    protected static class LogEvent {
-        final Level logLevel;
-        final String eventType;
-        final Map<String, Object> eventData;
-
-        LogEvent(final @NonNull Level logLevel, final @NonNull String eventType, @Nullable Map<String, Object> eventData) {
-            this.logLevel = logLevel;
-            this.eventType = eventType;
-            this.eventData = eventData;
-        }
-    }
-
-    private boolean processedQueuedLogEvents = false;
-    private final ArrayList<LogEvent> queuedLogEvents = new ArrayList<>();
-
-    protected void log(final @NonNull Level logLevel, final @NonNull String eventType, @Nullable Map<String, Object> eventData) {
-        LogEvent logEvent = new LogEvent(logLevel, eventType, eventData);
-        synchronized (queuedLogEvents) {
-            if (processedQueuedLogEvents) {
-                this.logEvent(logEvent);
-            } else {
-                queuedLogEvents.add(logEvent);
-            }
-        }
-    }
-
-    private void logEvent(final @NonNull LogEvent logEvent) {
-        // Payload including common payload
-        final Map<String, Object> payload = new HashMap<>(this.commonPayload);
-
-        payload.put("event_id", this.eventCounter.getAndAdd(1));
-        payload.put("timestamp", new Date().getTime() / 1000); // Milliseconds -> Seconds
-        payload.put("log_level", logEvent.logLevel.name);
-
-        // Event-specific payload
-        payload.put("event_type", logEvent.eventType);
-        if (logEvent.eventData != null) {
-            payload.put("event_data", logEvent.eventData);
-        }
-
-        // Log to Android log
-        if (this.logLocally && android.util.Log.isLoggable(this.androidLogTag, logEvent.logLevel.androidLogPriority)) {
-            String jsonStringForAndroidLog = "{}";
-            try {
-                if (this.jsonIndentation > 0) {
-                    jsonStringForAndroidLog = new JSONObject(payload).toString(this.jsonIndentation);
-                } else {
-                    jsonStringForAndroidLog = new JSONObject(payload).toString();
-                }
-            } catch (Exception ignored) {
-            }
-            android.util.Log.println(logEvent.logLevel.androidLogPriority, this.androidLogTag, jsonStringForAndroidLog);
-        }
-
-        // Remote logging
-        if (this.logRemotely) {
-            this.remoteLogQueue.execute(() -> {
-                HttpsURLConnection connection = null;
-                try {
-                    URL endpoint = sendToRapidIngestion ? new URL("https://logs.gocarrot.com/dev.sdk.log." + logEvent.logLevel.name)
-                                                        : new URL("https://logs.gocarrot.com/sdk.log." + logEvent.logLevel.name);
-                    connection = (HttpsURLConnection) endpoint.openConnection();
-                    connection.setRequestProperty("Accept-Charset", "UTF-8");
-                    connection.setUseCaches(false);
-                    connection.setDoOutput(true);
-                    connection.setRequestProperty("Content-Type", "application/json");
-                    //connection.setRequestProperty("Content-Encoding", "gzip");
-
-                    //GZIPOutputStream wr = new GZIPOutputStream(connection.getOutputStream());
-                    OutputStream wr = connection.getOutputStream();
-                    wr.write(new JSONObject(payload).toString().getBytes());
-                    wr.flush();
-                    wr.close();
-
-                    InputStream is;
-                    if (connection.getResponseCode() < 400) {
-                        is = connection.getInputStream();
-                    } else {
-                        is = connection.getErrorStream();
-                    }
-                    BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-                    String line;
-                    //noinspection MismatchedQueryAndUpdateOfStringBuilder
-                    StringBuilder response = new StringBuilder();
-                    while ((line = rd.readLine()) != null) {
-                        response.append(line);
-                        response.append('\r');
-                    }
-                    rd.close();
-                } catch (Exception ignored) {
-                } finally {
-                    if (connection != null) {
-                        connection.disconnect();
-                    }
-                }
-            });
-        }
-
-        // Log to listeners
-        if (this.logListener != null) {
-            this.logListener.logEvent(logEvent.eventType, logEvent.logLevel.name, payload);
-        }
-    }
+}
 }

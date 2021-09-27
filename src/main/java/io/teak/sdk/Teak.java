@@ -6,13 +6,19 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Debug;
+import android.os.StrictMode;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
@@ -125,11 +131,20 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
             if (intentData.getBooleanQueryParameter("teak_debug", false) &&
                 (activity.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
-                android.os.Debug.waitForDebugger();
+                Debug.waitForDebugger();
             }
 
             if (intentData.getBooleanQueryParameter("teak_mutex_report", false)) {
                 InstrumentableReentrantLock.interruptLongLocksAndReport = true;
+            }
+
+            if (intentData.getBooleanQueryParameter("teak_strict_mode", false)) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+                                               .detectNonSdkApiUsage()
+                                               .penaltyLog()
+                                               .build());
+                }
             }
         }
 
@@ -152,7 +167,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             Class<?> clazz = Class.forName("io.teak.sdk.wrapper.Version");
             Method m = clazz.getDeclaredMethod("map");
             @SuppressWarnings("unchecked")
-            final Map<String, Object> wrapperVersion = (Map<String, Object>)m.invoke(null);
+            final Map<String, Object> wrapperVersion = (Map<String, Object>) m.invoke(null);
             if (wrapperVersion != null) {
                 Teak.sdkMap.putAll(wrapperVersion);
             }
@@ -172,7 +187,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         if (Instance == null) {
             try {
                 Instance = new TeakInstance(activity, objectFactory);
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                android.util.Log.e(LOG_TAG, android.util.Log.getStackTraceString(e));
             }
         }
     }
@@ -185,6 +201,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * @param userIdentifier An identifier which is unique for the current user.
      */
     @SuppressWarnings("unused")
+    @Deprecated
     public static void identifyUser(final String userIdentifier) {
         Teak.identifyUser(userIdentifier, new String[0], null);
     }
@@ -198,6 +215,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * @param email          The email address for the user.
      */
     @SuppressWarnings("unused")
+    @Deprecated
     public static void identifyUser(final String userIdentifier, final String email) {
         Teak.identifyUser(userIdentifier, new String[0], email);
     }
@@ -239,6 +257,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      *                          {@link #OPT_OUT_IDFA}, {@link #OPT_OUT_FACEBOOK}, {@link #OPT_OUT_PUSH_KEY}
      */
     @SuppressWarnings("unused")
+    @Deprecated
     public static void identifyUser(final String userIdentifier, final String[] optOut) {
         identifyUser(userIdentifier, optOut, null);
     }
@@ -254,14 +273,93 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * @param email          The email address for the user.
      */
     @SuppressWarnings("unused")
+    @Deprecated
     public static void identifyUser(final String userIdentifier, final String[] optOut, final String email) {
-        Teak.log.trace("Teak.identifyUser", "userIdentifier", userIdentifier, "optOut", Arrays.toString(optOut), "email", email);
+        final Set<String> optOutSet = optOut == null ? new HashSet<>() : new HashSet<>(Arrays.asList(optOut));
+        final UserConfiguration userConfiguration = new UserConfiguration(email, null,
+            optOutSet.contains(OPT_OUT_FACEBOOK),
+            optOutSet.contains(OPT_OUT_IDFA),
+            optOutSet.contains(OPT_OUT_PUSH_KEY));
+
+        identifyUser(userIdentifier, userConfiguration);
+    }
+
+    public static class UserConfiguration implements Unobfuscable {
+        public final String email;
+        public final String facebookId;
+
+        /**
+         * Opt out of collecting a Facebook Access Token for this specific user.
+         * <br>
+         * If you prevent Teak from collecting the Facebook Access Token, Teak will no longer be able to correlate this user across multiple devices.
+         */
+        @Deprecated
+        public final boolean optOutFacebook;
+
+        /**
+         * Opt out of collecting an IDFA for this specific user.
+         * <br>
+         * If you prevent Teak from collecting the Identifier For Advertisers (IDFA), Teak will no longer be able to add this user to Facebook Ad Audiences.
+         */
+        public final boolean optOutIDFA;
+
+        /**
+         * Opt out of collecting a Push Key for this specific user.
+         * <br>
+         * If you prevent Teak from collecting the Push Key, Teak will no longer be able to send Local Notifications or Push Notifications for this user.
+         */
+        public final boolean optOutPushKey;
+
+        public UserConfiguration() {
+            this(null, null, false, false, false);
+        }
+
+        public UserConfiguration(final String email) {
+            this(email, null, false, false, false);
+        }
+
+        public UserConfiguration(final String email, final String facebookId) {
+            this(email, facebookId, false, false, false);
+        }
+
+        public UserConfiguration(final String email, final String facebookId,
+            final boolean optOutFacebook, final boolean optOutIDFA,
+            final boolean optOutPushKey) {
+            this.email = email;
+            this.facebookId = facebookId;
+            this.optOutFacebook = optOutFacebook;
+            this.optOutIDFA = optOutIDFA;
+            this.optOutPushKey = optOutPushKey;
+        }
+
+        public Map<String, Object> toHash() {
+            final Map<String, Object> map = new HashMap<>();
+            map.put("email", this.email);
+            map.put("facebook_id", this.facebookId);
+            map.put("opt_out_facebook", this.optOutFacebook);
+            map.put("opt_out_idfa", this.optOutIDFA);
+            map.put("opt_out_push_key", this.optOutPushKey);
+            return map;
+        }
+    }
+
+    /**
+     * Tell Teak how it should identify the current user, with additional options and configuration.
+     * <br>
+     * <p>This should be the same way you identify the user in your backend.</p>
+     *
+     * @param userIdentifier An identifier which is unique for the current user.
+     * @param userConfiguration A set of configuration keys and value, @see UserConfiguration
+     */
+    @SuppressWarnings("unused")
+    public static void identifyUser(final String userIdentifier, final UserConfiguration userConfiguration) {
+        Teak.log.trace("Teak.identifyUser", userIdentifier, userConfiguration);
 
         // Always process deep links when identifyUser is called
         Teak.processDeepLinks();
 
         if (Instance != null) {
-            asyncExecutor.submit(() -> Instance.identifyUser(userIdentifier, optOut != null ? optOut : new String[] {}, email));
+            asyncExecutor.submit(() -> Instance.identifyUser(userIdentifier, userConfiguration));
         }
     }
 
@@ -498,176 +596,434 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     }
 
     /**
-     * Event posted when a notification was received either in the foreground, or that launched the app.
+     * Base class for providing data about the launch of the app.
      */
-    public static class NotificationEvent {
+    public static class LaunchData implements Unobfuscable {
         /**
-         * True if the notification was received when the app was in the foreground.
+         * If this launch is not attributed to anything, this constant is used instead of
+         * a null LaunchData.
          */
-        public final boolean isForeground;
-
-        /**
-         * The reward id, or null if there was no reward attached.
-         */
-        public final String teakRewardId;
+        public static final LaunchData Unattributed = new LaunchData();
 
         /**
-         * The notification id.
+         * The link associated with this launch; or null.
          */
-        public final String teakNotifId;
+        public final Uri launchLink;
 
         /**
-         * True if there was a reward attached; false otherwise.
+         * Constructor with {@link String}.
+         * @param launchLink Link as a String.
          */
-        public final boolean incentivized;
-
-        /**
-         * The name of the schedule responsible on the Teak dashboard, if this was a scheduled notification; null otherwise.
-         */
-        public final String teakScheduleName;
-
-        /**
-         * The id of the schedule responsible on the Teak dashboard, if this was a scheduled notification; null otherwise.
-         */
-        public final String teakScheduleId;
-
-        /**
-         * The name of the notification creative on the Teak dashboard.
-         */
-        public final String teakCreativeName;
-
-        /**
-         * The id of the notification creative on the Teak dashboard.
-         */
-        public final String teakCreativeId;
-
-        /**
-         * TODO
-         */
-        public final String teakChannelName;
-
-        /**
-         * The deep link attached to the notification; null if there was no deep link.
-         */
-        public final String teakDeepLink;
-
-        /**
-         * The text in the body of the notification.
-         */
-        public final String message;
-
-        /**
-         * Attached reward, or null.
-         */
-        public final Map<String, Object> reward;
-
-        // TODO: Is this needed?
-        public final String teakNotificationPlacement;
-
-        public NotificationEvent(final Bundle bundle, final boolean isForeground) {
-            this(bundle, isForeground, null);
+        protected LaunchData(@Nullable String launchLink) {
+            this(launchLink != null ? Uri.parse(launchLink) : null);
         }
 
-        public NotificationEvent(final Bundle bundle, final boolean isForeground, final Map<String, Object> reward) {
-            this.isForeground = isForeground;
-            this.teakRewardId = bundle.getString("teakRewardId");
-            this.teakNotifId = bundle.getString("teakNotifId");
-            this.incentivized = this.teakRewardId != null;
-            this.teakScheduleName = bundle.getString("teakScheduleName");
-            this.teakScheduleId = bundle.getString("teakScheduleId");
-            this.teakCreativeName = bundle.getString("teakCreativeName");
-            this.teakCreativeId = bundle.getString("teakCreativeId");
-            this.teakChannelName = bundle.getString("teakChannelName");
-            this.teakDeepLink = bundle.getString("teakDeepLink");
-            this.teakNotificationPlacement = bundle.getString("teakNotificationPlacement");
-            this.message = bundle.getString("message");
-            this.reward = reward;
+        /**
+         * Constructor with {@link Uri}.
+         * @param launchLink Link as a Uri.
+         */
+        public LaunchData(@Nullable Uri launchLink) {
+            this.launchLink = launchLink;
         }
 
+        /**
+         * For {@link LaunchData#Unattributed}
+         */
+        private LaunchData() {
+            this.launchLink = null;
+        }
+
+        /**
+         * Used by {@link io.teak.sdk.core.LaunchDataSource#sourceWithUpdatedDeepLink}
+         * @param uri Updated deep link
+         * @return A merged LaunchData
+         */
+        public LaunchData mergeDeepLink(@NonNull final Uri uri) {
+            return new LaunchData(uri);
+        }
+
+        /**
+         * For internal use.
+         *
+         * @return Map used by Teak internally.
+         */
+        public Map<String, Object> toSessionAttributionMap() {
+            final HashMap<String, Object> map = new HashMap<>();
+
+            if (this.launchLink != null) {
+                map.put("launch_link", this.launchLink.toString());
+            }
+            return map;
+        }
+
+        /**
+         * Convert to a Map, intended to be converted to JSON and
+         * consumed by the Teak Unity SDK.
+         *
+         * @return A Map representation of this object.
+         */
         public Map<String, Object> toMap() {
             final HashMap<String, Object> map = new HashMap<>();
-            map.put("teakNotifId", this.teakNotifId);
-            map.put("teakRewardId", this.teakRewardId);
-            map.put("incentivized", this.incentivized);
-            map.put("teakScheduleName", this.teakScheduleName);
-            map.put("teakCreativeName", this.teakCreativeName);
-            map.put("teakChannelName", this.teakCreativeName);
-            map.put("teakDeepLink", this.teakDeepLink);
-            map.put("teakNotificationPlacement", this.teakNotificationPlacement);
-            map.put("message", this.message);
+            map.put("launch_link", this.launchLink != null ? this.launchLink.toString() : null);
+            return map;
+        }
+    }
 
-            if (this.reward != null) {
-                map.putAll(reward);
+    /**
+     * Base class for describing a Teak-attributed launch of the app.
+     */
+    public static class AttributedLaunchData extends LaunchData implements Unobfuscable {
+        /**
+         * The name of the schedule responsible on the Teak dashboard; or null if this was not a scheduled channel.
+         */
+        public final String scheduleName;
+
+        /**
+         * The id of the schedule responsible on the Teak dashboard; or null if this was not a scheduled channel.
+         */
+        public final String scheduleId;
+
+        /**
+         * The name of the creative on the Teak dashboard.
+         */
+        public final String creativeName;
+
+        /**
+         * The id of the creative on the Teak dashboard.
+         */
+        public final String creativeId;
+
+        /**
+         * The id of the Teak reward associated with this launch; or null.
+         */
+        public final String rewardId;
+
+        /**
+         * The name of the channel responsible for this attribution.
+         *
+         * One of:
+         *  * generic_link
+         *  * android_push
+         *  * email
+         */
+        public final String channelName;
+
+        /**
+         * Used by {@link NotificationLaunchData}
+         * @param bundle Push notification contents.
+         */
+        protected AttributedLaunchData(@NonNull final Bundle bundle) {
+            super(bundle.getString("teakDeepLink"));
+
+            if (!(this instanceof NotificationLaunchData)) {
+                throw new RuntimeException("AttributedLaunchData(Bundle) constructor used to construct something other than NotificationLaunchData");
+            }
+
+            this.scheduleName = bundle.getString("teakScheduleName");
+            this.scheduleId = bundle.getString("teakScheduleId");
+            this.creativeName = bundle.getString("teakCreativeName");
+            this.creativeId = bundle.getString("teakCreativeId");
+            this.rewardId = bundle.getString("teakRewardId");
+            this.channelName = bundle.getString("teakChannelName");
+        }
+
+        /**
+         * Used by both {@link NotificationLaunchData} and {@link RewardlinkLaunchData}
+         * @param uri Uri of the email link or generic link used to launch the app.
+         */
+        protected AttributedLaunchData(@NonNull final Uri uri) {
+            super(uri);
+
+            this.scheduleName = uri.getQueryParameter("teak_schedule_name");
+            this.scheduleId = uri.getQueryParameter("teak_schedule_id");
+
+            // In the non-mobile world, there is no such thing as "not a link launch" and so the
+            // parameter names are different to properly differentiate session source
+            final String urlCreativeName = uri.getQueryParameter("teak_creative_name");
+            this.creativeName = urlCreativeName != null ? urlCreativeName : uri.getQueryParameter("teak_rewardlink_name");
+            final String urlCreativeId = uri.getQueryParameter("teak_creative_id");
+            this.creativeId = urlCreativeId != null ? urlCreativeId : uri.getQueryParameter("teak_rewardlink_id");
+
+            this.rewardId = uri.getQueryParameter("teak_reward_id");
+            this.channelName = uri.getQueryParameter("teak_channel_name");
+        }
+
+        /**
+         * For use in {@link AttributedLaunchData#mergeDeepLink(Uri)}
+         * @param oldLaunchData The old attribution
+         * @param updatedDeepLink The deep link in the reply from the identify user request.
+         */
+        protected AttributedLaunchData(@NonNull final AttributedLaunchData oldLaunchData, @NonNull Uri updatedDeepLink) {
+            super(updatedDeepLink);
+
+            final AttributedLaunchData newLaunchData = new AttributedLaunchData(updatedDeepLink);
+            this.scheduleName = Helpers.newIfNotOld(oldLaunchData.scheduleName, newLaunchData.scheduleName);
+            this.scheduleId = Helpers.newIfNotOld(oldLaunchData.scheduleId, newLaunchData.scheduleId);
+            this.creativeName = Helpers.newIfNotOld(oldLaunchData.creativeName, newLaunchData.creativeName);
+            this.creativeId = Helpers.newIfNotOld(oldLaunchData.creativeId, newLaunchData.creativeId);
+            this.rewardId = Helpers.newIfNotOld(oldLaunchData.rewardId, newLaunchData.rewardId);
+            this.channelName = Helpers.newIfNotOld(oldLaunchData.channelName, newLaunchData.channelName);
+        }
+
+        @Override
+        public LaunchData mergeDeepLink(@NonNull Uri uri) {
+            return new AttributedLaunchData(this, uri);
+        }
+
+        /**
+         * @return True if this notification had a reward attached to it.
+         */
+        public boolean isIncentivized() {
+            return this.rewardId != null;
+        }
+
+        @Override
+        public Map<String, Object> toSessionAttributionMap() {
+            final Map<String, Object> map = super.toSessionAttributionMap();
+
+            // Put the URI and any query parameters that start with 'teak_' into 'deep_link'
+            if (this.launchLink != null) {
+                map.put("deep_link", this.launchLink.toString());
+                for (final String name : this.launchLink.getQueryParameterNames()) {
+                    if (name.startsWith("teak_")) {
+                        final List<String> values = this.launchLink.getQueryParameters(name);
+                        if (values.size() > 1) {
+                            map.put(name, values);
+                        } else {
+                            map.put(name, values.get(0));
+                        }
+                    }
+                }
             }
 
             return map;
+        }
+
+        /**
+         * Convert to a Map, intended to be converted to JSON and
+         * consumed by the Teak Unity SDK.
+         *
+         * @return A Map representation of this object.
+         */
+        @Override
+        public Map<String, Object> toMap() {
+            final Map<String, Object> map = super.toMap();
+            map.put("teakScheduleName", this.scheduleName);
+            map.put("teakScheduleId", this.scheduleId);
+            map.put("teakCreativeName", this.creativeName);
+            map.put("teakCreativeId", this.creativeId);
+            map.put("teakRewardId", this.rewardId);
+            map.put("teakChannelName", this.channelName);
+            map.put("teakDeepLink", io.teak.sdk.core.DeepLink.willProcessUri(this.launchLink) ? this.launchLink.toString() : null);
+            return map;
+        }
+    }
+
+    /**
+     * Launch data for a Teak push notification or email.
+     */
+    public static class NotificationLaunchData extends AttributedLaunchData implements Unobfuscable {
+        /**
+         * The send-id of the notification.
+         */
+        public final String sourceSendId;
+
+        /**
+         * Construct NotificationLaunchData for a push notification.
+         * @param bundle Push notification contents.
+         */
+        public NotificationLaunchData(@NonNull final Bundle bundle) {
+            super(bundle);
+            this.sourceSendId = bundle.getString("teakNotifId");
+        }
+
+        /**
+         * Construct NotificationLaunchData for an email link.
+         * @param uri Email link.
+         */
+        public NotificationLaunchData(@NonNull final Uri uri) {
+            super(uri);
+            this.sourceSendId = uri.getQueryParameter("teak_notif_id");
+        }
+
+        /**
+         * For use in {@link NotificationLaunchData#mergeDeepLink(Uri)}
+         * @param oldLaunchData The old attribution
+         * @param updatedDeepLink The deep link in the reply from the identify user request.
+         */
+        protected NotificationLaunchData(@NonNull final NotificationLaunchData oldLaunchData, @NonNull Uri updatedDeepLink) {
+            super(oldLaunchData, updatedDeepLink);
+            this.sourceSendId = Helpers.newIfNotOld(oldLaunchData.sourceSendId, updatedDeepLink.getQueryParameter("teak_notif_id"));
+        }
+
+        @Override
+        public LaunchData mergeDeepLink(@NonNull Uri uri) {
+            return new NotificationLaunchData(this, uri);
+        }
+
+        /**
+         * For internal use.
+         * @param uri The Uri to test.
+         * @return true if the Uri is from a Teak email, in which case it should use NotificationLaunchData.
+         */
+        public static boolean isTeakEmailUri(@NonNull final Uri uri) {
+            return !Helpers.isNullOrEmpty(uri.getQueryParameter("teak_notif_id"));
+        }
+
+        @Override
+        public Map<String, Object> toMap() {
+            final Map<String, Object> map = super.toMap();
+            map.put("teakNotifId", this.sourceSendId);
+            return map;
+        }
+
+        @Override
+        public Map<String, Object> toSessionAttributionMap() {
+            final Map<String, Object> map = super.toSessionAttributionMap();
+            if (this.sourceSendId != null) {
+                map.put("teak_notif_id", this.sourceSendId);
+            }
+            return map;
+        }
+    }
+
+    /**
+     * Launch data for a Teak reward link.
+     */
+    public static class RewardlinkLaunchData extends AttributedLaunchData implements Unobfuscable {
+        /**
+         * The Teak short link that resolved to this attribution; or null.
+         */
+        public final Uri shortLink;
+
+        public RewardlinkLaunchData(@NonNull final Uri uri, @Nullable final Uri shortLink) {
+            super(uri);
+            this.shortLink = shortLink;
+        }
+
+        /**
+         * For internal use.
+         * @param uri The Uri to test.
+         * @return true if the Uri is a Teak reward link.
+         */
+        public static boolean isTeakRewardLink(@NonNull final Uri uri) {
+            return !Helpers.isNullOrEmpty(uri.getQueryParameter("teak_rewardlink_id"));
+        }
+
+        /**
+         * For use in {@link RewardlinkLaunchData#mergeDeepLink(Uri)}
+         * @param oldLaunchData The old attribution
+         * @param updatedDeepLink The deep link in the reply from the identify user request.
+         */
+        protected RewardlinkLaunchData(@NonNull final RewardlinkLaunchData oldLaunchData, @NonNull Uri updatedDeepLink) {
+            super(oldLaunchData, updatedDeepLink);
+            this.shortLink = oldLaunchData.shortLink;
+        }
+
+        @Override
+        public LaunchData mergeDeepLink(@NonNull Uri uri) {
+            return new RewardlinkLaunchData(this, uri);
+        }
+    }
+
+    public static class Event implements Unobfuscable {
+        /**
+         * Data associated with this launch.
+         */
+        public final LaunchData launchData;
+
+        /**
+         * The {@link TeakNotification.Reward} attached, or null.
+         */
+        public final TeakNotification.Reward reward;
+
+        /**
+         * Event base class.
+         * @param launchData Attribution data for launch.
+         * @param reward Reward, if available.
+         */
+        public Event(@NonNull final LaunchData launchData, @Nullable final TeakNotification.Reward reward) {
+            this.launchData = launchData;
+            this.reward = reward;
+        }
+
+        /**
+         * Used internally for JSON serialization.
+         *
+         * @return Teak wrapper SDK consumable JSON.
+         */
+        public JSONObject toJSON() {
+            final Map<String, Object> map = this.launchData.toMap();
+            if (this.reward != null && this.reward.json != null) {
+                map.putAll(this.reward.json.toMap());
+            }
+            return new JSONObject(map);
+        }
+    }
+
+    /**
+     * Event posted when a foreground notification was received, or the game was launched from a
+     * Teak email, or Teak push notification.
+     */
+    public static class NotificationEvent extends Event implements Unobfuscable {
+        /**
+         * True if this push notification was received when the app was in the foreground.
+         */
+        public final boolean isForeground;
+
+        public NotificationEvent(@NonNull final NotificationLaunchData launchData, final boolean isForeground) {
+            super(launchData, null);
+            this.isForeground = isForeground;
+        }
+
+        @Override
+        public JSONObject toJSON() {
+            final JSONObject json = super.toJSON();
+            json.put("isForeground", this.isForeground);
+            return json;
+        }
+    }
+
+    /**
+     * Event posted when the app was launched from a link created by the Teak dashboard.
+     */
+    public static class LaunchFromLinkEvent extends Event implements Unobfuscable {
+        /**
+         * Constructor
+         * @param launchData Launch attribution data.
+         */
+        public LaunchFromLinkEvent(@NonNull final RewardlinkLaunchData launchData) {
+            super(launchData, null);
+        }
+    }
+
+    /**
+     * Event posted whenever the app launches.
+     */
+    public static class PostLaunchSummaryEvent extends Event implements Unobfuscable {
+        public PostLaunchSummaryEvent(@NonNull final LaunchData launchData) {
+            super(launchData, null);
         }
     }
 
     /**
      * Event posted when a reward claim attempt has occurred.
      */
-    public static class RewardClaimEvent {
+    public static class RewardClaimEvent extends Event implements Unobfuscable {
         /**
-         * The reward id.
+         * Constructor
+         * @param launchData Launch attribution data.
+         * @param reward Reward.
          */
-        public final String teakRewardId;
-
-        /**
-         * The notification id, if the reward came from a notification.
-         */
-        public final String teakNotifId;
-
-        /**
-         * The name of the schedule responsible on the Teak dashboard, if this was a scheduled notification; null otherwise.
-         */
-        public final String teakScheduleName;
-
-        /**
-         * The id of the schedule responsible on the Teak dashboard, if this was a scheduled notification; null otherwise.
-         */
-        public final String teakScheduleId;
-
-        /**
-         * The name of the notification creative on the Teak dashboard.
-         */
-        public final String teakCreativeName;
-
-        /**
-         * The id of the notification creative on the Teak dashboard.
-         */
-        public final String teakCreativeId;
-
-        /**
-         * TODO
-         */
-        public final String teakChannelName;
-
-        /**
-         * The full contents of the reward.
-         */
-        public final Map<String, Object> rewardAsMap;
-
-        public RewardClaimEvent(@NonNull final Map<String, Object> rewardMap) {
-            this.rewardAsMap = rewardMap;
-            this.teakNotifId = (String) rewardMap.get("teakNotifId");
-            this.teakRewardId = (String) rewardMap.get("teakRewardId");
-            this.teakScheduleName = (String) rewardMap.get("teakScheduleName");
-            this.teakScheduleId = (String) rewardMap.get("teakScheduleId");
-            this.teakCreativeName = (String) rewardMap.get("teakCreativeName");
-            this.teakCreativeId = (String) rewardMap.get("teakCreativeId");
-            this.teakChannelName = (String) rewardMap.get("teakChannelName");
-        }
-
-        public Map<String, Object> toMap() {
-            return this.rewardAsMap;
+        public RewardClaimEvent(@NonNull final AttributedLaunchData launchData, @NonNull final TeakNotification.Reward reward) {
+            super(launchData, reward);
         }
     }
 
     /**
      * Event sent when "additional data" is available for the user.
      */
-    public static class AdditionalDataEvent {
+    public static class AdditionalDataEvent implements Unobfuscable {
         /**
          * A JSON object containing user-defined data received from the server.
          */
@@ -675,20 +1031,6 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
         public AdditionalDataEvent(final JSONObject additionalData) {
             this.additionalData = additionalData;
-        }
-    }
-
-    /**
-     * Event sent when the app was launched from a link created by the Teak dashboard.
-     */
-    public static class LaunchFromLinkEvent {
-        /**
-         * TODO: This should be expanded out into data members
-         */
-        public final JSONObject todoExpandThis;
-
-        public LaunchFromLinkEvent(final JSONObject linkData) {
-            this.todoExpandThis = linkData;
         }
     }
 

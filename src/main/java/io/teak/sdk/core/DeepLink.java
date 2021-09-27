@@ -77,131 +77,135 @@ public class DeepLink {
         executor.execute(() -> {
             synchronized (routes) {
                 routes.put(patternKey, link);
+    }
+});
+}
+
+public static boolean willProcessUri(Uri uri) {
+    if (uri == null) return false;
+    return DeepLink.willProcessUri(URI.create(uri.toString()));
+}
+
+public static boolean willProcessUri(URI uri) {
+    if (uri == null) return false;
+    return TeakConfiguration.get().appConfiguration.urlSchemes.contains(uri.getScheme());
+}
+
+public static boolean processUri(Uri uri) {
+    return DeepLink.processUri(URI.create(uri.toString()));
+}
+
+public static boolean processUri(URI uri) {
+    if (!DeepLink.willProcessUri(uri)) return false;
+
+    synchronized (routes) {
+        for (Map.Entry<String, DeepLink> entry : routes.entrySet()) {
+            final String key = entry.getKey();
+            final DeepLink value = entry.getValue();
+
+            Pattern pattern = null;
+            try {
+                pattern = Pattern.compile(key);
+            } catch (Exception e) {
+                Teak.log.exception(e);
             }
-        });
-    }
+            if (pattern == null) continue;
 
-    public static boolean willProcessUri(Uri uri) {
-        if (uri == null) return false;
-        return TeakConfiguration.get().appConfiguration.urlSchemes.contains(uri.getScheme());
-    }
-
-    public static boolean willProcessUri(URI uri) {
-        if (uri == null) return false;
-        return TeakConfiguration.get().appConfiguration.urlSchemes.contains(uri.getScheme());
-    }
-
-    public static boolean processUri(URI uri) {
-        if (!DeepLink.willProcessUri(uri)) return false;
-
-        synchronized (routes) {
-            for (Map.Entry<String, DeepLink> entry : routes.entrySet()) {
-                final String key = entry.getKey();
-                final DeepLink value = entry.getValue();
-
-                Pattern pattern = null;
-                try {
-                    pattern = Pattern.compile(key);
-                } catch (Exception e) {
-                    Teak.log.exception(e);
+            final String uriPath = uri.getPath();
+            Matcher matcher = pattern.matcher(uriPath);
+            if (matcher.matches()) {
+                final Map<String, Object> parameterDict = new HashMap<>();
+                int idx = 1; // Index 0 = full match
+                for (String name : value.groupNames) {
+                    try {
+                        parameterDict.put(name, matcher.group(idx));
+                        idx++;
+                    } catch (Exception e) {
+                        Teak.log.exception(e);
+                        return false;
+                    }
                 }
-                if (pattern == null) continue;
 
-                final String uriPath = uri.getPath();
-                Matcher matcher = pattern.matcher(uriPath);
-                if (matcher.matches()) {
-                    final Map<String, Object> parameterDict = new HashMap<>();
-                    int idx = 1; // Index 0 = full match
-                    for (String name : value.groupNames) {
+                Map<String, String> query = new HashMap<>();
+                if (uri.getQuery() != null) {
+                    String[] pairs = uri.getQuery().split("&");
+                    for (String pair : pairs) {
+                        int eqIdx = pair.indexOf("=");
                         try {
-                            parameterDict.put(name, matcher.group(idx));
-                            idx++;
-                        } catch (Exception e) {
-                            Teak.log.exception(e);
-                            return false;
+                            query.put(URLDecoder.decode(pair.substring(0, eqIdx), "UTF-8"),
+                                URLDecoder.decode(pair.substring(eqIdx + 1), "UTF-8"));
+                        } catch (Exception ignored) {
                         }
                     }
-
-                    Map<String, String> query = new HashMap<>();
-                    if (uri.getQuery() != null) {
-                        String[] pairs = uri.getQuery().split("&");
-                        for (String pair : pairs) {
-                            int eqIdx = pair.indexOf("=");
-                            try {
-                                query.put(URLDecoder.decode(pair.substring(0, eqIdx), "UTF-8"),
-                                    URLDecoder.decode(pair.substring(eqIdx + 1), "UTF-8"));
-                            } catch (Exception ignored) {
-                            }
-                        }
-                    }
-
-                    // Add the query parameters, allow them to overwrite path parameters
-                    for (String name : query.keySet()) {
-                        parameterDict.put(name, query.get(name));
-                    }
-
-                    // Add in the original path, but do not overwrite an existing parameter
-                    if (!parameterDict.containsKey(INCOMING_URL_PATH_KEY)) {
-                        parameterDict.put(INCOMING_URL_PATH_KEY, uriPath);
-                    }
-
-                    // Add in the original, full, url, but do not overwrite an existing parameter
-                    if (!parameterDict.containsKey(INCOMING_URL_KEY)) {
-                        parameterDict.put(INCOMING_URL_KEY, uri.toString());
-                    }
-
-                    Teak.log.i("deep_link.handled", Helpers.mm.h(
-                                                        "url", uri.toString(),
-                                                        "params", parameterDict,
-                                                        "route", value.route));
-
-                    executor.execute(() -> {
-                        try {
-                            value.call.call(parameterDict);
-                        } catch (Exception e) {
-                            Teak.log.exception(e);
-                        }
-                    });
-                    return true;
                 }
+
+                // Add the query parameters, allow them to overwrite path parameters
+                for (String name : query.keySet()) {
+                    parameterDict.put(name, query.get(name));
+                }
+
+                // Add in the original path, but do not overwrite an existing parameter
+                if (!parameterDict.containsKey(INCOMING_URL_PATH_KEY)) {
+                    parameterDict.put(INCOMING_URL_PATH_KEY, uriPath);
+                }
+
+                // Add in the original, full, url, but do not overwrite an existing parameter
+                if (!parameterDict.containsKey(INCOMING_URL_KEY)) {
+                    parameterDict.put(INCOMING_URL_KEY, uri.toString());
+                }
+
+                Teak.log.i("deep_link.handled", Helpers.mm.h(
+                                                    "url", uri.toString(),
+                                                    "params", parameterDict,
+                                                    "route", value.route));
+
+                executor.execute(() -> {
+                    try {
+                        value.call.call(parameterDict);
+                    } catch (Exception e) {
+                        Teak.log.exception(e);
+                    }
+                });
+                return true;
             }
         }
-
-        Teak.log.i("deep_link.ignored", Helpers.mm.h("url", uri.toString()));
-        return false;
     }
 
-    public static List<Map<String, String>> getRouteNamesAndDescriptions() {
-        List<Map<String, String>> routeNamesAndDescriptions = new ArrayList<>();
-        synchronized (routes) {
-            for (Map.Entry<String, DeepLink> entry : routes.entrySet()) {
-                DeepLink link = entry.getValue();
-                if (link.name != null && !link.name.isEmpty()) {
-                    Map<String, String> item = new HashMap<>();
-                    item.put("name", link.name);
-                    item.put("description", link.description == null ? "" : link.description);
-                    item.put("route", link.route);
-                    routeNamesAndDescriptions.add(item);
-                }
+    Teak.log.i("deep_link.ignored", Helpers.mm.h("url", uri.toString()));
+    return false;
+}
+
+public static List<Map<String, String>> getRouteNamesAndDescriptions() {
+    List<Map<String, String>> routeNamesAndDescriptions = new ArrayList<>();
+    synchronized (routes) {
+        for (Map.Entry<String, DeepLink> entry : routes.entrySet()) {
+            DeepLink link = entry.getValue();
+            if (link.name != null && !link.name.isEmpty()) {
+                Map<String, String> item = new HashMap<>();
+                item.put("name", link.name);
+                item.put("description", link.description == null ? "" : link.description);
+                item.put("route", link.route);
+                routeNamesAndDescriptions.add(item);
             }
         }
-        return routeNamesAndDescriptions;
     }
+    return routeNamesAndDescriptions;
+}
 
-    public static final Map<String, DeepLink> routes = new HashMap<>();
-    private static final ExecutorService executor = Executors.newSingleThreadExecutor();
+public static final Map<String, DeepLink> routes = new HashMap<>();
+private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    private final String route;
-    private final Teak.DeepLink call;
-    private final List<String> groupNames;
-    private final String name;
-    private final String description;
+private final String route;
+private final Teak.DeepLink call;
+private final List<String> groupNames;
+private final String name;
+private final String description;
 
-    private DeepLink(String route, Teak.DeepLink call, List<String> groupNames, String name, String description) {
-        this.route = route;
-        this.call = call;
-        this.groupNames = groupNames;
-        this.name = name;
-        this.description = description;
-    }
+private DeepLink(String route, Teak.DeepLink call, List<String> groupNames, String name, String description) {
+    this.route = route;
+    this.call = call;
+    this.groupNames = groupNames;
+    this.name = name;
+    this.description = description;
+}
 }

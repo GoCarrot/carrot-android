@@ -47,6 +47,8 @@ public class AppConfiguration {
     public final boolean traceLog;
     @SuppressWarnings("WeakerAccess")
     public final Set<String> urlSchemes;
+    @SuppressWarnings("WeakerAccess")
+    public final boolean sdk5Behaviors;
 
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_API_KEY_RESOURCE = "io_teak_api_key";
@@ -56,6 +58,8 @@ public class AppConfiguration {
     public static final String TEAK_STORE_ID = "io_teak_store_id";
     @SuppressWarnings("WeakerAccess")
     public static final String TEAK_TRACE_LOG_RESOURCE = "io_teak_log_trace";
+    @SuppressWarnings("WeakerAccess")
+    public static final String TEAK_SDK_5_BEHAVIORS = "io_teak_sdk5_behaviors";
 
     @SuppressWarnings("WeakerAccess")
     public static final String GooglePlayStoreId = "google_play";
@@ -157,7 +161,7 @@ public class AppConfiguration {
 
         // Get the installer package
         {
-            this.installerPackage = this.packageManager.getInstallerPackageName(this.bundleId);
+            this.installerPackage = Helpers.getInstallerPackage(context);
         }
 
         // Trace log mode
@@ -171,6 +175,12 @@ public class AppConfiguration {
             HashSet<String> urlSchemeSet = new HashSet<>();
             urlSchemeSet.add("teak" + this.appId);
             this.urlSchemes = Collections.unmodifiableSet(urlSchemeSet);
+        }
+
+        // SDK 5 Behaviors
+        {
+            final Boolean sdk5Behaviors = androidResources.getTeakBoolResource(TEAK_SDK_5_BEHAVIORS, false);
+            this.sdk5Behaviors = sdk5Behaviors != null ? sdk5Behaviors : false;
         }
     }
 

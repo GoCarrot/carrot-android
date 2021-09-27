@@ -53,7 +53,7 @@ public class TeakInstance implements Unobfuscable {
         this.context = activity.getApplicationContext();
         this.activityHashCode = activity.hashCode();
         this.objectFactory = objectFactory;
-        this.teakCore = new TeakCore(this.context);
+        this.teakCore = TeakCore.get(this.context);
         PushState.init(this.context);
 
         // Ravens
@@ -115,16 +115,16 @@ public class TeakInstance implements Unobfuscable {
 
     ///// identifyUser
 
-    void identifyUser(String userIdentifier, String[] optOut, String email) {
-        if (userIdentifier == null || userIdentifier.isEmpty()) {
+    void identifyUser(final String userId, final Teak.UserConfiguration userConfiguration) {
+        if (userId == null || userId.isEmpty()) {
             Teak.log.e("identify_user.error", "User identifier can not be null or empty.");
             return;
         }
 
-        Teak.log.i("identify_user", Helpers.mm.h("userId", userIdentifier, "optOut", optOut, "email", email));
+        Teak.log.i("identify_user", userId, userConfiguration.toHash());
 
         if (this.isEnabled()) {
-            TeakEvent.postEvent(new UserIdEvent(userIdentifier, optOut, email));
+            TeakEvent.postEvent(new UserIdEvent(userId, userConfiguration));
         }
     }
 
@@ -325,10 +325,14 @@ public class TeakInstance implements Unobfuscable {
                 appStore = objectFactory.getIStore();
 
                 // Facebook Access Token Tracker
-                try {
-                    Class.forName("com.facebook.AccessTokenTracker");
-                    TeakInstance.this.facebookAccessTokenTracker = new AccessTokenTracker();
-                } catch (Exception ignored) {
+                // This will be removed in SDK 5
+                final TeakConfiguration teakConfiguration = TeakConfiguration.get();
+                if (!teakConfiguration.appConfiguration.sdk5Behaviors) {
+                    try {
+                        Class.forName("com.facebook.AccessTokenTracker");
+                        TeakInstance.this.facebookAccessTokenTracker = new AccessTokenTracker();
+                    } catch (Exception ignored) {
+                    }
                 }
 
                 Intent intent = activity.getIntent();

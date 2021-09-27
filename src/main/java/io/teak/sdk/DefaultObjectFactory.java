@@ -117,8 +117,11 @@ public class DefaultObjectFactory implements IObjectFactory {
                 admPushProvider.initialize(context);
                 ret = admPushProvider;
                 Teak.log.i("factory.pushProvider", Helpers.mm.h("type", "adm"));
+            } else {
+                Teak.log.i("factory.pushProvider", "ADM is not supported in this context.");
             }
         } catch (Exception ignored) {
+            Teak.log.i("factory.pushProvider", "ADM is not present.");
         }
 
         if (ret == null) {

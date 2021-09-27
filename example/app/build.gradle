@@ -1,18 +1,18 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 31
 
     defaultConfig {
-        applicationId "com.teakio.pushtest"
+        applicationId "io.teak.app.unity.dev"
         minSdkVersion 16
-        targetSdkVersion 30
+        targetSdkVersion 31
         versionCode 1
         versionName "1.0"
 
         manifestPlaceholders = [
-                teakShortDomain:"teak-prod.jckpt.me",
-                teakAppId:"1136371193060244"
+                teakShortDomain:"teak-dev.freechips.link",
+                teakAppId:"613659812345256"
         ]
     }
     buildTypes {
@@ -23,12 +23,21 @@ android {
     }
 }
 
+gradle.projectsEvaluated {
+    if (android.defaultConfig.targetSdkVersion.apiLevel < android.compileSdkVersion.split(/\-/)[1] as Integer) {
+        throw new GradleException('targetSdkVersion is less than compileSdkVersion')
+    }
+}
+
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     testImplementation 'junit:junit:4.13.2'
 
-    implementation 'androidx.appcompat:appcompat:1.2.0'
-    implementation 'com.google.firebase:firebase-messaging:21.1.0'
+    implementation 'androidx.core:core:1.6+'
+    implementation 'androidx.work:work-runtime:2.7+'
+
+    implementation 'androidx.appcompat:appcompat:1.3.1'
+    implementation 'com.google.firebase:firebase-messaging:22.0.0'
     implementation 'org.greenrobot:eventbus:3.2.0'
     implementation "com.android.billingclient:billing:3.0.0"
 
