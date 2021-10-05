@@ -203,6 +203,7 @@ public class AppConfiguration {
         ret.put("storeId", this.storeId);
         ret.put("targetSdkVersion", this.targetSdkVersion);
         ret.put("traceLog", this.traceLog);
+        ret.put("sdk5Behaviors", this.sdk5Behaviors);
         return ret;
     }
 
