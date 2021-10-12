@@ -12,6 +12,7 @@ import android.os.Debug;
 import android.os.StrictMode;
 
 import java.lang.reflect.Method;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1119,6 +1120,30 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     public static void waitUntilDeepLinksAreReady() throws ExecutionException, InterruptedException {
         Teak.waitForDeepLink.get();
+    }
+
+    /**
+     * Manually pass Teak a deep link path to handle.
+     *
+     * This path should be prefixed with a forward slash, and can contain query parameters, e.g.
+     *     /foo/bar?fizz=buzz
+     * It should not contain a host, or a scheme.
+     *
+     * This function will only execute deep links that have been defined through Teak.
+     * It has no visibility into any other SDKs or custom code.
+     * @param path The deep link path to process.
+     * @return true if the deep link was found and handled.
+     */
+    @SuppressWarnings("unused")
+    public static boolean handleDeepLinkPath(final String path) {
+        Teak.log.trace("Teak.handleDeepLinkPath", "path", path);
+
+        try {
+            final URI uri = URI.create(TeakConfiguration.get().appConfiguration.urlSchemes.iterator().next() + "://" + path);
+            return io.teak.sdk.core.DeepLink.processUri(uri);
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     ///// Configuration
