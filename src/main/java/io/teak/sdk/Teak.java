@@ -353,7 +353,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static void identifyUser(final String userIdentifier, final UserConfiguration userConfiguration) {
-        Teak.log.trace("Teak.identifyUser", userIdentifier, userConfiguration);
+        Teak.log.trace("Teak.identifyUser", "userIdentifier", userIdentifier, "userConfiguration", userConfiguration);
 
         // Always process deep links when identifyUser is called
         Teak.processDeepLinks();
