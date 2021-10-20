@@ -54,6 +54,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      *
      * @deprecated Use the {@link Teak#Version} member instead.
      */
+    @Deprecated
     public static final String SDKVersion = io.teak.sdk.BuildConfig.VERSION_NAME;
 
     /**
@@ -1023,7 +1024,10 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Event sent when "additional data" is available for the user.
+     *
+     * @deprecated Use the {@link UserDataEvent} event instead.
      */
+    @Deprecated
     public static class AdditionalDataEvent implements Unobfuscable {
         /**
          * A JSON object containing user-defined data received from the server.
@@ -1032,6 +1036,40 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
         public AdditionalDataEvent(final JSONObject additionalData) {
             this.additionalData = additionalData;
+        }
+    }
+
+    /**
+     * Event sent when data about the user becomes available, or gets updated.
+     */
+    public static class UserDataEvent implements Unobfuscable {
+        /**
+         * A JSON object containing user-defined data received from the Teak server, or null.
+         */
+        public final JSONObject additionalData;
+
+        /**
+         * True if the user is opted out of Teak email campaigns.
+         */
+        public final boolean optOutEmail;
+
+        /**
+         * True if the user is opted out of Teak push campaigns.
+         */
+        public final boolean optOutPush;
+
+        public UserDataEvent(final JSONObject additionalData, final boolean optOutEmail, final boolean optOutPush) {
+            this.additionalData = additionalData;
+            this.optOutEmail = optOutEmail;
+            this.optOutPush = optOutPush;
+        }
+
+        public JSONObject toJSON() {
+            final JSONObject json = new JSONObject();
+            json.put("additionalData", this.additionalData);
+            json.put("optOutEmail", this.optOutEmail);
+            json.put("optOutPush", this.optOutPush);
+            return json;
         }
     }
 
@@ -1143,6 +1181,38 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             return io.teak.sdk.core.DeepLink.processUri(uri);
         } catch (Exception ignored) {
             return false;
+        }
+    }
+
+    ///// Opt Out Management
+
+    /**
+     * Set the opt out state for email.
+     *
+     * If the user wants to opt out of receiving Teak email campaigns, set this to true.
+     * @param optOut true if the user wants to opt out of Teak email campaigns; false otherwise.
+     */
+    @SuppressWarnings("unused")
+    public static void setOptOutEmail(final boolean optOut) {
+        Teak.log.trace("Teak.setOptOutEmail", "optOut", optOut);
+
+        if (Instance != null) {
+            Instance.setOptOutEmail(optOut);
+        }
+    }
+
+    /**
+     * Set the opt out state for push notifications.
+     *
+     * If the user wants to opt out of receiving Teak push notification campaigns, set this to true.
+     * @param optOut true if the user wants to opt out of Teak push notification campaigns; false otherwise.
+     */
+    @SuppressWarnings("unused")
+    public static void setOptOutPush(final boolean optOut) {
+        Teak.log.trace("Teak.setOptOutPush", "optOut", optOut);
+
+        if (Instance != null) {
+            Instance.setOptOutPush(optOut);
         }
     }
 

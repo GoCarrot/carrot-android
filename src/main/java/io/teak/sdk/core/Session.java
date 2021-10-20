@@ -115,6 +115,10 @@ public class Session {
     private String facebookAccessToken;
     private String facebookId;
 
+    private boolean optOutEmail = false;
+    private boolean optOutPush = false;
+    private JSONObject additionalData = null;
+
     public UserProfile userProfile;
 
     // State: Expiring
@@ -508,11 +512,18 @@ public class Session {
                             }
 
                             // Grab additional data
-                            final JSONObject additionalData = response.optJSONObject("additional_data");
-                            if (additionalData != null) {
-                                Teak.log.i("additional_data.received", additionalData.toString());
-                                whenUserIdIsReadyPost(new Teak.AdditionalDataEvent(additionalData));
+                            Session.this.additionalData = response.optJSONObject("additional_data");
+                            if (Session.this.additionalData != null) {
+                                Teak.log.i("additional_data.received", Session.this.additionalData.toString());
+                                whenUserIdIsReadyPost(new Teak.AdditionalDataEvent(Session.this.additionalData));
                             }
+
+                            // Opt out state
+                            Session.this.optOutEmail = response.optBoolean("opt_out_email", false);
+                            Session.this.optOutPush = response.optBoolean("opt_out_push", false);
+
+                            // Send user data event
+                            Session.this.dispatchUserEvent();
 
                             // Assign new state
                             // Prevent warning for 'do_not_track_event'
@@ -569,6 +580,14 @@ public class Session {
                 Session.currentSessionLock.unlock();
             }
         });
+    }
+
+    private void dispatchUserEvent() {
+        this.stateLock.lock();
+        final Teak.UserDataEvent event = new Teak.UserDataEvent(this.additionalData, this.optOutEmail, this.optOutPush);
+        this.stateLock.unlock();
+
+        whenUserIdIsReadyPost(event);
     }
 
     private synchronized void processAttributionAndDispatchEvents() {
@@ -994,6 +1013,35 @@ public class Session {
     // region Accessors
     public String userId() {
         return userId;
+    }
+
+    public void setOptOutEmail(final boolean optOut) {
+        final HashMap<String, Object> payload = new HashMap<>();
+        payload.put("email", optOut);
+        this.setOptOut(payload);
+    }
+
+    public void setOptOutPush(final boolean optOut) {
+        final HashMap<String, Object> payload = new HashMap<>();
+        payload.put("push", optOut);
+        this.setOptOut(payload);
+    }
+
+    private void setOptOut(final HashMap<String, Object> payload) {
+        this.executionQueue.execute(() -> {
+            Request.submit("/me/opt_out.json", payload, Session.this,
+                    (responseCode, responseBody) -> {
+                        try {
+                            JSONObject response = new JSONObject(responseBody);
+                            Session.this.stateLock.lock();
+                            Session.this.optOutEmail = response.optBoolean("email", Session.this.optOutEmail);
+                            Session.this.optOutPush = response.optBoolean("push", Session.this.optOutPush);
+                            Session.this.stateLock.unlock();
+                            Session.this.dispatchUserEvent();
+                        } catch(Exception ignored) {
+                        }
+                    });
+        });
     }
     // endregion
 
