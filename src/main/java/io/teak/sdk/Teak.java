@@ -1059,7 +1059,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         public final boolean optOutPush;
 
         public UserDataEvent(final JSONObject additionalData, final boolean optOutEmail, final boolean optOutPush) {
-            this.additionalData = additionalData;
+            this.additionalData = additionalData == null ? new JSONObject() : additionalData;
             this.optOutEmail = optOutEmail;
             this.optOutPush = optOutPush;
         }
