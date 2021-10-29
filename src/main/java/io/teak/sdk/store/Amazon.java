@@ -20,11 +20,12 @@ import java.util.Map;
 import io.teak.sdk.Helpers.mm;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
+import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.PurchaseEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
 
-public class Amazon implements IStore, PurchasingListener {
+public class Amazon implements Unobfuscable, IStore, PurchasingListener {
     private final HashMap<RequestId, Map<String, Object>> skuDetailsRequestMap = new HashMap<>();
 
     public Amazon(Context context) {
