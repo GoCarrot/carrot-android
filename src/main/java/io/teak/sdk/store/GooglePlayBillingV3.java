@@ -20,9 +20,10 @@ import androidx.annotation.Nullable;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
+import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.event.PurchaseEvent;
 
-public class GooglePlayBillingV3 implements IStore, PurchasesUpdatedListener, BillingClientStateListener {
+public class GooglePlayBillingV3 implements Unobfuscable, IStore, PurchasesUpdatedListener, BillingClientStateListener {
     private final BillingClient billingClient;
 
     public GooglePlayBillingV3(Context context) {
