@@ -180,8 +180,14 @@ public class NotificationBuilder {
         final IdHelper R = new IdHelper(); // Declaring local as 'R' ensures we don't accidentally use the other R
 
         // Logic for the Android 12 notification style
+        int targetSdkVersion = 0; // Do not use TeakConfiguration.get()
+        try {
+            ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+            targetSdkVersion = appInfo.targetSdkVersion;
+        } catch (Exception ignored) {
+        }
         final boolean isRunningOn12Plus = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S;
-        final boolean isTargeting12Plus = TeakConfiguration.get().appConfiguration.targetSdkVersion >= 31;
+        final boolean isTargeting12Plus = targetSdkVersion >= 31;
         final boolean willAutomaticallyUse12PlusStyle = isRunningOn12Plus && isTargeting12Plus;
         final boolean serverRequests12PlusStyle = teakNotificaton.useDecoratedCustomView;
         final boolean isAndroid12NotificationStyle = serverRequests12PlusStyle || willAutomaticallyUse12PlusStyle;
