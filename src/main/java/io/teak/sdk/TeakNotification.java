@@ -213,7 +213,7 @@ public class TeakNotification implements Unobfuscable {
                     Request.submit("rewards.gocarrot.com", "/" + teakRewardId + "/clicks", payload, session,
                         (responseCode, responseBody) -> {
                             try {
-                                JSONObject responseJson = new JSONObject(responseBody);
+                                final JSONObject responseJson = new JSONObject(responseBody);
 
                                 // https://sentry.io/organizations/teak/issues/1354507192/?project=141792&referrer=alert_email
                                 if (responseBody == null) {
@@ -221,9 +221,13 @@ public class TeakNotification implements Unobfuscable {
                                     return;
                                 }
 
-                                JSONObject rewardResponse = responseJson.optJSONObject("response");
+                                final JSONObject rewardResponse = responseJson.optJSONObject("response");
+                                if (rewardResponse == null) {
+                                    q.offer(null);
+                                    return;
+                                }
 
-                                JSONObject fullParsedResponse = new JSONObject();
+                                final JSONObject fullParsedResponse = new JSONObject();
                                 fullParsedResponse.put("teakRewardId", teakRewardId);
                                 fullParsedResponse.put("status", rewardResponse.get("status"));
                                 if (rewardResponse.optJSONObject("reward") != null) {
@@ -231,7 +235,7 @@ public class TeakNotification implements Unobfuscable {
                                 } else if (rewardResponse.opt("reward") != null) {
                                     fullParsedResponse.put("reward", new JSONObject(rewardResponse.getString("reward")));
                                 }
-                                Reward reward = new Reward(fullParsedResponse);
+                                final Reward reward = new Reward(fullParsedResponse);
 
                                 Teak.log.i("reward.claim.response", responseJson.toMap());
 
