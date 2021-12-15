@@ -634,15 +634,6 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         }
 
         /**
-         * Used by {@link io.teak.sdk.core.LaunchDataSource#sourceWithUpdatedDeepLink}
-         * @param uri Updated deep link
-         * @return A merged LaunchData
-         */
-        public LaunchData mergeDeepLink(@NonNull final Uri uri) {
-            return new LaunchData(uri);
-        }
-
-        /**
          * For internal use.
          *
          * @return Map used by Teak internally.
@@ -709,7 +700,12 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         public final String channelName;
 
         /**
-         * Used by {@link NotificationLaunchData}
+         * The deep link associated with this launch; or null.
+         */
+        public final Uri deepLink;
+
+        /**
+         * Used by {@link NotificationLaunchData#NotificationLaunchData(Bundle)}
          * @param bundle Push notification contents.
          */
         protected AttributedLaunchData(@NonNull final Bundle bundle) {
@@ -725,27 +721,44 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             this.creativeId = bundle.getString("teakCreativeId");
             this.rewardId = bundle.getString("teakRewardId");
             this.channelName = bundle.getString("teakChannelName");
+
+            // When constructing from a Bundle, the deepLink should be assigned the launchLink
+            // so that Session#checkLaunchDataForDeepLinkAndPostEvents will execute the deep link
+            // correctly.
+            this.deepLink = this.launchLink; // Resolved by call to super()
         }
 
         /**
-         * Used by both {@link NotificationLaunchData} and {@link RewardlinkLaunchData}
-         * @param uri Uri of the email link or generic link used to launch the app.
+         * Used by {@link NotificationLaunchData#NotificationLaunchData(Uri)}
+         * @param deepLink Uri of the deep link in the notification
          */
-        protected AttributedLaunchData(@NonNull final Uri uri) {
-            super(uri);
+        protected AttributedLaunchData(@NonNull final Uri deepLink) {
+            this((Uri) null, deepLink);
+        }
 
-            this.scheduleName = uri.getQueryParameter("teak_schedule_name");
-            this.scheduleId = uri.getQueryParameter("teak_schedule_id");
+        /**
+         * Used by {@link RewardlinkLaunchData#RewardlinkLaunchData(Uri, Uri)}
+         * @param shortLink Uri of the email link or generic link used to launch the app.
+         * @param deepLink Uri of a resolved deep link.
+         */
+        protected AttributedLaunchData(@Nullable final Uri shortLink, @NonNull Uri deepLink) {
+            super(shortLink);
+
+            this.scheduleName = deepLink.getQueryParameter("teak_schedule_name");
+            this.scheduleId = deepLink.getQueryParameter("teak_schedule_id");
 
             // In the non-mobile world, there is no such thing as "not a link launch" and so the
             // parameter names are different to properly differentiate session source
-            final String urlCreativeName = uri.getQueryParameter("teak_creative_name");
-            this.creativeName = urlCreativeName != null ? urlCreativeName : uri.getQueryParameter("teak_rewardlink_name");
-            final String urlCreativeId = uri.getQueryParameter("teak_creative_id");
-            this.creativeId = urlCreativeId != null ? urlCreativeId : uri.getQueryParameter("teak_rewardlink_id");
+            final String urlCreativeName = deepLink.getQueryParameter("teak_creative_name");
+            this.creativeName = urlCreativeName != null ? urlCreativeName : deepLink.getQueryParameter("teak_rewardlink_name");
+            final String urlCreativeId = deepLink.getQueryParameter("teak_creative_id");
+            this.creativeId = urlCreativeId != null ? urlCreativeId : deepLink.getQueryParameter("teak_rewardlink_id");
 
-            this.rewardId = uri.getQueryParameter("teak_reward_id");
-            this.channelName = uri.getQueryParameter("teak_channel_name");
+            this.rewardId = deepLink.getQueryParameter("teak_reward_id");
+            this.channelName = deepLink.getQueryParameter("teak_channel_name");
+
+            final String teakDeepLink = deepLink.getQueryParameter("teak_deep_link");
+            this.deepLink = (teakDeepLink == null ? deepLink : Uri.parse(teakDeepLink));
         }
 
         /**
@@ -754,7 +767,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          * @param updatedDeepLink The deep link in the reply from the identify user request.
          */
         protected AttributedLaunchData(@NonNull final AttributedLaunchData oldLaunchData, @NonNull Uri updatedDeepLink) {
-            super(updatedDeepLink);
+            super(oldLaunchData.launchLink);
 
             final AttributedLaunchData newLaunchData = new AttributedLaunchData(updatedDeepLink);
             this.scheduleName = Helpers.newIfNotOld(oldLaunchData.scheduleName, newLaunchData.scheduleName);
@@ -763,10 +776,15 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             this.creativeId = Helpers.newIfNotOld(oldLaunchData.creativeId, newLaunchData.creativeId);
             this.rewardId = Helpers.newIfNotOld(oldLaunchData.rewardId, newLaunchData.rewardId);
             this.channelName = Helpers.newIfNotOld(oldLaunchData.channelName, newLaunchData.channelName);
+            this.deepLink = updatedDeepLink;
         }
 
-        @Override
-        public LaunchData mergeDeepLink(@NonNull Uri uri) {
+        /**
+         * Used by {@link io.teak.sdk.core.LaunchDataSource#sourceWithUpdatedDeepLink}
+         * @param uri Updated deep link
+         * @return A merged AttributedLaunchData
+         */
+        public AttributedLaunchData mergeDeepLink(@NonNull Uri uri) {
             return new AttributedLaunchData(this, uri);
         }
 
@@ -782,11 +800,11 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             final Map<String, Object> map = super.toSessionAttributionMap();
 
             // Put the URI and any query parameters that start with 'teak_' into 'deep_link'
-            if (this.launchLink != null) {
-                map.put("deep_link", this.launchLink.toString());
-                for (final String name : this.launchLink.getQueryParameterNames()) {
+            if (this.deepLink != null) {
+                map.put("deep_link", this.deepLink.toString());
+                for (final String name : this.deepLink.getQueryParameterNames()) {
                     if (name.startsWith("teak_")) {
-                        final List<String> values = this.launchLink.getQueryParameters(name);
+                        final List<String> values = this.deepLink.getQueryParameters(name);
                         if (values.size() > 1) {
                             map.put(name, values);
                         } else {
@@ -857,7 +875,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         }
 
         @Override
-        public LaunchData mergeDeepLink(@NonNull Uri uri) {
+        public AttributedLaunchData mergeDeepLink(@NonNull Uri uri) {
             return new NotificationLaunchData(this, uri);
         }
 
@@ -891,14 +909,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * Launch data for a Teak reward link.
      */
     public static class RewardlinkLaunchData extends AttributedLaunchData implements Unobfuscable {
-        /**
-         * The Teak short link that resolved to this attribution; or null.
-         */
-        public final Uri shortLink;
-
         public RewardlinkLaunchData(@NonNull final Uri uri, @Nullable final Uri shortLink) {
-            super(uri);
-            this.shortLink = shortLink;
+            super(shortLink, uri);
         }
 
         /**
@@ -917,11 +929,10 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          */
         protected RewardlinkLaunchData(@NonNull final RewardlinkLaunchData oldLaunchData, @NonNull Uri updatedDeepLink) {
             super(oldLaunchData, updatedDeepLink);
-            this.shortLink = oldLaunchData.shortLink;
         }
 
         @Override
-        public LaunchData mergeDeepLink(@NonNull Uri uri) {
+        public AttributedLaunchData mergeDeepLink(@NonNull Uri uri) {
             return new RewardlinkLaunchData(this, uri);
         }
     }

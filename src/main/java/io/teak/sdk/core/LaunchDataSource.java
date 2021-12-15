@@ -38,7 +38,12 @@ public class LaunchDataSource implements Future<Teak.LaunchData> {
     }
 
     public static LaunchDataSource sourceWithUpdatedDeepLink(@NonNull final Teak.LaunchData launchData, @NonNull final Uri deepLink) {
-        return new LaunchDataSource(Helpers.futureForValue(launchData.mergeDeepLink(deepLink)));
+        if (launchData instanceof Teak.AttributedLaunchData) {
+            final Teak.AttributedLaunchData attributedLaunchData = (Teak.AttributedLaunchData) launchData;
+            return new LaunchDataSource(Helpers.futureForValue(attributedLaunchData.mergeDeepLink(deepLink)));
+        }
+
+        return new LaunchDataSource(Helpers.futureForValue(launchData));
     }
 
     public static LaunchDataSource sourceFromIntent(@NonNull final Intent intent) {
@@ -171,11 +176,12 @@ public class LaunchDataSource implements Future<Teak.LaunchData> {
             if (Teak.NotificationLaunchData.isTeakEmailUri(uri)) {
                 return new Teak.NotificationLaunchData(uri);
             } else if (Teak.RewardlinkLaunchData.isTeakRewardLink(uri)) {
+                // If it has a 'teak_rewardlink_id' then it's a reward link
                 return new Teak.RewardlinkLaunchData(uri, httpsUri);
+            } else {
+                // Otherwise this is not a Teak attributed launch
+                return new Teak.LaunchData(uri);
             }
-
-            // Otherwise this is not a Teak attributed launch
-            return new Teak.LaunchData(uri);
         });
 
         // Start it running, and return the Future
