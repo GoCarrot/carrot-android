@@ -611,7 +611,7 @@ public class Session {
                 final Teak.LaunchData launchData = Session.this.launchDataSource.get(15, TimeUnit.SECONDS);
 
                 // LaunchData should never be null, but in case it is...
-                if(launchData == null) {
+                if (launchData == null) {
                     Session.whenUserIdIsReadyPost(new Teak.PostLaunchSummaryEvent(Teak.LaunchData.Unattributed));
                     return;
                 }
@@ -1039,17 +1039,17 @@ public class Session {
     private void setOptOut(final HashMap<String, Object> payload) {
         this.executionQueue.execute(() -> {
             Request.submit("/me/opt_out.json", payload, Session.this,
-                    (responseCode, responseBody) -> {
-                        try {
-                            JSONObject response = new JSONObject(responseBody);
-                            Session.this.stateLock.lock();
-                            Session.this.optOutEmail = response.optBoolean("email", Session.this.optOutEmail);
-                            Session.this.optOutPush = response.optBoolean("push", Session.this.optOutPush);
-                            Session.this.stateLock.unlock();
-                            Session.this.dispatchUserEvent();
-                        } catch(Exception ignored) {
-                        }
-                    });
+                (responseCode, responseBody) -> {
+                    try {
+                        JSONObject response = new JSONObject(responseBody);
+                        Session.this.stateLock.lock();
+                        Session.this.optOutEmail = response.optBoolean("email", Session.this.optOutEmail);
+                        Session.this.optOutPush = response.optBoolean("push", Session.this.optOutPush);
+                        Session.this.stateLock.unlock();
+                        Session.this.dispatchUserEvent();
+                    } catch (Exception ignored) {
+                    }
+                });
         });
     }
     // endregion
