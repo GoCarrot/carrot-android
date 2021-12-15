@@ -1,7 +1,9 @@
 package io.teak.sdk;
 
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.os.Bundle;
 
 import com.amazon.device.messaging.ADM;
 
@@ -74,6 +76,18 @@ public class DefaultObjectFactory implements IObjectFactory {
     ///// Helpers
 
     private IStore createStore(@NonNull Context context) {
+        // If automatic purchase collection is disabled, just return null
+        //
+        // Note that we cannot use TeakConfiguration here because this happens before it is initialized.
+        try {
+            final ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+            if (appInfo.metaData.getBoolean("io_teak_no_auto_track_purchase", false)) {
+                Teak.log.i("factory.istore", "Automatic purchase tracking disabled (io_teak_no_auto_track_purchase).");
+                return null;
+            }
+        } catch (Exception ignored) {
+        }
+
         final PackageManager packageManager = context.getPackageManager();
         if (packageManager == null) {
             Teak.log.e("factory.istore", "Unable to get Package Manager.");
