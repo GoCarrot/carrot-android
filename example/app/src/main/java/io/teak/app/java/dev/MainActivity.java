@@ -334,7 +334,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void makePurchase(View view) {
-        showPurchaseDialogForSku("com.teakio.pushtest.dollar");
+        showPurchaseDialogForSku("io.teak.app.sku.dollar");
     }
 
     public void crashApp(View view) {

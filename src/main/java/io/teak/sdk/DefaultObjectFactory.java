@@ -97,9 +97,24 @@ public class DefaultObjectFactory implements IObjectFactory {
             }
         } else {
             try {
-                clazz = Class.forName("io.teak.sdk.store.GooglePlayBillingV3");
+                // If the 'getSkus' method is present, then this is (probably) Google Play Billing v4
+                // so use that instead.
+                Class<?> gpbv4 = Class.forName("com.android.billingclient.api.Purchase");
+                gpbv4.getMethod("getSkus");
+                clazz = Class.forName("io.teak.sdk.store.GooglePlayBillingV4");
+            } catch (NoSuchMethodException ignored) {
+
             } catch (Exception e) {
                 Teak.log.exception(e);
+            }
+
+            if (clazz == null) {
+                try {
+                    // Default to Billing v3
+                    clazz = Class.forName("io.teak.sdk.store.GooglePlayBillingV3");
+                } catch (Exception e) {
+                    Teak.log.exception(e);
+                }
             }
         }
 
