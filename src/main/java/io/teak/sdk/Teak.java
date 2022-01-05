@@ -834,7 +834,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             map.put("teakCreativeId", this.creativeId);
             map.put("teakRewardId", this.rewardId);
             map.put("teakChannelName", this.channelName);
-            map.put("teakDeepLink", io.teak.sdk.core.DeepLink.willProcessUri(this.launchLink) ? this.launchLink.toString() : null);
+            map.put("teakDeepLink", io.teak.sdk.core.DeepLink.willProcessUri(this.deepLink) ? this.deepLink.toString() : null);
             return map;
         }
     }
