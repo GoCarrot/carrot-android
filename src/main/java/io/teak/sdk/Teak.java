@@ -755,7 +755,6 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             this.creativeName = urlCreativeName != null ? urlCreativeName : deepLink.getQueryParameter("teak_rewardlink_name");
             final String urlCreativeId = deepLink.getQueryParameter("teak_creative_id");
             this.creativeId = urlCreativeId != null ? urlCreativeId : deepLink.getQueryParameter("teak_rewardlink_id");
-
             this.rewardId = deepLink.getQueryParameter("teak_reward_id");
             this.channelName = deepLink.getQueryParameter("teak_channel_name");
 
