@@ -227,6 +227,11 @@ public class TeakNotification implements Unobfuscable {
                                     return;
                                 }
 
+                                if (rewardResponse.get("status") == null) {
+                                    q.offer(null);
+                                    return;
+                                }
+
                                 final JSONObject fullParsedResponse = new JSONObject();
                                 fullParsedResponse.put("teakRewardId", teakRewardId);
                                 fullParsedResponse.put("status", rewardResponse.get("status"));
