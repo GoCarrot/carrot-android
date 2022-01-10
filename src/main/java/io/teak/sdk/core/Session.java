@@ -943,27 +943,36 @@ public class Session {
     private void checkLaunchDataForDeepLinkAndPostEvents(final Teak.LaunchData launchData) {
         try {
             final TeakConfiguration teakConfiguration = TeakConfiguration.get();
-            if (launchData.launchLink != null) {
-                // See if TeakLinks can do anything with the deep link
-                final boolean deepLinkWasProcessedByTeak = DeepLink.processUri(launchData.launchLink);
+            if (launchData instanceof Teak.AttributedLaunchData) {
+                // This is an attributed launch, it came from a Teak source
+                final Teak.AttributedLaunchData attributedLaunchData = (Teak.AttributedLaunchData) launchData;
 
-                // Otherwise, if this was a deep link then it was either a universal
-                // link or came in from a Teak Notification
-                if (!deepLinkWasProcessedByTeak &&
-                        launchData.launchLink.getScheme() != null &&
-                        !launchData.launchLink.getScheme().startsWith("teak")) {
+                // If this was a RewardLink send the appropriate event
+                if (attributedLaunchData instanceof Teak.RewardlinkLaunchData) {
+                    Session.whenUserIdIsReadyPost(new Teak.LaunchFromLinkEvent((Teak.RewardlinkLaunchData) attributedLaunchData));
+                }
+
+                // If TeakLinks will not handle the deep link, then it's an external deep link and
+                // so we should launch an intent with it
+                if (attributedLaunchData.deepLink != null && !DeepLink.willProcessUri(attributedLaunchData.deepLink)) {
                     // In API 30+ using 'queryIntentActivities' requires a list of queried schemes
                     // in AndroidManifest.xml. Instead, add 'teakSessionProcessed' and the existing
                     // code in Session.onActivityResumed will check for that flag, and not cause
                     // an infinite loop.
-                    final Intent uriIntent = new Intent(Intent.ACTION_VIEW, launchData.launchLink);
+                    final Intent uriIntent = new Intent(Intent.ACTION_VIEW, attributedLaunchData.deepLink);
                     uriIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     uriIntent.putExtra("teakSessionProcessed", true);
                     teakConfiguration.appConfiguration.applicationContext.startActivity(uriIntent);
-                } else if (launchData instanceof Teak.RewardlinkLaunchData) {
-                    final Teak.RewardlinkLaunchData rewardlinkLaunchData = (Teak.RewardlinkLaunchData) launchData;
-                    Session.whenUserIdIsReadyPost(new Teak.LaunchFromLinkEvent(rewardlinkLaunchData));
+                } else {
+                    // Otherwise, handle the deep link
+                    DeepLink.processUri(attributedLaunchData.deepLink);
                 }
+            } else {
+                // If this is not an attributed launch, then we should check to see if TeakLinks can
+                // do anything with the **launchLink**, because a customer may still want to use the
+                // TeakLink system outside of the context of a Teak Reward Link, and that should still
+                // function properly.
+                DeepLink.processUri(launchData.launchLink);
             }
         } catch (Exception e) {
             Teak.log.exception(e);

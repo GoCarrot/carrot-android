@@ -10,6 +10,7 @@ import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.android.billingclient.api.SkuDetails;
 import com.android.billingclient.api.SkuDetailsParams;
 
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -50,19 +51,33 @@ public class GooglePlayBillingV3 implements Unobfuscable, IStore, PurchasesUpdat
             return;
         }
 
+        // Because Java won't just do what I fucking tell it to do...
+        Method getSku = null;
         try {
-            for (Purchase purchase : purchaseList) {
+            getSku = Purchase.class.getMethod("getSku");
+        } catch (Exception e) {
+            Teak.log.exception(e);
+        }
+
+        if (getSku == null) {
+            return;
+        }
+
+        for (Purchase purchase : purchaseList) {
+            try {
+                final String purchaseSku = (String) getSku.invoke(purchase);
+
                 final Map<String, Object> payload = new HashMap<>();
                 payload.put("purchase_token", purchase.getPurchaseToken());
                 payload.put("purchase_time", purchase.getPurchaseTime());
-                payload.put("product_id", purchase.getSku());
+                payload.put("product_id", purchaseSku);
                 payload.put("order_id", purchase.getOrderId());
 
                 final SkuDetailsParams params = SkuDetailsParams
-                        .newBuilder()
-                        .setType(BillingClient.SkuType.INAPP)
-                        .setSkusList(Collections.singletonList(purchase.getSku()))
-                        .build();
+                                                    .newBuilder()
+                                                    .setType(BillingClient.SkuType.INAPP)
+                                                    .setSkusList(Collections.singletonList(purchaseSku))
+                                                    .build();
 
                 this.billingClient.querySkuDetailsAsync(params, (ignored, skuDetailsList) -> {
                     try {
@@ -71,19 +86,19 @@ public class GooglePlayBillingV3 implements Unobfuscable, IStore, PurchasesUpdat
                             payload.put("price_amount_micros", skuDetails.getPriceAmountMicros());
                             payload.put("price_currency_code", skuDetails.getPriceCurrencyCode());
 
-                            Teak.log.i("billing.google.v3.sku", "SKU Details retrieved.", Helpers.mm.h(purchase.getSku(), skuDetails.getPriceAmountMicros()));
+                            Teak.log.i("billing.google.v3.sku", "SKU Details retrieved.", Helpers.mm.h(purchaseSku, skuDetails.getPriceAmountMicros()));
                         } else {
                             Teak.log.e("billing.google.v3.sku", "SKU Details query failed.");
                         }
 
                         TeakEvent.postEvent(new PurchaseEvent(payload));
-                    } catch(Exception e) {
+                    } catch (Exception e) {
                         Teak.log.exception(e);
                     }
                 });
+            } catch (Exception e) {
+                Teak.log.exception(e);
             }
-        } catch (Exception e) {
-            Teak.log.exception(e);
         }
     }
 }
