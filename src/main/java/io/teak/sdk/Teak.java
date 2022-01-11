@@ -886,7 +886,11 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          * @return true if the Uri is from a Teak email, in which case it should use NotificationLaunchData.
          */
         public static boolean isTeakEmailUri(@NonNull final Uri uri) {
-            return !Helpers.isNullOrEmpty(uri.getQueryParameter("teak_notif_id"));
+            try {
+                return !Helpers.isNullOrEmpty(uri.getQueryParameter("teak_notif_id"));
+            } catch (UnsupportedOperationException ignored) {
+            }
+            return false;
         }
 
         @Override
@@ -920,7 +924,11 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          * @return true if the Uri is a Teak reward link.
          */
         public static boolean isTeakRewardLink(@NonNull final Uri uri) {
-            return !Helpers.isNullOrEmpty(uri.getQueryParameter("teak_rewardlink_id"));
+            try {
+                return !Helpers.isNullOrEmpty(uri.getQueryParameter("teak_rewardlink_id"));
+            } catch (UnsupportedOperationException ignored) {
+            }
+            return false;
         }
 
         /**
