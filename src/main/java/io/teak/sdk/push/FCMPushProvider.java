@@ -6,10 +6,12 @@ import android.os.Bundle;
 
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import androidx.annotation.NonNull;
@@ -149,6 +151,14 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
                 instanceIdTask.addOnSuccessListener(this::onNewToken);
 
                 instanceIdTask.addOnFailureListener(e -> Teak.log.exception(e));
+
+                // Log out the Firebase config
+                final FirebaseOptions firebaseOptions = this.firebaseApp.getOptions();
+                final HashMap<String, Object> fcmConfig = new HashMap<>();
+                fcmConfig.put("projectId", firebaseOptions.getProjectId());
+                fcmConfig.put("applicationId", firebaseOptions.getApplicationId());
+                fcmConfig.put("gcmSenderId", firebaseOptions.getGcmSenderId());
+                Teak.log.i("google.fcm.configuration", fcmConfig);
             } catch (Exception e) {
                 Teak.log.exception(e);
             }
