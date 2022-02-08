@@ -67,21 +67,18 @@ public class LaunchDataSource implements Future<Teak.LaunchData> {
                     //
                     // The install referrer may be something like a link from an email, which means that it
                     // could also contain a teak_notif_id.
-                    //
-                    // However, there cannot also be a teakNotifId from a push notification, because it's the
-                    // first launch, and Teak therefore cannot possibly know about the device.
                     final TeakConfiguration teakConfiguration = TeakConfiguration.get();
                     final Future<String> installReferrer = InstallReferrerFuture.get(teakConfiguration.appConfiguration.applicationContext);
                     return new LaunchDataSource(LaunchDataSource.futureFromLinkResolution(installReferrer));
-                } else {
-                    // There's no notification launch, no link launch, and it's not the first launch
-                    // so this is an unattributed launch,
-                    return LaunchDataSource.Unattributed;
                 }
-            } else {
-                // There is a launch url, so resolve that URL
-                return new LaunchDataSource(LaunchDataSource.futureFromLinkResolution(Helpers.futureForValue(intentDataString)));
+
+                // There's no notification launch, no link launch, and it's not the first launch
+                // so this is an unattributed launch,
+                return LaunchDataSource.Unattributed;
             }
+
+            // There is a launch url, so resolve that URL
+            return new LaunchDataSource(LaunchDataSource.futureFromLinkResolution(Helpers.futureForValue(intentDataString)));
         }
     }
 
