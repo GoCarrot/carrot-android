@@ -10,3 +10,4 @@ local.properties
 out.map
 
 _doxygen
+node_modules

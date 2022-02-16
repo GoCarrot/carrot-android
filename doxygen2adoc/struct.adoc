@@ -10,17 +10,7 @@
 {{#each methods}}
 {{> function}}
 {{/each}}{{/if}}
-{{#if events}}== Events
-{{#each events}}
+{{#if staticMethods}}== Static Methods
+{{#each staticMethods}}
 {{> function}}
 {{/each}}{{/if}}
-{{#if properties}}== Properties
-[cols="1,2a"]
-|===
-|Property |Description
-
-{{#each properties}}
-|{{name}} |{{brief}}
-{{/each}}
-|===
-{{/if}}

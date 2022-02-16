@@ -9,3 +9,9 @@ template:
 
 partial:
   function: doxygen2adoc/function.adoc
+
+exclude:
+  - file
+  - dir
+  - namespace
+  - page
