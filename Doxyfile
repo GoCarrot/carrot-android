@@ -15,6 +15,3 @@ AUTOLINK_SUPPORT       = NO
 OPTIMIZE_OUTPUT_JAVA   = YES
 INPUT                  = src/main/java/io/teak/sdk/Teak.java
 EXCLUDE_SYMBOLS        = 
-
-
-
