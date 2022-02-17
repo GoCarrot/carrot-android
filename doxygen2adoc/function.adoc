@@ -8,7 +8,7 @@
 {{/if}}
 [source,csharp]
 ----
-{{{type}}} {{name}}{{{argString}}}
+{{{declaration}}}
 ----
 // TODO: collapseable here?
 {{description}}

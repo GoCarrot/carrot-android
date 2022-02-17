@@ -4,7 +4,7 @@
 
 {{#if attributes}}== Attributes
 {{#each attributes}}
-{{this.name}} {{this.type}}
+{{> attribute}}
 {{/each}}{{/if}}
 {{#if methods}}== Methods
 {{#each methods}}
