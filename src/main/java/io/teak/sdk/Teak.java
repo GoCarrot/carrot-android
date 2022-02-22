@@ -199,6 +199,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * Tell Teak how it should identify the current user.
      * <br>
      * <p>This should be the same way you identify the user in your backend.</p>
+     * 
+     * @deprecated Use {@link Teak#identifyUser(String, UserConfiguration)} instead.
      *
      * @param userIdentifier An identifier which is unique for the current user.
      */
@@ -212,6 +214,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * Tell Teak how it should identify the current user.
      * <br>
      * <p>This should be the same way you identify the user in your backend.</p>
+     *
+     * @deprecated Use {@link Teak#identifyUser(String, UserConfiguration)} instead.
      *
      * @param userIdentifier An identifier which is unique for the current user.
      * @param email          The email address for the user.
@@ -254,6 +258,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * <br>
      * <p>This should be the same way you identify the user in your backend.</p>
      *
+     * @deprecated Use {@link Teak#identifyUser(String, UserConfiguration)} instead.
+     *
      * @param userIdentifier An identifier which is unique for the current user.
      * @param optOut         A list containing zero or more of:
      *                          {@link #OPT_OUT_IDFA}, {@link #OPT_OUT_FACEBOOK}, {@link #OPT_OUT_PUSH_KEY}
@@ -268,6 +274,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * Tell Teak how it should identify the current user, with data collection opt-out and email.
      * <br>
      * <p>This should be the same way you identify the user in your backend.</p>
+     *
+     * @deprecated Use {@link Teak#identifyUser(String, UserConfiguration)} instead.
      *
      * @param userIdentifier An identifier which is unique for the current user.
      * @param optOut         A list containing zero or more of:
