@@ -25,7 +25,7 @@ import io.teak.sdk.json.JSONObject;
 
 /**
  * An app-to-user notification received from Teak via GCM.
- * <br>
+ *
  * The following parameters from the GCM payload are used to create a <code>TeakNotification</code>.
  * <pre>
  * {@code
@@ -45,7 +45,7 @@ import io.teak.sdk.json.JSONObject;
 public class TeakNotification implements Unobfuscable {
     /**
      * The {@link Intent} action sent by Teak when a notification has been opened by the user.
-     * <br>
+     *
      * This allows you to take special actions, it is not required that you listen for it.
      */
     @SuppressWarnings("WeakerAccess")
@@ -53,7 +53,7 @@ public class TeakNotification implements Unobfuscable {
 
     /**
      * The {@link Intent} action sent by Teak when a notification has been cleared by the user.
-     * <br>
+     *
      * This allows you to take special actions, it is not required that you listen for it.
      */
     @SuppressWarnings("WeakerAccess")
@@ -114,7 +114,7 @@ public class TeakNotification implements Unobfuscable {
 
         /**
          * Status of this reward.
-         * <br>
+         *
          * One of the following status codes:
          * {@link Reward#UNKNOWN}
          * {@link Reward#GRANT_REWARD}
@@ -124,7 +124,7 @@ public class TeakNotification implements Unobfuscable {
          * {@link Reward#EXCEED_MAX_CLICKS_FOR_DAY}
          * {@link Reward#EXPIRED}
          * {@link Reward#INVALID_POST}
-         * <br>
+         *
          * If status is {@link Reward#GRANT_REWARD}, the 'reward' field will contain the reward that should be granted.
          */
         public int status;
