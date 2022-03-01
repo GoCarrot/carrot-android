@@ -1,8 +1,14 @@
-= {{name}}
 :caution-caption: Deprecated
 :table-caption!:
 
-{{brief}}
+= {{cut name 'io.teak.sdk.'}}
+
+{{#if inheritsFrom}}
+{{name}} +
+{{#each inheritsFrom}}└ {{this}} +{{/each}}
+{{/if}}
+
+{{{brief}}}
 
 {{#if deprecated}}
 [CAUTION]
@@ -17,7 +23,7 @@
 |Name |Type |Description
 
 {{#each attributes}}
-|{{name}} |``{{return.type}}`` |{{brief}}
+|{{name}} |``{{return.type}}`` |{{{brief}}}
 {{/each}}
 |===
 {{/if}}

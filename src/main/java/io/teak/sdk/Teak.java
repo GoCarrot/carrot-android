@@ -114,6 +114,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         onCreate(activity, null);
     }
 
+    /// @cond hide_from_doxygen
     /**
      * Used for internal testing.
      *
@@ -194,6 +195,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             }
         }
     }
+    /// @endcond hide_from_doxygen
 
     /**
      * Tell Teak how it should identify the current user.
@@ -291,13 +293,22 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     }
 
     public static class UserConfiguration implements Unobfuscable {
+        /**
+         * Email address
+         */
         public final String email;
+
+        /**
+         * Facebook Id
+         */
         public final String facebookId;
 
         /**
          * Opt out of collecting a Facebook Access Token for this specific user.
          *
-         * If you prevent Teak from collecting the Facebook Access Token, Teak will no longer be able to correlate this user across multiple devices.
+         * @note If you prevent Teak from collecting the Facebook Access Token, Teak will no longer be able to correlate this user across multiple devices.
+         *
+         * @deprecated Instead do not specify a Facebook Id for the user.
          */
         @Deprecated
         public final boolean optOutFacebook;
@@ -305,29 +316,52 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         /**
          * Opt out of collecting an IDFA for this specific user.
          *
-         * If you prevent Teak from collecting the Identifier For Advertisers (IDFA), Teak will no longer be able to add this user to Facebook Ad Audiences.
+         * @note If you prevent Teak from collecting the Identifier For Advertisers (IDFA), Teak will no longer be able to add this user to Facebook Ad Audiences.
          */
         public final boolean optOutIDFA;
 
         /**
          * Opt out of collecting a Push Key for this specific user.
          *
-         * If you prevent Teak from collecting the Push Key, Teak will no longer be able to send Local Notifications or Push Notifications for this user.
+         * @note If you prevent Teak from collecting the Push Key, Teak will no longer be able to send Local Notifications or Push Notifications for this user.
          */
         public final boolean optOutPushKey;
 
+        /**
+         * UserConfiguration with no email, no facebook id, and no opt outs
+         */
         public UserConfiguration() {
             this(null, null, false, false, false);
         }
 
+        /**
+         * UserConfiguration specifying email
+         *
+         * @param email Email address for the user.
+         */
         public UserConfiguration(final String email) {
             this(email, null, false, false, false);
         }
 
+        /**
+         * UserConfiguration specifying email and Facebook Id.
+         *
+         * @param email      Email address for the user.
+         * @param facebookId Facebook Id for the user.
+         */
         public UserConfiguration(final String email, final String facebookId) {
             this(email, facebookId, false, false, false);
         }
 
+        /**
+         * UserConfiguration
+         *
+         * @param email          Email address for the user.
+         * @param facebookId     Facebook Id for the user.
+         * @param optOutfacebook <code>true</code> if the user should be opted out of Facebook Id Collection
+         * @param optOutIDFA     <code>true</code> if the user should be opted out of IDFA collection.
+         * @param optOutPushKey  <code>true</code> if the user should be opted out of push key collection.
+         */
         public UserConfiguration(final String email, final String facebookId,
             final boolean optOutFacebook, final boolean optOutIDFA,
             final boolean optOutPushKey) {
@@ -621,6 +655,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          */
         public final Uri launchLink;
 
+        /// @cond hide_from_doxygen
         /**
          * Constructor with {@link String}.
          * @param launchLink Link as a String.
@@ -669,6 +704,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             map.put("launch_link", this.launchLink != null ? this.launchLink.toString() : null);
             return map;
         }
+        /// @endcond hide_from_doxygen
     }
 
     /**
@@ -715,6 +751,16 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          */
         public final Uri deepLink;
 
+        /**
+         * Returns true if this was an incentivized launch.
+         *
+         * @return True if this notification had a reward attached to it.
+         */
+        public boolean isIncentivized() {
+            return this.rewardId != null;
+        }
+
+        /// @cond hide_from_doxygen
         /**
          * Used by {@link NotificationLaunchData#NotificationLaunchData(Bundle)}
          * @param bundle Push notification contents.
@@ -798,13 +844,6 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             return new AttributedLaunchData(this, uri);
         }
 
-        /**
-         * @return True if this notification had a reward attached to it.
-         */
-        public boolean isIncentivized() {
-            return this.rewardId != null;
-        }
-
         @Override
         public Map<String, Object> toSessionAttributionMap() {
             final Map<String, Object> map = super.toSessionAttributionMap();
@@ -845,6 +884,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             map.put("teakDeepLink", io.teak.sdk.core.DeepLink.willProcessUri(this.deepLink) ? this.deepLink.toString() : null);
             return map;
         }
+        /// @endcond hide_from_doxygen
     }
 
     /**
@@ -856,6 +896,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          */
         public final String sourceSendId;
 
+        /// @cond hide_from_doxygen
         /**
          * Construct NotificationLaunchData for a push notification.
          * @param bundle Push notification contents.
@@ -917,12 +958,14 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             }
             return map;
         }
+        /// @endcond hide_from_doxygen
     }
 
     /**
      * Launch data for a Teak reward link.
      */
     public static class RewardlinkLaunchData extends AttributedLaunchData implements Unobfuscable {
+        /// @cond hide_from_doxygen
         public RewardlinkLaunchData(@NonNull final Uri uri, @Nullable final Uri shortLink) {
             super(shortLink, uri);
         }
@@ -953,8 +996,12 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         public AttributedLaunchData mergeDeepLink(@NonNull Uri uri) {
             return new RewardlinkLaunchData(this, uri);
         }
+        /// @endcond hide_from_doxygen
     }
 
+    /**
+     * Base class for Teak events
+     */
     public static class Event implements Unobfuscable {
         /**
          * Data associated with this launch.
@@ -966,8 +1013,9 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          */
         public final TeakNotification.Reward reward;
 
+        /// @cond hide_from_doxygen
         /**
-         * Event base class.
+         * Constructor.
          * @param launchData Attribution data for launch.
          * @param reward Reward, if available.
          */
@@ -976,11 +1024,6 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             this.reward = reward;
         }
 
-        /**
-         * Used internally for JSON serialization.
-         *
-         * @return Teak wrapper SDK consumable JSON.
-         */
         public JSONObject toJSON() {
             final Map<String, Object> map = this.launchData.toMap();
             if (this.reward != null && this.reward.json != null) {
@@ -988,6 +1031,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             }
             return new JSONObject(map);
         }
+        /// @endcond hide_from_doxygen
     }
 
     /**
@@ -1000,6 +1044,12 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          */
         public final boolean isForeground;
 
+        /// @cond hide_from_doxygen
+        /**
+         * Constructor.
+         * @param launchData   Notification launch data.
+         * @param isForeground True if the notification was delivered in the foreground.
+         */
         public NotificationEvent(@NonNull final NotificationLaunchData launchData, final boolean isForeground) {
             super(launchData, null);
             this.isForeground = isForeground;
@@ -1011,34 +1061,40 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             json.put("isForeground", this.isForeground);
             return json;
         }
+        /// @endcond hide_from_doxygen
     }
 
     /**
      * Event posted when the app was launched from a link created by the Teak dashboard.
      */
     public static class LaunchFromLinkEvent extends Event implements Unobfuscable {
+        /// @cond hide_from_doxygen
         /**
-         * Constructor
+         * Constructor.
          * @param launchData Launch attribution data.
          */
         public LaunchFromLinkEvent(@NonNull final RewardlinkLaunchData launchData) {
             super(launchData, null);
         }
+        /// @endcond hide_from_doxygen
     }
 
     /**
      * Event posted whenever the app launches.
      */
     public static class PostLaunchSummaryEvent extends Event implements Unobfuscable {
+        /// @cond hide_from_doxygen
         public PostLaunchSummaryEvent(@NonNull final LaunchData launchData) {
             super(launchData, null);
         }
+        /// @endcond hide_from_doxygen
     }
 
     /**
      * Event posted when a reward claim attempt has occurred.
      */
     public static class RewardClaimEvent extends Event implements Unobfuscable {
+        /// @cond hide_from_doxygen
         /**
          * Constructor
          * @param launchData Launch attribution data.
@@ -1047,6 +1103,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         public RewardClaimEvent(@NonNull final AttributedLaunchData launchData, @NonNull final TeakNotification.Reward reward) {
             super(launchData, reward);
         }
+        /// @endcond hide_from_doxygen
     }
 
     /**
@@ -1061,9 +1118,15 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          */
         public final JSONObject additionalData;
 
+        /// @cond hide_from_doxygen
+        /**
+         * Constructor.
+         * @param additionalData User-specific data received from the server.
+         */
         public AdditionalDataEvent(final JSONObject additionalData) {
             this.additionalData = additionalData;
         }
+        /// @endcond hide_from_doxygen
     }
 
     /**
@@ -1085,6 +1148,13 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          */
         public final boolean optOutPush;
 
+        /// @cond hide_from_doxygen
+        /**
+         * Constructor.
+         * @param additionalData User-specific data received from the server.
+         * @param optOutEmail    True if the user has opted out of email.
+         * @param optOutPush     True if the user has opted out of push notifications.
+         */
         public UserDataEvent(final JSONObject additionalData, final boolean optOutEmail, final boolean optOutPush) {
             this.additionalData = additionalData == null ? new JSONObject() : additionalData;
             this.optOutEmail = optOutEmail;
@@ -1098,6 +1168,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             json.put("optOutPush", this.optOutPush);
             return json;
         }
+        /// @endcond hide_from_doxygen
     }
 
     ///// LogListener
@@ -1150,7 +1221,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     /// @endcond hide_from_doxygen
 
     ///// Logging
-
+    /// @cond hide_from_doxygen
     public static int jsonLogIndentation = 0;
     public static io.teak.sdk.Log log = new io.teak.sdk.Log(Teak.LOG_TAG, Teak.jsonLogIndentation);
 
@@ -1161,6 +1232,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             return obj.toString();
         }
     }
+    /// @endcond hide_from_doxygen
 
     ///// Deep Links
 
@@ -1185,6 +1257,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     private static final FutureTask<Void> waitForDeepLink = new FutureTask<>(() -> TeakEvent.postEvent(new DeepLinksReadyEvent()), null);
 
+    /// @cond hide_from_doxygen
     /**
      * Block until deep links are ready for processing.
      *
@@ -1195,6 +1268,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     public static void waitUntilDeepLinksAreReady() throws ExecutionException, InterruptedException {
         Teak.waitForDeepLink.get();
     }
+    /// @endcond hide_from_doxygen
 
     /**
      * Manually pass Teak a deep link path to handle.
@@ -1252,6 +1326,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         }
     }
 
+    /// @cond hide_from_doxygen
     ///// Configuration
 
     public static final String PREFERENCES_FILE = "io.teak.sdk.Preferences";
@@ -1261,4 +1336,5 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     public static TeakInstance Instance;
 
     private static final ExecutorService asyncExecutor = Executors.newCachedThreadPool();
+    /// @endcond hide_from_doxygen
 }
