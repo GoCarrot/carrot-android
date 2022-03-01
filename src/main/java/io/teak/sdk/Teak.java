@@ -584,6 +584,11 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * Interface for running code when a deep link is received
      */
     public static abstract class DeepLink implements Unobfuscable {
+        /**
+         * Method called when a deep link is invoked.
+         * 
+         * @param parameters A dictionary of the path, and url parameters provided to the deep link.
+         */
         public abstract void call(Map<String, Object> parameters);
     }
 
@@ -1098,9 +1103,16 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     ///// LogListener
 
     /**
-     *
+     * Used to listen for Teak log events.
      */
     public static abstract class LogListener {
+        /**
+         * A log event sent by the Teak SDK.
+         * 
+         * @param logEvent The log event type.
+         * @param logLevel The severity of the log message.
+         * @param logData  Semi-structured log message.
+         **/
         public abstract void logEvent(String logEvent, String logLevel, Map<String, Object> logData);
     }
 
@@ -1117,6 +1129,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     ///// BroadcastReceiver
 
     @Override
+    /// @cond hide_from_doxygen
     public void onReceive(final Context inContext, final Intent intent) {
         final Context context = inContext.getApplicationContext();
 
@@ -1134,6 +1147,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Cleared, context, intent));
         }
     }
+    /// @endcond hide_from_doxygen
 
     ///// Logging
 

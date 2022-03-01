@@ -27,7 +27,7 @@ import io.teak.sdk.json.JSONObject;
  * An app-to-user notification received from Teak via GCM.
  *
  * The following parameters from the GCM payload are used to create a <code>TeakNotification</code>.
- * <pre>
+ *
  * {@code
  * {
  *   [teakRewardId] : string  - associated Teak Reward Id,
@@ -40,7 +40,6 @@ import io.teak.sdk.json.JSONObject;
  *   [useDecoratedCustomView] : boolean - Use the Android 12 notification style on non-Android 12 devices
  * }
  * }
- * </pre>
  */
 public class TeakNotification implements Unobfuscable {
     /**
@@ -629,7 +628,7 @@ public class TeakNotification implements Unobfuscable {
     }
 
     /**************************************************************************/
-
+    // @cond hide_from_doxygen
     // Version of the push from Teak
     static final int TEAK_NOTIFICATION_V0 = 0;
     int notificationVersion = TEAK_NOTIFICATION_V0;
@@ -767,4 +766,5 @@ public class TeakNotification implements Unobfuscable {
 
         return 0;
     }
+    // @endcond hide_from_doxygen
 }

@@ -13,5 +13,6 @@ AUTOLINK_SUPPORT       = NO
 
 # Project-specific configuration
 OPTIMIZE_OUTPUT_JAVA   = YES
-INPUT                  = src/main/java/io/teak/sdk/Teak.java
-EXCLUDE_SYMBOLS        = 
+INPUT                  = src/main/java/io/teak/sdk/Teak.java src/main/java/io/teak/sdk/TeakNotification.java
+EXCLUDE                =
+EXCLUDE_SYMBOLS        =
