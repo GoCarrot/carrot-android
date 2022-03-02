@@ -9,7 +9,7 @@
 
 {{{brief}}}
 
-[source,java]
+[source]
 ----
 {{{declaration}}}
 ----
@@ -35,7 +35,8 @@ WARNING: {{{this}}}
 |Name |Description
 
 {{#each params}}
-|{{name}} |{{{description}}}
+|``{{name}}``
+|{{{description}}}
 {{/each}}
 |===
 {{/if}}
