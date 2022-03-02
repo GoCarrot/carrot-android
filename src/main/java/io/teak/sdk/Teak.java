@@ -195,7 +195,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             }
         }
     }
-    /// @endcond hide_from_doxygen
+    /// @endcond
 
     /**
      * Tell Teak how it should identify the current user.
@@ -704,7 +704,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             map.put("launch_link", this.launchLink != null ? this.launchLink.toString() : null);
             return map;
         }
-        /// @endcond hide_from_doxygen
+        /// @endcond
     }
 
     /**
@@ -884,7 +884,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             map.put("teakDeepLink", io.teak.sdk.core.DeepLink.willProcessUri(this.deepLink) ? this.deepLink.toString() : null);
             return map;
         }
-        /// @endcond hide_from_doxygen
+        /// @endcond
     }
 
     /**
@@ -958,7 +958,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             }
             return map;
         }
-        /// @endcond hide_from_doxygen
+        /// @endcond
     }
 
     /**
@@ -996,7 +996,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         public AttributedLaunchData mergeDeepLink(@NonNull Uri uri) {
             return new RewardlinkLaunchData(this, uri);
         }
-        /// @endcond hide_from_doxygen
+        /// @endcond
     }
 
     /**
@@ -1031,7 +1031,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             }
             return new JSONObject(map);
         }
-        /// @endcond hide_from_doxygen
+        /// @endcond
     }
 
     /**
@@ -1061,7 +1061,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             json.put("isForeground", this.isForeground);
             return json;
         }
-        /// @endcond hide_from_doxygen
+        /// @endcond
     }
 
     /**
@@ -1076,7 +1076,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         public LaunchFromLinkEvent(@NonNull final RewardlinkLaunchData launchData) {
             super(launchData, null);
         }
-        /// @endcond hide_from_doxygen
+        /// @endcond
     }
 
     /**
@@ -1087,7 +1087,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         public PostLaunchSummaryEvent(@NonNull final LaunchData launchData) {
             super(launchData, null);
         }
-        /// @endcond hide_from_doxygen
+        /// @endcond
     }
 
     /**
@@ -1103,7 +1103,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         public RewardClaimEvent(@NonNull final AttributedLaunchData launchData, @NonNull final TeakNotification.Reward reward) {
             super(launchData, reward);
         }
-        /// @endcond hide_from_doxygen
+        /// @endcond
     }
 
     /**
@@ -1126,7 +1126,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         public AdditionalDataEvent(final JSONObject additionalData) {
             this.additionalData = additionalData;
         }
-        /// @endcond hide_from_doxygen
+        /// @endcond
     }
 
     /**
@@ -1168,7 +1168,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             json.put("optOutPush", this.optOutPush);
             return json;
         }
-        /// @endcond hide_from_doxygen
+        /// @endcond
     }
 
     ///// LogListener
@@ -1218,7 +1218,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Cleared, context, intent));
         }
     }
-    /// @endcond hide_from_doxygen
+    /// @endcond
 
     ///// Logging
     /// @cond hide_from_doxygen
@@ -1232,7 +1232,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             return obj.toString();
         }
     }
-    /// @endcond hide_from_doxygen
+    /// @endcond
 
     ///// Deep Links
 
@@ -1268,7 +1268,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     public static void waitUntilDeepLinksAreReady() throws ExecutionException, InterruptedException {
         Teak.waitForDeepLink.get();
     }
-    /// @endcond hide_from_doxygen
+    /// @endcond
 
     /**
      * Manually pass Teak a deep link path to handle.
@@ -1336,5 +1336,5 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     public static TeakInstance Instance;
 
     private static final ExecutorService asyncExecutor = Executors.newCachedThreadPool();
-    /// @endcond hide_from_doxygen
+    /// @endcond
 }

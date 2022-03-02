@@ -372,7 +372,7 @@ public class TeakNotification implements Unobfuscable {
     /**
      * Schedules a push notification, to be delivered to other users, for some time in the future.
      *
-     * @param creativeId     The identifier of the notification in the Teak dashboard (will create if not found).
+     * @param creativeId     The identifier of the notification in the Teak dashboard, this must already exist.
      * @param delayInSeconds The delay in seconds from now to send the notification.
      * @param userIds        A list of game-assigned user ids to deliver the notification to.
      * @return The identifiers of the scheduled notifications (see {@link TeakNotification#cancelNotification(String)} or null.
@@ -766,5 +766,5 @@ public class TeakNotification implements Unobfuscable {
 
         return 0;
     }
-    // @endcond hide_from_doxygen
+    // @endcond
 }
