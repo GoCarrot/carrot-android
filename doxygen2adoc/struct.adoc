@@ -1,6 +1,7 @@
 :caution-caption: Deprecated
 :table-caption!:
 
+[#{{id}}]
 = {{cut name 'io.teak.sdk.'}}
 
 {{#if inheritsFrom}}
@@ -23,7 +24,18 @@
 |Name |Type |Description
 
 {{#each attributes}}
-|{{name}} |``{{return.type}}`` |{{{brief}}}
+|[[{{id}}]]{{name}} |``{{return.type}}`` |{{{brief}}}
+{{/each}}
+|===
+{{/if}}
+
+{{#if staticAttributes}}== Static Attributes
+[cols="1,2a,3a", stripes="even"]
+|===
+|Name |Type |Description
+
+{{#each staticAttributes}}
+|[[{{id}}]]{{name}} |``{{return.type}}`` |{{{brief}}}
 {{/each}}
 |===
 {{/if}}
@@ -44,7 +56,7 @@
 |Name |Type |Description |Access
 
 {{#each properties}}
-|{{name}} |``{{return.type}}`` |{{{brief}}} |Get{{#if settable}}/Set{{/if}}
+|[[{{id}}]]{{name}} |``{{return.type}}`` |{{{brief}}} |Get{{#if settable}}/Set{{/if}}
 {{/each}}
 |===
 {{/if}}

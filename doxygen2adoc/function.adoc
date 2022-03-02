@@ -1,4 +1,4 @@
-
+[#{{id}}]
 === {{name}}
 {{#if deprecated}}
 [CAUTION]
@@ -9,7 +9,7 @@
 
 {{{brief}}}
 
-[source,csharp]
+[source,java]
 ----
 {{{declaration}}}
 ----
