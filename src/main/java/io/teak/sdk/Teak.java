@@ -372,6 +372,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             this.optOutPushKey = optOutPushKey;
         }
 
+        /// @cond hide_from_doxygen
         public Map<String, Object> toHash() {
             final Map<String, Object> map = new HashMap<>();
             map.put("email", this.email);
@@ -381,6 +382,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             map.put("opt_out_push_key", this.optOutPushKey);
             return map;
         }
+        /// @endcond
     }
 
     /**
@@ -1240,7 +1242,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * Indicate that your app is ready for deep links.
      *
      * Deep links will not be processed sooner than the earliest of:
-     * - {@link #identifyUser(String, String[])} is called
+     * - {@link #identifyUser(String, UserConfiguration)} is called
      * - This method is called
      */
     @SuppressWarnings("unused")
