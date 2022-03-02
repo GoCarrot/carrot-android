@@ -9,10 +9,9 @@
 
 {{{brief}}}
 
-[source]
-----
-{{{declaration}}}
-----
+++++
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">{{{declaration}}}</code></pre>
+++++
 
 {{#if return.description}}==== Return
 {{return.description}}{{/if}}
