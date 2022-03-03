@@ -8,7 +8,6 @@ template:
 
 partial:
   function: doxygen2adoc/function.adoc
-  attribute: doxygen2adoc/attribute.adoc
 
 nav: docs/modules/ROOT/partials/nav.adoc
 
