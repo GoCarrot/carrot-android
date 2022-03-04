@@ -6,6 +6,5 @@ nav:
 
 asciidoc:
   attributes:
-    source-language: java@
     table-caption: false
     caution-caption: Deprecated@
