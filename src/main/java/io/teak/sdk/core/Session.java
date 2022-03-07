@@ -495,7 +495,8 @@ public class Session {
                             if (!response.isNull("deep_link")) {
                                 try {
                                     final String updatedDeepLink = response.getString("deep_link");
-                                    Session.this.launchDataSource = LaunchDataSource.sourceWithUpdatedDeepLink(launchData, Uri.parse(updatedDeepLink));
+                                    final Uri launchLink = payload.containsKey("launch_link") ? Uri.parse((String) payload.get("launch_link")) : null;
+                                    Session.this.launchDataSource = LaunchDataSource.sourceWithUpdatedDeepLink(launchData, Uri.parse(updatedDeepLink), launchLink);
                                     Teak.log.i("deep_link.processed", updatedDeepLink);
                                 } catch (Exception e) {
                                     Teak.log.exception(e);
