@@ -21,6 +21,7 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLProtocolException;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakConfiguration;
@@ -37,13 +38,15 @@ public class LaunchDataSource implements Future<Teak.LaunchData> {
         this.launchDataFuture = launchDataFuture;
     }
 
-    public static LaunchDataSource sourceWithUpdatedDeepLink(@NonNull final Teak.LaunchData launchData, @NonNull final Uri deepLink) {
+    public static LaunchDataSource sourceWithUpdatedDeepLink(@NonNull final Teak.LaunchData launchData, @NonNull final Uri deepLink, @Nullable final Uri launchLink) {
+        // Update the existing launch data, if it's attributed
         if (launchData instanceof Teak.AttributedLaunchData) {
             final Teak.AttributedLaunchData attributedLaunchData = (Teak.AttributedLaunchData) launchData;
             return new LaunchDataSource(Helpers.futureForValue(attributedLaunchData.mergeDeepLink(deepLink)));
         }
 
-        return new LaunchDataSource(Helpers.futureForValue(launchData));
+        // Re-determine what kind of attribution this should be, with the deep link sent back by the server
+        return new LaunchDataSource(Helpers.futureForValue(launchDataFromUriPair(deepLink, launchLink)));
     }
 
     public static LaunchDataSource sourceFromIntent(@NonNull final Intent intent) {
@@ -79,6 +82,19 @@ public class LaunchDataSource implements Future<Teak.LaunchData> {
 
             // There is a launch url, so resolve that URL
             return new LaunchDataSource(LaunchDataSource.futureFromLinkResolution(Helpers.futureForValue(intentDataString)));
+        }
+    }
+
+    private static Teak.LaunchData launchDataFromUriPair(final Uri uri, final Uri httpsUri) {
+        // If this is a link from a Teak email, then it's a notification launch data
+        if (Teak.NotificationLaunchData.isTeakEmailUri(uri)) {
+            return new Teak.NotificationLaunchData(uri);
+        } else if (Teak.RewardlinkLaunchData.isTeakRewardLink(uri)) {
+            // If it has a 'teak_rewardlink_id' then it's a reward link
+            return new Teak.RewardlinkLaunchData(uri, httpsUri);
+        } else {
+            // Otherwise this is not a Teak attributed launch
+            return new Teak.LaunchData(uri);
         }
     }
 
@@ -167,16 +183,7 @@ public class LaunchDataSource implements Future<Teak.LaunchData> {
                 }
             }
 
-            // If this is a link from a Teak email, then it's a notification launch data
-            if (Teak.NotificationLaunchData.isTeakEmailUri(uri)) {
-                return new Teak.NotificationLaunchData(uri);
-            } else if (Teak.RewardlinkLaunchData.isTeakRewardLink(uri)) {
-                // If it has a 'teak_rewardlink_id' then it's a reward link
-                return new Teak.RewardlinkLaunchData(uri, httpsUri);
-            } else {
-                // Otherwise this is not a Teak attributed launch
-                return new Teak.LaunchData(uri);
-            }
+            return launchDataFromUriPair(uri, httpsUri);
         });
 
         // Start it running, and return the Future
