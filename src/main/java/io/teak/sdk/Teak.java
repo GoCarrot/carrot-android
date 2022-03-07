@@ -468,9 +468,9 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     /**
      * Has the user disabled notifications for this app.
      *
-     * This will always return 'false' for any device below API 19.
+     * @note This will always return <code>false</code> for any device below API 19.
      *
-     * @return 'true' if the device is above API 19 and the user has disabled notifications, 'false' otherwise.
+     * @return <code>true</code> if the device is above API 19 and the user has disabled notifications, <code>false</code> otherwise.
      */
     @SuppressWarnings("unused")
     public static int getNotificationStatus() {
@@ -485,12 +485,11 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Open the settings app to the settings for this app.
+     * 
+     * @note This will always return <code>false</code> for any device below API 19.
+     * @note Be sure to prompt the user to re-enable notifications for your app before calling this function.
      *
-     * Be sure to prompt the user to re-enable notifications for your app before calling this function.
-     *
-     * This will always return 'false' for any device below API 19.
-     *
-     * @return 'true' if Teak was (probably) able to open the settings, 'false' if Teak was (probably) not able to open the settings.
+     * @return <code>true</code> if Teak was (probably) able to open the settings, <code>false</code> if Teak was (probably) not able to open the settings.
      */
     @SuppressWarnings("unused")
     public static boolean openSettingsAppToThisAppsSettings() {
@@ -507,9 +506,10 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     /**
      * Set the badge number on the icon of the application.
      *
-     * Set the count to 0 to remove the badge.
+     * @note Set the count to 0 to remove the badge.
      *
-     * @return 'true' if Teak was able to set the badge number, 'false' otherwise.
+     * @param count The value to set as the badge number.
+     * @return <code>true</code> if Teak was able to set the badge number, <code>false</code> otherwise.
      */
     @SuppressWarnings({"unused", "UnusedReturnValue", "SameParameterValue"})
     public static boolean setApplicationBadgeNumber(int count) {

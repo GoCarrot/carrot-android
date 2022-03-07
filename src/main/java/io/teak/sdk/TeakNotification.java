@@ -556,6 +556,11 @@ public class TeakNotification implements Unobfuscable {
         return ret;
     }
 
+    /**
+     * Cancel all scheduled push notifications for the logged in user.
+     *
+     * @return A list containing the ids of all scheduled notifications.
+     */
     @SuppressWarnings("unused")
     public static FutureTask<String> cancelAll() {
         Teak.log.trace("TeakNotification.cancelAll");
