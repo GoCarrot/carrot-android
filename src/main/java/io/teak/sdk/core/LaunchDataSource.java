@@ -170,10 +170,6 @@ public class LaunchDataSource implements Future<Teak.LaunchData> {
                     } catch (Exception e) {
                         Teak.log.exception(e);
                     }
-                } catch (SSLProtocolException ssl_e) {
-                    // Ignored, Sentry issue 'TEAK-SDK-Z'
-                } catch (SSLException ssl_e) {
-                    // Ignored
                 } catch (Exception e) {
                     Teak.log.exception(e);
                 } finally {
