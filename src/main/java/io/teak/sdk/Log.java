@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
@@ -201,8 +202,9 @@ public class Log {
                 commonPayload.put("sdk_version", Teak.Version);
 
                 // Log ISO8601 format timestamp at init
-                SimpleDateFormat iso8601 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
-                Map<String, Object> dateTime = new HashMap<>();
+                final SimpleDateFormat iso8601 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+                iso8601.setTimeZone(TimeZone.getTimeZone("UTC"));
+                final Map<String, Object> dateTime = new HashMap<>();
                 dateTime.put("at", iso8601.format(new Date()));
                 log(Level.Info, "sdk_init", dateTime);
 
