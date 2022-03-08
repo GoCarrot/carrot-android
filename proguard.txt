@@ -11,6 +11,9 @@
 -keep public class * implements com.android.vending.billing.IInAppBillingService { public static *; }
 -dontwarn com.android.vending.billing.IInAppBillingService.**
 
+### Billing v4 ###
+-keep public class com.android.billingclient.api.Purchase { public *; }
+
 ### Facebook ###
 -keep class com.facebook.** { *; }
 -dontwarn com.facebook.**

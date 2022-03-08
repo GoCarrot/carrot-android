@@ -1,4 +1,9 @@
 #
+# FUTURE PAT: This is the file for building teak.aar, not the file
+#             included in teak.aar which gets merged into customer builds.
+#
+
+#
 # This ProGuard configuration file illustrates how to process a program
 # library, such that it remains usable as a library.
 # Usage:
