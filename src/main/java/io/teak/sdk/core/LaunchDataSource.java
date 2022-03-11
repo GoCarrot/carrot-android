@@ -21,6 +21,7 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLProtocolException;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakConfiguration;
@@ -37,48 +38,63 @@ public class LaunchDataSource implements Future<Teak.LaunchData> {
         this.launchDataFuture = launchDataFuture;
     }
 
-    public static LaunchDataSource sourceWithUpdatedDeepLink(@NonNull final Teak.LaunchData launchData, @NonNull final Uri deepLink) {
-        return new LaunchDataSource(Helpers.futureForValue(launchData.mergeDeepLink(deepLink)));
+    public static LaunchDataSource sourceWithUpdatedDeepLink(@NonNull final Teak.LaunchData launchData, @NonNull final Uri deepLink, @Nullable final Uri launchLink) {
+        // Update the existing launch data, if it's attributed
+        if (launchData instanceof Teak.AttributedLaunchData) {
+            final Teak.AttributedLaunchData attributedLaunchData = (Teak.AttributedLaunchData) launchData;
+            return new LaunchDataSource(Helpers.futureForValue(attributedLaunchData.mergeDeepLink(deepLink)));
+        }
+
+        // Re-determine what kind of attribution this should be, with the deep link sent back by the server
+        return new LaunchDataSource(Helpers.futureForValue(launchDataFromUriPair(deepLink, launchLink)));
     }
 
     public static LaunchDataSource sourceFromIntent(@NonNull final Intent intent) {
-        // If is is not a "first launch" then we can take the easy path of not needing to wait for
-        // the possibility of an install referrer.
-        final boolean isFirstLaunch = intent.getBooleanExtra("teakIsFirstLaunch", false);
+        // If there is a teakNotifId, then we do not need to wait for the resolution of a link.
+        final String teakNotifId = Helpers.getStringOrNullFromIntentExtra(intent, "teakNotifId");
 
-        // So the fast path is no first launch, and teakNotifId in the Intent extras.
-        if (!isFirstLaunch) {
-            // If it is not a first launch, and there is a teakNotifId, then we do not need to wait for
-            // the resolution of a link.
-            final String teakNotifId = Helpers.getStringOrNullFromIntentExtra(intent, "teakNotifId");
-
-            if (teakNotifId != null) {
-                // This is the fast and easy path. There is a teakNotifId, meaning we launched via a push
-                // notification, and it's not the first launch, so we do not need to worry about any
-                // install referrer.
-                return new LaunchDataSource(Helpers.futureForValue(new Teak.NotificationLaunchData(intent.getExtras())));
-            } else {
-                // This is not the first launch, but we will need to wait for a link resolution
-                final String intentDataString = intent.getDataString();
-
-                // If there's no launch url, this is a completely unattributed launch
-                if (Helpers.isNullOrEmpty(intentDataString)) {
-                    return LaunchDataSource.Unattributed;
-                } else {
-                    return new LaunchDataSource(LaunchDataSource.futureFromLinkResolution(Helpers.futureForValue(intentDataString)));
-                }
-            }
+        if (teakNotifId != null) {
+            // This is the fast and easy path. There is a teakNotifId, meaning we launched via a push
+            // notification.
+            return new LaunchDataSource(Helpers.futureForValue(new Teak.NotificationLaunchData(intent.getExtras())));
         } else {
-            // This is the first launch, which means we need to check for an install referrer.
-            //
-            // The install referrer may be something like a link from an email, which means that it
-            // could also contain a teak_notif_id.
-            //
-            // However, there cannot also be a teakNotifId from a push notification, because it's the
-            // first launch, and Teak therefor cannot possibly know about the device.
-            final TeakConfiguration teakConfiguration = TeakConfiguration.get();
-            final Future<String> installReferrer = InstallReferrerFuture.get(teakConfiguration.appConfiguration.applicationContext);
-            return new LaunchDataSource(LaunchDataSource.futureFromLinkResolution(installReferrer));
+            // Not a notification launch, so check for a launch url
+            final String intentDataString = intent.getDataString();
+
+            // If there's no launch url, check to see if it's the first launch for an install referral
+            if (Helpers.isNullOrEmpty(intentDataString)) {
+                final boolean isFirstLaunch = intent.getBooleanExtra("teakIsFirstLaunch", false);
+
+                if (isFirstLaunch) {
+                    // This is the first launch, which means we need to check for an install referrer.
+                    //
+                    // The install referrer may be something like a link from an email, which means that it
+                    // could also contain a teak_notif_id.
+                    final TeakConfiguration teakConfiguration = TeakConfiguration.get();
+                    final Future<String> installReferrer = InstallReferrerFuture.get(teakConfiguration.appConfiguration.applicationContext);
+                    return new LaunchDataSource(LaunchDataSource.futureFromLinkResolution(installReferrer));
+                }
+
+                // There's no notification launch, no link launch, and it's not the first launch
+                // so this is an unattributed launch,
+                return LaunchDataSource.Unattributed;
+            }
+
+            // There is a launch url, so resolve that URL
+            return new LaunchDataSource(LaunchDataSource.futureFromLinkResolution(Helpers.futureForValue(intentDataString)));
+        }
+    }
+
+    private static Teak.LaunchData launchDataFromUriPair(final Uri uri, final Uri httpsUri) {
+        // If this is a link from a Teak email, then it's a notification launch data
+        if (Teak.NotificationLaunchData.isTeakEmailUri(uri)) {
+            return new Teak.NotificationLaunchData(uri);
+        } else if (Teak.RewardlinkLaunchData.isTeakRewardLink(uri)) {
+            // If it has a 'teak_rewardlink_id' then it's a reward link
+            return new Teak.RewardlinkLaunchData(uri, httpsUri);
+        } else {
+            // Otherwise this is not a Teak attributed launch
+            return new Teak.LaunchData(uri);
         }
     }
 
@@ -154,10 +170,6 @@ public class LaunchDataSource implements Future<Teak.LaunchData> {
                     } catch (Exception e) {
                         Teak.log.exception(e);
                     }
-                } catch (SSLProtocolException ssl_e) {
-                    // Ignored, Sentry issue 'TEAK-SDK-Z'
-                } catch (SSLException ssl_e) {
-                    // Ignored
                 } catch (Exception e) {
                     Teak.log.exception(e);
                 } finally {
@@ -167,15 +179,7 @@ public class LaunchDataSource implements Future<Teak.LaunchData> {
                 }
             }
 
-            // If this is a link from a Teak email, then it's a notification launch data
-            if (Teak.NotificationLaunchData.isTeakEmailUri(uri)) {
-                return new Teak.NotificationLaunchData(uri);
-            } else if (Teak.RewardlinkLaunchData.isTeakRewardLink(uri)) {
-                return new Teak.RewardlinkLaunchData(uri, httpsUri);
-            }
-
-            // Otherwise this is not a Teak attributed launch
-            return new Teak.LaunchData(uri);
+            return launchDataFromUriPair(uri, httpsUri);
         });
 
         // Start it running, and return the Future

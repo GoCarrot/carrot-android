@@ -180,8 +180,14 @@ public class NotificationBuilder {
         final IdHelper R = new IdHelper(); // Declaring local as 'R' ensures we don't accidentally use the other R
 
         // Logic for the Android 12 notification style
+        int targetSdkVersion = 0; // Do not use TeakConfiguration.get()
+        try {
+            ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+            targetSdkVersion = appInfo.targetSdkVersion;
+        } catch (Exception ignored) {
+        }
         final boolean isRunningOn12Plus = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S;
-        final boolean isTargeting12Plus = TeakConfiguration.get().appConfiguration.targetSdkVersion >= 31;
+        final boolean isTargeting12Plus = targetSdkVersion >= 31;
         final boolean willAutomaticallyUse12PlusStyle = isRunningOn12Plus && isTargeting12Plus;
         final boolean serverRequests12PlusStyle = teakNotificaton.useDecoratedCustomView;
         final boolean isAndroid12NotificationStyle = serverRequests12PlusStyle || willAutomaticallyUse12PlusStyle;
@@ -369,6 +375,15 @@ public class NotificationBuilder {
                 JSONObject viewConfig = teakNotificaton.display.getJSONObject(name);
                 Iterator<String> keys = viewConfig.keys();
 
+                // View configuration does not include frames
+                if (isAndroid12NotificationStyle) {
+                    try {
+                        final int viewElementId = R.id("left_image_frame");
+                        remoteViews.setViewVisibility(viewElementId, View.GONE);
+                    } catch (Exception ignored) {
+                    }
+                }
+
                 // Action buttons
                 final boolean[] actionButtonsConfigured = new boolean[3];
 
@@ -409,21 +424,15 @@ public class NotificationBuilder {
                     } else if (isUIType(viewElement, ImageView.class)) {
                         final String value = viewConfig.getString(key);
                         if (value.equalsIgnoreCase("BUILTIN_APP_ICON")) {
-                            // If we are using the Android 12 notification style, then skip the "left_image" key
-                            // since that view style already places the app icon on the left
-                            if ("left_image".equals(key) && isAndroid12NotificationStyle) {
-                                remoteViews.setViewVisibility(viewElementId, View.GONE);
-                            } else {
-                                remoteViews.setImageViewResource(viewElementId, appIconResourceId);
-                            }
+                            remoteViews.setImageViewResource(viewElementId, appIconResourceId);
                         } else if (value.equalsIgnoreCase("NONE")) {
                             remoteViews.setViewVisibility(viewElementId, View.GONE);
                         } else {
                             final Bitmap bitmap = loadBitmapWithOOMFallbacks(key, viewConfig);
                             if (bitmap == null) {
-                                if ("left_image".equals(key)) {
-                                    remoteViews.setViewVisibility(viewElementId, View.GONE);
-                                } else {
+                                // If an asset failed to load, throw an AssetLoadException, unless it's
+                                // the "left_image" in which case just ignore it.
+                                if (!"left_image".equals(key)) {
                                     throw new AssetLoadException(value);
                                 }
                             } else {

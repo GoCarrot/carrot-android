@@ -10,6 +10,7 @@ import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.android.billingclient.api.SkuDetails;
 import com.android.billingclient.api.SkuDetailsParams;
 
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -46,32 +47,58 @@ public class GooglePlayBillingV3 implements Unobfuscable, IStore, PurchasesUpdat
 
     @Override
     public void onPurchasesUpdated(@NonNull BillingResult billingResult, @Nullable List<Purchase> purchaseList) {
+        if (purchaseList == null) {
+            return;
+        }
+
+        // Because Java won't just do what I fucking tell it to do...
+        Method getSku = null;
+        try {
+            getSku = Purchase.class.getMethod("getSku");
+        } catch (Exception e) {
+            Teak.log.exception(e);
+        }
+
+        if (getSku == null) {
+            return;
+        }
+
         for (Purchase purchase : purchaseList) {
-            final Map<String, Object> payload = new HashMap<>();
-            payload.put("purchase_token", purchase.getPurchaseToken());
-            payload.put("purchase_time", purchase.getPurchaseTime());
-            payload.put("product_id", purchase.getSku());
-            payload.put("order_id", purchase.getOrderId());
+            try {
+                final String purchaseSku = (String) getSku.invoke(purchase);
 
-            final SkuDetailsParams params = SkuDetailsParams
-                                                .newBuilder()
-                                                .setType(BillingClient.SkuType.INAPP)
-                                                .setSkusList(Collections.singletonList(purchase.getSku()))
-                                                .build();
+                final Map<String, Object> payload = new HashMap<>();
+                payload.put("purchase_token", purchase.getPurchaseToken());
+                payload.put("purchase_time", purchase.getPurchaseTime());
+                payload.put("product_id", purchaseSku);
+                payload.put("order_id", purchase.getOrderId());
 
-            this.billingClient.querySkuDetailsAsync(params, (ignored, skuDetailsList) -> {
-                if (skuDetailsList != null && !skuDetailsList.isEmpty()) {
-                    final SkuDetails skuDetails = skuDetailsList.get(0);
-                    payload.put("price_amount_micros", skuDetails.getPriceAmountMicros());
-                    payload.put("price_currency_code", skuDetails.getPriceCurrencyCode());
+                final SkuDetailsParams params = SkuDetailsParams
+                                                    .newBuilder()
+                                                    .setType(BillingClient.SkuType.INAPP)
+                                                    .setSkusList(Collections.singletonList(purchaseSku))
+                                                    .build();
 
-                    Teak.log.i("billing.google.v3.sku", "SKU Details retrieved.", Helpers.mm.h(purchase.getSku(), skuDetails.getPriceAmountMicros()));
-                } else {
-                    Teak.log.e("billing.google.v3.sku", "SKU Details query failed.");
-                }
+                this.billingClient.querySkuDetailsAsync(params, (ignored, skuDetailsList) -> {
+                    try {
+                        if (skuDetailsList != null && !skuDetailsList.isEmpty()) {
+                            final SkuDetails skuDetails = skuDetailsList.get(0);
+                            payload.put("price_amount_micros", skuDetails.getPriceAmountMicros());
+                            payload.put("price_currency_code", skuDetails.getPriceCurrencyCode());
 
-                TeakEvent.postEvent(new PurchaseEvent(payload));
-            });
+                            Teak.log.i("billing.google.v3.sku", "SKU Details retrieved.", Helpers.mm.h(purchaseSku, skuDetails.getPriceAmountMicros()));
+                        } else {
+                            Teak.log.e("billing.google.v3.sku", "SKU Details query failed.");
+                        }
+
+                        TeakEvent.postEvent(new PurchaseEvent(payload));
+                    } catch (Exception e) {
+                        Teak.log.exception(e);
+                    }
+                });
+            } catch (Exception e) {
+                Teak.log.exception(e);
+            }
         }
     }
 }

@@ -1,7 +1,9 @@
 package io.teak.sdk;
 
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.os.Bundle;
 
 import com.amazon.device.messaging.ADM;
 
@@ -74,6 +76,18 @@ public class DefaultObjectFactory implements IObjectFactory {
     ///// Helpers
 
     private IStore createStore(@NonNull Context context) {
+        // If automatic purchase collection is disabled, just return null
+        //
+        // Note that we cannot use TeakConfiguration here because this happens before it is initialized.
+        try {
+            final ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+            if (appInfo.metaData.getBoolean("io_teak_no_auto_track_purchase", false)) {
+                Teak.log.i("factory.istore", "Automatic purchase tracking disabled (io_teak_no_auto_track_purchase).");
+                return null;
+            }
+        } catch (Exception ignored) {
+        }
+
         final PackageManager packageManager = context.getPackageManager();
         if (packageManager == null) {
             Teak.log.e("factory.istore", "Unable to get Package Manager.");
@@ -87,20 +101,43 @@ public class DefaultObjectFactory implements IObjectFactory {
         }
 
         // Applicable store, default to GooglePlay
-        Class<?> clazz = io.teak.sdk.store.GooglePlayBillingV3.class;
+        Class<?> clazz = null;
         if (Helpers.isAmazonDevice(context)) {
             try {
                 Class.forName("com.amazon.device.iap.PurchasingListener");
-                clazz = io.teak.sdk.store.Amazon.class;
+                clazz = Class.forName("io.teak.sdk.store.Amazon");
             } catch (Exception e) {
                 Teak.log.exception(e);
             }
+        } else {
+            try {
+                // If the 'getSkus' method is present, then this is (probably) Google Play Billing v4
+                // so use that instead.
+                Class<?> gpbv4 = Class.forName("com.android.billingclient.api.Purchase");
+                gpbv4.getMethod("getSkus");
+                clazz = Class.forName("io.teak.sdk.store.GooglePlayBillingV4");
+            } catch (NoSuchMethodException ignored) {
+
+            } catch (Exception e) {
+                Teak.log.exception(e);
+            }
+
+            if (clazz == null) {
+                try {
+                    // Default to Billing v3
+                    clazz = Class.forName("io.teak.sdk.store.GooglePlayBillingV3");
+                } catch (Exception e) {
+                    Teak.log.exception(e);
+                }
+            }
         }
 
-        try {
-            return (IStore) clazz.getDeclaredConstructor(Context.class).newInstance(context);
-        } catch (Exception e) {
-            Teak.log.exception(e);
+        if (clazz != null) {
+            try {
+                return (IStore) clazz.getDeclaredConstructor(Context.class).newInstance(context);
+            } catch (Exception e) {
+                Teak.log.exception(e);
+            }
         }
 
         return null;
