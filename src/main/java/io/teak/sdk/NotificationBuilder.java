@@ -44,6 +44,7 @@ import java.util.Iterator;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
@@ -54,6 +55,7 @@ import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONObject;
 
 public class NotificationBuilder {
+    private static AtomicInteger pendingIntentRequestCode = new AtomicInteger();
     public static class AssetLoadException extends Exception {
         AssetLoadException(String assetName, Exception cause) {
             super("Failed to load asset: " + assetName, cause);
@@ -275,7 +277,6 @@ public class NotificationBuilder {
         }
 
         // Intent creation helper
-        final Random rng = new Random();
         final ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
         class PendingIntentHelper {
             PendingIntent getTrampolineIntent(String deepLink) {
@@ -292,7 +293,7 @@ public class NotificationBuilder {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     flags |= PendingIntent.FLAG_IMMUTABLE;
                 }
-                return PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, flags);
+                return PendingIntent.getBroadcast(context, pendingIntentRequestCode.getAndIncrement(), pushOpenedIntent, flags);
             }
 
             PendingIntent getDeleteIntent() {
@@ -305,7 +306,7 @@ public class NotificationBuilder {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     flags |= PendingIntent.FLAG_IMMUTABLE;
                 }
-                return PendingIntent.getBroadcast(context, rng.nextInt(), deleteIntent, flags);
+                return PendingIntent.getBroadcast(context, pendingIntentRequestCode.getAndIncrement(), deleteIntent, flags);
             }
 
             PendingIntent getLaunchIntent(String deepLink) {
@@ -327,11 +328,11 @@ public class NotificationBuilder {
                     launchIntent.setData(teakDeepLink);
                 }
 
-                int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+                int flags = PendingIntent.FLAG_ONE_SHOT;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     flags |= PendingIntent.FLAG_IMMUTABLE;
                 }
-                return PendingIntent.getActivity(context, 0, launchIntent, flags);
+                return PendingIntent.getActivity(context, pendingIntentRequestCode.getAndIncrement(), launchIntent, flags);
             }
         }
         final PendingIntentHelper pendingIntent = new PendingIntentHelper();
