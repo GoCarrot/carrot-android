@@ -39,12 +39,11 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
@@ -54,7 +53,6 @@ import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONObject;
 
 public class NotificationBuilder {
-    private static AtomicInteger pendingIntentRequestCode = new AtomicInteger();
     public static class AssetLoadException extends Exception {
         AssetLoadException(String assetName) {
             super("Failed to load asset: " + assetName);
@@ -276,6 +274,7 @@ public class NotificationBuilder {
         }
 
         // Intent creation helper
+        final SecureRandom rng = new SecureRandom();
         final ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
         class PendingIntentHelper {
             PendingIntent getTrampolineIntent(String deepLink) {
@@ -292,7 +291,7 @@ public class NotificationBuilder {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     flags |= PendingIntent.FLAG_IMMUTABLE;
                 }
-                return PendingIntent.getBroadcast(context, pendingIntentRequestCode.getAndIncrement(), pushOpenedIntent, flags);
+                return PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, flags);
             }
 
             PendingIntent getDeleteIntent() {
@@ -305,7 +304,7 @@ public class NotificationBuilder {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     flags |= PendingIntent.FLAG_IMMUTABLE;
                 }
-                return PendingIntent.getBroadcast(context, pendingIntentRequestCode.getAndIncrement(), deleteIntent, flags);
+                return PendingIntent.getBroadcast(context, rng.nextInt(), deleteIntent, flags);
             }
 
             PendingIntent getLaunchIntent() {
@@ -326,7 +325,7 @@ public class NotificationBuilder {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     flags |= PendingIntent.FLAG_IMMUTABLE;
                 }
-                return PendingIntent.getActivity(context, pendingIntentRequestCode.getAndIncrement(), launchIntent, flags);
+                return PendingIntent.getActivity(context, rng.nextInt(), launchIntent, flags);
             }
         }
         final PendingIntentHelper pendingIntent = new PendingIntentHelper();
