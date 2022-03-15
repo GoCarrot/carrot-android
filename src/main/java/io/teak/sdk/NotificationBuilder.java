@@ -308,7 +308,7 @@ public class NotificationBuilder {
                 return PendingIntent.getBroadcast(context, pendingIntentRequestCode.getAndIncrement(), deleteIntent, flags);
             }
 
-            PendingIntent getLaunchIntent(String deepLink) {
+            PendingIntent getLaunchIntent() {
                 final Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
                 if (launchIntent == null) {
                     return null;
@@ -321,11 +321,6 @@ public class NotificationBuilder {
                 // https://stackoverflow.com/questions/5502427/resume-application-and-stack-from-notification/5502950#5502950
                 launchIntent.setPackage(null);
                 launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
-
-                if (deepLink != null) {
-                    Uri teakDeepLink = Uri.parse(deepLink);
-                    launchIntent.setData(teakDeepLink);
-                }
 
                 int flags = PendingIntent.FLAG_ONE_SHOT;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -342,7 +337,7 @@ public class NotificationBuilder {
 
             // If this is Android 11 or 12, direct-launch the app
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                builder.setContentIntent(pendingIntent.getLaunchIntent(null));
+                builder.setContentIntent(pendingIntent.getLaunchIntent());
             } else {
                 // Create intent to fire if/when notification is opened, attach bundle info
                 builder.setContentIntent(pendingIntent.getTrampolineIntent(null));
