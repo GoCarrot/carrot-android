@@ -39,9 +39,9 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.FutureTask;
 
@@ -274,7 +274,7 @@ public class NotificationBuilder {
         }
 
         // Intent creation helper
-        final Random rng = new Random();
+        final SecureRandom rng = new SecureRandom();
         final ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
         class PendingIntentHelper {
             PendingIntent getTrampolineIntent(String deepLink) {
@@ -307,7 +307,7 @@ public class NotificationBuilder {
                 return PendingIntent.getBroadcast(context, rng.nextInt(), deleteIntent, flags);
             }
 
-            PendingIntent getLaunchIntent(String deepLink) {
+            PendingIntent getLaunchIntent() {
                 final Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
                 if (launchIntent == null) {
                     return null;
@@ -321,16 +321,11 @@ public class NotificationBuilder {
                 launchIntent.setPackage(null);
                 launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
 
-                if (deepLink != null) {
-                    Uri teakDeepLink = Uri.parse(deepLink);
-                    launchIntent.setData(teakDeepLink);
-                }
-
-                int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+                int flags = PendingIntent.FLAG_ONE_SHOT;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     flags |= PendingIntent.FLAG_IMMUTABLE;
                 }
-                return PendingIntent.getActivity(context, 0, launchIntent, flags);
+                return PendingIntent.getActivity(context, rng.nextInt(), launchIntent, flags);
             }
         }
         final PendingIntentHelper pendingIntent = new PendingIntentHelper();
@@ -341,7 +336,7 @@ public class NotificationBuilder {
 
             // If this is Android 11 or 12, direct-launch the app
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                builder.setContentIntent(pendingIntent.getLaunchIntent(null));
+                builder.setContentIntent(pendingIntent.getLaunchIntent());
             } else {
                 // Create intent to fire if/when notification is opened, attach bundle info
                 builder.setContentIntent(pendingIntent.getTrampolineIntent(null));
