@@ -1,0 +1,1 @@
+:struct-name: class {{cut name 'io.teak.sdk.'}}
