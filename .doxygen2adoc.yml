@@ -7,9 +7,6 @@ template:
 partial:
   structTitle: doxygen2adoc/structTitle.adoc
 
-global:
-  sourceLanguage: java
-
 antora: docs/antora.yml
 
 nav: docs/modules/ROOT/partials/nav.adoc
