@@ -1,0 +1,6 @@
+new:
+  - Added ``io_teak_no_auto_track_purchase`` to prevent automatic purchase collection
+  - Added support for Google Play Billing v4
+bug:
+  - Fix Android 12 formatting of text-only notifications
+  - Fix issue of opening browser when launched with the host for a teak shortlink, but no path

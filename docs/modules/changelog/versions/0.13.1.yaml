@@ -1,0 +1,5 @@
+new:
+  - Unity/Air wrapper classes now included in core for testability and better continuous integration performance
+bug:
+  - Hotfix from 0.12.9 integrated
+  - Internal system re-write

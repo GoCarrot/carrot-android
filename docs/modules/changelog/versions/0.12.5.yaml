@@ -1,0 +1,9 @@
+new:
+  - Add support for:
+    - "``io_teak_notification_accent_color``"
+    - "``io_teak_small_notification_icon``"
+    - "``io_teak_large_notification_icon``"
+bug:
+  - Back-stack loop bug fix
+  - Catch ``SecurityException`` on very old Android which requires ``android.permission.VIBRATE``
+  - Raven service changed from error to warning to prevent developer anxiety

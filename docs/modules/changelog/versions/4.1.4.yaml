@@ -1,0 +1,2 @@
+bug:
+  - Fixes null Iterator exception when a purchase is cancled in Google Play Billing

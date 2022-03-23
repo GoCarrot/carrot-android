@@ -8,3 +8,4 @@
 --
 include::partial$nav.adoc[]
 --
+* xref:android-api:changelog:page$changelog.adoc[Changelog]

@@ -1,0 +1,14 @@
+breaking:
+  - If you target Android 12, you must add ``android:exported`` specifications to the receiver definition for ``io.teak.sdk.push.ADMPushProvider$MessageAlertReceiver``:
+    - |
+      <receiver
+        android:name="io.teak.sdk.push.ADMPushProvider$MessageAlertReceiver"
+        android:permission="com.amazon.device.messaging.permission.SEND"
+        android:exported="true">
+new:
+  - Added support for targeting Android 12 (API level 31)
+  - Added a flag to preview SDK 5 changes, ``io_teak_sdk5_behaviors``:
+    - If ``io_teak_sdk5_behaviors`` is enabled, Teak will no longer automatically collect Facebook Access Token, instead you must pass the Facebook User Id to ``Teak#identifyUser``
+  - Added ``Teak$PostLaunchSummaryEvent`` which will contain launch information for both Teak attributed, and non-Teak attributed launches
+bug:
+  - When app is launched via an email link ``Teak$NotificationEvent`` event is now correctly posted.

@@ -1,0 +1,9 @@
+breaking:
+  - If using Teak to create a separate Firebase instance, you must add ``io_teak_firebase_project_id`` and 
+new:
+  - Support Firebase Project Id for Firebase 20.1.6+
+bug:
+  - Push state chain limited to a length of 50
+  - Fix ``public static void identifyUser(final String userIdentifier)`` overloaded method
+  - No longer process deep links which are not Teak links
+  - Reduce thread allocations, and add further measurement around thread and executor allocations

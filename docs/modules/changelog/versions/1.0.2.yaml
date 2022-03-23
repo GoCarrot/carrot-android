@@ -1,0 +1,2 @@
+bug:
+  - "``ADMPushProvider$MessageAlertReceiver`` no longer obfuscated."

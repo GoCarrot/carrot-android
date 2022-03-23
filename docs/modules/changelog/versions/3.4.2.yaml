@@ -1,0 +1,4 @@
+new:
+- Let users use their own FirebaseMessagingService
+- Added ``isTeakNotification``
+- Added ``onMessageReceivedExternal``

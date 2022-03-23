@@ -1,0 +1,3 @@
+bug:
+  - Fix corner case where GCM reg would not get sent if it came in *during* identifyUser (for real this time)
+  - Fixes integration checker when ``<activity-alias>`` is used

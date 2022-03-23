@@ -1,0 +1,4 @@
+breaking:
+  - "``io.teak.sdk.TeakUnityPlayerNativeActivity`` renamed to ``io.teak.sdk.wrapper.unity.TeakUnityPlayerNativeActivity``"
+  - "``io.teak.sdk.TeakUnityPlayerActivity`` renamed to ``io.teak.sdk.wrapper.unity.TeakUnityPlayerActivity``"
+  - "``io.teak.sdk.Application`` renamed to ``io.teak.sdk.wrapper.Application``"
