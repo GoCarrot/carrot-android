@@ -1,0 +1,4 @@
+bug:
+  - Purchase tracking works once again
+  - Send common payload during reward claim
+  - "``RetryableTask`` now immediately fails if ``ClassNotFoundException`` (if GCM isn’t linked)"

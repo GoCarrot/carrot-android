@@ -9,7 +9,8 @@ public interface ISDKWrapper {
         ForegroundNotification,
         AdditionalData,
         LaunchedFromLink,
-        PostLaunchSummary
+        PostLaunchSummary,
+        UserData
     }
     void sdkSendMessage(@NonNull EventType eventType, @NonNull String eventData);
 }

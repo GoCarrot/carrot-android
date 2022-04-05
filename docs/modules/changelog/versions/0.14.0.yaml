@@ -1,0 +1,5 @@
+new:
+  -  Notification buttons in expanded view
+  -  Aspect ratio now preserved in small view notifications
+bug:
+  -  Launch deep-link now takes precedence over install-attribution deep link on first launch of app

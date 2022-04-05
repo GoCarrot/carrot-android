@@ -1,0 +1,2 @@
+bug:
+  - Fixes issue in Android 12 compatibility that prevented push notifications from displaying when the app was not running.

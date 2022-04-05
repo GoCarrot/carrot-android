@@ -1,0 +1,2 @@
+bug:
+  - Mark GooglePlayBillingV3 and Amazon store classes Unobfuscatable.

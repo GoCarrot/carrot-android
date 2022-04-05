@@ -187,6 +187,20 @@ public class TeakInstance implements Unobfuscable {
         });
     }
 
+    ///// Opt Out Management
+
+    void setOptOutEmail(final boolean optOut) {
+        Session.whenUserIdIsReadyRun(session -> {
+            session.setOptOutEmail(optOut);
+        });
+    }
+
+    void setOptOutPush(final boolean optOut) {
+        Session.whenUserIdIsReadyRun(session -> {
+            session.setOptOutPush(optOut);
+        });
+    }
+
     ///// Notifications and Settings
 
     int getNotificationStatus() {

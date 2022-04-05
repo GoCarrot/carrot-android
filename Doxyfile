@@ -1,0 +1,18 @@
+# Only generate XML
+OUTPUT_DIRECTORY       = _doxygen
+GENERATE_LATEX         = NO
+GENERATE_HTML          = NO
+GENERATE_XML           = YES
+XML_PROGRAMLISTING     = NO
+
+# First line of comment should be the 'brief'
+JAVADOC_AUTOBRIEF      = YES
+
+# Stop the automatic ref generation (for the word Teak for example)
+AUTOLINK_SUPPORT       = NO
+
+# Project-specific configuration
+OPTIMIZE_OUTPUT_JAVA   = YES
+INPUT                  = src/main/java/io/teak/sdk/Teak.java src/main/java/io/teak/sdk/TeakNotification.java
+EXCLUDE                =
+EXCLUDE_SYMBOLS        =

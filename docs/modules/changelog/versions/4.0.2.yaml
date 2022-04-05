@@ -1,0 +1,11 @@
+breaking:
+  - If you target Android 12, you must add ``android:exported`` specifications to the receiver definition for ``io.teak.sdk.push.ADMPushProvider$MessageAlertReceiver``:
+    - |
+      <receiver
+        android:name="io.teak.sdk.push.ADMPushProvider$MessageAlertReceiver"
+        android:permission="com.amazon.device.messaging.permission.SEND"
+        android:exported="true">
+new:
+  - Added support for targeting Android 12 (API level 31)
+bug:
+  - Fixed a bug where handling links would only report the creative name for links and not email links.

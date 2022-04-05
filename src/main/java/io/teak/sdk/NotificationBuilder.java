@@ -39,23 +39,26 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
 
 import androidx.core.app.NotificationCompat;
+import io.teak.sdk.core.Result;
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONObject;
 
 public class NotificationBuilder {
+    private static AtomicInteger pendingIntentRequestCode = new AtomicInteger();
     public static class AssetLoadException extends Exception {
-        AssetLoadException(String assetName) {
-            super("Failed to load asset: " + assetName);
+        AssetLoadException(String assetName, Exception cause) {
+            super("Failed to load asset: " + assetName, cause);
         }
     }
 
@@ -274,7 +277,7 @@ public class NotificationBuilder {
         }
 
         // Intent creation helper
-        final Random rng = new Random();
+        final SecureRandom rng = new SecureRandom();
         final ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
         class PendingIntentHelper {
             PendingIntent getTrampolineIntent(String deepLink) {
@@ -291,7 +294,7 @@ public class NotificationBuilder {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     flags |= PendingIntent.FLAG_IMMUTABLE;
                 }
-                return PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, flags);
+                return PendingIntent.getBroadcast(context, pendingIntentRequestCode.getAndIncrement(), pushOpenedIntent, flags);
             }
 
             PendingIntent getDeleteIntent() {
@@ -304,10 +307,10 @@ public class NotificationBuilder {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     flags |= PendingIntent.FLAG_IMMUTABLE;
                 }
-                return PendingIntent.getBroadcast(context, rng.nextInt(), deleteIntent, flags);
+                return PendingIntent.getBroadcast(context, pendingIntentRequestCode.getAndIncrement(), deleteIntent, flags);
             }
 
-            PendingIntent getLaunchIntent(String deepLink) {
+            PendingIntent getLaunchIntent() {
                 final Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
                 if (launchIntent == null) {
                     return null;
@@ -321,16 +324,12 @@ public class NotificationBuilder {
                 launchIntent.setPackage(null);
                 launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
 
-                if (deepLink != null) {
-                    Uri teakDeepLink = Uri.parse(deepLink);
-                    launchIntent.setData(teakDeepLink);
-                }
-
-                int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+                int flags = PendingIntent.FLAG_ONE_SHOT;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     flags |= PendingIntent.FLAG_IMMUTABLE;
                 }
-                return PendingIntent.getActivity(context, 0, launchIntent, flags);
+
+                return PendingIntent.getActivity(context, rng.nextInt(), launchIntent, flags);
             }
         }
         final PendingIntentHelper pendingIntent = new PendingIntentHelper();
@@ -341,7 +340,7 @@ public class NotificationBuilder {
 
             // If this is Android 11 or 12, direct-launch the app
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                builder.setContentIntent(pendingIntent.getLaunchIntent(null));
+                builder.setContentIntent(pendingIntent.getLaunchIntent());
             } else {
                 // Create intent to fire if/when notification is opened, attach bundle info
                 builder.setContentIntent(pendingIntent.getTrampolineIntent(null));
@@ -428,29 +427,29 @@ public class NotificationBuilder {
                         } else if (value.equalsIgnoreCase("NONE")) {
                             remoteViews.setViewVisibility(viewElementId, View.GONE);
                         } else {
-                            final Bitmap bitmap = loadBitmapWithOOMFallbacks(key, viewConfig);
-                            if (bitmap == null) {
+                            final Result<Bitmap> bitmapResult = loadBitmapWithOOMFallbacks(key, viewConfig);
+                            if (bitmapResult.value == null) {
                                 // If an asset failed to load, throw an AssetLoadException, unless it's
                                 // the "left_image" in which case just ignore it.
                                 if (!"left_image".equals(key)) {
-                                    throw new AssetLoadException(value);
+                                    throw new AssetLoadException(value, bitmapResult.error);
                                 }
                             } else {
-                                remoteViews.setImageViewBitmap(viewElementId, bitmap);
+                                remoteViews.setImageViewBitmap(viewElementId, bitmapResult.value);
                             }
                         }
                     } else if (isUIType(viewElement, ViewFlipper.class)) {
-                        final AnimationConfiguration animationConfig = loadAnimationConfigWithOOMFallbacks(viewConfig);
-                        if (animationConfig == null) {
+                        final Result<AnimationConfiguration> animationConfigResult = loadAnimationConfigWithOOMFallbacks(viewConfig);
+                        if (animationConfigResult.value == null) {
                             final JSONObject jsonConfig = viewConfig.getJSONObject("view_animator");
-                            throw new AssetLoadException(jsonConfig.getString("sprite_sheet"));
-                        } else if (animationConfig.spriteSheet == null) {
-                            throw new AssetLoadException(animationConfig.spriteSheetUrl);
+                            throw new AssetLoadException(jsonConfig.getString("sprite_sheet"), animationConfigResult.error);
+                        } else if (animationConfigResult.value.spriteSheet == null) {
+                            throw new AssetLoadException(animationConfigResult.value.spriteSheetUrl, animationConfigResult.error);
                         }
-                        final Bitmap bitmap = animationConfig.spriteSheet;
-                        final int frameWidth = animationConfig.width;
-                        final int frameHeight = animationConfig.height;
-                        final int msPerFrame = animationConfig.displayMs;
+                        final Bitmap bitmap = animationConfigResult.value.spriteSheet;
+                        final int frameWidth = animationConfigResult.value.width;
+                        final int frameHeight = animationConfigResult.value.height;
+                        final int msPerFrame = animationConfigResult.value.displayMs;
 
                         final int numCols = bitmap.getWidth() / frameWidth;
                         final int numRows = bitmap.getHeight() / frameHeight;
@@ -462,7 +461,7 @@ public class NotificationBuilder {
                                 Bitmap frame = Bitmap.createBitmap(bitmap, startX, startY, frameWidth, frameHeight);
 
                                 if (frame == null) {
-                                    throw new IllegalArgumentException("Frame [" + x + ", " + y + "] is null (" + animationConfig.spriteSheetUrl + ")");
+                                    throw new IllegalArgumentException("Frame [" + x + ", " + y + "] is null (" + animationConfigResult.value.spriteSheetUrl + ")");
                                 }
 
                                 final RemoteViews frameView = new RemoteViews(context.getPackageName(),
@@ -527,16 +526,17 @@ public class NotificationBuilder {
                 public int displayMs;
             }
 
-            private AnimationConfiguration loadAnimationConfigWithOOMFallbacks(JSONObject viewConfig) throws OutOfMemoryError {
+            private Result<AnimationConfiguration> loadAnimationConfigWithOOMFallbacks(JSONObject viewConfig) throws OutOfMemoryError {
                 final AnimationConfiguration ret = new AnimationConfiguration();
                 final JSONObject initialAnimationConfig = viewConfig.getJSONObject("view_animator");
                 try {
+                    final Result<Bitmap> loadBitmapResult = loadBitmapFromUriString(ret.spriteSheetUrl);
                     ret.spriteSheetUrl = initialAnimationConfig.getString("sprite_sheet");
-                    ret.spriteSheet = loadBitmapFromUriString(ret.spriteSheetUrl);
+                    ret.spriteSheet = loadBitmapResult.value;
                     ret.width = initialAnimationConfig.getInt("width");
                     ret.height = initialAnimationConfig.getInt("height");
                     ret.displayMs = initialAnimationConfig.optInt("display_ms", 500);
-                    return ret;
+                    return new Result<>(ret, loadBitmapResult.error);
                 } catch (OutOfMemoryError e) {
                     Teak.log.e("oom.animation.initial", initialAnimationConfig.getString("sprite_sheet"));
 
@@ -545,13 +545,14 @@ public class NotificationBuilder {
                         for (int i = 0; i < oomFallbacks.length(); i++) {
                             final JSONObject fallbackAnimationConfig = oomFallbacks.getJSONObject(i);
                             try {
+                                final Result<Bitmap> loadBitmapResult = loadBitmapFromUriString(ret.spriteSheetUrl);
                                 ret.spriteSheetUrl = fallbackAnimationConfig.getString("sprite_sheet");
-                                ret.spriteSheet = loadBitmapFromUriString(ret.spriteSheetUrl);
+                                ret.spriteSheet = loadBitmapResult.value;
                                 ret.width = fallbackAnimationConfig.getInt("width");
                                 ret.height = fallbackAnimationConfig.getInt("height");
                                 ret.displayMs = fallbackAnimationConfig.optInt("display_ms", 500);
                                 Teak.log.i("oom.animation.fallback", ret.spriteSheetUrl);
-                                return ret;
+                                return new Result<>(ret, loadBitmapResult.error);
                             } catch (OutOfMemoryError ignored) {
                                 Teak.log.e("oom.animation.fallback", fallbackAnimationConfig.getString("sprite_sheet"));
                             }
@@ -563,10 +564,10 @@ public class NotificationBuilder {
                         throw err;
                     }
                 }
-                return null;
+                return new Result<>(null);
             }
 
-            private Bitmap loadBitmapWithOOMFallbacks(String key, JSONObject viewConfig) throws OutOfMemoryError {
+            private Result<Bitmap> loadBitmapWithOOMFallbacks(String key, JSONObject viewConfig) throws OutOfMemoryError {
                 try {
                     return loadBitmapFromUriString(viewConfig.getString(key));
                 } catch (OutOfMemoryError e) {
@@ -577,9 +578,9 @@ public class NotificationBuilder {
                     if (oomFallbacks != null) {
                         for (int i = 0; i < oomFallbacks.length(); i++) {
                             try {
-                                final Bitmap ret = loadBitmapFromUriString(oomFallbacks.getString(i));
+                                final Result<Bitmap> loadBitmapResult = loadBitmapFromUriString(oomFallbacks.getString(i));
                                 Teak.log.i("oom.image.fallback", oomFallbacks.getString(i));
-                                return ret;
+                                return loadBitmapResult;
                             } catch (OutOfMemoryError ignored) {
                                 Teak.log.e("oom.animation.fallback", oomFallbacks.getString(i));
                             }
@@ -591,13 +592,14 @@ public class NotificationBuilder {
                         throw err;
                     }
                 }
-                return null;
+                return new Result<>(null);
             }
 
-            private Bitmap loadBitmapFromUriString(String bitmapUriString) throws OutOfMemoryError {
+            private Result<Bitmap> loadBitmapFromUriString(String bitmapUriString) throws OutOfMemoryError {
                 final Uri bitmapUri = Uri.parse(bitmapUriString);
                 Bitmap ret = null;
                 InputStream inputStream = null;
+                Exception exception = null;
                 try {
                     if (bitmapUri.getScheme() != null &&
                         bitmapUri.getScheme().equals("assets")) {
@@ -622,12 +624,8 @@ public class NotificationBuilder {
                         inputStream = conn.getInputStream();
                         ret = BitmapFactory.decodeStream(inputStream);
                     }
-                } catch (SocketException ignored) {
-                } catch (SSLException ignored) {
-                } catch (UnknownHostException ignored) {
-                } catch (FileNotFoundException ignored) {
-                } catch (SocketTimeoutException ignored) {
-                } catch (IOException ignored) {
+                } catch (Exception e) {
+                    exception = e;
                 } finally {
                     if (inputStream != null) {
                         try {
@@ -636,10 +634,10 @@ public class NotificationBuilder {
                         }
                     }
                 }
-                return ret;
+                return new Result<>(ret, exception);
             }
 
-            private boolean isUIType(View viewElement, Class clazz) {
+            private boolean isUIType(View viewElement, Class<?> clazz) {
                 // TODO: Do more error checking to see if this is an AppCompat* class, and don't use InstanceOf
                 return clazz.isInstance(viewElement);
             }

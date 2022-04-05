@@ -1,0 +1,9 @@
+new:
+  - "``FOREGROUND_NOTIFICATION_INTENT`` is broadcast when a Push Notification is recieved while the app is in the foreground."
+  - "``ms_since_first_event`` is now sent with batched requests."
+  - Added ``deviceBoard`` and ``deviceProduct`` to device information.
+  - "``Teak.setLogListener`` for getting callbacks when the Teak SDK would log an event."
+bug:
+  - Suppress some log spam when looking to see if ``NotificationManagerCompat.areNotificationsEnabled`` is supported.
+  - Stopped some of the fine-grain checking for what ``IInAppBillingService`` supports, to prevent possible ANRs.
+  - All threads and executors are now named, so that any ANR/crash report which includes thread names will clearly show what Teak is doing in that ANR/crash.

@@ -1,0 +1,7 @@
+breaking:
+  - "``minSdkVersion`` is now 16"
+  - "``targetSdkVersion`` must now be 28 or higher"
+new:
+  - Teak can now use ``androidx`` or the ``support-v4`` libraries for its dependencies.
+bug:
+  - Can now use the 5.x series of the Facebook SDK.

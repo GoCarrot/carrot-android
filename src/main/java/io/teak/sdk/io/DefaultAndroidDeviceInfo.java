@@ -18,7 +18,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -91,7 +90,7 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
         if (Build.VERSION.SDK_INT < 28) {
             try {
                 @SuppressWarnings("deprecation")
-                final byte[] buildSerial = android.os.Build.SERIAL.getBytes(StandardCharsets.UTF_8);
+                final byte[] buildSerial = android.os.Build.SERIAL.getBytes("utf8");
                 tempDeviceId = UUID.nameUUIDFromBytes(buildSerial).toString();
             } catch (Exception e) {
                 Teak.log.e("getDeviceId", "android.os.Build.SERIAL not available, falling back to Settings.Secure.ANDROID_ID.");
@@ -105,7 +104,7 @@ public class DefaultAndroidDeviceInfo implements IAndroidDeviceInfo {
                 if ("9774d56d682e549c".equals(androidId)) {
                     Teak.log.e("getDeviceId", "Settings.Secure.ANDROID_ID == '9774d56d682e549c', falling back to random UUID stored in preferences.");
                 } else {
-                    tempDeviceId = UUID.nameUUIDFromBytes(androidId.getBytes(StandardCharsets.UTF_8)).toString();
+                    tempDeviceId = UUID.nameUUIDFromBytes(androidId.getBytes("utf8")).toString();
                 }
             } catch (Exception e) {
                 Teak.log.e("getDeviceId", "Error generating device id from Settings.Secure.ANDROID_ID, falling back to random UUID stored in preferences.");

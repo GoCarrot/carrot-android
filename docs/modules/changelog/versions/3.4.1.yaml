@@ -1,0 +1,2 @@
+bug:
+  - Fix mutex lock order to resolve potential deadlock

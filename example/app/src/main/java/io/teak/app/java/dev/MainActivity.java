@@ -159,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
         // These user ids should be unique, no two players should have the same user id.
         final String userId = "native-" + Build.MODEL.toLowerCase();
 
-        final Teak.UserConfiguration userConfiguration = new Teak.UserConfiguration();
+        final Teak.UserConfiguration userConfiguration = new Teak.UserConfiguration("pat@teak.io");
         Teak.identifyUser(userId, userConfiguration);
 
         // Binding the in app billing service

@@ -1,0 +1,4 @@
+new:
+  - The incoming path used to parse a deep link is sent along to the handler in the key ``__incoming_path``
+  - The full url used to parse a deep link is sent along to the handler in the key ``__incoming_url``
+  - "``identifyUser`` now takes email as a parameter"

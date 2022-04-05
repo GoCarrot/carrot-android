@@ -1,0 +1,2 @@
+bug:
+  - Additional listeners for GCM registration key updates, and improvements in handling GCM registrations.
