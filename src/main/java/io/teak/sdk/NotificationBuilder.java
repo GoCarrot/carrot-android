@@ -39,9 +39,9 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -277,6 +277,7 @@ public class NotificationBuilder {
         }
 
         // Intent creation helper
+        final SecureRandom rng = new SecureRandom();
         final ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
         class PendingIntentHelper {
             PendingIntent getTrampolineIntent(String deepLink) {
@@ -327,7 +328,8 @@ public class NotificationBuilder {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     flags |= PendingIntent.FLAG_IMMUTABLE;
                 }
-                return PendingIntent.getActivity(context, pendingIntentRequestCode.getAndIncrement(), launchIntent, flags);
+
+                return PendingIntent.getActivity(context, rng.nextInt(), launchIntent, flags);
             }
         }
         final PendingIntentHelper pendingIntent = new PendingIntentHelper();

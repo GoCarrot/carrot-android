@@ -5,10 +5,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
@@ -197,7 +200,13 @@ public class Log {
             synchronized (commonPayload) {
                 // Add sdk version to common payload, and log init message
                 commonPayload.put("sdk_version", Teak.Version);
-                log(Level.Info, "sdk_init", null);
+
+                // Log ISO8601 format timestamp at init
+                final SimpleDateFormat iso8601 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+                iso8601.setTimeZone(TimeZone.getTimeZone("UTC"));
+                final Map<String, Object> dateTime = new HashMap<>();
+                dateTime.put("at", iso8601.format(new Date()));
+                log(Level.Info, "sdk_init", dateTime);
 
                 // Log full device configuration, then add common payload after
                 log(Level.Info, "configuration.device", configuration.deviceConfiguration.toMap());
