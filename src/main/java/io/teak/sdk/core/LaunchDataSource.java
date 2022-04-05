@@ -98,19 +98,6 @@ public class LaunchDataSource implements Future<Teak.LaunchData> {
         }
     }
 
-    private static Teak.LaunchData launchDataFromUriPair(final Uri uri, final Uri httpsUri) {
-        // If this is a link from a Teak email, then it's a notification launch data
-        if (Teak.NotificationLaunchData.isTeakEmailUri(uri)) {
-            return new Teak.NotificationLaunchData(uri);
-        } else if (Teak.RewardlinkLaunchData.isTeakRewardLink(uri)) {
-            // If it has a 'teak_rewardlink_id' then it's a reward link
-            return new Teak.RewardlinkLaunchData(uri, httpsUri);
-        } else {
-            // Otherwise this is not a Teak attributed launch
-            return new Teak.LaunchData(uri);
-        }
-    }
-
     ////// Create a Future which will contain AttributionData from a resolved link
 
     protected static Future<Teak.LaunchData> futureFromLinkResolution(@NonNull final Future<String> futureForUriOrNull) {
