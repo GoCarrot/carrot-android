@@ -18,10 +18,10 @@ public class Result<T> {
     @Override
     public boolean equals(Object obj) {
         if (obj == null) return false;
-        if (!(obj instanceof Result<?>)) return false;
+        if (!(obj instanceof Result<?>) ) return false;
         if (obj == this) return true;
 
-        final Result<?> result = (Result<?>)obj;
+        final Result<?> result = (Result<?>) obj;
         return result.value == this.value && result.error == this.error;
     }
 
@@ -36,7 +36,7 @@ public class Result<T> {
     @Override
     public String toString() {
         return getClass().getName() + '@' + Integer.toHexString(hashCode()) +
-                "[value=" + (value == null ? "null" : value.toString()) +
-                ", error=" + (error == null ? "null" : error.toString()) + "]";
+            "[value=" + (value == null ? "null" : value.toString()) +
+            ", error=" + (error == null ? "null" : error.toString()) + "]";
     }
 }
