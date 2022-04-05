@@ -638,7 +638,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      */
     @SuppressWarnings("unused")
     public static void registerDeepLink(@NonNull String route, @NonNull String name, @NonNull String description, @NonNull Teak.DeepLink call) {
-        Teak.log.i("deep_link.register", Helpers.mm.h("route", route, "name", name, "description", description, "call", call.toString()));
+        Teak.log.i("deep_link.register", Helpers.mm.h("route", route, "name", name, "description", description));
         io.teak.sdk.core.DeepLink.internalRegisterRoute(route, name, description, call);
     }
 
