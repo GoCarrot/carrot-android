@@ -1,0 +1,4 @@
+bug:
+  - "``io_teak_enable_caching`` has been removed"
+  - "``app_version`` reported to Sentry should be a string, not int"
+  - Sentry reporting Job is now working properly

@@ -1,0 +1,2 @@
+bug:
+  - No longer will call deep links again, or resolve rewards again, when the user id is changed.

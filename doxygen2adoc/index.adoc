@@ -1,0 +1,5 @@
+= Teak Android API
+
+{{#each items}}
+* xref:{{id}}.adoc[{{name}}]
+{{/each}}

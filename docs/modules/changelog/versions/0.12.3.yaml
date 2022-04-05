@@ -1,0 +1,3 @@
+bug:
+  - Use ``layout_centerVertical`` on the app icon to support various background image heights
+  - Prevent back-stack loops from out of app deep-links

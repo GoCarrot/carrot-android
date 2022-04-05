@@ -1,0 +1,3 @@
+bug:
+  - Fix parameter checking logic bug in trackEvent
+  - Fix 'cold start' attribution bug

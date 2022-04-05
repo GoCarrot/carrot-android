@@ -1,0 +1,2 @@
+bug:
+  - Fix singleton FCMPushProvider to allow operation before Teak initialization

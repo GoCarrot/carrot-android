@@ -1,0 +1,3 @@
+new:
+  - Supports Amazon Device Messaging 1.1.0
+  - LaunchedFromLink event

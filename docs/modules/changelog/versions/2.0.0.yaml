@@ -1,0 +1,12 @@
+breaking:
+  - Direct GCM support removed, now using Firebase
+  - Firebase Job Dispatcher is now used for a unified Teak worker:
+    - Removes ``io.teak.sdk.service.RavenService``
+    - Removes ``io.teak.sdk.service.DeviceStateService``
+    - Changes ``io.teak.sdk.service.JobService`` into a Firebase JobDispatcher
+  - "``userHasDisabledNotifications`` -> ``getNotificationStatus``"
+new:
+  - ShortcutBadger @ 50d422d1792b394a5a6cda10cc358ba58436fe29
+  - "``io_teak_enable_caching`` now defaults to ``true``"
+bug:
+  - If an ``OutOfMemoryError`` is thrown during construction of a notification's expanded view the expanded view will simply be omitted instead of not showing the entire notification.

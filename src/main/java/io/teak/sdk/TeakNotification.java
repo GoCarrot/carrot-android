@@ -25,9 +25,9 @@ import io.teak.sdk.json.JSONObject;
 
 /**
  * An app-to-user notification received from Teak via GCM.
- * <br>
+ *
  * The following parameters from the GCM payload are used to create a <code>TeakNotification</code>.
- * <pre>
+ *
  * {@code
  * {
  *   [teakRewardId] : string  - associated Teak Reward Id,
@@ -40,12 +40,11 @@ import io.teak.sdk.json.JSONObject;
  *   [useDecoratedCustomView] : boolean - Use the Android 12 notification style on non-Android 12 devices
  * }
  * }
- * </pre>
  */
 public class TeakNotification implements Unobfuscable {
     /**
      * The {@link Intent} action sent by Teak when a notification has been opened by the user.
-     * <br>
+     *
      * This allows you to take special actions, it is not required that you listen for it.
      */
     @SuppressWarnings("WeakerAccess")
@@ -53,7 +52,7 @@ public class TeakNotification implements Unobfuscable {
 
     /**
      * The {@link Intent} action sent by Teak when a notification has been cleared by the user.
-     * <br>
+     *
      * This allows you to take special actions, it is not required that you listen for it.
      */
     @SuppressWarnings("WeakerAccess")
@@ -114,7 +113,7 @@ public class TeakNotification implements Unobfuscable {
 
         /**
          * Status of this reward.
-         * <br>
+         *
          * One of the following status codes:
          * {@link Reward#UNKNOWN}
          * {@link Reward#GRANT_REWARD}
@@ -124,7 +123,7 @@ public class TeakNotification implements Unobfuscable {
          * {@link Reward#EXCEED_MAX_CLICKS_FOR_DAY}
          * {@link Reward#EXPIRED}
          * {@link Reward#INVALID_POST}
-         * <br>
+         *
          * If status is {@link Reward#GRANT_REWARD}, the 'reward' field will contain the reward that should be granted.
          */
         public int status;
@@ -373,7 +372,7 @@ public class TeakNotification implements Unobfuscable {
     /**
      * Schedules a push notification, to be delivered to other users, for some time in the future.
      *
-     * @param creativeId     The identifier of the notification in the Teak dashboard (will create if not found).
+     * @param creativeId     The identifier of the notification in the Teak dashboard, this must already exist.
      * @param delayInSeconds The delay in seconds from now to send the notification.
      * @param userIds        A list of game-assigned user ids to deliver the notification to.
      * @return The identifiers of the scheduled notifications (see {@link TeakNotification#cancelNotification(String)} or null.
@@ -557,6 +556,11 @@ public class TeakNotification implements Unobfuscable {
         return ret;
     }
 
+    /**
+     * Cancel all scheduled push notifications for the logged in user.
+     *
+     * @return A list containing the ids of all scheduled notifications.
+     */
     @SuppressWarnings("unused")
     public static FutureTask<String> cancelAll() {
         Teak.log.trace("TeakNotification.cancelAll");
@@ -629,7 +633,7 @@ public class TeakNotification implements Unobfuscable {
     }
 
     /**************************************************************************/
-
+    // @cond hide_from_doxygen
     // Version of the push from Teak
     static final int TEAK_NOTIFICATION_V0 = 0;
     int notificationVersion = TEAK_NOTIFICATION_V0;
@@ -767,4 +771,5 @@ public class TeakNotification implements Unobfuscable {
 
         return 0;
     }
+    // @endcond
 }

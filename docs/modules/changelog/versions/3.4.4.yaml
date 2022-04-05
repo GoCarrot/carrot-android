@@ -1,0 +1,2 @@
+bug:
+  - Fix deadlock when a UnitySendMessage call would cause another callback into Teak under certain circumstances

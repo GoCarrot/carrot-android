@@ -1,0 +1,4 @@
+bug:
+  - Fix crash when changing user id due to locking Session A and unlocking Session B
+  - Fix non-delivery of push notifications when app had been killed in the background
+  - Try and catch initialization errors from TeakWrapper and report them
