@@ -134,7 +134,7 @@ You will need two versions of this file. One located in ``values`` and the other
 
 The file in ``values`` should point to a full-color icon, for devices running less than Android 5, and the file in ``values-v21`` should point to a white and transparent PNG for Android 5 and above.
 
-IMPORTANT: To make sure that your white and transparent PNG shows up properly, see xref::pages$notification-icon.adoc[Notification Icons].
+IMPORTANT: To make sure that your white and transparent PNG shows up properly, see xref:page$notification-icon.adoc[Notification Icons].
 
 == Setting Up Deep Linking
 
