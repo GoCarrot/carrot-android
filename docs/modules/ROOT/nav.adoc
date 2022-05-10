@@ -1,11 +1,5 @@
-* Android
-+
---
-include::sdk-reference:android:partial$nav.adoc[]
---
-** API
-+
---
-include::partial$nav.adoc[]
---
-* xref:android-api:changelog:page$changelog.adoc[Changelog]
+* xref:page$integration.adoc[Integration]
+* xref:page$working-with-teak.adoc[Working With Teak]
+* xref:page$notification-icon.adoc[Notification Icons]
+* xref:page$third-party.adoc[Third-Party Code]
+* xref:changelog:page$changelog.adoc[Changelog]

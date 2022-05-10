@@ -1,3 +1,4 @@
+* API
 {{#each items}}
-* * xref:android-api:ROOT:page${{id}}.adoc[{{cut name 'io.teak.sdk.'}}]
+** xref:api:page${{id}}.adoc[{{cut name 'io.teak.sdk.'}}]
 {{/each}}

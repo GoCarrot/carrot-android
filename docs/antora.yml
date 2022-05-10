@@ -1,8 +1,10 @@
-name: android-api
-title: Android API
+name: android
+title: Android SDK
 version: 4.2.0
+start_page: integration.adoc
 nav:
 - modules/ROOT/nav.adoc
+- modules/api/nav.adoc
 
 asciidoc:
   attributes:
