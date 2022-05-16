@@ -199,6 +199,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Tell Teak how it should identify the current user.
+     * 
+     * This will also begin tracking and reporting of a session, and track a daily active user.
      *
      * @note This should be the same way you identify the user in your backend.
      * @deprecated Use {@link Teak#identifyUser(String, UserConfiguration)} instead.
@@ -213,6 +215,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Tell Teak how it should identify the current user.
+     * 
+     * This will also begin tracking and reporting of a session, and track a daily active user.
      *
      * @note This should be the same way you identify the user in your backend.
      * @deprecated Use {@link Teak#identifyUser(String, UserConfiguration)} instead.
@@ -255,6 +259,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Tell Teak how it should identify the current user, with data collection opt-out.
+     * 
+     * This will also begin tracking and reporting of a session, and track a daily active user.
      *
      * @note This should be the same way you identify the user in your backend.
      * @deprecated Use {@link Teak#identifyUser(String, UserConfiguration)} instead.
@@ -271,6 +277,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Tell Teak how it should identify the current user, with data collection opt-out and email.
+     * 
+     * This will also begin tracking and reporting of a session, and track a daily active user.
      *
      * @note This should be the same way you identify the user in your backend.
      * @deprecated Use {@link Teak#identifyUser(String, UserConfiguration)} instead.
@@ -387,6 +395,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Tell Teak how it should identify the current user, with additional options and configuration.
+     * 
+     * This will also begin tracking and reporting of a session, and track a daily active user.
      *
      * @note This should be the same way you identify the user in your backend.
      *
