@@ -1,0 +1,2 @@
+bug:
+  - Reverted change to use ``StandardCharsets.UTF_8`` because that requires API 19.
