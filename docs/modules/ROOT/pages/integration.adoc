@@ -147,8 +147,8 @@ Add the following to the ``<activity>`` section of your Android manifest:
   <action android:name="android.intent.action.VIEW" />
   <category android:name="android.intent.category.DEFAULT" />
   <category android:name="android.intent.category.BROWSABLE" />
-  <data android:scheme="http" android:host="YOUR_SUBDOMAIN.jckpt.me" />
-  <data android:scheme="https" android:host="YOUR_SUBDOMAIN.jckpt.me" />
+  <data android:scheme="http" android:host="YOUR_SHORTLINK_DOMAIN.jckpt.me" />
+  <data android:scheme="https" android:host="YOUR_SHORTLINK_DOMAIN.jckpt.me" />
 </intent-filter>
 <intent-filter>
   <action android:name="android.intent.action.VIEW" />
@@ -158,9 +158,9 @@ Add the following to the ``<activity>`` section of your Android manifest:
 </intent-filter>
 ----
 
-NOTE: Replace ``YOUR_TEAK_APP_ID`` with your Teak App Id and ``YOUR_SUBDOMAIN`` with your Teak Subdomain.
+NOTE: Replace ``YOUR_TEAK_APP_ID`` with your Teak App Id and ``YOUR_SHORTLINK_DOMAIN`` with your Teak ShortLink Domain.
 
-Your Teak App Id and Teak Subdomain can be found in the Settings for your app on the Teak dashboard.
+Your Teak App Id and Teak Shortlink Domain can be found in the Settings for your app on the Teak dashboard.
 
 === What This Does
 
