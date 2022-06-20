@@ -26,7 +26,7 @@ import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONException;
 import io.teak.sdk.json.JSONObject;
 
-public class Helpers {
+public class Helpers implements Unobfuscable {
     @SuppressWarnings("deprecation")
     @SuppressLint("PackageManagerGetSignatures")
     public static Signature[] getAppSignatures(@NonNull Context appContext) {
