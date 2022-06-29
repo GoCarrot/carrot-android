@@ -6,7 +6,7 @@ Teak SDK 5 will contain many changes, and break many things. We do not have a fi
 
 Starting in SDK 4.1.0 there is a way to preview SDK 5 behaviors.
 
-To enable this, simply add the ``io_teak_sdk5_behaviors`` boolean key to your ``AndroidManifest.xml``, and set it to ``true``.
+To enable this, add the ``io_teak_sdk5_behaviors`` boolean key to your ``AndroidManifest.xml``, and set it to ``true``.
 
 .AndroidManifest.xml
 [source,xml]
@@ -21,4 +21,4 @@ To enable this, simply add the ``io_teak_sdk5_behaviors`` boolean key to your ``
 
 == SDK 5 Behavior Preview Functionality
 
-- Will no longer automatically collect Facebook Access Token, instead you must pass the Facebook User Id to ``Teak#identifyUser``
+- Will no longer automatically collect Facebook Access Token, instead you must pass the Facebook User Id to <<Teak.identifyUser(String,UserConfiguration)>>
