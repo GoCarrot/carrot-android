@@ -1,5 +1,6 @@
 * xref:page$integration.adoc[Integration]
 * xref:page$working-with-teak.adoc[Working With Teak]
 * xref:page$notification-icon.adoc[Notification Icons]
+* xref:page$sdk5.adoc[SDK5 Preview]
 * xref:page$third-party.adoc[Third-Party Code]
 * xref:changelog:page$changelog.adoc[Changelog]
