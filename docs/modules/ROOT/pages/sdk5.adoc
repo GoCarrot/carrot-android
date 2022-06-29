@@ -22,3 +22,4 @@ To enable this, add the ``io_teak_sdk5_behaviors`` boolean key to your ``Android
 == SDK 5 Behavior Preview Functionality
 
 - Will no longer automatically collect Facebook Access Token, instead you must pass the Facebook User Id to <<Teak.identifyUser(String,UserConfiguration)>>
+- The Teak server will no longer automatically collect email addresses from Facebook, instead you must pass the email address to <<Teak.identifyUser(String,UserConfiguration)>>
