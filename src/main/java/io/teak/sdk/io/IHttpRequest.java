@@ -23,5 +23,5 @@ public interface IHttpRequest {
     }
 
     @Nullable
-    Response synchronousRequest(URL url, String requestBody, String sig) throws IOException;
+    Response synchronousRequest(final URL url, final String method, final String requestBody, final String sig) throws IOException;
 }
