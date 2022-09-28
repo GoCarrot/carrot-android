@@ -430,6 +430,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     /**
      * Delete any email address associated with the current user.
      */
+    @SuppressWarnings("unused")
     public static void deleteEmail() {
         Teak.log.trace("Teak.deleteEmail");
 
