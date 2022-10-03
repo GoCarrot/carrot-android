@@ -26,7 +26,7 @@ Teak already handles these changes for you, provided you are using Teak SDK 4.0.
 
 Teak will use the new notification style iff:
 
-- Your app is targeting API 12+, and your app is running on an API 12+ device
+- Your app is targeting API 31+ (Android 12), and your app is running on an Android 12 (API 31+) or newer device
 - The Teak Server tells the Teak SDK to display the notification using the new style
 
 Google's full description of these changes is located here: https://developer.android.com/about/versions/12/behavior-changes-12#custom-notifications
