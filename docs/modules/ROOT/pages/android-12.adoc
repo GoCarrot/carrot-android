@@ -1,0 +1,32 @@
+= Android 12
+
+NOTE: Teak takes care of all of this for you, this document just exists to make you aware of the changes and why they've happened.
+
+Android 12 makes some changes to push notification layouts that impact Teak.
+
+Collapsed notifications will always have the app icon next to the notification, and expanded notifications will always have a header that contains the app icon and app title, as well as the time the notification was received.
+
+== Notification Layouts
+
+Collapsed notifications will now always have the app icon next to the notification content.
+
+.Collapsed Notification
+image::custom-collapsed-view.png[Collapsed View, 50%, 50%]
+
+Expanded notifications now always have a header above the notification content.
+
+.Expanded Notification
+image::custom-expanded-view.png[Expanded View, 50%, 50%]
+
+These images are from the Android 12 documentation.
+
+== What You Need to Do
+
+Teak already handles these changes for you, provided you are using Teak SDK 4.0.2 or later, depending on the circumstances.
+
+Teak will use the new notification style iff:
+
+- Your app is targeting API 12+, and your app is running on an API 12+ device
+- The Teak Server tells the Teak SDK to display the notification using the new style
+
+Google's full description of these changes is located here: https://developer.android.com/about/versions/12/behavior-changes-12#custom-notifications
