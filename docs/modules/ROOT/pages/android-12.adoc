@@ -1,32 +1,35 @@
 = Android 12
 
-NOTE: Teak takes care of all of this for you, this document just exists to make you aware of the changes and why they've happened.
-
-Android 12 makes some changes to push notification layouts that impact Teak.
-
-Collapsed notifications will always have the app icon next to the notification, and expanded notifications will always have a header that contains the app icon and app title, as well as the time the notification was received.
+NOTE: All version of the Teak SDK after 4.0.2 support targeting API Level 31 (Android 12).
 
 == Notification Layouts
 
-Collapsed notifications will now always have the app icon next to the notification content.
+Android 12 introduces a new required notification layout, which changes how notifications are displayed.
 
-.Collapsed Notification
-image::custom-collapsed-view.png[Collapsed View, 50%, 50%]
+With Teak SDK 4.0.2 (and later), these changes will happen automatically if your app is targeting API Level 31+ (Android 12) _and_ the device is running Android 12 or newer.
 
-Expanded notifications now always have a header above the notification content.
+Examples of both text, and image notifications are below, including a sizing grid image for your reference.
 
-.Expanded Notification
-image::custom-expanded-view.png[Expanded View, 50%, 50%]
+=== Collapsed Notifications
 
-These images are from the Android 12 documentation.
+Collapsed notifications now have a banner which contains the app icon, app title, and time the notification was received.
 
-== What You Need to Do
+.Collapsed Notifications in Android 12
+image::android-12-collapsed.png[Collapsed View in Android 12]
 
-Teak already handles these changes for you, provided you are using Teak SDK 4.0.2 or later, depending on the circumstances.
+Prior to Android 12, the same notifications would look like this:
 
-Teak will use the new notification style iff:
+.Collapsed Notifications in Android 10
+image::android-10-collapsed.png[Collapsed View in Android 10]
 
-- Your app is targeting API 31+ (Android 12), and your app is running on an Android 12 (API 31+) or newer device
-- The Teak Server tells the Teak SDK to display the notification using the new style
+=== Expanded Notifications
 
-Google's full description of these changes is located here: https://developer.android.com/about/versions/12/behavior-changes-12#custom-notifications
+Expanded notifications now have a banner which contains the app icon, app title, and time the notification was received.
+
+.Expanded Notifications in Android 12
+image::android-12-expanded.png[Expanded View in Android 12]
+
+Prior to Android 12, the same notifications would look like this:
+
+.Expanded Notifications in Android 10
+image::android-10-expanded.png[Expanded View in Android 10]
