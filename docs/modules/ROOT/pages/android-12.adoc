@@ -1,12 +1,12 @@
 = Android 12
 
-NOTE: All version of the Teak SDK after 4.0.2 support targeting API Level 31 (Android 12).
+NOTE: All version of the Teak SDK after 4.1.14 support targeting API Level 31 (Android 12).
 
 == Notification Layouts
 
 Android 12 introduces a new required notification layout, which changes how notifications are displayed.
 
-With Teak SDK 4.0.2 (and later), these changes will happen automatically if your app is targeting API Level 31+ (Android 12) _and_ the device is running Android 12 or newer.
+With Teak SDK 4.1.14 (and later), these changes will happen automatically if your app is targeting API Level 31+ (Android 12) _and_ the device is running Android 12 or newer.
 
 Examples of both text, and image notifications are below, including a sizing grid image for your reference.
 
