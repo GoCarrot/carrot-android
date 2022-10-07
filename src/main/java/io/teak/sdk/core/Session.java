@@ -516,7 +516,10 @@ public class Session {
                             Session.this.additionalData = response.optJSONObject("additional_data");
                             if (Session.this.additionalData != null) {
                                 Teak.log.i("additional_data.received", Session.this.additionalData.toString());
-                                whenUserIdIsReadyPost(new Teak.AdditionalDataEvent(Session.this.additionalData));
+
+                                @SuppressWarnings("deprecation")
+                                final Teak.AdditionalDataEvent event = new Teak.AdditionalDataEvent(Session.this.additionalData);
+                                whenUserIdIsReadyPost(event);
                             }
 
                             // Opt out state

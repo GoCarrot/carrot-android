@@ -221,6 +221,7 @@ public class TeakCore {
 
                             // Close notification tray if we are not on Android 12+
                             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                                @SuppressWarnings("deprecation")
                                 final Intent it = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
                                 context.sendBroadcast(it);
                             }

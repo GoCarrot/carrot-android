@@ -28,6 +28,7 @@ public class TeakInterface implements Unobfuscable {
     }
 
     @Subscribe
+    @SuppressWarnings("deprecation")
     public void onAdditionalData(Teak.AdditionalDataEvent event) {
         String eventData = "{}";
         try {
