@@ -111,11 +111,11 @@ public class DefaultObjectFactory implements IObjectFactory {
             }
         } else {
             try {
-                // If the 'getSkus' method is present, then this is (probably) Google Play Billing v4
-                // so use that instead.
-                Class<?> gpbv4 = Class.forName("com.android.billingclient.api.Purchase");
-                gpbv4.getMethod("getSkus");
-                clazz = Class.forName("io.teak.sdk.store.GooglePlayBillingV4");
+                // If the 'BillingClient.queryProductDetailsAsync' method is present
+                // this is Google Play Billing v5 so use that instead.
+                Class<?> gpbv5 = Class.forName("com.android.billingclient.api.BillingClient");
+                gpbv5.getMethod("queryProductDetailsAsync");
+                clazz = Class.forName("io.teak.sdk.store.GooglePlayBillingV5");
             } catch (NoSuchMethodException ignored) {
 
             } catch (Exception e) {
@@ -124,8 +124,8 @@ public class DefaultObjectFactory implements IObjectFactory {
 
             if (clazz == null) {
                 try {
-                    // Default to Billing v3
-                    clazz = Class.forName("io.teak.sdk.store.GooglePlayBillingV3");
+                    // Default to Billing v4
+                    clazz = Class.forName("io.teak.sdk.store.GooglePlayBillingV4");
                 } catch (Exception e) {
                     Teak.log.exception(e);
                 }

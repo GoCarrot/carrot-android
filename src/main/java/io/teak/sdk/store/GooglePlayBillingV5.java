@@ -5,10 +5,11 @@ import android.content.Context;
 import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.BillingClientStateListener;
 import com.android.billingclient.api.BillingResult;
+import com.android.billingclient.api.ProductDetails;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.PurchasesUpdatedListener;
+import com.android.billingclient.api.QueryProductDetailsParams;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -22,16 +23,15 @@ import io.teak.sdk.TeakEvent;
 import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.event.PurchaseEvent;
 
-@SuppressWarnings("deprecation")
-public class GooglePlayBillingV4 implements Unobfuscable, IStore, PurchasesUpdatedListener, BillingClientStateListener {
+public class GooglePlayBillingV5 implements Unobfuscable, IStore, PurchasesUpdatedListener, BillingClientStateListener {
     private final BillingClient billingClient;
 
-    public GooglePlayBillingV4(Context context) {
+    public GooglePlayBillingV5(Context context) {
         this.billingClient = BillingClient.newBuilder(context)
-                                 .setListener(this)
-                                 .enablePendingPurchases()
-                                 .build();
-        Teak.log.i("billing.google.v4", "Google Play Billing v4 registered.");
+                .setListener(this)
+                .enablePendingPurchases()
+                .build();
+        Teak.log.i("billing.google.v5", "Google Play Billing v5 registered.");
 
         this.billingClient.startConnection(this);
     }
@@ -52,7 +52,7 @@ public class GooglePlayBillingV4 implements Unobfuscable, IStore, PurchasesUpdat
 
         try {
             for (Purchase purchase : purchaseList) {
-                final ArrayList<String> skusInPurchase = purchase.getSkus();
+                final List<String> skusInPurchase = purchase.getProducts();
                 for (String purchaseSku : skusInPurchase) {
                     final Map<String, Object> payload = new HashMap<>();
                     payload.put("purchase_token", purchase.getPurchaseToken());
@@ -60,22 +60,25 @@ public class GooglePlayBillingV4 implements Unobfuscable, IStore, PurchasesUpdat
                     payload.put("product_id", purchaseSku);
                     payload.put("order_id", purchase.getOrderId());
 
-                    final com.android.billingclient.api.SkuDetailsParams params = com.android.billingclient.api.SkuDetailsParams
-                                                        .newBuilder()
-                                                        .setType(BillingClient.SkuType.INAPP)
-                                                        .setSkusList(Collections.singletonList(purchaseSku))
-                                                        .build();
+                    final QueryProductDetailsParams params = QueryProductDetailsParams
+                            .newBuilder()
+                            .setProductList(Collections.singletonList(QueryProductDetailsParams.Product.newBuilder()
+                                    .setProductId(purchaseSku)
+                                    .setProductType(BillingClient.ProductType.SUBS)
+                                    .build()))
+                            .build();
 
-                    this.billingClient.querySkuDetailsAsync(params, (ignored, skuDetailsList) -> {
+                    this.billingClient.queryProductDetailsAsync(params, (ignored, productDetailsList) -> {
                         try {
-                            if (skuDetailsList != null && !skuDetailsList.isEmpty()) {
-                                final com.android.billingclient.api.SkuDetails skuDetails = skuDetailsList.get(0);
-                                payload.put("price_amount_micros", skuDetails.getPriceAmountMicros());
-                                payload.put("price_currency_code", skuDetails.getPriceCurrencyCode());
+                            if (!productDetailsList.isEmpty()) {
+                                final ProductDetails productDetails = productDetailsList.get(0);
+                                final ProductDetails.OneTimePurchaseOfferDetails otpDetails = productDetails.getOneTimePurchaseOfferDetails();
+                                payload.put("price_amount_micros", otpDetails.getPriceAmountMicros());
+                                payload.put("price_currency_code", otpDetails.getPriceCurrencyCode());
 
-                                Teak.log.i("billing.google.v4.sku", "SKU Details retrieved.", Helpers.mm.h(purchaseSku, skuDetails.getPriceAmountMicros()));
+                                Teak.log.i("billing.google.v5.sku", "SKU Details retrieved.", Helpers.mm.h(purchaseSku, otpDetails.getPriceAmountMicros()));
                             } else {
-                                Teak.log.e("billing.google.v4.sku", "SKU Details query failed.");
+                                Teak.log.e("billing.google.v5.sku", "SKU Details query failed.");
                             }
 
                             TeakEvent.postEvent(new PurchaseEvent(payload));
