@@ -588,7 +588,8 @@ public class Session {
 
     private void dispatchUserEvent() {
         this.stateLock.lock();
-        final Teak.UserDataEvent event = new Teak.UserDataEvent(this.additionalData, this.optOutEmail, this.optOutPush);
+        final TeakConfiguration teakConfiguration = TeakConfiguration.get();
+        final Teak.UserDataEvent event = new Teak.UserDataEvent(this.additionalData, this.optOutEmail, this.optOutPush, teakConfiguration.deviceConfiguration.pushRegistration);
         this.stateLock.unlock();
 
         whenUserIdIsReadyPost(event);

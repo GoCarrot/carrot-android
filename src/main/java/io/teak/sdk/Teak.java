@@ -1172,17 +1172,27 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          */
         public final boolean optOutPush;
 
+        /**
+         * Push registration information for this user, if push is enabled.
+         */
+        public final Map<String, String> pushRegistration;
+
         /// @cond hide_from_doxygen
         /**
          * Constructor.
-         * @param additionalData User-specific data received from the server.
-         * @param optOutEmail    True if the user has opted out of email.
-         * @param optOutPush     True if the user has opted out of push notifications.
+         * @param additionalData   User-specific data received from the server.
+         * @param optOutEmail      True if the user has opted out of email.
+         * @param optOutPush       True if the user has opted out of push notifications.
+         * @param pushRegistration Push registration dictionary
          */
-        public UserDataEvent(final JSONObject additionalData, final boolean optOutEmail, final boolean optOutPush) {
+        public UserDataEvent(final JSONObject additionalData,
+                             final boolean optOutEmail,
+                             final boolean optOutPush,
+                             final Map<String, String> pushRegistration;) {
             this.additionalData = additionalData == null ? new JSONObject() : additionalData;
             this.optOutEmail = optOutEmail;
             this.optOutPush = optOutPush;
+            this.pushRegistration = pushRegistration;
         }
 
         public JSONObject toJSON() {
@@ -1190,6 +1200,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             json.put("additionalData", this.additionalData);
             json.put("optOutEmail", this.optOutEmail);
             json.put("optOutPush", this.optOutPush);
+            json.put("pushRegistration", this.pushRegistration);
             return json;
         }
         /// @endcond
