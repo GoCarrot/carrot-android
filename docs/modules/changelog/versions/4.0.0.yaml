@@ -16,5 +16,6 @@ new:
   - Now supports out-of-memory fallbacks for all notifiation images.
   - Added ``teakScheduleId`` and ``teakCreativeId`` to ``NotificationEvent``
   - Added ``teakScheduleId`` and ``teakCreativeId`` to ``RewardClaimEvent``
+  - Now automatically tracks purchases from Google Play Billing v3
 bug:
   - Fixed a bug where links created on the Teak Dashboard could only link to the teakXXXXX:// scheme.
