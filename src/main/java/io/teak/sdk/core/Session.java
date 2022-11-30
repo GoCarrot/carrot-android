@@ -115,8 +115,9 @@ public class Session {
     private String facebookAccessToken;
     private String facebookId;
 
-    private boolean optOutEmail = false;
-    private boolean optOutPush = false;
+    private ChannelStatus channelStatusEmail = ChannelStatus.Unknown;
+    private ChannelStatus channelStatusPush = ChannelStatus.Unknown;
+    private ChannelStatus channelStatusSms = ChannelStatus.Unknown;
     private JSONObject additionalData = null;
 
     public UserProfile userProfile;
@@ -522,9 +523,13 @@ public class Session {
                                 whenUserIdIsReadyPost(event);
                             }
 
-                            // Opt out state
-                            Session.this.optOutEmail = response.optBoolean("opt_out_email", false);
-                            Session.this.optOutPush = response.optBoolean("opt_out_push", false);
+                            // Opt out state - LEGACY
+                            if (response.has("opt_out_states")) {
+                                final JSONObject optOutStates = response.getJSONObject("opt_out_states");
+                                Session.this.channelStatusEmail = new ChannelStatus(optOutStates.getJSONObject("email"));
+                                Session.this.channelStatusPush = new ChannelStatus(optOutStates.getJSONObject("push"));
+                                Session.this.channelStatusSms = new ChannelStatus(optOutStates.getJSONObject("sms"));
+                            }
 
                             // Send user data event
                             Session.this.dispatchUserEvent();
@@ -589,7 +594,7 @@ public class Session {
     private void dispatchUserEvent() {
         this.stateLock.lock();
         final TeakConfiguration teakConfiguration = TeakConfiguration.get();
-        final Teak.UserDataEvent event = new Teak.UserDataEvent(this.additionalData, this.optOutEmail, this.optOutPush, teakConfiguration.deviceConfiguration.pushRegistration);
+        final Teak.UserDataEvent event = new Teak.UserDataEvent(this.additionalData, this.channelStatusEmail, this.channelStatusPush, this.channelStatusSms, teakConfiguration.deviceConfiguration.pushRegistration);
         this.stateLock.unlock();
 
         whenUserIdIsReadyPost(event);
@@ -1048,8 +1053,10 @@ public class Session {
                     try {
                         JSONObject response = new JSONObject(responseBody);
                         Session.this.stateLock.lock();
-                        Session.this.optOutEmail = response.optBoolean("email", Session.this.optOutEmail);
-                        Session.this.optOutPush = response.optBoolean("push", Session.this.optOutPush);
+// TODO: This is all going to be replaced with a call to /me/channel_state in a future commit
+//                        Session.this.optOutEmail = response.optBoolean("email", Session.this.optOutEmail);
+//                        Session.this.optOutPush = response.optBoolean("push", Session.this.optOutPush);
+//                        Session.this.optOutSms = response.optBoolean("sms", Session.this.optOutSms);
                         Session.this.stateLock.unlock();
                         Session.this.dispatchUserEvent();
                     } catch (Exception ignored) {

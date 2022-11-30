@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.teak.sdk.configuration.AppConfiguration;
+import io.teak.sdk.core.ChannelStatus;
 import io.teak.sdk.core.Executors;
 import io.teak.sdk.core.InstrumentableReentrantLock;
 import io.teak.sdk.core.TeakCore;
@@ -1163,14 +1164,19 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         public final JSONObject additionalData;
 
         /**
-         * True if the user is opted out of Teak email campaigns.
+         * Status of the Teak email channel for this user.
          */
-        public final boolean optOutEmail;
+        public final ChannelStatus emailStatus;
 
         /**
-         * True if the user is opted out of Teak push campaigns.
+         * Status of the Teak push notification channel for this user.
          */
-        public final boolean optOutPush;
+        public final ChannelStatus pushStatus;
+
+        /**
+         * Status of the Teak SMS channel for this user.
+         */
+        public final ChannelStatus smsStatus;
 
         /**
          * Push registration information for this user, if push is enabled.
@@ -1181,25 +1187,29 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         /**
          * Constructor.
          * @param additionalData   User-specific data received from the server.
-         * @param optOutEmail      True if the user has opted out of email.
-         * @param optOutPush       True if the user has opted out of push notifications.
+         * @param email            Email opt out state.
+         * @param push             Push opt out state.
+         * @param sms              SMS opt out state.
          * @param pushRegistration Push registration dictionary
          */
         public UserDataEvent(final JSONObject additionalData,
-                             final boolean optOutEmail,
-                             final boolean optOutPush,
+                             final ChannelStatus email,
+                             final ChannelStatus push,
+                             final ChannelStatus sms,
                              final Map<String, String> pushRegistration) {
             this.additionalData = additionalData == null ? new JSONObject() : additionalData;
-            this.optOutEmail = optOutEmail;
-            this.optOutPush = optOutPush;
+            this.emailStatus = email;
+            this.pushStatus = push;
+            this.smsStatus = sms;
             this.pushRegistration = pushRegistration;
         }
 
         public JSONObject toJSON() {
             final JSONObject json = new JSONObject();
             json.put("additionalData", this.additionalData);
-            json.put("optOutEmail", this.optOutEmail);
-            json.put("optOutPush", this.optOutPush);
+            json.put("emailStatus", this.emailStatus.toJSON());
+            json.put("pushStatus", this.pushStatus.toJSON());
+            json.put("smsStatus", this.smsStatus.toJSON());
             json.put("pushRegistration", this.pushRegistration);
             return json;
         }
