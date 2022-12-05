@@ -25,8 +25,9 @@ public class ChannelStatus {
             if (OptOut.name.equalsIgnoreCase(string)) return OptOut;
             if (Available.name.equalsIgnoreCase(string)) return Available;
             if (OptIn.name.equalsIgnoreCase(string)) return OptIn;
+            if (Absent.name.equalsIgnoreCase(string)) return Absent;
 
-            return Absent;
+            return Unknown;
         }
     }
 
