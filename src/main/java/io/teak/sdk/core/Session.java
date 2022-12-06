@@ -523,7 +523,7 @@ public class Session {
                                 whenUserIdIsReadyPost(event);
                             }
 
-                            // Opt out state - LEGACY
+                            // Opt out state
                             if (response.has("opt_out_states")) {
                                 final JSONObject optOutStates = response.getJSONObject("opt_out_states");
                                 Session.this.channelStatusEmail = new ChannelStatus(optOutStates.getJSONObject("email"));
