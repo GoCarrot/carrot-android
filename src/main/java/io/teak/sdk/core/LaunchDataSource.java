@@ -29,7 +29,6 @@ import io.teak.sdk.referrer.InstallReferrerFuture;
 public class LaunchDataSource implements Future<Teak.LaunchData> {
     public static final LaunchDataSource Unattributed = new LaunchDataSource(Helpers.futureForValue(Teak.LaunchData.Unattributed));
 
-    public boolean isProcessed = false;
     private final Future<Teak.LaunchData> launchDataFuture;
 
     private LaunchDataSource(@NonNull final Future<Teak.LaunchData> launchDataFuture) {
