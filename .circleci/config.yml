@@ -2,6 +2,7 @@ version: 2.1
 
 orbs:
   teak: teak/sdk-utils@0.7.0
+  buildomat: teak/buildomat@0.1
 
 jobs:
   build:
@@ -86,6 +87,7 @@ jobs:
       - attach_workspace:
           at: .
       - sentry_upload_proguard
+      - buildomat/aws-oidc-assume
       - run:
           name: Upload SDK to S3
           command: |
@@ -110,6 +112,7 @@ jobs:
       - attach_workspace:
           at: .
       - sentry_upload_proguard
+      - buildomat/aws-oidc-assume
       - run:
           name: Upload SDK to S3
           command: |
@@ -153,6 +156,9 @@ workflows:
             tags:
               only: /.*/
       - deploy_versioned:
+          context:
+            - AWS-OIDC-Role
+            - Sentry
           requires:
             - build
           filters:
@@ -170,6 +176,9 @@ workflows:
             tags:
               only: /.*/
       - deploy_latest:
+          context:
+            - AWS-OIDC-Role
+            - Sentry
           requires:
             - hold
           filters:
