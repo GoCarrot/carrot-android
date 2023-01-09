@@ -222,4 +222,4 @@ commands:
           name: Upload ProGuard Mappings to Sentry
           command: |
             sentry-cli --version
-            sentry-cli upload-proguard --require-one << parameters.proguard_mapping >> << parameters.sentry_cli_args >>
+            sentry-cli upload-proguard -p "${CIRCLE_PROJECT_REPONAME}-sdk" --require-one << parameters.proguard_mapping >> << parameters.sentry_cli_args >>
