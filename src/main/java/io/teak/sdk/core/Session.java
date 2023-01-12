@@ -527,9 +527,9 @@ public class Session {
                             // Opt out state
                             if (response.has("opt_out_states")) {
                                 final JSONObject optOutStates = response.getJSONObject("opt_out_states");
-                                Session.this.channelStatusEmail = new ChannelStatus(optOutStates.getJSONObject("email"));
-                                Session.this.channelStatusPush = new ChannelStatus(optOutStates.getJSONObject("push"));
-                                Session.this.channelStatusSms = new ChannelStatus(optOutStates.getJSONObject("sms"));
+                                Session.this.channelStatusEmail = ChannelStatus.fromJSON(optOutStates.optJSONObject("email"));
+                                Session.this.channelStatusPush = ChannelStatus.fromJSON(optOutStates.optJSONObject("push"));
+                                Session.this.channelStatusSms = ChannelStatus.fromJSON(optOutStates.optJSONObject("sms"));
                             }
 
                             // Send user data event

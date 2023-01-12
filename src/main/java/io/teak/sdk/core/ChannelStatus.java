@@ -36,13 +36,13 @@ public class ChannelStatus {
 
     public static final ChannelStatus Unknown = new ChannelStatus("unknown", false);
 
-    public ChannelStatus(final String state, final boolean deliveryFault) {
+    protected ChannelStatus(final String state, final boolean deliveryFault) {
         this.state = State.fromString(state);
         this.deliveryFault = deliveryFault;
     }
 
-    public ChannelStatus(final JSONObject jsonObject) {
-        this(jsonObject.getString("state"), jsonObject.optBoolean("delivery_fault", false));
+    public static ChannelStatus fromJSON(final JSONObject jsonObject) {
+        return new ChannelStatus(jsonObject.optString("state", "unknown"), jsonObject.optBoolean("delivery_fault", false));
     }
 
     public JSONObject toJSON() {
