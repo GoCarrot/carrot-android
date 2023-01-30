@@ -21,7 +21,7 @@ public class ChannelStatus {
             this.name = name;
         }
 
-        static State fromString(final String string) {
+        public static State fromString(final String string) {
             if (OptOut.name.equalsIgnoreCase(string)) return OptOut;
             if (Available.name.equalsIgnoreCase(string)) return Available;
             if (OptIn.name.equalsIgnoreCase(string)) return OptIn;
