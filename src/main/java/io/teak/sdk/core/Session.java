@@ -1034,37 +1034,6 @@ public class Session {
     public String userId() {
         return userId;
     }
-
-    public void setOptOutEmail(final boolean optOut) {
-        final HashMap<String, Object> payload = new HashMap<>();
-        payload.put("email", optOut);
-        this.setOptOut(payload);
-    }
-
-    public void setOptOutPush(final boolean optOut) {
-        final HashMap<String, Object> payload = new HashMap<>();
-        payload.put("push", optOut);
-        this.setOptOut(payload);
-    }
-
-    private void setOptOut(final HashMap<String, Object> payload) {
-        this.executionQueue.execute(() -> {
-            Request.submit("/me/opt_out.json", payload, Session.this,
-                (responseCode, responseBody) -> {
-                    try {
-                        JSONObject response = new JSONObject(responseBody);
-                        Session.this.stateLock.lock();
-// TODO: This is all going to be replaced with a call to /me/channel_state in a future commit
-//                        Session.this.optOutEmail = response.optBoolean("email", Session.this.optOutEmail);
-//                        Session.this.optOutPush = response.optBoolean("push", Session.this.optOutPush);
-//                        Session.this.optOutSms = response.optBoolean("sms", Session.this.optOutSms);
-                        Session.this.stateLock.unlock();
-                        Session.this.dispatchUserEvent();
-                    } catch (Exception ignored) {
-                    }
-                });
-        });
-    }
     // endregion
 
     // region Current Session

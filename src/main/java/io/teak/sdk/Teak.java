@@ -1339,38 +1339,6 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         }
     }
 
-    ///// Opt Out Management
-
-    /**
-     * Set the opt out state for email.
-     *
-     * If the user wants to opt out of receiving Teak email campaigns, set this to true.
-     * @param optOut true if the user wants to opt out of Teak email campaigns; false otherwise.
-     */
-    @SuppressWarnings("unused")
-    public static void setOptOutEmail(final boolean optOut) {
-        Teak.log.trace("Teak.setOptOutEmail", "optOut", optOut);
-
-        if (Instance != null) {
-            Instance.setOptOutEmail(optOut);
-        }
-    }
-
-    /**
-     * Set the opt out state for push notifications.
-     *
-     * If the user wants to opt out of receiving Teak push notification campaigns, set this to true.
-     * @param optOut true if the user wants to opt out of Teak push notification campaigns; false otherwise.
-     */
-    @SuppressWarnings("unused")
-    public static void setOptOutPush(final boolean optOut) {
-        Teak.log.trace("Teak.setOptOutPush", "optOut", optOut);
-
-        if (Instance != null) {
-            Instance.setOptOutPush(optOut);
-        }
-    }
-
     /// @cond hide_from_doxygen
     ///// Configuration
 
