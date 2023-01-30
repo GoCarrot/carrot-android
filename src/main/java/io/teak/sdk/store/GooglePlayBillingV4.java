@@ -61,10 +61,10 @@ public class GooglePlayBillingV4 implements Unobfuscable, IStore, PurchasesUpdat
                     payload.put("order_id", purchase.getOrderId());
 
                     final com.android.billingclient.api.SkuDetailsParams params = com.android.billingclient.api.SkuDetailsParams
-                                                        .newBuilder()
-                                                        .setType(BillingClient.SkuType.INAPP)
-                                                        .setSkusList(Collections.singletonList(purchaseSku))
-                                                        .build();
+                                                                                      .newBuilder()
+                                                                                      .setType(BillingClient.SkuType.INAPP)
+                                                                                      .setSkusList(Collections.singletonList(purchaseSku))
+                                                                                      .build();
 
                     this.billingClient.querySkuDetailsAsync(params, (ignored, skuDetailsList) -> {
                         try {

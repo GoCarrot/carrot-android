@@ -1193,10 +1193,10 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          * @param pushRegistration Push registration dictionary
          */
         public UserDataEvent(final JSONObject additionalData,
-                             final ChannelStatus email,
-                             final ChannelStatus push,
-                             final ChannelStatus sms,
-                             final Map<String, String> pushRegistration) {
+            final ChannelStatus email,
+            final ChannelStatus push,
+            final ChannelStatus sms,
+            final Map<String, String> pushRegistration) {
             this.additionalData = additionalData == null ? new JSONObject() : additionalData;
             this.emailStatus = email;
             this.pushStatus = push;

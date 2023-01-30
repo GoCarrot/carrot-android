@@ -28,9 +28,9 @@ public class GooglePlayBillingV5 implements Unobfuscable, IStore, PurchasesUpdat
 
     public GooglePlayBillingV5(Context context) {
         this.billingClient = BillingClient.newBuilder(context)
-                .setListener(this)
-                .enablePendingPurchases()
-                .build();
+                                 .setListener(this)
+                                 .enablePendingPurchases()
+                                 .build();
         Teak.log.i("billing.google.v5", "Google Play Billing v5 registered.");
 
         this.billingClient.startConnection(this);
@@ -61,12 +61,12 @@ public class GooglePlayBillingV5 implements Unobfuscable, IStore, PurchasesUpdat
                     payload.put("order_id", purchase.getOrderId());
 
                     final QueryProductDetailsParams params = QueryProductDetailsParams
-                            .newBuilder()
-                            .setProductList(Collections.singletonList(QueryProductDetailsParams.Product.newBuilder()
-                                    .setProductId(purchaseSku)
-                                    .setProductType(BillingClient.ProductType.SUBS)
-                                    .build()))
-                            .build();
+                                                                 .newBuilder()
+                                                                 .setProductList(Collections.singletonList(QueryProductDetailsParams.Product.newBuilder()
+                                                                                                               .setProductId(purchaseSku)
+                                                                                                               .setProductType(BillingClient.ProductType.SUBS)
+                                                                                                               .build()))
+                                                                 .build();
 
                     this.billingClient.queryProductDetailsAsync(params, (ignored, productDetailsList) -> {
                         try {
