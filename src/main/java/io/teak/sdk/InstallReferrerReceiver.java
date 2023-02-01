@@ -8,7 +8,8 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
-import io.teak.sdk.Helpers.mm;
+
+import java.util.Collections;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -20,7 +21,7 @@ public class InstallReferrerReceiver extends BroadcastReceiver implements Unobfu
     public void onReceive(Context context, Intent intent) {
         String installReferrer = intent.getStringExtra("referrer");
         if (installReferrer != null && !installReferrer.isEmpty()) {
-            Teak.log.i("install_referrer", mm.h("referrer", installReferrer));
+            Teak.log.i("install_referrer", Collections.singletonMap("referrer", installReferrer));
             installReferrerQueue.offer(installReferrer);
         }
 

@@ -7,6 +7,8 @@ import android.os.Bundle;
 
 import com.amazon.device.messaging.ADM;
 
+import java.util.Collections;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.teak.sdk.io.DefaultAndroidDeviceInfo;
@@ -153,7 +155,7 @@ public class DefaultObjectFactory implements IObjectFactory {
                 ADMPushProvider admPushProvider = new ADMPushProvider();
                 admPushProvider.initialize(context);
                 ret = admPushProvider;
-                Teak.log.i("factory.pushProvider", Helpers.mm.h("type", "adm"));
+                Teak.log.i("factory.pushProvider", Collections.singletonMap("type", "adm"));
             } else {
                 Teak.log.i("factory.pushProvider", "ADM is not supported in this context.");
             }
@@ -166,7 +168,7 @@ public class DefaultObjectFactory implements IObjectFactory {
                 Class.forName("com.google.android.gms.common.GooglePlayServicesUtil");
                 try {
                     ret = FCMPushProvider.initialize(context);
-                    Teak.log.i("factory.pushProvider", Helpers.mm.h("type", "fcm"));
+                    Teak.log.i("factory.pushProvider", Collections.singletonMap("type", "fcm"));
                 } catch (IntegrationChecker.MissingDependencyException e) {
                     pushCreationException = e;
                 }
@@ -175,7 +177,7 @@ public class DefaultObjectFactory implements IObjectFactory {
         }
 
         if (ret == null) {
-            Teak.log.e("factory.pushProvider", Helpers.mm.h("type", "none"));
+            Teak.log.e("factory.pushProvider", Collections.singletonMap("type", "none"));
             if (pushCreationException != null) {
                 throw pushCreationException;
             }

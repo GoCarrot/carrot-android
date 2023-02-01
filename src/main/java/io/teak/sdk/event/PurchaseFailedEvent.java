@@ -2,6 +2,8 @@ package io.teak.sdk.event;
 
 import androidx.annotation.Nullable;
 import io.teak.sdk.TeakEvent;
+
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,6 +15,6 @@ public class PurchaseFailedEvent extends TeakEvent {
     public PurchaseFailedEvent(int errorCode, @Nullable Map<String, Object> extras) {
         super(Type);
         this.errorCode = errorCode;
-        this.extras = extras == null ? new HashMap<>() : extras;
+        this.extras = extras == null ? Collections.emptyMap() : extras;
     }
 }

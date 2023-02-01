@@ -710,12 +710,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          * @return Map used by Teak internally.
          */
         public Map<String, Object> toSessionAttributionMap() {
-            final HashMap<String, Object> map = new HashMap<>();
-
-            if (this.launchLink != null) {
-                map.put("launch_link", this.launchLink.toString());
-            }
-            return map;
+            return this.launchLink != null ? Collections.singletonMap("launch_link", this.launchLink.toString())
+                                                                      : Collections.emptyMap();
         }
 
         /**
@@ -725,9 +721,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          * @return A Map representation of this object.
          */
         public Map<String, Object> toMap() {
-            final HashMap<String, Object> map = new HashMap<>();
-            map.put("launch_link", this.launchLink != null ? this.launchLink.toString() : null);
-            return map;
+            return Collections.singletonMap("launch_link", this.launchLink != null ? this.launchLink.toString() : null);
         }
         /// @endcond
     }

@@ -13,6 +13,7 @@ import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
@@ -1076,9 +1077,7 @@ public class Session {
     // endregion
 
     private Map<String, Object> toMap() {
-        HashMap<String, Object> map = new HashMap<>();
-        map.put("startDate", this.startDate.getTime() / 1000);
-        return map;
+        return Collections.singletonMap("startDate", this.startDate.getTime() / 1000);
     }
 
     @Override

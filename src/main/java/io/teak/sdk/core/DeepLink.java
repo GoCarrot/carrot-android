@@ -5,6 +5,7 @@ import android.net.Uri;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -178,7 +179,7 @@ public static boolean processUri(URI uri) {
         }
     }
 
-    Teak.log.i("deep_link.ignored", Helpers.mm.h("url", uri.toString()));
+    Teak.log.i("deep_link.ignored", Collections.singletonMap("url", uri.toString()));
     return false;
 }
 

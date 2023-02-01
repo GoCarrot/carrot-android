@@ -40,8 +40,10 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.security.SecureRandom;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -72,11 +74,7 @@ public class NotificationBuilder {
         } catch (AssetLoadException e) {
             throw e;
         } catch (Exception e) {
-            HashMap<String, Object> extras = new HashMap<>();
-            if (teakNotificaton.teakCreativeName != null) {
-                extras.put("teakCreativeName", teakNotificaton.teakCreativeName);
-            }
-            Teak.log.exception(e, extras);
+            Teak.log.exception(e, teakNotificaton.teakCreativeName != null ? Collections.singletonMap("teakCreativeName", teakNotificaton.teakCreativeName) : Collections.emptyMap());
 
             // TODO: Report to the 'callback' URL on the push when/if we implement that
             return null;
@@ -677,10 +675,7 @@ public class NotificationBuilder {
                     bigContentView.setViewVisibility(R.id("small_view_container"), View.GONE);
                 }
             } catch (Exception e) {
-                HashMap<String, Object> extras = new HashMap<>();
-                if (teakNotificaton.teakCreativeName != null) {
-                    extras.put("teakCreativeName", teakNotificaton.teakCreativeName);
-                }
+                final Map<String, Object> extras = teakNotificaton.teakCreativeName != null ? Collections.singletonMap("teakCreativeName", teakNotificaton.teakCreativeName) : Collections.emptyMap();
                 Teak.log.exception(e, extras);
             }
         }

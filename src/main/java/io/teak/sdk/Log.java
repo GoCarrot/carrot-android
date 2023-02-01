@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
@@ -87,9 +88,7 @@ public class Log {
     }
 
     public void e(@NonNull String eventType, @NonNull String message) {
-        Map<String, Object> eventData = new HashMap<>();
-        eventData.put("message", message);
-        this.log(Level.Error, eventType, eventData);
+        this.log(Level.Error, eventType, Collections.singletonMap("message", message));
     }
 
     public void e(@NonNull String eventType, @NonNull Map<String, Object> eventData) {
@@ -102,9 +101,7 @@ public class Log {
     }
 
     public void i(@NonNull String eventType, @NonNull String message) {
-        Map<String, Object> eventData = new HashMap<>();
-        eventData.put("message", message);
-        this.log(Level.Info, eventType, eventData);
+        this.log(Level.Info, eventType, Collections.singletonMap("message", message));
     }
 
     public void i(@NonNull String eventType, @NonNull String message, @NonNull Map<String, Object> eventData) {
@@ -117,9 +114,7 @@ public class Log {
     }
 
     public void w(@NonNull String eventType, @NonNull String message) {
-        Map<String, Object> eventData = new HashMap<>();
-        eventData.put("message", message);
-        this.log(Level.Warn, eventType, eventData);
+        this.log(Level.Warn, eventType, Collections.singletonMap("message", message));
     }
 
     public void w(@NonNull String eventType, @NonNull String message, @NonNull Map<String, Object> eventData) {
@@ -204,8 +199,7 @@ public class Log {
                 // Log ISO8601 format timestamp at init
                 final SimpleDateFormat iso8601 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
                 iso8601.setTimeZone(TimeZone.getTimeZone("UTC"));
-                final Map<String, Object> dateTime = new HashMap<>();
-                dateTime.put("at", iso8601.format(new Date()));
+                final Map<String, Object> dateTime = Collections.singletonMap("at", iso8601.format(new Date()));
                 log(Level.Info, "sdk_init", dateTime);
 
                 // Log full device configuration, then add common payload after

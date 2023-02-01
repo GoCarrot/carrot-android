@@ -76,7 +76,7 @@ public class GooglePlayBillingV5 implements Unobfuscable, IStore, PurchasesUpdat
                                 payload.put("price_amount_micros", otpDetails.getPriceAmountMicros());
                                 payload.put("price_currency_code", otpDetails.getPriceCurrencyCode());
 
-                                Teak.log.i("billing.google.v5.sku", "SKU Details retrieved.", Helpers.mm.h(purchaseSku, otpDetails.getPriceAmountMicros()));
+                                Teak.log.i("billing.google.v5.sku", "SKU Details retrieved.", Collections.singletonMap(purchaseSku, otpDetails.getPriceAmountMicros()));
                             } else {
                                 Teak.log.e("billing.google.v5.sku", "SKU Details query failed.");
                             }
