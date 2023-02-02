@@ -441,6 +441,86 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     }
 
     /**
+     * Teak Marketing Channel.
+     */
+    public static class Channel {
+
+        /**
+         * Marketing channel type
+         */
+        public enum Type {
+            Push("push"),       ///< Push Notification channel
+            Email("email"),     ///< Email channel
+            SMS("sms"),         ///< SMS channel
+            Invalid("invalid"); ///< Invalid channel, will be ignored if used
+
+            //public static final Integer length = 1 + Invalid.ordinal();
+
+            public final String name;
+
+            Type(String name) {
+                this.name = name;
+            }
+
+            /// @cond hide_from_doxygen
+            public static Type fromString(final String string) {
+                if (Push.name.equalsIgnoreCase(string)) return Push;
+                if (Email.name.equalsIgnoreCase(string)) return Email;
+                if (SMS.name.equalsIgnoreCase(string)) return SMS;
+
+                return Invalid;
+            }
+            /// @endcond
+        }
+
+        /**
+         * State of marketing channel
+         */
+        public enum State {
+            OptOut("opt_out"),
+            Available("available"),
+            OptIn("opt_in"),
+            Absent("absent"),
+            Unknown("unknown");
+
+            //public static final Integer length = 1 + Absent.ordinal();
+
+            public final String name;
+
+            State(String name) {
+                this.name = name;
+            }
+
+            public static State fromString(final String string) {
+                if (OptOut.name.equalsIgnoreCase(string)) return OptOut;
+                if (Available.name.equalsIgnoreCase(string)) return Available;
+                if (OptIn.name.equalsIgnoreCase(string)) return OptIn;
+                if (Absent.name.equalsIgnoreCase(string)) return Absent;
+
+                return Unknown;
+            }
+        }
+
+        /**
+         * Class used for {@link Teak#setChannelState(String, String)} replies.
+         */
+        public static class Reply {
+            public final boolean error;
+            public final State state;
+            public final Type channel;
+            public final Map<String, String[]> errors;
+
+            public Reply(boolean error, State state, Type channel, Map<String, String[]> errors) {
+                this.error = error;
+                this.state = state;
+                this.channel = channel;
+                this.errors = errors;
+            }
+
+            public static final Reply NoInstance = new Reply(true, State.Unknown, Type.Invalid, Collections.singletonMap("sdk", new String[] {"Instance not ready"}));
+        }
+    }
+    /**
      * Track an arbitrary event in Teak.
      *
      * @param actionId         The identifier for the action, e.g. 'complete'.
