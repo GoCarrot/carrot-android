@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -520,6 +521,35 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             public static final Reply NoInstance = new Reply(true, State.Unknown, Type.Invalid, Collections.singletonMap("sdk", new String[] {"Instance not ready"}));
         }
     }
+
+    /**
+     * Set the state of a Teak Marketing Channel.
+     *
+     * @param channel The channel being modified.
+     * @param state   The state for the channel.
+     */
+    @SuppressWarnings("unused")
+    public static Future<Channel.Reply> setChannelState(final Channel.Type channel, final Channel.State state) {
+        Teak.log.trace("Teak.setChannelState", "channel", channel.name, "state", state.name);
+
+        if (Instance != null) {
+            return Instance.setChannelState(channel, state);
+        }
+
+        return Helpers.futureForValue(Channel.Reply.NoInstance);
+    }
+
+    /**
+     * Set the state of a Teak Marketing Channel, string version.
+     *
+     * @param channelName The name of the channel being modified.
+     * @param stateName   The name of the state for the channel.
+     */
+    @SuppressWarnings("unused")
+    public static Future<Channel.Reply> setChannelState(final String channelName, final String stateName) {
+        return setChannelState(Channel.Type.fromString(channelName), Channel.State.fromString(stateName));
+    }
+
     /**
      * Track an arbitrary event in Teak.
      *

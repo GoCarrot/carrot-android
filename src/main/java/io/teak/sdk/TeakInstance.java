@@ -17,19 +17,25 @@ import java.security.InvalidParameterException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 
 import androidx.annotation.NonNull;
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.Session;
 import io.teak.sdk.core.TeakCore;
+import io.teak.sdk.core.ThreadFactory;
 import io.teak.sdk.event.LifecycleEvent;
 import io.teak.sdk.event.LogoutEvent;
 import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.event.UserIdEvent;
 import io.teak.sdk.facebook.AccessTokenTracker;
+import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.push.PushState;
 import io.teak.sdk.raven.Raven;
@@ -145,6 +151,65 @@ public class TeakInstance implements Unobfuscable {
         Session.whenUserIdIsReadyRun(session -> {
             Request.submit(null, "DELETE", "/me/email.json", Collections.emptyMap(), session, null);
         });
+    }
+
+    ///// channels
+
+    public Future<Teak.Channel.Reply> setChannelState(final Teak.Channel.Type channel, final Teak.Channel.State state) {
+        final ArrayBlockingQueue<Teak.Channel.Reply> q = new ArrayBlockingQueue<>(1);
+        final FutureTask<Teak.Channel.Reply> ret = new FutureTask<>(() -> {
+            try {
+                return q.take();
+            } catch (InterruptedException e) {
+                Teak.log.exception(e);
+            }
+            return null;
+        });
+        ThreadFactory.autoStart(ret);
+
+        Session.whenUserIdIsReadyRun((session) -> {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("channel", channel.name);
+            payload.put("state", state.name);
+            Request.submit(null, "POST", "/me/channel_state.json", payload,
+                    session, (int responseCode, String responseBody) -> {
+                try {
+                    final JSONObject response = new JSONObject((responseBody == null || responseBody.trim().isEmpty()) ? "{}" : responseBody);
+
+                    final boolean error = "ok".equalsIgnoreCase(response.optString("status", "error"));
+                    final Teak.Channel.State replyState = Teak.Channel.State.fromString(response.optString("state", "unknown"));
+                    final Teak.Channel.Type replyType = Teak.Channel.Type.fromString(response.optString("channel", "unknown"));
+
+                    // May get re-assigned
+                    Map<String, String[]> replyErrors = Collections.emptyMap();
+
+                    // If there are errors, marshal them into the correct format
+                    final JSONObject errorsJson = response.optJSONObject("errors");
+                    if (errorsJson != null) {
+                        for (Iterator<String> it = errorsJson.keys(); it.hasNext(); ) {
+                            final String key = it.next();
+                            final JSONArray errorStrings = response.optJSONArray(key);
+                            if (errorStrings != null) {
+                                final String[] array = new String[errorStrings.length()];
+                                int index = 0;
+                                for (Object value : errorStrings) {
+                                    array[index] = (String) value;
+                                    index++;
+                                }
+                                replyErrors.put(key, array);
+                            }
+                        }
+                    }
+
+                    // Offer to queue
+                    q.offer(new Teak.Channel.Reply(error, replyState, replyType, replyErrors));
+                } catch (Exception e) {
+                    Teak.log.exception(e);
+                    q.offer(new Teak.Channel.Reply(true, Teak.Channel.State.Unknown, channel, Collections.singletonMap("sdk", e.toString().split("\n"))));
+                }
+            });
+        });
+        return ret;
     }
 
     ///// trackEvent
