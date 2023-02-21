@@ -450,10 +450,12 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          * Marketing channel type
          */
         public enum Type {
-            Push("push"),       ///< Push Notification channel
-            Email("email"),     ///< Email channel
-            SMS("sms"),         ///< SMS channel
-            Invalid("invalid"); ///< Invalid channel, will be ignored if used
+            MobilePush("push"),             ///< Push notification channel for mobile devices
+            DesktopPush("desktop_push"),    ///< Push notification channel for desktop devices
+            PlatformPush("platform_push"),  ///< Push notification channel for the current platform
+            Email("email"),                 ///< Email channel
+            SMS("sms"),                     ///< SMS channel
+            Invalid("invalid");             ///< Invalid channel, will be ignored if used
 
             //public static final Integer length = 1 + Invalid.ordinal();
 
@@ -465,7 +467,9 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
             /// @cond hide_from_doxygen
             public static Type fromString(final String string) {
-                if (Push.name.equalsIgnoreCase(string)) return Push;
+                if (MobilePush.name.equalsIgnoreCase(string)) return MobilePush;
+                if (DesktopPush.name.equalsIgnoreCase(string)) return DesktopPush;
+                if (PlatformPush.name.equalsIgnoreCase(string)) return PlatformPush;
                 if (Email.name.equalsIgnoreCase(string)) return Email;
                 if (SMS.name.equalsIgnoreCase(string)) return SMS;
 

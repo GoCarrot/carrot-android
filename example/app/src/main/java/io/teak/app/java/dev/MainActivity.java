@@ -342,7 +342,7 @@ public class MainActivity extends AppCompatActivity {
 //        Teak.log.exception(new Raven.ReportTestException(Teak.SDKVersion));
 //        Teak.incrementEvent("debug_increment", null, null, 5);
 //        android.os.Process.sendSignal(android.os.Process.myPid(), android.os.Process.SIGNAL_QUIT);
-        Teak.setChannelState(Teak.Channel.Type.Push, Teak.Channel.State.Available);
+        Teak.setChannelState(Teak.Channel.Type.PlatformPush, Teak.Channel.State.Available);
     }
 
     public void integrationTestTimeout(String timeout) {
