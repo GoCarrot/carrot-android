@@ -989,7 +989,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
         @Override
         public Map<String, Object> toSessionAttributionMap() {
-            final Map<String, Object> map = super.toSessionAttributionMap();
+            final Map<String, Object> map = new HashMap(super.toSessionAttributionMap());
 
             // Put the URI and any query parameters that start with 'teak_' into 'deep_link'
             if (this.deepLink != null) {
@@ -1017,7 +1017,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          */
         @Override
         public Map<String, Object> toMap() {
-            final Map<String, Object> map = super.toMap();
+            final Map<String, Object> map = new HashMap(super.toMap());
             map.put("teakScheduleName", this.scheduleName);
             map.put("teakScheduleId", this.scheduleId);
             map.put("teakCreativeName", this.creativeName);
@@ -1088,7 +1088,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
         @Override
         public Map<String, Object> toMap() {
-            final Map<String, Object> map = super.toMap();
+            final Map<String, Object> map = new HashMap(super.toMap());
             map.put("teakNotifId", this.sourceSendId);
             return map;
         }
@@ -1168,7 +1168,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         }
 
         public JSONObject toJSON() {
-            final Map<String, Object> map = this.launchData.toMap();
+            final Map<String, Object> map = new HashMap(this.launchData.toMap());
             if (this.reward != null && this.reward.json != null) {
                 map.putAll(this.reward.json.toMap());
             }
