@@ -37,6 +37,7 @@ import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.DeepLinksReadyEvent;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.io.AndroidResources;
+import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONException;
 import io.teak.sdk.json.JSONObject;
 
@@ -520,6 +521,15 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
                 this.state = state;
                 this.channel = channel;
                 this.errors = errors;
+            }
+
+            public JSONObject toJSON() {
+                final JSONObject json = new JSONObject();
+                json.put("state", this.state.name);
+                json.put("channel", this.channel.name);
+                json.put("error", this.error);
+                json.put("errors", this.errors);
+                return json;
             }
 
             public static final Reply NoInstance = new Reply(true, State.Unknown, Type.Invalid, Collections.singletonMap("sdk", new String[] {"Instance not ready"}));
