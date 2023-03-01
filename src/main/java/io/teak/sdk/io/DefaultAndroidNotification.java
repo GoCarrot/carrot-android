@@ -16,7 +16,6 @@ import org.greenrobot.eventbus.Subscribe;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Random;
 
 import androidx.annotation.NonNull;
@@ -105,7 +104,7 @@ public class DefaultAndroidNotification implements IAndroidNotification {
 
     @Override
     public void cancelNotification(@NonNull Context context, int platformId) {
-        Teak.log.i("notification.cancel", Collections.singletonMap("platformId", platformId));
+        Teak.log.i("notification.cancel", Helpers.mm.h("platformId", platformId));
 
         this.notificationManager.cancel(NOTIFICATION_TAG, platformId);
 

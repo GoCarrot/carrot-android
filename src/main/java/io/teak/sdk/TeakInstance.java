@@ -138,7 +138,7 @@ public class TeakInstance implements Unobfuscable {
     ///// logout
 
     void logout() {
-        Teak.log.i("logout", Collections.emptyMap());
+        Teak.log.i("logout", new HashMap<>());
 
         if (this.isEnabled()) {
             TeakEvent.postEvent(new LogoutEvent());
@@ -149,7 +149,7 @@ public class TeakInstance implements Unobfuscable {
 
     void deleteEmail() {
         Session.whenUserIdIsReadyRun(session -> {
-            Request.submit(null, "DELETE", "/me/email.json", Collections.emptyMap(), session, null);
+            Request.submit(null, "DELETE", "/me/email.json", new HashMap<>(), session, null);
         });
     }
 
@@ -391,7 +391,7 @@ public class TeakInstance implements Unobfuscable {
         @Override
         public void onActivityCreated(Activity activity, Bundle bundle) {
             if (activity.hashCode() == activityHashCode && setState(State.Created)) {
-                Teak.log.i("lifecycle", Collections.singletonMap("callback", "onActivityCreated"));
+                Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityCreated"));
 
                 final Context context = activity.getApplicationContext();
 
@@ -427,7 +427,7 @@ public class TeakInstance implements Unobfuscable {
         @Override
         public void onActivityResumed(Activity activity) {
             if (activity.hashCode() == activityHashCode && setState(State.Active)) {
-                Teak.log.i("lifecycle", Collections.singletonMap("callback", "onActivityResumed"));
+                Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityResumed"));
                 Intent intent = activity.getIntent();
                 if (intent == null) {
                     intent = new Intent();
@@ -461,7 +461,7 @@ public class TeakInstance implements Unobfuscable {
         @Override
         public void onActivityPaused(Activity activity) {
             if (activity.hashCode() == activityHashCode && setState(State.Paused)) {
-                Teak.log.i("lifecycle", Collections.singletonMap("callback", "onActivityPaused"));
+                Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityPaused"));
                 Intent intent = activity.getIntent();
                 if (intent == null) {
                     intent = new Intent();
@@ -473,7 +473,7 @@ public class TeakInstance implements Unobfuscable {
         @Override
         public void onActivityDestroyed(Activity activity) {
             if (activity.hashCode() == activityHashCode && setState(State.Destroyed)) {
-                Teak.log.i("lifecycle", Collections.singletonMap("callback", "onActivityDestroyed"));
+                Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityDestroyed"));
 
                 if (TeakInstance.this.facebookAccessTokenTracker != null) {
                     TeakInstance.this.facebookAccessTokenTracker.stopTracking();

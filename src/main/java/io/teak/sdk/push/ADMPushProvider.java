@@ -14,7 +14,6 @@ import com.amazon.device.messaging.development.ADMManifest;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.regex.Matcher;
@@ -86,7 +85,7 @@ public class ADMPushProvider implements IPushProvider, Unobfuscable {
     ///// Helper
 
     private static void sendRegistrationEvent(@NonNull String registrationId) {
-        Teak.log.i("amazon.adm.registered", Collections.singletonMap("admId", registrationId));
+        Teak.log.i("amazon.adm.registered", Helpers.mm.h("admId", registrationId));
         if (Teak.isEnabled()) {
             TeakEvent.postEvent(new PushRegistrationEvent("adm_push_key", registrationId, null));
         }
@@ -102,7 +101,7 @@ public class ADMPushProvider implements IPushProvider, Unobfuscable {
 
         // "external" is used to chain FCM receivers and so ADM output should match, even though
         // we do not support chaining ADM receivers.
-        Teak.log.i("amazon.adm.received", Collections.singletonMap("external", false));
+        Teak.log.i("amazon.adm.received", Helpers.mm.h("external", false));
 
         if (intent.hasExtra("teakAdm")) {
             JSONObject teakAdm = new JSONObject(intent.getStringExtra("teakAdm"));
@@ -201,7 +200,7 @@ public class ADMPushProvider implements IPushProvider, Unobfuscable {
     }
 
     private static void onUnregistered(String s) {
-        Teak.log.i("amazon.adm.unregistered", Collections.singletonMap("admId", s));
+        Teak.log.i("amazon.adm.unregistered", Helpers.mm.h("admId", s));
         if (Teak.isEnabled()) {
             TeakEvent.postEvent(new PushRegistrationEvent(PushRegistrationEvent.UnRegistered));
         }

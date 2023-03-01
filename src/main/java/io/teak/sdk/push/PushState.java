@@ -254,6 +254,8 @@ public Map<String, Object> toMap() {
         genericStateChain.add(entry.toMap());
     }
 
-    return Collections.singletonMap("push_state_chain", genericStateChain);
+    HashMap<String, Object> ret = new HashMap<>();
+    ret.put("push_state_chain", genericStateChain);
+    return ret;
 }
 }

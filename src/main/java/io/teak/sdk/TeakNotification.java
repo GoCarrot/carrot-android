@@ -5,7 +5,6 @@ import android.os.Bundle;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -202,12 +201,13 @@ public class TeakNotification implements Unobfuscable {
             ThreadFactory.autoStart(ret);
 
             Session.whenUserIdIsReadyRun(session -> {
-                Teak.log.i("reward.claim.request", Collections.singletonMap("teakRewardId", teakRewardId));
+                Teak.log.i("reward.claim.request", mm.h("teakRewardId", teakRewardId));
 
                 try {
                     // https://rewards.gocarrot.com/<<teak_reward_id>>/clicks?clicking_user_id=<<your_user_id>>
                     //String requestBody = "clicking_user_id=" + URLEncoder.encode(session.userId(), "UTF-8");
-                    Map<String, Object> payload = Collections.singletonMap("clicking_user_id", session.userId());
+                    HashMap<String, Object> payload = new HashMap<>();
+                    payload.put("clicking_user_id", session.userId());
 
                     Request.submit("rewards.gocarrot.com", "/" + teakRewardId + "/clicks", payload, session,
                         (responseCode, responseBody) -> {
@@ -277,7 +277,8 @@ public class TeakNotification implements Unobfuscable {
         if (Teak.Instance == null || !Teak.Instance.isEnabled()) {
             Teak.log.e("notification.schedule.disabled", "Teak is disabled, ignoring scheduleNotification().");
 
-            final Map<String, Object> ret = Collections.singletonMap("status", "error.teak.disabled");
+            final Map<String, Object> ret = new HashMap<>();
+            ret.put("status", "error.teak.disabled");
 
             return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
@@ -285,7 +286,8 @@ public class TeakNotification implements Unobfuscable {
         if (creativeId == null || creativeId.isEmpty()) {
             Teak.log.e("notification.schedule.error", "creativeId cannot be null or empty");
 
-            final Map<String, Object> ret = Collections.singletonMap("status", "error.parameter.creativeId");
+            final Map<String, Object> ret = new HashMap<>();
+            ret.put("status", "error.parameter.creativeId");
 
             return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
@@ -293,7 +295,8 @@ public class TeakNotification implements Unobfuscable {
         if (defaultMessage == null || defaultMessage.isEmpty()) {
             Teak.log.e("notification.schedule.error", "defaultMessage cannot be null or empty");
 
-            final Map<String, Object> ret = Collections.singletonMap("status", "error.parameter.defaultMessage");
+            final Map<String, Object> ret = new HashMap<>();
+            ret.put("status", "error.parameter.defaultMessage");
 
             return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
@@ -301,7 +304,8 @@ public class TeakNotification implements Unobfuscable {
         if (delayInSeconds > 2630000 /* one month in seconds */ || delayInSeconds < 0) {
             Teak.log.e("notification.schedule.error", "delayInSeconds can not be negative, or greater than one month");
 
-            final Map<String, Object> ret = Collections.singletonMap("status", "error.parameter.delayInSeconds");
+            final Map<String, Object> ret = new HashMap<>();
+            ret.put("status", "error.parameter.delayInSeconds");
 
             return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
@@ -313,7 +317,8 @@ public class TeakNotification implements Unobfuscable {
             } catch (InterruptedException e) {
                 Teak.log.exception(e);
 
-                final Map<String, Object> err = Collections.singletonMap("status", "error.exception.exception");
+                final Map<String, Object> err = new HashMap<>();
+                err.put("status", "error.exception.exception");
                 return new JSONObject(err).toString();
             }
         });
@@ -334,10 +339,10 @@ public class TeakNotification implements Unobfuscable {
                             contents.put("status", response.getString("status"));
 
                             if (response.getString("status").equals("ok")) {
-                                Teak.log.i("notification.schedule", "Scheduled notification.", Collections.singletonMap("notification", response.getJSONObject("event").get("id")));
+                                Teak.log.i("notification.schedule", "Scheduled notification.", mm.h("notification", response.getJSONObject("event").get("id")));
                                 contents.put("data", response.getJSONObject("event").get("id").toString());
                             } else {
-                                Teak.log.e("notification.schedule.error", "Error scheduling notification.", Collections.singletonMap("response", response.toString()));
+                                Teak.log.e("notification.schedule.error", "Error scheduling notification.", mm.h("response", response.toString()));
                             }
                         } else {
                             Teak.log.e("notification.schedule.error", "JSON does not contain 'status' element.");
@@ -347,12 +352,14 @@ public class TeakNotification implements Unobfuscable {
                         q.offer(new JSONObject(contents).toString());
                     } catch (JSONException e) {
                         Teak.log.e("notification.schedule.error", "Error parsing JSON: " + e.toString());
-                        final Map<String, Object> contents = Collections.singletonMap("status", "error.internal");
+                        final Map<String, Object> contents = new HashMap<>();
+                        contents.put("status", "error.internal");
                         q.offer(new JSONObject(contents).toString());
                     } catch (Exception e) {
-                        Teak.log.exception(e, Collections.singletonMap("teakCreativeId", creativeId));
+                        Teak.log.exception(e, mm.h("teakCreativeId", creativeId));
 
-                        final Map<String, Object> contents = Collections.singletonMap("status", "error.internal");
+                        final Map<String, Object> contents = new HashMap<>();
+                        contents.put("status", "error.internal");
                         q.offer(new JSONObject(contents).toString());
                     }
 
@@ -377,7 +384,8 @@ public class TeakNotification implements Unobfuscable {
         if (Teak.Instance == null || !Teak.Instance.isEnabled()) {
             Teak.log.e("notification.schedule.disabled", "Teak is disabled, ignoring scheduleNotification().");
 
-            final Map<String, Object> ret = Collections.singletonMap("status", "error.teak.disabled");
+            final Map<String, Object> ret = new HashMap<>();
+            ret.put("status", "error.teak.disabled");
 
             return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
@@ -385,7 +393,8 @@ public class TeakNotification implements Unobfuscable {
         if (creativeId == null || creativeId.isEmpty()) {
             Teak.log.e("notification.schedule.error", "creativeId cannot be null or empty");
 
-            final Map<String, Object> ret = Collections.singletonMap("status", "error.parameter.creativeId");
+            final Map<String, Object> ret = new HashMap<>();
+            ret.put("status", "error.parameter.creativeId");
 
             return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
@@ -393,7 +402,8 @@ public class TeakNotification implements Unobfuscable {
         if (userIds == null || userIds.length < 1) {
             Teak.log.e("notification.schedule.error", "userIds cannot be null or empty");
 
-            final Map<String, Object> ret = Collections.singletonMap("status", "error.parameter.userIds");
+            final Map<String, Object> ret = new HashMap<>();
+            ret.put("status", "error.parameter.userIds");
 
             return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
@@ -401,7 +411,8 @@ public class TeakNotification implements Unobfuscable {
         if (delayInSeconds > 2630000 /* one month in seconds */ || delayInSeconds < 0) {
             Teak.log.e("notification.schedule.error", "delayInSeconds can not be negative, or greater than one month");
 
-            final Map<String, Object> ret = Collections.singletonMap("status", "error.parameter.delayInSeconds");
+            final Map<String, Object> ret = new HashMap<>();
+            ret.put("status", "error.parameter.delayInSeconds");
 
             return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
@@ -413,7 +424,8 @@ public class TeakNotification implements Unobfuscable {
             } catch (InterruptedException e) {
                 Teak.log.exception(e);
 
-                final Map<String, Object> err = Collections.singletonMap("status", "error.exception.exception");
+                final Map<String, Object> err = new HashMap<>();
+                err.put("status", "error.exception.exception");
                 return new JSONObject(err).toString();
             }
         });
@@ -434,10 +446,10 @@ public class TeakNotification implements Unobfuscable {
                             contents.put("status", response.getString("status"));
 
                             if (response.getString("status").equals("ok")) {
-                                Teak.log.i("notification.schedule", "Scheduled notification.", Collections.singletonMap("notification", response.getJSONArray("ids").toString()));
+                                Teak.log.i("notification.schedule", "Scheduled notification.", mm.h("notification", response.getJSONArray("ids").toString()));
                                 contents.put("data", response.getJSONArray("ids").toString());
                             } else {
-                                Teak.log.e("notification.schedule.error", "Error scheduling notification.", Collections.singletonMap("response", response.toString()));
+                                Teak.log.e("notification.schedule.error", "Error scheduling notification.", mm.h("response", response.toString()));
                             }
                         } else {
                             Teak.log.e("notification.schedule.error", "JSON does not contain 'status' element.");
@@ -447,12 +459,14 @@ public class TeakNotification implements Unobfuscable {
                         q.offer(new JSONObject(contents).toString());
                     } catch (JSONException e) {
                         Teak.log.e("notification.schedule.error", "Error parsing JSON: " + e.toString());
-                        final Map<String, Object> contents = Collections.singletonMap("status", "error.internal");
+                        final Map<String, Object> contents = new HashMap<>();
+                        contents.put("status", "error.internal");
                         q.offer(new JSONObject(contents).toString());
                     } catch (Exception e) {
-                        Teak.log.exception(e, Collections.singletonMap("teakCreativeId", creativeId));
+                        Teak.log.exception(e, mm.h("teakCreativeId", creativeId));
 
-                        final Map<String, Object> contents = Collections.singletonMap("status", "error.internal");
+                        final Map<String, Object> contents = new HashMap<>();
+                        contents.put("status", "error.internal");
                         q.offer(new JSONObject(contents).toString());
                     }
 
@@ -475,7 +489,8 @@ public class TeakNotification implements Unobfuscable {
         if (Teak.Instance == null || !Teak.Instance.isEnabled()) {
             Teak.log.e("notification.cancel.disabled", "Teak is disabled, ignoring cancelNotification().");
 
-            final Map<String, Object> ret = Collections.singletonMap("status", "error.teak.disabled");
+            final Map<String, Object> ret = new HashMap<>();
+            ret.put("status", "error.teak.disabled");
 
             return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
@@ -483,7 +498,8 @@ public class TeakNotification implements Unobfuscable {
         if (scheduleId == null || scheduleId.isEmpty()) {
             Teak.log.e("notification.cancel.error", "scheduleId cannot be null or empty");
 
-            final Map<String, Object> ret = Collections.singletonMap("status", "error.parameter.creativeId");
+            final Map<String, Object> ret = new HashMap<>();
+            ret.put("status", "error.parameter.creativeId");
 
             return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
@@ -499,7 +515,8 @@ public class TeakNotification implements Unobfuscable {
         });
 
         Session.whenUserIdIsOrWasReadyRun(session -> {
-            final Map<String, Object> payload = Collections.singletonMap("id", scheduleId);
+            HashMap<String, Object> payload = new HashMap<>();
+            payload.put("id", scheduleId);
 
             Request.submit("/me/cancel_local_notify.json", payload, session,
                 (responseCode, responseBody) -> {
@@ -511,10 +528,10 @@ public class TeakNotification implements Unobfuscable {
                             contents.put("status", response.getString("status"));
 
                             if (response.getString("status").equals("ok")) {
-                                Teak.log.i("notification.cancel", "Canceled notification.", Collections.singletonMap("notification", scheduleId));
+                                Teak.log.i("notification.cancel", "Canceled notification.", mm.h("notification", scheduleId));
                                 contents.put("data", response.getJSONObject("event").get("id").toString());
                             } else {
-                                Teak.log.e("notification.cancel.error", "Error canceling notification.", Collections.singletonMap("response", response.toString()));
+                                Teak.log.e("notification.cancel.error", "Error canceling notification.", mm.h("response", response.toString()));
                             }
                         } else {
                             Teak.log.e("notification.cancel.error", "Timed out while canceling notification.");
@@ -523,12 +540,14 @@ public class TeakNotification implements Unobfuscable {
                         q.offer(new JSONObject(contents).toString());
                     } catch (JSONException e) {
                         Teak.log.e("notification.cancel.error", "Timed out while canceling notification.");
-                        final Map<String, Object> contents = Collections.singletonMap("status", "error.internal");
+                        final Map<String, Object> contents = new HashMap<>();
+                        contents.put("status", "error.internal");
                         q.offer(new JSONObject(contents).toString());
                     } catch (Exception e) {
-                        final Map<String, Object> contents = Collections.singletonMap("status", "error.internal");
+                        final Map<String, Object> contents = new HashMap<>();
+                        contents.put("status", "error.internal");
                         q.offer(new JSONObject(contents).toString());
-                        Teak.log.exception(e, Collections.singletonMap("scheduleId", scheduleId));
+                        Teak.log.exception(e, mm.h("scheduleId", scheduleId));
                     }
                     ret.run();
                 });
@@ -549,7 +568,8 @@ public class TeakNotification implements Unobfuscable {
         if (!Teak.isEnabled()) {
             Teak.log.e("notification.cancel_all.disabled", "Teak is disabled, ignoring cancelAll().");
 
-            final Map<String, Object> ret = Collections.singletonMap("status", "error.teak.disabled");
+            final Map<String, Object> ret = new HashMap<>();
+            ret.put("status", "error.teak.disabled");
 
             return new FutureTask<>(() -> new JSONObject(ret).toString());
         }
@@ -565,7 +585,9 @@ public class TeakNotification implements Unobfuscable {
         });
 
         Session.whenUserIdIsOrWasReadyRun(session -> {
-            Request.submit("/me/cancel_all_local_notifications.json", Collections.emptyMap(), session,
+            HashMap<String, Object> payload = new HashMap<>();
+
+            Request.submit("/me/cancel_all_local_notifications.json", payload, session,
                 (responseCode, responseBody) -> {
                     try {
                         JSONObject response = new JSONObject(responseBody);
@@ -585,7 +607,7 @@ public class TeakNotification implements Unobfuscable {
                                 contents.put("data", canceled);
                                 Teak.log.i("notification.cancel_all", "Canceled all notifications.");
                             } else {
-                                Teak.log.e("notification.cancel_all.error", "Error canceling all notifications.", Collections.singletonMap("response", response.toString()));
+                                Teak.log.e("notification.cancel_all.error", "Error canceling all notifications.", mm.h("response", response.toString()));
                             }
                         } else {
                             Teak.log.e("notification.cancel.error", "Timed out while canceling all notifications.");
@@ -594,12 +616,14 @@ public class TeakNotification implements Unobfuscable {
                         q.offer(new JSONObject(contents).toString());
                     } catch (JSONException e) {
                         Teak.log.e("notification.cancel.error", "Timed out while canceling all notifications.");
-                        final Map<String, Object> contents = Collections.singletonMap("status", "error.internal");
+                        final Map<String, Object> contents = new HashMap<>();
+                        contents.put("status", "error.internal");
                         q.offer(new JSONObject(contents).toString());
                     } catch (Exception e) {
-                        final Map<String, Object> contents = Collections.singletonMap("status", "error.internal");
+                        final Map<String, Object> contents = new HashMap<>();
+                        contents.put("status", "error.internal");
                         q.offer(new JSONObject(contents).toString());
-                        Teak.log.exception(e, Collections.singletonMap("responseBody", responseBody));
+                        Teak.log.exception(e, mm.h("responseBody", responseBody));
                     }
                     ret.run();
                 });

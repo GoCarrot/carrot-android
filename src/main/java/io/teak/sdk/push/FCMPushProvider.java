@@ -11,7 +11,6 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -104,7 +103,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
     }
 
     private static void onMessageReceivedExternal(RemoteMessage remoteMessage, Context context, boolean wasActuallyExternal) {
-        Teak.log.i("google.fcm.received", Collections.singletonMap("external", wasActuallyExternal));
+        Teak.log.i("google.fcm.received", Helpers.mm.h("external", wasActuallyExternal));
 
         // Future-Pat, the RemoteMessage.toIntent method doesn't seem to exist all the time
         // so don't rely on it.
@@ -116,7 +115,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
 
     @Override
     public void onNewToken(@NonNull String token) {
-        Teak.log.i("google.fcm.registered", Collections.singletonMap("fcmId", token));
+        Teak.log.i("google.fcm.registered", Helpers.mm.h("fcmId", token));
         if (Teak.isEnabled()) {
             final String senderId = this.firebaseApp == null ? null : this.firebaseApp.getOptions().getGcmSenderId();
             TeakEvent.postEvent(new PushRegistrationEvent("gcm_push_key", token, senderId));

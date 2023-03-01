@@ -1,7 +1,6 @@
 package io.teak.sdk.core;
 
 import java.security.InvalidParameterException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
@@ -23,7 +22,7 @@ public class UserProfile extends Request {
     private ScheduledFuture<?> scheduledSend;
 
     UserProfile(@NonNull Session session, @NonNull Map<String, Object> userProfile) {
-        super(RemoteConfiguration.getHostnameForEndpoint("/me/profile", Request.remoteConfiguration), "/me/profile", Collections.emptyMap(), session, null, true);
+        super(RemoteConfiguration.getHostnameForEndpoint("/me/profile", Request.remoteConfiguration), "/me/profile", new HashMap<>(), session, null, true);
 
         if (!(userProfile.get("context") instanceof String)) {
             throw new InvalidParameterException("User Profile value 'context' is not a String");

@@ -13,11 +13,11 @@ import com.amazon.device.iap.model.RequestId;
 import com.amazon.device.iap.model.UserData;
 import com.amazon.device.iap.model.UserDataResponse;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
+import io.teak.sdk.Helpers.mm;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.Unobfuscable;
@@ -32,7 +32,7 @@ public class Amazon implements Unobfuscable, IStore, PurchasingListener {
         try {
             PurchasingService.registerListener(context, this);
 
-            Teak.log.i("billing.amazon.v2", "Amazon In-App Purchasing 2.0 registered.", Collections.singletonMap("sandboxMode", PurchasingService.IS_SANDBOX_MODE));
+            Teak.log.i("billing.amazon.v2", "Amazon In-App Purchasing 2.0 registered.", mm.h("sandboxMode", PurchasingService.IS_SANDBOX_MODE));
 
             TeakEvent.addEventListener(event -> {
                 if (event.eventType.equals(LifecycleEvent.Resumed)) {
@@ -64,7 +64,7 @@ public class Amazon implements Unobfuscable, IStore, PurchasingListener {
 
             for (Map.Entry<String, Product> entry : skuMap.entrySet()) {
                 final String price = entry.getValue().getPrice();
-                Teak.log.i("billing.amazon.v2.sku", "SKU Details retrieved.", Collections.singletonMap(entry.getKey(), price));
+                Teak.log.i("billing.amazon.v2.sku", "SKU Details retrieved.", mm.h(entry.getKey(), price));
                 payload.put("price_string", price);
 
                 TeakEvent.postEvent(new PurchaseEvent(payload));

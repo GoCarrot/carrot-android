@@ -2,7 +2,6 @@ package io.teak.sdk;
 
 import java.math.BigInteger;
 import java.net.URL;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -142,7 +141,7 @@ public class Request implements Runnable {
         long firstAddTime = 0L;
 
         BatchedRequest(@Nullable String hostname, @NonNull String endpoint, @NonNull Session session, boolean addStandardAttributes) {
-            super(hostname, endpoint, Collections.emptyMap(), session, null, addStandardAttributes);
+            super(hostname, endpoint, new HashMap<>(), session, null, addStandardAttributes);
         }
 
         synchronized boolean add(@NonNull String endpoint, @Nullable Map<String, Object> payload, @Nullable Callback callback) {
