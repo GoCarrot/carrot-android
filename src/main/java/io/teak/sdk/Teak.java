@@ -445,7 +445,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     /**
      * Teak Marketing Channel.
      */
-    public static class Channel {
+    public static class Channel implements Unobfuscable {
 
         /**
          * Marketing channel type
@@ -510,7 +510,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         /**
          * Class used for {@link Teak#setChannelState(String, String)} replies.
          */
-        public static class Reply {
+        public static class Reply implements Unobfuscable {
             public final boolean error;
             public final State state;
             public final Type channel;
