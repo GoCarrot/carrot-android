@@ -547,7 +547,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         Teak.log.trace("Teak.setChannelState", "channel", channel.name, "state", state.name);
 
         if (Instance != null) {
-            return Instance.setChannelState(channel, state);
+            // If "PlatformPush" is requested, this is Android; so it's MobilePush
+            return Instance.setChannelState(channel == Channel.Type.PlatformPush ? Channel.Type.MobilePush : channel, state);
         }
 
         return Helpers.futureForValue(Channel.Reply.NoInstance);
