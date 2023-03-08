@@ -656,6 +656,45 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     }
 
     /**
+     * Open the settings app to the notification settings for this app.
+     *
+     * @note This will always return <code>false</code> for any device below API 26.
+     *
+     * @return <code>true</code> if Teak was able to open the notification settings, <code>false</code> if Teak was not able to open the settings.
+     */
+    @SuppressWarnings("unused")
+    public static boolean openNotificationSettings() {
+        Teak.log.trace("Teak.openNotificationSettings");
+
+        if (Instance == null) {
+            Teak.log.e("error.openNotificationSettings", "openNotificationSettings() should not be called before onCreate()");
+            return false;
+        } else {
+            return Instance.openNotificationSettings(null);
+        }
+    }
+
+    /**
+     * Open the settings app to the notification settings for this app.
+     *
+     * @note This will always return <code>false</code> for any device below API 26.
+     *
+     * @param channelId The specific channel id to open the settings to.
+     * @return <code>true</code> if Teak was able to open the notification settings, <code>false</code> if Teak was not able to open the settings.
+     */
+    @SuppressWarnings("unused")
+    public static boolean openNotificationSettings(String channelId) {
+        Teak.log.trace("Teak.openNotificationSettings");
+
+        if (Instance == null) {
+            Teak.log.e("error.openNotificationSettings", "openNotificationSettings() should not be called before onCreate()");
+            return false;
+        } else {
+            return Instance.openNotificationSettings(channelId);
+        }
+    }
+
+    /**
      * Set the badge number on the icon of the application.
      *
      * @note Set the count to 0 to remove the badge.

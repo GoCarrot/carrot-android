@@ -296,6 +296,21 @@ public class TeakInstance implements Unobfuscable {
         return ret;
     }
 
+    boolean openNotificationSettings(String channelId) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Intent settingsIntent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, this.context.getPackageName());
+            if (channelId != null) {
+                settingsIntent.putExtra(Settings.EXTRA_CHANNEL_ID, channelId);
+            }
+            this.context.startActivity(settingsIntent);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     ///// Application icon badge
 
     boolean setApplicationBadgeNumber(int count) {
