@@ -722,7 +722,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
                                                            "platformString",
                                                            "memoryClass",
                                                            "advertisingId",
-                                                           "limitAdTracking"});
+                                                           "limitAdTracking",
+                                                           "pushRegistration"});
     }
 
     /**
