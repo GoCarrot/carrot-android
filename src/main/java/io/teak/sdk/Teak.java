@@ -539,6 +539,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     /**
      * Set the state of a Teak Marketing Channel.
      *
+     * @note You may only assign the values {@link Teak.Channel.State#OptOut} and {@link Teak.Channel.State#Available} to Push Channels; {@link Channel.State#OptIn} is not allowed.
+     *
      * @param channel The channel being modified.
      * @param state   The state for the channel.
      */
@@ -556,6 +558,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Set the state of a Teak Marketing Channel, string version.
+     *
+     * @note You may only assign the values {@link Channel.State#OptOut} and {@link Channel.State#Available} to Push Channels; {@link Channel.State#OptIn} is not allowed.
      *
      * @param channelName The name of the channel being modified.
      * @param stateName   The name of the state for the channel.
