@@ -267,6 +267,10 @@ public class TeakInstance implements Unobfuscable {
         return PushState.get().getNotificationStatus();
     }
 
+    boolean canOpenSettingsAppToThisAppsSettings() {
+        return Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT;
+    }
+
     boolean openSettingsAppToThisAppsSettings() {
         boolean ret = false;
         try {
@@ -296,19 +300,21 @@ public class TeakInstance implements Unobfuscable {
         return ret;
     }
 
+    boolean canOpenNotificationSettings() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O;
+    }
+
     boolean openNotificationSettings(String channelId) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Intent settingsIntent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-                                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        .putExtra(Settings.EXTRA_APP_PACKAGE, this.context.getPackageName());
-            if (channelId != null) {
-                settingsIntent.putExtra(Settings.EXTRA_CHANNEL_ID, channelId);
-            }
-            this.context.startActivity(settingsIntent);
-            return true;
-        } else {
-            return false;
+        if (!this.canOpenNotificationSettings()) return false;
+
+        Intent settingsIntent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    .putExtra(Settings.EXTRA_APP_PACKAGE, this.context.getPackageName());
+        if (channelId != null) {
+            settingsIntent.putExtra(Settings.EXTRA_CHANNEL_ID, channelId);
         }
+        this.context.startActivity(settingsIntent);
+        return true;
     }
 
     ///// Application icon badge

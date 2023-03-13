@@ -636,6 +636,23 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     }
 
     /**
+     * Determine if Teak can open the settings app to the settings for this app.
+     *
+     * @return <code>true</code> if Teak will be able to open the settings, <code>false</code> otherwise.
+     */
+    @SuppressWarnings("unused")
+    public static boolean canOpenSettingsAppToThisAppsSettings() {
+        Teak.log.trace("Teak.canOpenSettingsAppToThisAppsSettings");
+
+        if (Instance == null) {
+            Teak.log.e("error.canOpenSettingsAppToThisAppsSettings", "canOpenSettingsAppToThisAppsSettings() should not be called before onCreate()");
+            return false;
+        } else {
+            return Instance.canOpenSettingsAppToThisAppsSettings();
+        }
+    }
+
+    /**
      * Open the settings app to the settings for this app.
      * 
      * @note This will always return <code>false</code> for any device below API 19.
@@ -652,6 +669,24 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             return false;
         } else {
             return Instance.openSettingsAppToThisAppsSettings();
+        }
+    }
+
+    /**
+     * Determine if the current device is able to open directly to the notificaton settings
+     * for this app.
+     *
+     * @return <code>true</code> if Teak will be able to open the notification settings, <code>false</code> otherwise.
+     */
+    @SuppressWarnings("unused")
+    public static boolean canOpenNotificationSettings() {
+        Teak.log.trace("Teak.canOpenNotificationSettings");
+
+        if (Instance == null) {
+            Teak.log.e("error.canOpenNotificationSettings", "canOpenNotificationSettings() should not be called before onCreate()");
+            return false;
+        } else {
+            return Instance.canOpenNotificationSettings();
         }
     }
 
