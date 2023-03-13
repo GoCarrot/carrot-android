@@ -6,6 +6,8 @@ new:
   - "``Teak#setOptOutEmail`` has been added to let users opt in/out of Teak email campaigns."
   - "``Teak#setOptOutPush`` has been added to let users opt in/out of Teak push notification campaigns."
   - "``Teak$UserDataEvent`` has been added to provide user specific state, including opt-out status for Teak email and push campaigns and the 'additional data' for the user. This supercedes ``Teak$AdditionalDataEvent``, which has been deprecated."
+  - "``Teak#canOpenNotificationSettings`` and ``Teak#openNotificationSettings`` to allow users to open the settings app directly to the notification settings for their app"
+  - "``Teak#canOpenSettingsAppToThisAppsSettings`` has been added"
   - Google Play Billing v5 support has been added
   - Added ``pushRegistration`` to ``Teak$UserDataEvent``
 bug:
