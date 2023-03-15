@@ -279,9 +279,6 @@ public class TeakInstance implements Unobfuscable {
                 intent.setAction(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS);
                 intent.putExtra(Settings.EXTRA_CHANNEL_ID, NotificationBuilder.getNotificationChannelId(context));
                 intent.putExtra(Settings.EXTRA_APP_PACKAGE, context.getPackageName());
-            } else if (Build.VERSION.SDK_INT > Build.VERSION_CODES.N_MR1) {
-                intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
-                intent.putExtra(Settings.EXTRA_APP_PACKAGE, context.getPackageName());
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
                 intent.putExtra("app_package", this.context.getPackageName());
