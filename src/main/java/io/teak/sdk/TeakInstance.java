@@ -267,6 +267,7 @@ public class TeakInstance implements Unobfuscable {
         return PushState.get().getNotificationStatus();
     }
 
+    @SuppressLint("AnnotateVersionCheck")
     boolean canOpenSettingsAppToThisAppsSettings() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
     }
@@ -297,6 +298,7 @@ public class TeakInstance implements Unobfuscable {
         return ret;
     }
 
+    @SuppressLint("AnnotateVersionCheck")
     boolean canOpenNotificationSettings() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O;
     }
