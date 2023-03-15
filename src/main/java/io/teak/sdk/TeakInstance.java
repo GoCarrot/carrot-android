@@ -268,7 +268,7 @@ public class TeakInstance implements Unobfuscable {
     }
 
     boolean canOpenSettingsAppToThisAppsSettings() {
-        return Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT;
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
     }
 
     boolean openSettingsAppToThisAppsSettings() {
