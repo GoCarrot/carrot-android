@@ -1,6 +1,7 @@
 breaking:
   - "``Teak$AdditionalDataEvent`` has been deprecated, and will be removed in the SDK 5 family. Please use ``Teak$UserDataEvent``."
   - Google Play Billing v3 support has been removed
+  - Now requires EventBus 3.3.1
 new:
   - "``Teak#handleDeepLinkPath`` has been added to allow you manually resolve a deep link path, e.g. /foo/bar?fizz=buzz"
   - "``Teak#setOptOutEmail`` has been added to let users opt in/out of Teak email campaigns."
