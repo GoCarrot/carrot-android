@@ -241,6 +241,9 @@ public class IntegrationChecker {
             final List<ManifestParser.XmlTag> applications = manifestParser.tags.find("$.application");
             if (applications.size() > 1) {
                 addErrorToReport("application.count", "There is more than one <application> defined in your AndroidManifest.xml, only one is allowed by Android.");
+            } else if (applications.size() == 0) {
+                Teak.log.i("integration.manifest", "Unable to read AndroidManifest.xml properly, skipping.");
+                return;
             }
 
             // Make sure the Teak FCM service is present
@@ -361,7 +364,7 @@ public class IntegrationChecker {
 
             builder.setTitle(title == null ? "Human, your assistance is needed" : title)
                 .setMessage(description)
-                .setPositiveButton(android.R.string.yes, null)
+                .setPositiveButton(android.R.string.ok, null)
                 .setIcon(android.R.drawable.ic_dialog_alert)
                 .show();
         });

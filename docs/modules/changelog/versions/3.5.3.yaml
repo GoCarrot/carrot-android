@@ -1,0 +1,2 @@
+bug:
+  - Fixed a bug where links created on the Teak Dashboard could only link to the teakXXXXX:// scheme.

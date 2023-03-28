@@ -20,7 +20,7 @@ import javax.net.ssl.SSLException;
 public class DefaultHttpRequest implements IHttpRequest {
     @Override
     @SuppressWarnings("TryWithIdenticalCatches")
-    public Response synchronousRequest(URL url, String requestBody, String sig) throws IOException {
+    public Response synchronousRequest(final URL url, final String method, final String requestBody, final String sig) throws IOException {
         Response ret = Response.ERROR_RESPONSE;
 
         HttpURLConnection connection = null;
@@ -33,6 +33,7 @@ public class DefaultHttpRequest implements IHttpRequest {
                 connection = (HttpURLConnection) url.openConnection();
             }
 
+            connection.setRequestMethod(method);
             connection.setRequestProperty("Accept-Charset", "UTF-8");
             connection.setUseCaches(false);
             connection.setDoOutput(true);

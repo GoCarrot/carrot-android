@@ -28,6 +28,7 @@ public class TeakInterface implements Unobfuscable {
     }
 
     @Subscribe
+    @SuppressWarnings("deprecation")
     public void onAdditionalData(Teak.AdditionalDataEvent event) {
         String eventData = "{}";
         try {
@@ -69,6 +70,16 @@ public class TeakInterface implements Unobfuscable {
         try {
             final String eventData = event.toJSON().toString(0);
             sdkWrapper.sdkSendMessage(ISDKWrapper.EventType.PostLaunchSummary, eventData);
+        } catch (Exception e) {
+            Teak.log.exception(e);
+        }
+    }
+
+    @Subscribe
+    public void onUserData(Teak.UserDataEvent event) {
+        try {
+            final String eventData = event.toJSON().toString(0);
+            sdkWrapper.sdkSendMessage(ISDKWrapper.EventType.UserData, eventData);
         } catch (Exception e) {
             Teak.log.exception(e);
         }

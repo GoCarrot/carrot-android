@@ -179,8 +179,8 @@ public class AppConfiguration {
 
         // SDK 5 Behaviors
         {
-            final Boolean sdk5Behaviors = androidResources.getTeakBoolResource(TEAK_SDK_5_BEHAVIORS, false);
-            this.sdk5Behaviors = sdk5Behaviors != null ? sdk5Behaviors : false;
+            final Boolean sdk5Behaviors = androidResources.getTeakBoolResource(TEAK_SDK_5_BEHAVIORS, true);
+            this.sdk5Behaviors = sdk5Behaviors != null ? sdk5Behaviors : true;
         }
     }
 

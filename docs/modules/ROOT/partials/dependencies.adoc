@@ -1,0 +1,12 @@
+.Required dependancies
+
+* `org.greenrobot:eventbus:3.3.1`
+* `com.google.android.gms:play-services-ads-identifier:16+`
+* `com.google.android.gms:play-services-base:16+`
+* `com.google.android.gms:play-services-basement:16+`
+* `com.google.firebase:firebase-messaging:21+`
+* `androidx.core:core:1.0.+`
+* `androidx.work:work-runtime:2.5.+`
+
+.Optional dependancies
+* `com.android.installreferrer:installreferrer:2.2+`

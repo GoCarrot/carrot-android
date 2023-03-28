@@ -159,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
         // These user ids should be unique, no two players should have the same user id.
         final String userId = "native-" + Build.MODEL.toLowerCase();
 
-        final Teak.UserConfiguration userConfiguration = new Teak.UserConfiguration();
+        final Teak.UserConfiguration userConfiguration = new Teak.UserConfiguration("pat@teak.io");
         Teak.identifyUser(userId, userConfiguration);
 
         // Binding the in app billing service
@@ -340,8 +340,10 @@ public class MainActivity extends AppCompatActivity {
     public void crashApp(View view) {
 //        throw new RuntimeException("I crashed the app!");
 //        Teak.log.exception(new Raven.ReportTestException(Teak.SDKVersion));
-        Teak.incrementEvent("debug_increment", null, null, 5);
+//        Teak.incrementEvent("debug_increment", null, null, 5);
 //        android.os.Process.sendSignal(android.os.Process.myPid(), android.os.Process.SIGNAL_QUIT);
+//        Teak.setChannelState(Teak.Channel.Type.PlatformPush, Teak.Channel.State.Available);
+        Teak.openNotificationSettings();
     }
 
     public void integrationTestTimeout(String timeout) {

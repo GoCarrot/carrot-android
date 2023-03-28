@@ -115,6 +115,11 @@ public class Session {
     private String facebookAccessToken;
     private String facebookId;
 
+    private ChannelStatus channelStatusEmail = ChannelStatus.Unknown;
+    private ChannelStatus channelStatusPush = ChannelStatus.Unknown;
+    private ChannelStatus channelStatusSms = ChannelStatus.Unknown;
+    private JSONObject additionalData = null;
+
     public UserProfile userProfile;
 
     // State: Expiring
@@ -122,6 +127,7 @@ public class Session {
 
     // State Independent
     private LaunchDataSource launchDataSource = null;
+    private boolean launchAttributionProcessed = false;
 
     // For cases where setUserId() is called before a Session has been created
     private static String pendingUserId;
@@ -509,11 +515,25 @@ public class Session {
                             }
 
                             // Grab additional data
-                            final JSONObject additionalData = response.optJSONObject("additional_data");
-                            if (additionalData != null) {
-                                Teak.log.i("additional_data.received", additionalData.toString());
-                                whenUserIdIsReadyPost(new Teak.AdditionalDataEvent(additionalData));
+                            Session.this.additionalData = response.optJSONObject("additional_data");
+                            if (Session.this.additionalData != null) {
+                                Teak.log.i("additional_data.received", Session.this.additionalData.toString());
+
+                                @SuppressWarnings("deprecation")
+                                final Teak.AdditionalDataEvent event = new Teak.AdditionalDataEvent(Session.this.additionalData);
+                                whenUserIdIsReadyPost(event);
                             }
+
+                            // Opt out state
+                            if (response.has("opt_out_states")) {
+                                final JSONObject optOutStates = response.getJSONObject("opt_out_states");
+                                Session.this.channelStatusEmail = ChannelStatus.fromJSON(optOutStates.optJSONObject("email"));
+                                Session.this.channelStatusPush = ChannelStatus.fromJSON(optOutStates.optJSONObject("push"));
+                                Session.this.channelStatusSms = ChannelStatus.fromJSON(optOutStates.optJSONObject("sms"));
+                            }
+
+                            // Send user data event
+                            Session.this.dispatchUserEvent();
 
                             // Assign new state
                             // Prevent warning for 'do_not_track_event'
@@ -572,10 +592,19 @@ public class Session {
         });
     }
 
+    private void dispatchUserEvent() {
+        this.stateLock.lock();
+        final TeakConfiguration teakConfiguration = TeakConfiguration.get();
+        final Teak.UserDataEvent event = new Teak.UserDataEvent(this.additionalData, this.channelStatusEmail, this.channelStatusPush, this.channelStatusSms, teakConfiguration.deviceConfiguration.pushRegistration);
+        this.stateLock.unlock();
+
+        whenUserIdIsReadyPost(event);
+    }
+
     private synchronized void processAttributionAndDispatchEvents() {
         // If there is no launch attribution, bail.
-        if (this.launchDataSource == null || this.launchDataSource.isProcessed) return;
-        this.launchDataSource.isProcessed = true;
+        if (this.launchDataSource == null || this.launchAttributionProcessed) return;
+        this.launchAttributionProcessed = true;
 
         this.executionQueue.execute(() -> {
             try {
@@ -593,7 +622,7 @@ public class Session {
                 final Teak.LaunchData launchData = Session.this.launchDataSource.get(15, TimeUnit.SECONDS);
 
                 // LaunchData should never be null, but in case it is...
-                if(launchData == null) {
+                if (launchData == null) {
                     Session.whenUserIdIsReadyPost(new Teak.PostLaunchSummaryEvent(Teak.LaunchData.Unattributed));
                     return;
                 }

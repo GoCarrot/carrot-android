@@ -1,0 +1,4 @@
+breaking:
+  -  Requires Firebase Messaging 21 minimum
+bug:
+  - Resets ``firstSendTime`` on UserProfile after send.

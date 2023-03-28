@@ -33,6 +33,7 @@ public class Request implements Runnable {
     public static final int MOCKED_PORT = 8080;
     private final String endpoint;
     private final String hostname;
+    private final String method;
     protected final Map<String, Object> payload;
     private final Session session;
     private final String requestId;
@@ -336,6 +337,10 @@ public class Request implements Runnable {
     }
 
     public static void submit(@Nullable String hostname, final @NonNull String endpoint, final @NonNull Map<String, Object> payload, final @NonNull Session session, final @Nullable Callback callback) {
+        submit(hostname, "POST", endpoint, payload, session, callback);
+    }
+
+    public static void submit(@Nullable String hostname, final @NonNull String method, final @NonNull String endpoint, final @NonNull Map<String, Object> payload, final @NonNull Session session, final @Nullable Callback callback) {
         if (hostname == null) {
             hostname = RemoteConfiguration.getHostnameForEndpoint(endpoint, Request.remoteConfiguration);
         }
@@ -355,18 +360,23 @@ public class Request implements Runnable {
                 requestExecutor.execute(() -> submit(finalHostname, endpoint, payload, session, callback));
             }
         } else {
-            requestExecutor.execute(new Request(hostname, endpoint, payload, session, callback, true));
+            requestExecutor.execute(new Request(hostname, method, endpoint, payload, session, callback, true));
         }
     }
 
     /////
 
     public Request(@Nullable String hostname, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback, boolean addStandardAttributes) {
+        this(hostname, "POST", endpoint, payload, session, callback, addStandardAttributes);
+    }
+
+    public Request(@Nullable String hostname, @NonNull String method, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback, boolean addStandardAttributes) {
         if (!endpoint.startsWith("/")) {
             throw new IllegalArgumentException("Parameter 'endpoint' must start with '/' or things will break, and you will lose an hour of your life debugging.");
         }
 
         this.hostname = hostname;
+        this.method = method;
         this.endpoint = endpoint;
         this.payload = new HashMap<>(payload);
         this.session = session;
@@ -508,7 +518,7 @@ public class Request implements Runnable {
                     requestBodyHash = Helpers.bytesToHex(result);
                 }
                 {
-                    final String stringToSign = "TeakV2-HMAC-SHA256\nPOST\n" + this.hostname + "\n" + this.endpoint + "\n" + requestBodyHash + "\n";
+                    final String stringToSign = "TeakV2-HMAC-SHA256\n" + this.method + "\n" + this.hostname + "\n" + this.endpoint + "\n" + requestBodyHash + "\n";
                     final Mac mac = Mac.getInstance("HmacSHA256");
                     mac.init(keySpec);
                     final byte[] result = mac.doFinal(stringToSign.getBytes());
@@ -528,7 +538,7 @@ public class Request implements Runnable {
                 isMockedRequest ? Request.MOCKED_PORT : Request.DEFAULT_PORT,
                 this.endpoint);
             final IHttpRequest request = new DefaultHttpRequest();
-            final IHttpRequest.Response response = request.synchronousRequest(url, requestBody, sig);
+            final IHttpRequest.Response response = request.synchronousRequest(url, this.method, requestBody, sig);
 
             final int statusCode = response == null ? 0 : response.statusCode;
             final String body = response == null ? null : response.body;

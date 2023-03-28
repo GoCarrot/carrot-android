@@ -1,0 +1,35 @@
+= Android 12
+
+NOTE: All version of the Teak SDK after 4.1.14 support targeting API Level 31 (Android 12).
+
+== Notification Layouts
+
+Android 12 introduces a new required notification layout, which changes how notifications are displayed.
+
+With Teak SDK 4.1.14 (and later), these changes will happen automatically if your app is targeting API Level 31+ (Android 12) _and_ the device is running Android 12 or newer.
+
+Examples of both text, and image notifications are below, including a sizing grid image for your reference.
+
+=== Collapsed Notifications
+
+Collapsed notifications now have a banner which contains the app icon, app title, and time the notification was received.
+
+.Collapsed Notifications in Android 12
+image::android-12-collapsed.png[Collapsed View in Android 12]
+
+Prior to Android 12, the same notifications would look like this:
+
+.Collapsed Notifications in Android 10
+image::android-10-collapsed.png[Collapsed View in Android 10]
+
+=== Expanded Notifications
+
+Expanded notifications now have a banner which contains the app icon, app title, and time the notification was received.
+
+.Expanded Notifications in Android 12
+image::android-12-expanded.png[Expanded View in Android 12]
+
+Prior to Android 12, the same notifications would look like this:
+
+.Expanded Notifications in Android 10
+image::android-10-expanded.png[Expanded View in Android 10]

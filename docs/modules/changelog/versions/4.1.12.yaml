@@ -1,0 +1,2 @@
+bug:
+  - Resolve bug which resulted in all previously received notifications being treated as though they were copies of the most recently received notification on Android 11 and 12 devices.

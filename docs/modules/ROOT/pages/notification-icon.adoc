@@ -1,0 +1,35 @@
+= Android Notification Icon Assets
+
+To make sure that your notification icons show up properly on API 21+ you should use https://romannurik.github.io/AndroidAssetStudio/[Android Asset Studio] to process, and create the needed resolutions for the icon.
+
+Click on the https://romannurik.github.io/AndroidAssetStudio/icons-notification.html#source.type=image&source.space.trim=1&source.space.pad=0&name=icon_white[Notification icon generator tool], and you will see this screen:
+
+image::android-asset-studio.png[]
+
+Drag your notification icon onto the page, and set the name (bottom left) to the value you use for ``io_teak_small_notification_icon``, then click on the Download Zip button in the top right corner.
+
+For this example the name of the icon is ``icon_white``
+
+The zip file should contain:
+
+* ``drawable-mdpi/icon_white.png``
+* ``drawable-hdpi/icon_white.png``
+* ``drawable-xhdpi/icon_white.png``
+* ``drawable-xxhdpi/icon_white.png``
+* ``drawable-xxxhdpi/icon_white.png``
+
+Copy all of these directories into your ``res/`` directory. Your Android app should now have:
+
+* ``res/drawable-mdpi/icon_white.png``
+* ``res/drawable-hdpi/icon_white.png``
+* ``res/drawable-xhdpi/icon_white.png``
+* ``res/drawable-xxhdpi/icon_white.png``
+* ``res/drawable-xxxhdpi/icon_white.png``
+
+This notification icon would be specified in ``res/values-v21/teak.xml`` as:
+
+.res/values-v21/teak.xml
+[source,xml]
+----
+<drawable name="io_teak_small_notification_icon">@drawable/icon_white</drawable>
+----

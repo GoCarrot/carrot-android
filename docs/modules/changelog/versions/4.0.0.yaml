@@ -1,0 +1,21 @@
+breaking:
+  - Deprecated method ``Teak.onNewIntent`` removed
+  - Support for Adobe AIR removed
+  - "``support-v4`` is no longer supported, AndroidX is now required"
+  - If you use the Facebook SDK, version 4 is now the minimum supported version
+  - Teak will no longer create a Firebase instance if one does not exist:
+    - "``io_teak_ignore_default_firebase_configuration`` removed"
+    - "``io_teak_gcm_sender_id`` removed"
+    - "``io_teak_firebase_app_id`` removed"
+    - "``io_teak_firebase_api_key`` removed"
+    - "``io_teak_firebase_project_id`` removed"
+  - Minimum target SDK is now API 30
+  - "``com.android.installreferrer`` version used is now 2.2"
+new:
+  - Now using v2 Signatures for request signing (this is not a user-facing change).
+  - Now supports out-of-memory fallbacks for all notifiation images.
+  - Added ``teakScheduleId`` and ``teakCreativeId`` to ``NotificationEvent``
+  - Added ``teakScheduleId`` and ``teakCreativeId`` to ``RewardClaimEvent``
+  - Now automatically tracks purchases from Google Play Billing v3
+bug:
+  - Fixed a bug where links created on the Teak Dashboard could only link to the teakXXXXX:// scheme.

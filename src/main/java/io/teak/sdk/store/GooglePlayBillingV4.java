@@ -7,8 +7,6 @@ import com.android.billingclient.api.BillingClientStateListener;
 import com.android.billingclient.api.BillingResult;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.PurchasesUpdatedListener;
-import com.android.billingclient.api.SkuDetails;
-import com.android.billingclient.api.SkuDetailsParams;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,6 +22,7 @@ import io.teak.sdk.TeakEvent;
 import io.teak.sdk.Unobfuscable;
 import io.teak.sdk.event.PurchaseEvent;
 
+@SuppressWarnings("deprecation")
 public class GooglePlayBillingV4 implements Unobfuscable, IStore, PurchasesUpdatedListener, BillingClientStateListener {
     private final BillingClient billingClient;
 
@@ -61,16 +60,16 @@ public class GooglePlayBillingV4 implements Unobfuscable, IStore, PurchasesUpdat
                     payload.put("product_id", purchaseSku);
                     payload.put("order_id", purchase.getOrderId());
 
-                    final SkuDetailsParams params = SkuDetailsParams
-                                                        .newBuilder()
-                                                        .setType(BillingClient.SkuType.INAPP)
-                                                        .setSkusList(Collections.singletonList(purchaseSku))
-                                                        .build();
+                    final com.android.billingclient.api.SkuDetailsParams params = com.android.billingclient.api.SkuDetailsParams
+                                                                                      .newBuilder()
+                                                                                      .setType(BillingClient.SkuType.INAPP)
+                                                                                      .setSkusList(Collections.singletonList(purchaseSku))
+                                                                                      .build();
 
                     this.billingClient.querySkuDetailsAsync(params, (ignored, skuDetailsList) -> {
                         try {
                             if (skuDetailsList != null && !skuDetailsList.isEmpty()) {
-                                final SkuDetails skuDetails = skuDetailsList.get(0);
+                                final com.android.billingclient.api.SkuDetails skuDetails = skuDetailsList.get(0);
                                 payload.put("price_amount_micros", skuDetails.getPriceAmountMicros());
                                 payload.put("price_currency_code", skuDetails.getPriceCurrencyCode());
 

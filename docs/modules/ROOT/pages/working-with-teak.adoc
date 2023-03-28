@@ -1,0 +1,19 @@
+= Working with Teak on Android
+
+== Identify User
+
+This tells Teak how the user should be referenced in the Teak system.
+
+All Teak events will be delayed until ``identifyUser`` is called.
+
+doxygen2adoc:Teak.identifyUser(String,UserConfiguration)[]
+
+IMPORTANT: This should be the same way that you identify the user in your system, so that when you export data from Teak, it will be easy for you to associate with your own data.
+
+== User Attributes
+
+Teak allows you to add a limited number of attributes to users. A maximum of 16 string and 16 numeric attributes can be used.
+
+doxygen2adoc:Teak.setNumericAttribute(String,double)[]
+
+doxygen2adoc:Teak.setStringAttribute(String,String)[]

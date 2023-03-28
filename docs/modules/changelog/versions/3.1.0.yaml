@@ -1,0 +1,5 @@
+new:
+  - "``/teak_internal/app_settings`` deep link added. Opens Android settings to the settings for this app."
+  - Foreground notification support.
+bug:
+  - Added additional proguard ``keep`` paterns.

@@ -17,8 +17,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLProtocolException;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -31,7 +29,6 @@ import io.teak.sdk.referrer.InstallReferrerFuture;
 public class LaunchDataSource implements Future<Teak.LaunchData> {
     public static final LaunchDataSource Unattributed = new LaunchDataSource(Helpers.futureForValue(Teak.LaunchData.Unattributed));
 
-    public boolean isProcessed = false;
     private final Future<Teak.LaunchData> launchDataFuture;
 
     private LaunchDataSource(@NonNull final Future<Teak.LaunchData> launchDataFuture) {

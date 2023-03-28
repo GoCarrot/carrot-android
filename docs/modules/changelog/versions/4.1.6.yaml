@@ -1,0 +1,2 @@
+bug:
+  - Fix for crash when an Amazon build did not contain Google Play Billing references.

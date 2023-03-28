@@ -1,0 +1,8 @@
+new:
+  - Support ``trackEvent`` for Adobe AIR
+  - Added ``incrementEvent``
+  - Now tracking ``PackageInfo.versionName`` (instead of just ``PackageInfo.versionCode``)
+  - Added support for Google Play's ``com.android.installreferrer.api.InstallReferrerClient``
+  - Added support for specifying the Android store, using ``io_teak_store_id``. Will detect Amazon automatically; defaults to Google Play.
+bug:
+  - Properly handle deep links with '?' or '#' in a URL path element
