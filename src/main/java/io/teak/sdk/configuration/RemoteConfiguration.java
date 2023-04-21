@@ -169,6 +169,9 @@ public class RemoteConfiguration {
                 payload.put("id", teakConfiguration.appConfiguration.appId);
                 payload.put("deep_link_routes", DeepLink.getRouteNamesAndDescriptions());
 
+                final String locale = Locale.getDefault().toString();
+                payload.put("locale", locale);
+
                 Request.submit("gocarrot.com", "/games/" + teakConfiguration.appConfiguration.appId + "/settings.json", payload, Session.NullSession,
                     (responseCode, responseBody) -> {
                         try {

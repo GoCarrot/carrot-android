@@ -411,7 +411,7 @@ public class Session {
                 String tzOffset = new DecimalFormat("#0.00").format(minutes / 60.0f);
                 payload.put("timezone", tzOffset);
 
-                String locale = Locale.getDefault().toString();
+                final String locale = Locale.getDefault().toString();
                 payload.put("locale", locale);
 
                 payload.put("android_limit_ad_tracking", !teakConfiguration.dataCollectionConfiguration.enableIDFA());
