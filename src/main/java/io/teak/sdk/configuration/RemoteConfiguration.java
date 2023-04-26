@@ -2,6 +2,7 @@ package io.teak.sdk.configuration;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
 
@@ -42,6 +43,8 @@ public class RemoteConfiguration {
     public final Map<String, Object> dynamicParameters;
     @SuppressWarnings("WeakerAccess")
     public final int heartbeatInterval;
+    @SuppressWarnings("WeakerAccess")
+    public final CategoryConfiguration categoryConfiguration;
     @SuppressWarnings("WeakerAccess")
     public final boolean isMocked;
 
@@ -126,7 +129,7 @@ public class RemoteConfiguration {
     public RemoteConfiguration(@NonNull AppConfiguration appConfiguration, @NonNull String hostname,
         String sdkSentryDsn, String appSentryDsn, String gcmSenderId, String firebaseAppId,
         boolean ignoreDefaultFirebaseConfiguration, boolean enhancedIntegrationChecks,
-        JSONObject endpointConfigurations, JSONObject dynamicParameters, int heartbeatInterval, boolean isMocked) {
+        JSONObject endpointConfigurations, JSONObject dynamicParameters, int heartbeatInterval, CategoryConfiguration categoryConfiguration, boolean isMocked) {
         this.appConfiguration = appConfiguration;
         this.hostname = hostname;
         this.appSentryDsn = appSentryDsn;
@@ -137,6 +140,7 @@ public class RemoteConfiguration {
         this.enhancedIntegrationChecks = enhancedIntegrationChecks;
         this.isMocked = isMocked;
         this.heartbeatInterval = heartbeatInterval;
+        this.categoryConfiguration = categoryConfiguration;
 
         this.endpointConfigurations = endpointConfigurations == null ? new JSONObject(defaultEndpointJson).toMap() : endpointConfigurations.toMap();
 
@@ -196,7 +200,10 @@ public class RemoteConfiguration {
                             }
                             final ResponseHelper helper = new ResponseHelper();
 
-                            // Future-Pat: This looks ugly, the reason we aren't moving it into the constructor itself is
+                            // Future-Ezri: Instead of making this messy, like below, make a helper constructor
+                            final CategoryConfiguration categoryConfiguration = new CategoryConfiguration(helper.jsonOrNull("available_categories"));
+
+                            // Future-Ezri: This looks ugly, the reason we aren't moving it into the constructor itself is
                             // so that it can be easily mocked for the functional tests.
                             final RemoteConfiguration configuration = new RemoteConfiguration(teakConfiguration.appConfiguration,
                                 response.isNull("auth") ? RemoteConfiguration.defaultHostname : response.getString("auth"),
@@ -209,6 +216,7 @@ public class RemoteConfiguration {
                                 helper.jsonOrNull("endpoint_configurations"),
                                 helper.jsonOrNull("dynamic_parameters"),
                                 response.optInt("heartbeat_interval", 60),
+                                categoryConfiguration,
                                 false);
 
                             Teak.log.i("configuration.remote", configuration.toHash());
@@ -257,6 +265,52 @@ public class RemoteConfiguration {
             return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toHash())));
         } catch (Exception ignored) {
             return super.toString();
+        }
+    }
+
+    /**
+     * Describes the notification categories that will be used by the Teak server.
+     */
+    public static class CategoryConfiguration {
+        public final Category[] categories;
+
+        /**
+         * An individual category.
+         */
+        public static class Category {
+            public final String name;
+            public final String description;
+            public final String sound;
+            public final boolean showBadge;
+
+            public Category(final String name, final String description, final String sound, final boolean showBadge) {
+                this.name = name;
+                this.description = description;
+                this.sound = sound;
+                this.showBadge = showBadge;
+            }
+
+            public Category(JSONObject category) {
+                this(category.getString("name"),
+                        category.getString("description"),
+                        category.getString("sound"),
+                        category.optBoolean("show_badge", false));
+            }
+        }
+
+        public CategoryConfiguration(final Category[] categories) {
+            this.categories = categories;
+        }
+
+        public CategoryConfiguration(JSONObject available_categories) {
+            final LinkedList<Category> categories = new LinkedList<>();
+            final Iterator<String> keys = available_categories.keys();
+            while(keys.hasNext()) {
+                final JSONObject category = available_categories.getJSONObject(keys.next());
+                categories.add(new Category(category));
+            }
+
+            this.categories = categories.toArray(new Category[0]);
         }
     }
 }
