@@ -209,9 +209,11 @@ public class RemoteConfiguration {
                             if (available_categories != null) {
                                 final Iterator<String> keys = available_categories.keys();
                                 while(keys.hasNext()) {
-                                    final JSONObject categoryJson = available_categories.getJSONObject(keys.next());
+                                    final String key = keys.next();
+                                    final JSONObject categoryJson = available_categories.getJSONObject(key);
                                     final ResponseHelper categoryJsonHelper = new ResponseHelper(categoryJson);
                                     categories.add(new CategoryConfiguration.Category(
+                                            key,
                                             categoryJson.getString("name"),
                                             categoryJsonHelper.strOrNull("description"),
                                             categoryJsonHelper.strOrNull("sound"),
@@ -296,12 +298,14 @@ public class RemoteConfiguration {
          * An individual category.
          */
         public static class Category {
+            public final String id;
             public final String name;
             public final String description;
             public final String sound;
             public final boolean showBadge;
 
-            public Category(final String name, final String description, final String sound, final boolean showBadge) {
+            public Category(final String id, final String name, final String description, final String sound, final boolean showBadge) {
+                this.id = id;
                 this.name = name;
                 this.description = description;
                 this.sound = sound;
