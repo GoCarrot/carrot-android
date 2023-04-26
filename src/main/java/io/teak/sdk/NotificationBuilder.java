@@ -14,6 +14,7 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -50,11 +51,13 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
 
 import androidx.core.app.NotificationCompat;
+import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.Result;
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONObject;
 
 public class NotificationBuilder {
+    public static final String DEFAULT_NOTIFICATION_CHANNEL_ID = "teak";
     private static AtomicInteger pendingIntentRequestCode = new AtomicInteger();
     public static class AssetLoadException extends Exception {
         AssetLoadException(String assetName, Exception cause) {
@@ -83,27 +86,37 @@ public class NotificationBuilder {
         }
     }
 
-    private static String notificationChannelId;
-    public static String getNotificationChannelId(Context context) {
+    public static void configureNotificationChannelId(Context context, RemoteConfiguration.CategoryConfiguration.Category category) {
         // Notification channel, required for running on API 26+
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (notificationChannelId == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
             try {
-                final String channelId = "teak";
-                if (notificationManager.getNotificationChannel(channelId) == null) {
-                    final int importance = NotificationManager.IMPORTANCE_HIGH;
-                    final NotificationChannel channel = new NotificationChannel(channelId, "Notifications", importance);
+                final int importance = NotificationManager.IMPORTANCE_HIGH;
+                final NotificationChannel channel = new NotificationChannel(category.id, category.name, importance);
+
+                if (notificationManager.getNotificationChannel(category.id) == null) {
                     channel.enableLights(true);
                     channel.setLightColor(Color.RED);
                     channel.enableVibration(true);
                     channel.setVibrationPattern(new long[] {100L, 300L, 0L, 0L, 100L, 300L});
-                    notificationManager.createNotificationChannel(channel);
                 }
-                notificationChannelId = channelId;
+                channel.setName(category.name);
+                channel.setDescription(category.description);
+                channel.setShowBadge(category.showBadge);
+                if (category.sound != null) {
+                    final Uri soundUri = Uri.parse(category.sound);
+                    if (soundUri != null) {
+                        channel.setSound(soundUri, new AudioAttributes.Builder()
+                                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                                .build());
+                    }
+                }
+
+                notificationManager.createNotificationChannel(channel);
             } catch (Exception ignored) {
             }
         }
-        return notificationChannelId;
     }
 
     private static String quietNotificationChannelId;
@@ -114,7 +127,7 @@ public class NotificationBuilder {
             try {
                 final String channelId = "teak-no-sound-or-vibrate";
                 final int importance = NotificationManager.IMPORTANCE_HIGH;
-                final NotificationChannel channel = new NotificationChannel(channelId, "Notifications", importance);
+                final NotificationChannel channel = new NotificationChannel(channelId, "Silent Notifications", importance);
                 channel.enableLights(true);
                 channel.setSound(null, null);
                 channel.setLightColor(Color.RED);
@@ -195,7 +208,7 @@ public class NotificationBuilder {
         final boolean serverRequests12PlusStyle = teakNotificaton.useDecoratedCustomView;
         final boolean isAndroid12NotificationStyle = serverRequests12PlusStyle || willAutomaticallyUse12PlusStyle;
 
-        final NotificationCompat.Builder builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
+        final NotificationCompat.Builder builder = new NotificationCompat.Builder(context, NotificationBuilder.DEFAULT_NOTIFICATION_CHANNEL_ID);
         builder.setGroup(UUID.randomUUID().toString());
 
         // Assign DecoratedCustomViewStyle if the server requests the Android 12 style, and it would
