@@ -182,6 +182,10 @@ public class RemoteConfiguration {
                             final JSONObject response = new JSONObject((responseBody == null || responseBody.trim().isEmpty()) ? "{}" : responseBody);
 
                             class ResponseHelper {
+                                final JSONObject json;
+                                private ResponseHelper(JSONObject json) {
+                                    this.json = json;
+                                }
                                 private String nullInsteadOfEmpty(String input) {
                                     if (input != null && !input.trim().isEmpty()) {
                                         return input;
@@ -189,16 +193,16 @@ public class RemoteConfiguration {
                                     return null;
                                 }
                                 private String strOrNull(String key) {
-                                    return nullInsteadOfEmpty(response.isNull(key) ? null : response.getString(key));
+                                    return nullInsteadOfEmpty(this.json .isNull(key) ? null : this.json .getString(key));
                                 }
                                 private boolean boolOrFalse(String key) {
-                                    return response.optBoolean(key, false);
+                                    return this.json .optBoolean(key, false);
                                 }
                                 private JSONObject jsonOrNull(String key) {
-                                    return response.has(key) ? response.getJSONObject(key) : null;
+                                    return this.json .has(key) ? this.json .getJSONObject(key) : null;
                                 }
                             }
-                            final ResponseHelper helper = new ResponseHelper();
+                            final ResponseHelper helper = new ResponseHelper(response);
 
                             // Future-Ezri: Instead of making this messy, like below, make a helper constructor
                             final CategoryConfiguration categoryConfiguration = new CategoryConfiguration(helper.jsonOrNull("available_categories"));
