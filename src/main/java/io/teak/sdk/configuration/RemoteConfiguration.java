@@ -204,8 +204,22 @@ public class RemoteConfiguration {
                             }
                             final ResponseHelper helper = new ResponseHelper(response);
 
-                            // Future-Ezri: Instead of making this messy, like below, make a helper constructor
-                            final CategoryConfiguration categoryConfiguration = new CategoryConfiguration(helper.jsonOrNull("available_categories"));
+                            final JSONObject available_categories = helper.jsonOrNull("available_categories");
+                            final LinkedList<CategoryConfiguration.Category> categories = new LinkedList<>();
+                            if (available_categories != null) {
+                                final Iterator<String> keys = available_categories.keys();
+                                while(keys.hasNext()) {
+                                    final JSONObject categoryJson = available_categories.getJSONObject(keys.next());
+                                    final ResponseHelper categoryJsonHelper = new ResponseHelper(categoryJson);
+                                    categories.add(new CategoryConfiguration.Category(
+                                            categoryJson.getString("name"),
+                                            categoryJsonHelper.strOrNull("description"),
+                                            categoryJsonHelper.strOrNull("sound"),
+                                            categoryJson.optBoolean("show_badge", false)
+                                    ));
+                                }
+                            }
+                            final CategoryConfiguration categoryConfiguration = new CategoryConfiguration(categories.toArray(new CategoryConfiguration.Category[0]));
 
                             // Future-Ezri: This looks ugly, the reason we aren't moving it into the constructor itself is
                             // so that it can be easily mocked for the functional tests.
@@ -293,28 +307,10 @@ public class RemoteConfiguration {
                 this.sound = sound;
                 this.showBadge = showBadge;
             }
-
-            public Category(JSONObject category) {
-                this(category.getString("name"),
-                        category.getString("description"),
-                        category.getString("sound"),
-                        category.optBoolean("show_badge", false));
-            }
         }
 
         public CategoryConfiguration(final Category[] categories) {
             this.categories = categories;
-        }
-
-        public CategoryConfiguration(JSONObject available_categories) {
-            final LinkedList<Category> categories = new LinkedList<>();
-            final Iterator<String> keys = available_categories.keys();
-            while(keys.hasNext()) {
-                final JSONObject category = available_categories.getJSONObject(keys.next());
-                categories.add(new Category(category));
-            }
-
-            this.categories = categories.toArray(new Category[0]);
         }
     }
 }
