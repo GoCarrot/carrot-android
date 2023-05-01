@@ -1,0 +1,6 @@
+breaking:
+  - todo
+new:
+  - todo
+bug:
+  - Fixed ``Missing class com.unity3d.player.UnityPlayerActivity`` warning in non-Unity projects.

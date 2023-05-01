@@ -34,6 +34,9 @@
 -keep class com.google.android.gms.common.GooglePlayServicesUtil { public *; }
 -keep class com.google.android.gms.ads.identifier.AdvertisingIdClient { public *; }
 
+### For non-Unity projects ###
+-dontwarn com.unity3d.player.UnityPlayerActivity
+
 ### EventBus ###
 -keepattributes *Annotation*
 -keepclassmembers class * {
