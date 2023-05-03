@@ -508,18 +508,24 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         }
 
         /**
-         * Class used for {@link Teak#setChannelState(String, String)} replies.
+         * Class used for {@link Teak#setChannelState(String, String)} and {@link Teak#setCategoryState(String, String, String)} replies.
          */
         public static class Reply implements Unobfuscable {
             public final boolean error;
             public final State state;
             public final Type channel;
+            public final String category;
             public final Map<String, String[]> errors;
 
             public Reply(boolean error, State state, Type channel, Map<String, String[]> errors) {
+                this(error, state, channel, null, errors);
+            }
+
+            public Reply(boolean error, State state, Type channel, String category, Map<String, String[]> errors) {
                 this.error = error;
                 this.state = state;
                 this.channel = channel;
+                this.category = category;
                 this.errors = errors;
             }
 
@@ -527,6 +533,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
                 final JSONObject json = new JSONObject();
                 json.put("state", this.state.name);
                 json.put("channel", this.channel.name);
+                json.put("category", this.category);
                 json.put("error", this.error);
                 json.put("errors", this.errors);
                 return json;
@@ -567,6 +574,40 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     @SuppressWarnings("unused")
     public static Future<Channel.Reply> setChannelState(final String channelName, final String stateName) {
         return setChannelState(Channel.Type.fromString(channelName), Channel.State.fromString(stateName));
+    }
+
+    /**
+     * Set the state of a Teak Marketing Channel Category
+     *
+     * @note You may only assign the values {@link Channel.State#OptOut} and {@link Channel.State#Available}.
+     *
+     * @param channel The channel being modified.
+     * @param category    The category being modified.
+     * @param state   The state for the channel.
+     */
+    public static Future<Channel.Reply> setCategoryState(final Channel.Type channel, final String category, final Channel.State state) {
+        Teak.log.trace("Teak.setCategoryState", "channel", channel.name, "category", category, "state", state.name);
+
+        if (Instance != null) {
+            // If "PlatformPush" is requested, this is Android; so it's MobilePush
+            return Instance.setCategoryState(channel == Channel.Type.PlatformPush ? Channel.Type.MobilePush : channel, category, state);
+        }
+
+        return Helpers.futureForValue(Channel.Reply.NoInstance);
+    }
+
+    /**
+     * Set the state of a Teak Marketing Channel Category, string version.
+     *
+     * @note You may only assign the values {@link Channel.State#OptOut} and {@link Channel.State#Available}.
+     *
+     * @param channelName The name of the channel being modified.
+     * @param category    The category being modified.
+     * @param stateName   The name of the state for the channel.
+     */
+    @SuppressWarnings("unused")
+    public static Future<Channel.Reply> setCategoryState(final String channelName, final String category, final String stateName) {
+        return setCategoryState(Channel.Type.fromString(channelName), category, Channel.State.fromString(stateName));
     }
 
     /**

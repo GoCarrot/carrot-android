@@ -1,6 +1,6 @@
 breaking:
   - todo
 new:
-  - todo
+  - "<<Teak#setCategoryState>> has been added to let users opt in/out of Teak marketing channel categories"
 bug:
   - Fixed ``Missing class com.unity3d.player.UnityPlayerActivity`` warning in non-Unity projects.
