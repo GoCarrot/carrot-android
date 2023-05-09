@@ -86,6 +86,20 @@ public class NotificationBuilder {
         }
     }
 
+    private static String channelIdForOptOutId(Context context, String optOutId) {
+        if (Helpers.isNullOrEmpty(optOutId)) {
+            return NotificationBuilder.DEFAULT_NOTIFICATION_CHANNEL_ID;
+        }
+
+        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
+            if (notificationManager.getNotificationChannel(optOutId) != null) {
+                return optOutId;
+            }
+        }
+        return NotificationBuilder.DEFAULT_NOTIFICATION_CHANNEL_ID;
+    }
+
     public static void configureNotificationChannelId(Context context, RemoteConfiguration.CategoryConfiguration.Category category) {
         // Notification channel, required for running on API 26+
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -208,7 +222,8 @@ public class NotificationBuilder {
         final boolean serverRequests12PlusStyle = teakNotificaton.useDecoratedCustomView;
         final boolean isAndroid12NotificationStyle = serverRequests12PlusStyle || willAutomaticallyUse12PlusStyle;
 
-        final NotificationCompat.Builder builder = new NotificationCompat.Builder(context, NotificationBuilder.DEFAULT_NOTIFICATION_CHANNEL_ID);
+        final NotificationCompat.Builder builder = new NotificationCompat.Builder(context,
+                NotificationBuilder.channelIdForOptOutId(context, teakNotificaton.teakOptOutCategory));
         builder.setGroup(UUID.randomUUID().toString());
 
         // Assign DecoratedCustomViewStyle if the server requests the Android 12 style, and it would

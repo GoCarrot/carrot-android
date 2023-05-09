@@ -2,5 +2,6 @@ breaking:
   - todo
 new:
   - "<<Teak#setCategoryState>> has been added to let users opt in/out of Teak marketing channel categories"
+  - Now uses the native notification channel support on Android Oreo and later.
 bug:
   - Fixed ``Missing class com.unity3d.player.UnityPlayerActivity`` warning in non-Unity projects.
