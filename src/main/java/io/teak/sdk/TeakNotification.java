@@ -659,6 +659,10 @@ public class TeakNotification implements Unobfuscable {
     final JSONObject display;
     final boolean useDecoratedCustomView;
 
+    // v2023
+    @SuppressWarnings("WeakerAccess")
+    final String teakOptOutCategory;
+
     // Animation
     public boolean isAnimated;
 
@@ -683,6 +687,7 @@ public class TeakNotification implements Unobfuscable {
         this.imageAssetA = bundle.getString("imageAssetA");
         this.teakDeepLink = bundle.getString("teakDeepLink");
         this.teakCreativeName = bundle.getString("teakCreativeName");
+        this.teakOptOutCategory = bundle.getString("teakOptOutCategory", "teak");
         this.isAnimated = false;
         this.bundle = bundle;
         this.notificationPlacement = appInForeground ? NotificationPlacement.Foreground : NotificationPlacement.Background;

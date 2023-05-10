@@ -2,6 +2,7 @@ package io.teak.sdk.configuration;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
 
@@ -42,6 +43,8 @@ public class RemoteConfiguration {
     public final Map<String, Object> dynamicParameters;
     @SuppressWarnings("WeakerAccess")
     public final int heartbeatInterval;
+    @SuppressWarnings("WeakerAccess")
+    public final CategoryConfiguration categoryConfiguration;
     @SuppressWarnings("WeakerAccess")
     public final boolean isMocked;
 
@@ -126,7 +129,7 @@ public class RemoteConfiguration {
     public RemoteConfiguration(@NonNull AppConfiguration appConfiguration, @NonNull String hostname,
         String sdkSentryDsn, String appSentryDsn, String gcmSenderId, String firebaseAppId,
         boolean ignoreDefaultFirebaseConfiguration, boolean enhancedIntegrationChecks,
-        JSONObject endpointConfigurations, JSONObject dynamicParameters, int heartbeatInterval, boolean isMocked) {
+        JSONObject endpointConfigurations, JSONObject dynamicParameters, int heartbeatInterval, CategoryConfiguration categoryConfiguration, boolean isMocked) {
         this.appConfiguration = appConfiguration;
         this.hostname = hostname;
         this.appSentryDsn = appSentryDsn;
@@ -137,6 +140,7 @@ public class RemoteConfiguration {
         this.enhancedIntegrationChecks = enhancedIntegrationChecks;
         this.isMocked = isMocked;
         this.heartbeatInterval = heartbeatInterval;
+        this.categoryConfiguration = categoryConfiguration;
 
         this.endpointConfigurations = endpointConfigurations == null ? new JSONObject(defaultEndpointJson).toMap() : endpointConfigurations.toMap();
 
@@ -178,6 +182,10 @@ public class RemoteConfiguration {
                             final JSONObject response = new JSONObject((responseBody == null || responseBody.trim().isEmpty()) ? "{}" : responseBody);
 
                             class ResponseHelper {
+                                final JSONObject json;
+                                private ResponseHelper(JSONObject json) {
+                                    this.json = json;
+                                }
                                 private String nullInsteadOfEmpty(String input) {
                                     if (input != null && !input.trim().isEmpty()) {
                                         return input;
@@ -185,18 +193,37 @@ public class RemoteConfiguration {
                                     return null;
                                 }
                                 private String strOrNull(String key) {
-                                    return nullInsteadOfEmpty(response.isNull(key) ? null : response.getString(key));
+                                    return nullInsteadOfEmpty(this.json .isNull(key) ? null : this.json .getString(key));
                                 }
                                 private boolean boolOrFalse(String key) {
-                                    return response.optBoolean(key, false);
+                                    return this.json .optBoolean(key, false);
                                 }
                                 private JSONObject jsonOrNull(String key) {
-                                    return response.has(key) ? response.getJSONObject(key) : null;
+                                    return this.json .has(key) ? this.json .getJSONObject(key) : null;
                                 }
                             }
-                            final ResponseHelper helper = new ResponseHelper();
+                            final ResponseHelper helper = new ResponseHelper(response);
 
-                            // Future-Pat: This looks ugly, the reason we aren't moving it into the constructor itself is
+                            final JSONObject available_categories = helper.jsonOrNull("available_categories");
+                            final LinkedList<CategoryConfiguration.Category> categories = new LinkedList<>();
+                            if (available_categories != null) {
+                                final Iterator<String> keys = available_categories.keys();
+                                while(keys.hasNext()) {
+                                    final String key = keys.next();
+                                    final JSONObject categoryJson = available_categories.getJSONObject(key);
+                                    final ResponseHelper categoryJsonHelper = new ResponseHelper(categoryJson);
+                                    categories.add(new CategoryConfiguration.Category(
+                                            key,
+                                            categoryJson.getString("name"),
+                                            categoryJsonHelper.strOrNull("description"),
+                                            categoryJsonHelper.strOrNull("sound"),
+                                            categoryJson.optBoolean("show_badge", false)
+                                    ));
+                                }
+                            }
+                            final CategoryConfiguration categoryConfiguration = new CategoryConfiguration(categories.toArray(new CategoryConfiguration.Category[0]));
+
+                            // Future-Ezri: This looks ugly, the reason we aren't moving it into the constructor itself is
                             // so that it can be easily mocked for the functional tests.
                             final RemoteConfiguration configuration = new RemoteConfiguration(teakConfiguration.appConfiguration,
                                 response.isNull("auth") ? RemoteConfiguration.defaultHostname : response.getString("auth"),
@@ -209,6 +236,7 @@ public class RemoteConfiguration {
                                 helper.jsonOrNull("endpoint_configurations"),
                                 helper.jsonOrNull("dynamic_parameters"),
                                 response.optInt("heartbeat_interval", 60),
+                                categoryConfiguration,
                                 false);
 
                             Teak.log.i("configuration.remote", configuration.toHash());
@@ -257,6 +285,36 @@ public class RemoteConfiguration {
             return String.format(Locale.US, "%s: %s", super.toString(), Teak.formatJSONForLogging(new JSONObject(this.toHash())));
         } catch (Exception ignored) {
             return super.toString();
+        }
+    }
+
+    /**
+     * Describes the notification categories that will be used by the Teak server.
+     */
+    public static class CategoryConfiguration {
+        public final Category[] categories;
+
+        /**
+         * An individual category.
+         */
+        public static class Category {
+            public final String id;
+            public final String name;
+            public final String description;
+            public final String sound;
+            public final boolean showBadge;
+
+            public Category(final String id, final String name, final String description, final String sound, final boolean showBadge) {
+                this.id = id;
+                this.name = name;
+                this.description = description;
+                this.sound = sound;
+                this.showBadge = showBadge;
+            }
+        }
+
+        public CategoryConfiguration(final Category[] categories) {
+            this.categories = categories;
         }
     }
 }

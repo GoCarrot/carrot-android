@@ -1022,6 +1022,11 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         public final Uri deepLink;
 
         /**
+         * The opt-out category of the marketing channel.
+         */
+        public final String optOutCategory;
+
+        /**
          * Returns true if this was an incentivized launch.
          *
          * @return True if this notification had a reward attached to it.
@@ -1053,6 +1058,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             // so that Session#checkLaunchDataForDeepLinkAndPostEvents will execute the deep link
             // correctly.
             this.deepLink = this.launchLink; // Resolved by call to super()
+
+            this.optOutCategory = bundle.getString("teakOptOutCategory", "teak");
         }
 
         /**
@@ -1085,6 +1092,9 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
             final String teakDeepLink = deepLink.getQueryParameter("teak_deep_link");
             this.deepLink = (teakDeepLink == null ? deepLink : Uri.parse(teakDeepLink));
+
+            this.optOutCategory = deepLink.getQueryParameter("teak_opt_out_category") != null ?
+                    deepLink.getQueryParameter("teak_opt_out_category") : "teak";
         }
 
         /**
@@ -1103,6 +1113,9 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             this.rewardId = Helpers.newIfNotOld(oldLaunchData.rewardId, newLaunchData.rewardId);
             this.channelName = Helpers.newIfNotOld(oldLaunchData.channelName, newLaunchData.channelName);
             this.deepLink = updatedDeepLink;
+            this.optOutCategory = Helpers.newIfNotOld(oldLaunchData.optOutCategory,
+                    updatedDeepLink.getQueryParameter("teak_opt_out_category") != null ?
+                            updatedDeepLink.getQueryParameter("teak_opt_out_category") : "teak");
         }
 
         /**
@@ -1117,6 +1130,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         @Override
         public Map<String, Object> toSessionAttributionMap() {
             final Map<String, Object> map = super.toSessionAttributionMap();
+
+            map.put("teak_opt_out_category", this.optOutCategory);
 
             // Put the URI and any query parameters that start with 'teak_' into 'deep_link'
             if (this.deepLink != null) {
@@ -1152,6 +1167,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             map.put("teakRewardId", this.rewardId);
             map.put("teakChannelName", this.channelName);
             map.put("teakDeepLink", io.teak.sdk.core.DeepLink.willProcessUri(this.deepLink) ? this.deepLink.toString() : null);
+            map.put("teakOptOutCategory", this.optOutCategory);
             return map;
         }
         /// @endcond

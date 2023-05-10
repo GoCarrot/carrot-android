@@ -83,6 +83,10 @@ public class TeakInstance implements Unobfuscable {
                         TeakInstance.this.appRaven.setAsUncaughtExceptionHandler();
                     }
                 }
+
+                for (RemoteConfiguration.CategoryConfiguration.Category category : remoteConfiguration.categoryConfiguration.categories) {
+                    NotificationBuilder.configureNotificationChannelId(TeakInstance.this.context, category);
+                }
             }
         });
 
@@ -337,7 +341,7 @@ public class TeakInstance implements Unobfuscable {
             final Intent intent = new Intent();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 intent.setAction(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS);
-                intent.putExtra(Settings.EXTRA_CHANNEL_ID, NotificationBuilder.getNotificationChannelId(context));
+                intent.putExtra(Settings.EXTRA_CHANNEL_ID, NotificationBuilder.DEFAULT_NOTIFICATION_CHANNEL_ID);
                 intent.putExtra(Settings.EXTRA_APP_PACKAGE, context.getPackageName());
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
