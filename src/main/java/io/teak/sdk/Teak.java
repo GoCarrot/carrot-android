@@ -1168,8 +1168,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             final String teakDeepLink = deepLink.getQueryParameter("teak_deep_link");
             this.deepLink = (teakDeepLink == null ? deepLink : Uri.parse(teakDeepLink));
 
-            this.optOutCategory = deepLink.getQueryParameter("teak_opt_out_category") != null ?
-                    deepLink.getQueryParameter("teak_opt_out_category") : "teak";
+            this.optOutCategory = deepLink.getQueryParameter("teak_opt_out_category") != null ? deepLink.getQueryParameter("teak_opt_out_category") : "teak";
         }
 
         /**
@@ -1189,8 +1188,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             this.channelName = Helpers.newIfNotOld(oldLaunchData.channelName, newLaunchData.channelName);
             this.deepLink = updatedDeepLink;
             this.optOutCategory = Helpers.newIfNotOld(oldLaunchData.optOutCategory,
-                    updatedDeepLink.getQueryParameter("teak_opt_out_category") != null ?
-                            updatedDeepLink.getQueryParameter("teak_opt_out_category") : "teak");
+                updatedDeepLink.getQueryParameter("teak_opt_out_category") != null ? updatedDeepLink.getQueryParameter("teak_opt_out_category") : "teak");
         }
 
         /**

@@ -193,13 +193,13 @@ public class RemoteConfiguration {
                                     return null;
                                 }
                                 private String strOrNull(String key) {
-                                    return nullInsteadOfEmpty(this.json .isNull(key) ? null : this.json .getString(key));
+                                    return nullInsteadOfEmpty(this.json.isNull(key) ? null : this.json.getString(key));
                                 }
                                 private boolean boolOrFalse(String key) {
-                                    return this.json .optBoolean(key, false);
+                                    return this.json.optBoolean(key, false);
                                 }
                                 private JSONObject jsonOrNull(String key) {
-                                    return this.json .has(key) ? this.json .getJSONObject(key) : null;
+                                    return this.json.has(key) ? this.json.getJSONObject(key) : null;
                                 }
                             }
                             final ResponseHelper helper = new ResponseHelper(response);
@@ -208,17 +208,16 @@ public class RemoteConfiguration {
                             final LinkedList<CategoryConfiguration.Category> categories = new LinkedList<>();
                             if (available_categories != null) {
                                 final Iterator<String> keys = available_categories.keys();
-                                while(keys.hasNext()) {
+                                while (keys.hasNext()) {
                                     final String key = keys.next();
                                     final JSONObject categoryJson = available_categories.getJSONObject(key);
                                     final ResponseHelper categoryJsonHelper = new ResponseHelper(categoryJson);
                                     categories.add(new CategoryConfiguration.Category(
-                                            key,
-                                            categoryJson.getString("name"),
-                                            categoryJsonHelper.strOrNull("description"),
-                                            categoryJsonHelper.strOrNull("sound"),
-                                            categoryJson.optBoolean("show_badge", false)
-                                    ));
+                                        key,
+                                        categoryJson.getString("name"),
+                                        categoryJsonHelper.strOrNull("description"),
+                                        categoryJsonHelper.strOrNull("sound"),
+                                        categoryJson.optBoolean("show_badge", false)));
                                 }
                             }
                             final CategoryConfiguration categoryConfiguration = new CategoryConfiguration(categories.toArray(new CategoryConfiguration.Category[0]));

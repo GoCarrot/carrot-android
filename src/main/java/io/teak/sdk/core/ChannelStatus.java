@@ -13,7 +13,7 @@ public class ChannelStatus {
     public final boolean deliveryFault;
     public final Map<String, Object> categories;
 
-    public static final ChannelStatus Unknown = new ChannelStatus("unknown", null,false);
+    public static final ChannelStatus Unknown = new ChannelStatus("unknown", null, false);
 
     protected ChannelStatus(final String state, final Map<String, Object> categories, final boolean deliveryFault) {
         this.state = Teak.Channel.State.fromString(state);
@@ -24,8 +24,8 @@ public class ChannelStatus {
     public static ChannelStatus fromJSON(final JSONObject jsonObject) {
         final JSONObject categories = jsonObject.optJSONObject("categories");
         return new ChannelStatus(jsonObject.optString("state", "unknown"),
-                categories == null ? null : categories.toMap(),
-                jsonObject.optBoolean("delivery_fault", false));
+            categories == null ? null : categories.toMap(),
+            jsonObject.optBoolean("delivery_fault", false));
     }
 
     public JSONObject toJSON() {

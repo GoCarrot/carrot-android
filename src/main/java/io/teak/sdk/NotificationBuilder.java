@@ -121,9 +121,9 @@ public class NotificationBuilder {
                     final Uri soundUri = Uri.parse(category.sound);
                     if (soundUri != null) {
                         channel.setSound(soundUri, new AudioAttributes.Builder()
-                                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
-                                .build());
+                                                       .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                                                       .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                                                       .build());
                     }
                 }
 
@@ -223,7 +223,7 @@ public class NotificationBuilder {
         final boolean isAndroid12NotificationStyle = serverRequests12PlusStyle || willAutomaticallyUse12PlusStyle;
 
         final NotificationCompat.Builder builder = new NotificationCompat.Builder(context,
-                NotificationBuilder.channelIdForOptOutId(context, teakNotificaton.teakOptOutCategory));
+            NotificationBuilder.channelIdForOptOutId(context, teakNotificaton.teakOptOutCategory));
         builder.setGroup(UUID.randomUUID().toString());
 
         // Assign DecoratedCustomViewStyle if the server requests the Android 12 style, and it would
