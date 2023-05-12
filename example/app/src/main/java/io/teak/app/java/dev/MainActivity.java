@@ -343,7 +343,8 @@ public class MainActivity extends AppCompatActivity {
 //        Teak.incrementEvent("debug_increment", null, null, 5);
 //        android.os.Process.sendSignal(android.os.Process.myPid(), android.os.Process.SIGNAL_QUIT);
 //        Teak.setChannelState(Teak.Channel.Type.PlatformPush, Teak.Channel.State.Available);
-        Teak.openNotificationSettings();
+//        Teak.openNotificationSettings();
+        Teak.Notification.schedule("test_none", 5);
     }
 
     public void integrationTestTimeout(String timeout) {

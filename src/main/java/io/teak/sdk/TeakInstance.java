@@ -14,6 +14,7 @@ import android.provider.Settings;
 
 import java.net.URLEncoder;
 import java.security.InvalidParameterException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -269,6 +270,70 @@ public class TeakInstance implements Unobfuscable {
                         } catch (Exception e) {
                             Teak.log.exception(e);
                             q.offer(new Teak.Channel.Reply(true, Teak.Channel.State.Unknown, channel, Collections.singletonMap("sdk", e.toString().split("\n"))));
+                        }
+                    });
+        });
+        return ret;
+    }
+
+    public Future<Teak.Notification.Reply> scheduleNotification(final String creativeId, final long delayInSeconds, final Map<String, Object> personalizationData) {
+        final ArrayBlockingQueue<Teak.Notification.Reply> q = new ArrayBlockingQueue<>(1);
+        final FutureTask<Teak.Notification.Reply> ret = new FutureTask<>(() -> {
+            try {
+                return q.take();
+            } catch (InterruptedException e) {
+                Teak.log.exception(e);
+            }
+            return null;
+        });
+        ThreadFactory.autoStart(ret);
+
+        Session.whenUserIdIsReadyRun((session) -> {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("identifier", creativeId);
+            payload.put("offset", delayInSeconds);
+            payload.put("personalization_data", personalizationData);
+            Request.submit(null, "POST", "/me/local_notify.json", payload,
+                    session, (int responseCode, String responseBody) -> {
+                        try {
+                            final JSONObject response = new JSONObject((responseBody == null || responseBody.trim().isEmpty()) ? "{}" : responseBody);
+
+                            final boolean error = "ok".equalsIgnoreCase(response.optString("status", "error"));
+
+                            List<String> notificationIds = null;
+                            if (response.has("event")) {
+                                final JSONObject event = response.optJSONObject("event");
+                                if (event.has("id")) {
+                                    notificationIds = Collections.singletonList(event.get("id").toString());
+                                }
+                            }
+
+                            // May get re-assigned
+                            Map<String, String[]> replyErrors = Collections.emptyMap();
+
+                            // If there are errors, marshal them into the correct format
+                            final JSONObject errorsJson = response.optJSONObject("errors");
+                            if (errorsJson != null) {
+                                for (Iterator<String> it = errorsJson.keys(); it.hasNext();) {
+                                    final String key = it.next();
+                                    final JSONArray errorStrings = response.optJSONArray(key);
+                                    if (errorStrings != null) {
+                                        final String[] array = new String[errorStrings.length()];
+                                        int index = 0;
+                                        for (Object value : errorStrings) {
+                                            array[index] = (String) value;
+                                            index++;
+                                        }
+                                        replyErrors.put(key, array);
+                                    }
+                                }
+                            }
+
+                            // Offer to queue
+                            q.offer(new Teak.Notification.Reply(error, replyErrors, notificationIds));
+                        } catch (Exception e) {
+                            Teak.log.exception(e);
+                            q.offer(new Teak.Notification.Reply(true, Collections.singletonMap("sdk", e.toString().split("\n"))));
                         }
                     });
         });

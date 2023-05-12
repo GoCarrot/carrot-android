@@ -37,7 +37,6 @@ import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.DeepLinksReadyEvent;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.io.AndroidResources;
-import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONException;
 import io.teak.sdk.json.JSONObject;
 
@@ -563,18 +562,12 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         return Helpers.futureForValue(Channel.Reply.NoInstance);
     }
 
-    /**
-     * Set the state of a Teak Marketing Channel, string version.
-     *
-     * @note You may only assign the values {@link Channel.State#OptOut} and {@link Channel.State#Available} to Push Channels; {@link Channel.State#OptIn} is not allowed.
-     *
-     * @param channelName The name of the channel being modified.
-     * @param stateName   The name of the state for the channel.
-     */
+    /// @cond hide_from_doxygen
     @SuppressWarnings("unused")
     public static Future<Channel.Reply> setChannelState(final String channelName, final String stateName) {
         return setChannelState(Channel.Type.fromString(channelName), Channel.State.fromString(stateName));
     }
+    /// @endcond
 
     /**
      * Set the state of a Teak Marketing Channel Category
@@ -596,18 +589,100 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         return Helpers.futureForValue(Channel.Reply.NoInstance);
     }
 
-    /**
-     * Set the state of a Teak Marketing Channel Category, string version.
-     *
-     * @note You may only assign the values {@link Channel.State#OptOut} and {@link Channel.State#Available}.
-     *
-     * @param channelName The name of the channel being modified.
-     * @param category    The category being modified.
-     * @param stateName   The name of the state for the channel.
-     */
+    /// @cond hide_from_doxygen
     @SuppressWarnings("unused")
     public static Future<Channel.Reply> setCategoryState(final String channelName, final String category, final String stateName) {
         return setCategoryState(Channel.Type.fromString(channelName), category, Channel.State.fromString(stateName));
+    }
+    /// @endcond
+
+    /**
+     * Methods for scheduling and canceling Teak notifications.
+     */
+    public static class Notification {
+        /**
+         * Class used to communicate replies to:
+         * - {@link Notification#schedule(String, long, Map)} ()}
+         */
+        public static class Reply implements Unobfuscable {
+            public final boolean error;
+            public final Map<String, String[]> errors;
+            public final List<String> notificationIds;
+
+            public Reply(String notificationId) {
+                this(Collections.singletonList(notificationId));
+            }
+
+            public Reply(List<String> notificationIds) {
+                this(false, null, notificationIds);
+            }
+
+            public Reply(boolean error, Map<String, String[]> errors) {
+                this(error, errors, null);
+            }
+
+            public Reply(boolean error, Map<String, String[]> errors, List<String> notificationIds) {
+                this.error = error;
+                this.errors = errors;
+                this.notificationIds = notificationIds;
+            }
+
+            public JSONObject toJSON() {
+                final JSONObject json = new JSONObject();
+                json.put("notification_ids", this.notificationIds);
+                json.put("error", this.error);
+                json.put("errors", this.errors);
+                return json;
+            }
+
+            public static final Reply NoInstance = new Reply(true, Collections.singletonMap("sdk", new String[] {"Instance not ready"}), null);
+        }
+
+        /**
+         * Schedule a notification to be sent to the current user in the future
+         * @param creativeId     The identifier of the notification creative on the Teak dashboard.
+         * @param delayInSeconds The delay, in seconds, before sending the notification.
+         * @return A {@link Future} for the {@link Reply} to this operation.
+         */
+        @SuppressWarnings("unused")
+        public static Future<Reply> schedule(final String creativeId, final long delayInSeconds) {
+            return schedule(creativeId, delayInSeconds, (Map<String, Object>) null);
+        }
+
+        /// @cond hide_from_doxygen
+        @SuppressWarnings("unused")
+        public static Future<Reply> schedule(final String creativeId, final long delayInSeconds, final String userInfoJson) {
+            return schedule(creativeId, delayInSeconds, userInfoJson == null ? null : new JSONObject(userInfoJson).toMap());
+        }
+        /// @endcond
+
+        /**
+         * Schedule a notification to be sent to the current user in the future
+         * @param creativeId            The identifier of the notification creative on the Teak dashboard.
+         * @param delayInSeconds        The delay, in seconds, before sending the notification.
+         * @param personalizationData   A dictionary containing parameters that the server can use for templating.
+         * @return A {@link Future} for the {@link Reply} to this operation.
+         */
+        @SuppressWarnings("unused")
+        public static Future<Reply> schedule(final String creativeId, final long delayInSeconds, final Map<String, Object> personalizationData) {
+            Teak.log.trace("Teak.Notification.schedule", "creativeId", creativeId, "delayInSeconds", delayInSeconds);
+
+            if (creativeId == null || creativeId.isEmpty()) {
+                Teak.log.e("notification.schedule.error", "creativeId cannot be null or empty");
+                return Helpers.futureForValue(new Reply(true, Collections.singletonMap("parameter", new String[] {"creativeId cannot be null or empty"})));
+            }
+
+            if (delayInSeconds > 2630000 /* one month in seconds */ || delayInSeconds < 0) {
+                Teak.log.e("notification.schedule.error", "delayInSeconds can not be negative, or greater than one month");
+                return Helpers.futureForValue(new Reply(true, Collections.singletonMap("parameter", new String[] {"delayInSeconds can not be negative, or greater than one month"})));
+            }
+
+            if (Instance != null) {
+                return Instance.scheduleNotification(creativeId, delayInSeconds, personalizationData);
+            }
+
+            return Helpers.futureForValue(Reply.NoInstance);
+        }
     }
 
     /**
