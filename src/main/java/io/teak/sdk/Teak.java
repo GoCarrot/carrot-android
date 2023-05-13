@@ -607,29 +607,29 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         public static class Reply implements Unobfuscable {
             public final boolean error;
             public final Map<String, String[]> errors;
-            public final List<String> notificationIds;
+            public final List<String> scheduleIds;
 
             public Reply(String notificationId) {
                 this(Collections.singletonList(notificationId));
             }
 
-            public Reply(List<String> notificationIds) {
-                this(false, null, notificationIds);
+            public Reply(List<String> scheduleIds) {
+                this(false, null, scheduleIds);
             }
 
             public Reply(boolean error, Map<String, String[]> errors) {
                 this(error, errors, null);
             }
 
-            public Reply(boolean error, Map<String, String[]> errors, List<String> notificationIds) {
+            public Reply(boolean error, Map<String, String[]> errors, List<String> scheduleIds) {
                 this.error = error;
                 this.errors = errors;
-                this.notificationIds = notificationIds;
+                this.scheduleIds = scheduleIds;
             }
 
             public JSONObject toJSON() {
                 final JSONObject json = new JSONObject();
-                json.put("notification_ids", this.notificationIds);
+                json.put("schedule_ids", this.scheduleIds);
                 json.put("error", this.error);
                 json.put("errors", this.errors);
                 return json;
