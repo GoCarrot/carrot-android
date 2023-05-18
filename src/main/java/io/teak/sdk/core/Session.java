@@ -22,6 +22,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -124,6 +125,7 @@ public class Session {
 
     // State: Expiring
     private Date endDate;
+    private ScheduledFuture<?> reportDurationFuture;
 
     // State Independent
     private LaunchDataSource launchDataSource = null;
@@ -184,6 +186,13 @@ public class Session {
         } finally {
             this.stateLock.unlock();
             Session.currentSessionLock.unlock();
+        }
+    }
+
+    private void resetReportDurationFuture() {
+        if (this.reportDurationFuture != null && !this.reportDurationFuture.isDone()) {
+            this.reportDurationFuture.cancel(false);
+            this.reportDurationFuture = null;
         }
     }
 
@@ -264,12 +273,22 @@ public class Session {
 
                     // Process deep link and/or rewards and send out events
                     processAttributionAndDispatchEvents();
+
+                    // If we are currently expiring, reset the future that will report duration
+                    // and send the server a "hey nevermind, I'm back" message
+                    if (this.state == State.Expiring) {
+                        this.resetReportDurationFuture();
+
+                        // TODO: Send server a "nevermind that" message
+//                        Request.submit("/todo-todo-todo", payload, Session.this,
+//                                (responseCode, responseBody) -> {
+//
+//                                });
+                    }
                 } break;
 
                 case Expiring: {
                     this.endDate = new Date();
-
-                    // TODO: When expiring, punt to background service and say "Hey check the state of this session in N seconds"
 
                     // Stop heartbeat, Expiring->Expiring is possible, so no invalid data here
                     if (this.heartbeatService != null) {
@@ -281,6 +300,16 @@ public class Session {
                     if (this.userProfile != null) {
                         TeakCore.operationQueue.execute(this.userProfile);
                     }
+
+                    // Create a job that will run after 5 seconds
+                    this.resetReportDurationFuture();
+                    this.reportDurationFuture = TeakCore.operationQueue.schedule(() -> {
+                        // This is a message to the server that, in effect, says "If you don't hear
+                        // from me again, consider this session over"
+                        final HashMap<String, Object> payload = new HashMap<>();
+                        payload.put("session_id", this.sessionId);
+                        payload.put("session_duration_ms", this.endDate.getTime() - this.startDate.getTime());
+                    }, 5, TimeUnit.SECONDS);
                 } break;
 
                 case Expired: {
@@ -1078,6 +1107,7 @@ public class Session {
     private Map<String, Object> toMap() {
         HashMap<String, Object> map = new HashMap<>();
         map.put("startDate", this.startDate.getTime() / 1000);
+        map.put("endDate", this.endDate.getTime() / 1000);
         return map;
     }
 
