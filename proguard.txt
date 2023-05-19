@@ -28,7 +28,11 @@
 -keep class * implements io.teak.sdk.Unobfuscable { *; }
 
 ### AndroidX invoke via reflection ###
+-keep class androidx.core.app.NotificationCompat { public *; }
 -keep class androidx.core.app.NotificationManagerCompat { public *; }
+
+### Firebase ###
+-keep class com.google.firebase.messaging.FirebaseMessagingService { public *; }
 
 ### Reported by tango @ PS ###
 -keep class com.google.android.gms.common.GooglePlayServicesUtil { public *; }
