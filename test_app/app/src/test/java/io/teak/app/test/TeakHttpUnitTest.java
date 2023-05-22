@@ -50,6 +50,7 @@ public class TeakHttpUnitTest extends TeakUnitTest {
                         null,
                         null,
                         600,
+                        new RemoteConfiguration.CategoryConfiguration(new RemoteConfiguration.CategoryConfiguration.Category[] {}),
                         true);
         TeakEvent.postEvent(new RemoteConfigurationEvent(remoteConfiguration));
     }
