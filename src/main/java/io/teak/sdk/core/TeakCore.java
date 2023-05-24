@@ -7,12 +7,15 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+
+import javax.net.ssl.HttpsURLConnection;
 
 import androidx.annotation.NonNull;
 import io.teak.sdk.Helpers;
@@ -21,6 +24,7 @@ import io.teak.sdk.NotificationBuilder;
 import io.teak.sdk.Request;
 import io.teak.sdk.RetriableTask;
 import io.teak.sdk.Teak;
+import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
 import io.teak.sdk.configuration.AppConfiguration;
@@ -34,6 +38,7 @@ import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.io.DefaultAndroidNotification;
 import io.teak.sdk.io.DefaultAndroidResources;
 import io.teak.sdk.json.JSONObject;
+import io.teak.sdk.push.PushState;
 
 public class TeakCore {
     private static TeakCore Instance = null;
@@ -132,6 +137,46 @@ public class TeakCore {
                         // Note: This is the only case where an attributed event is sent from somewhere
                         // outside of Session#processAttributionAndDispatchEvents.
                         Session.whenUserIdIsReadyPost(new Teak.NotificationEvent(new Teak.NotificationLaunchData(bundle), true));
+                    }
+
+                    // Health check
+                    final boolean isHealthCheckPush = Helpers.getBooleanFromBundle(bundle, "teakHealthCheck");
+                    if (isHealthCheckPush || bundle.containsKey("teakExpectedDisplay")) {
+                        final boolean expectedDisplay = Helpers.getBooleanFromBundle(bundle, "teakExpectedDisplay");
+                        final PushState pushState = PushState.get();
+                        final boolean canDisplayNotification = (pushState != null && pushState.getNotificationStatus() == Teak.TEAK_NOTIFICATIONS_ENABLED);
+                        final boolean shouldSendHealthCheck = isHealthCheckPush || (expectedDisplay != canDisplayNotification);
+
+                        if (shouldSendHealthCheck) {
+                            asyncExecutor.execute(() -> {
+                                HttpsURLConnection connection = null;
+                                try {
+                                    final TeakConfiguration teakConfiguration = TeakConfiguration.get();
+                                    final String queryString = "app_id=" + URLEncoder.encode(bundle.getString("teakAppId"), "UTF-8") +
+                                            "&user_id=" + URLEncoder.encode(bundle.getString("teakUserId"), "UTF-8") +
+                                            "&platform_id=" + URLEncoder.encode(bundle.getString("teakNotifId"), "UTF-8") +
+                                            "&device_id=" + URLEncoder.encode(teakConfiguration.deviceConfiguration.deviceId, "UTF-8") +
+                                            "&expected_display=" + (expectedDisplay ? "true" : "false") +
+                                            "&status=" + ((pushState == null) ? "UnableToDetermine" : (canDisplayNotification ? "Enabled" : "Disabled"));
+
+                                    final URL url = new URL("https://parsnip.gocarrot.com/push_state?" + queryString);
+                                    connection = (HttpsURLConnection) url.openConnection();
+                                    connection.setRequestProperty("Accept-Charset", "UTF-8");
+                                    connection.setUseCaches(false);
+                                    connection.getResponseCode();
+                                } catch (Exception ignored) {
+                                } finally {
+                                    if (connection != null) {
+                                        connection.disconnect();
+                                    }
+                                }
+                            });
+                        }
+                    }
+
+                    // If this was a health check, do nothing further
+                    if (isHealthCheckPush) {
+                        return;
                     }
 
                     // Create Teak Notification
