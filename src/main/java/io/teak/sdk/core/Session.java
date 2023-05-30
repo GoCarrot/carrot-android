@@ -123,6 +123,8 @@ public class Session {
 
     public UserProfile userProfile;
 
+    private String serverSessionId;
+
     // State: Expiring
     private Date endDate;
     private ScheduledFuture<?> reportDurationFuture;
@@ -307,7 +309,7 @@ public class Session {
                         // This is a message to the server that, in effect, says "If you don't hear
                         // from me again, consider this session over"
                         final HashMap<String, Object> payload = new HashMap<>();
-                        payload.put("session_id", this.sessionId);
+                        payload.put("session_id", this.serverSessionId); // The value the server passed to us
                         payload.put("session_duration_ms", this.endDate.getTime() - this.startDate.getTime());
                     }, 5, TimeUnit.SECONDS);
                 } break;
@@ -559,6 +561,11 @@ public class Session {
                                 Session.this.channelStatusEmail = ChannelStatus.fromJSON(optOutStates.optJSONObject("email"));
                                 Session.this.channelStatusPush = ChannelStatus.fromJSON(optOutStates.optJSONObject("push"));
                                 Session.this.channelStatusSms = ChannelStatus.fromJSON(optOutStates.optJSONObject("sms"));
+                            }
+
+                            // Server-session id is the id of the underlying Redshift launch event
+                            if (response.has("session_id")) {
+                                Session.this.serverSessionId = response.getString("session_id");
                             }
 
                             // Send user data event
