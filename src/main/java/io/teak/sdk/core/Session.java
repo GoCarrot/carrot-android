@@ -22,6 +22,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -122,8 +123,12 @@ public class Session {
 
     public UserProfile userProfile;
 
+    private String serverSessionId;
+
     // State: Expiring
     private Date endDate;
+    private ScheduledFuture<?> reportDurationFuture;
+    private boolean reportDurationSent;
 
     // State Independent
     private LaunchDataSource launchDataSource = null;
@@ -187,6 +192,16 @@ public class Session {
         }
     }
 
+    private boolean resetReportDurationFuture() {
+        boolean ret = this.reportDurationSent;
+        if (this.reportDurationFuture != null && !this.reportDurationFuture.isDone()) {
+            this.reportDurationFuture.cancel(false);
+            this.reportDurationFuture = null;
+            this.reportDurationSent = false;
+        }
+        return ret;
+    }
+
     private boolean setState(@NonNull State newState) {
         this.stateLock.lock();
         try {
@@ -234,10 +249,9 @@ public class Session {
                     // Start heartbeat, heartbeat service should be null right now
                     if (this.heartbeatService != null) {
                         invalidValuesForTransition.add(new Object[] {"heartbeatService", this.heartbeatService});
-                        break;
+                    } else {
+                        startHeartbeat();
                     }
-
-                    startHeartbeat();
 
                     userIdReadyRunnableQueueLock.lock();
                     try {
@@ -264,12 +278,22 @@ public class Session {
 
                     // Process deep link and/or rewards and send out events
                     processAttributionAndDispatchEvents();
+
+                    // If we are currently expiring, reset the future that will report duration
+                    // and send the server a "hey nevermind, I'm back" message
+                    if (this.state == State.Expiring) {
+                        // Reset the future, and if session_stop got sent then send session_resume
+                        if (this.resetReportDurationFuture()) {
+                            // Send server a "nevermind that" message
+                            HashMap<String, Object> payload = new HashMap<>();
+                            payload.put("session_id", this.serverSessionId);
+                            Request.submit("parsnip.gocarrot.com", "/session_stop", payload, this, null);
+                        }
+                    }
                 } break;
 
                 case Expiring: {
                     this.endDate = new Date();
-
-                    // TODO: When expiring, punt to background service and say "Hey check the state of this session in N seconds"
 
                     // Stop heartbeat, Expiring->Expiring is possible, so no invalid data here
                     if (this.heartbeatService != null) {
@@ -281,12 +305,23 @@ public class Session {
                     if (this.userProfile != null) {
                         TeakCore.operationQueue.execute(this.userProfile);
                     }
+
+                    // Create a job that will run after 5 seconds
+                    this.resetReportDurationFuture();
+                    this.reportDurationFuture = TeakCore.operationQueue.schedule(() -> {
+                        // This is a message to the server that, in effect, says "If you don't hear
+                        // from me again, consider this session over"
+                        HashMap<String, Object> payload = new HashMap<>();
+                        payload.put("session_id", this.serverSessionId);
+                        payload.put("session_duration_ms", this.endDate.getTime() - this.startDate.getTime());
+
+o a                        this.reportDurationSent = true;
+                        Request.submit("parsnip.gocarrot.com", "/session_stop", payload, this, null);
+                    }, 5, TimeUnit.SECONDS);
                 } break;
 
                 case Expired: {
                     TeakEvent.removeEventListener(this.teakEventListener);
-
-                    // TODO: Report Session to server, once we collect that info.
                 } break;
             }
 
@@ -530,6 +565,11 @@ public class Session {
                                 Session.this.channelStatusEmail = ChannelStatus.fromJSON(optOutStates.optJSONObject("email"));
                                 Session.this.channelStatusPush = ChannelStatus.fromJSON(optOutStates.optJSONObject("push"));
                                 Session.this.channelStatusSms = ChannelStatus.fromJSON(optOutStates.optJSONObject("sms"));
+                            }
+
+                            // Server-session id is the id of the underlying Redshift launch event
+                            if (response.has("session_id")) {
+                                Session.this.serverSessionId = response.get("session_id").toString();
                             }
 
                             // Send user data event
@@ -1078,6 +1118,7 @@ public class Session {
     private Map<String, Object> toMap() {
         HashMap<String, Object> map = new HashMap<>();
         map.put("startDate", this.startDate.getTime() / 1000);
+        map.put("endDate", this.endDate.getTime() / 1000);
         return map;
     }
 
