@@ -565,7 +565,7 @@ public class Session {
 
                             // Server-session id is the id of the underlying Redshift launch event
                             if (response.has("session_id")) {
-                                Session.this.serverSessionId = response.getString("session_id");
+                                Session.this.serverSessionId = response.get("session_id").toString();
                             }
 
                             // Send user data event
