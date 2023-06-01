@@ -315,7 +315,7 @@ public class Session {
                         payload.put("session_id", this.serverSessionId);
                         payload.put("session_duration_ms", this.endDate.getTime() - this.startDate.getTime());
 
-o a                        this.reportDurationSent = true;
+                        this.reportDurationSent = true;
                         Request.submit("parsnip.gocarrot.com", "/session_stop", payload, this, null);
                     }, 5, TimeUnit.SECONDS);
                 } break;
