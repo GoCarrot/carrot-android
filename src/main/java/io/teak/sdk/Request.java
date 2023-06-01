@@ -372,7 +372,7 @@ public class Request implements Runnable {
 
     public Request(@Nullable String hostname, @NonNull String method, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback, boolean addStandardAttributes) {
         if (!endpoint.startsWith("/")) {
-            throw new IllegalArgumentException("Parameter 'endpoint' must start with '/' or things will break, and you will lose an hour of your life debugging.");
+            throw new IllegalArgumentException("Parameter 'endpoint' must start with '/' or things will break, and you will lose an hour of your life debugging. Number of times this exception has saved an ass: 1.");
         }
 
         this.hostname = hostname;
