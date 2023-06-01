@@ -148,29 +148,17 @@ public class TeakCore {
                         final boolean shouldSendHealthCheck = isHealthCheckPush || (expectedDisplay != canDisplayNotification);
 
                         if (shouldSendHealthCheck) {
-                            asyncExecutor.execute(() -> {
-                                HttpsURLConnection connection = null;
-                                try {
-                                    final TeakConfiguration teakConfiguration = TeakConfiguration.get();
-                                    final String queryString = "app_id=" + URLEncoder.encode(bundle.getString("teakAppId"), "UTF-8") +
-                                            "&user_id=" + URLEncoder.encode(bundle.getString("teakUserId"), "UTF-8") +
-                                            "&platform_id=" + URLEncoder.encode(bundle.getString("teakNotifId"), "UTF-8") +
-                                            "&device_id=" + URLEncoder.encode(teakConfiguration.deviceConfiguration.deviceId, "UTF-8") +
-                                            "&expected_display=" + (expectedDisplay ? "true" : "false") +
-                                            "&status=" + ((pushState == null) ? "UnableToDetermine" : (canDisplayNotification ? "Enabled" : "Disabled"));
+                            final TeakConfiguration teakConfiguration = TeakConfiguration.get();
 
-                                    final URL url = new URL("https://parsnip.gocarrot.com/push_state?" + queryString);
-                                    connection = (HttpsURLConnection) url.openConnection();
-                                    connection.setRequestProperty("Accept-Charset", "UTF-8");
-                                    connection.setUseCaches(false);
-                                    connection.getResponseCode();
-                                } catch (Exception ignored) {
-                                } finally {
-                                    if (connection != null) {
-                                        connection.disconnect();
-                                    }
-                                }
-                            });
+                            final HashMap<String, Object> payload = new HashMap<>();
+                            payload.put("app_id", bundle.getString("teakAppId"));
+                            payload.put("user_id", bundle.getString("teakUserId"));
+                            payload.put("platform_id", bundle.getString("teakNotifId"));
+                            payload.put("device_id", teakConfiguration.deviceConfiguration.deviceId);
+                            payload.put("expected_display", expectedDisplay);
+                            payload.put("status", ((pushState == null) ? "UnableToDetermine" : (canDisplayNotification ? "Enabled" : "Disabled")));
+
+                            Request.submit("parsnip.gocarrot.com", "/push_state", payload, Session.NullSession);
                         }
                     }
 
