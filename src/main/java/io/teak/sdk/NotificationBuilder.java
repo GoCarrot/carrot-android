@@ -444,6 +444,7 @@ public class NotificationBuilder {
                         remoteViews.setOnClickPendingIntent(viewElementId, pendingIntent.getTrampolineIntent(deepLink));
                     } else if (isUIType(viewElement, TextView.class)) {
                         final String value = viewConfig.getString(key);
+                        remoteViews.setViewVisibility(viewElementId, View.VISIBLE);
                         remoteViews.setTextViewText(viewElementId, fromHtml(value));
                     } else //noinspection StatementWithEmptyBody
                         if (isUIType(viewElement, ImageButton.class)) {
