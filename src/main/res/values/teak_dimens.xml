@@ -2,4 +2,6 @@
 <resources>
     <dimen name="teak_notification_large_icon_width">64dp</dimen>
     <dimen name="teak_notification_large_icon_height">64dp</dimen>
+    <dimen name="teak_notification_ios_icon_width">64dp</dimen>
+    <dimen name="teak_notification_ios_icon_height">64dp</dimen>
 </resources>
