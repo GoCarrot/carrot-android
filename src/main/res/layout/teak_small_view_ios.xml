@@ -51,7 +51,7 @@
     <ImageView android:id="@+id/right_image"
         android:layout_width="@dimen/teak_notification_ios_icon_width"
         android:layout_height="@dimen/teak_notification_ios_icon_height"
-        android:scaleType="fitXY"
+        android:scaleType="centerInside"
         android:contentDescription="@null"
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true" />
