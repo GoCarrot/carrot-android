@@ -6,6 +6,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -32,14 +33,10 @@ import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.ViewFlipper;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -48,7 +45,6 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLException;
 
 import androidx.core.app.NotificationCompat;
 import io.teak.sdk.configuration.RemoteConfiguration;
@@ -117,13 +113,25 @@ public class NotificationBuilder {
                 channel.setName(category.name);
                 channel.setDescription(category.description);
                 channel.setShowBadge(category.showBadge);
+
                 if (category.sound != null) {
-                    final Uri soundUri = Uri.parse(category.sound);
+                    Uri soundUri = null;
+                    try {
+                        final Resources resources = context.getResources();
+                        final String packageName = context.getPackageName();
+                        final int soundId = resources.getIdentifier(category.sound, "raw", packageName);
+                        if (soundId != 0) {
+                            soundUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + packageName + "/" + soundId);
+                        }
+                    } catch (Exception ignored) {
+                    }
+
                     if (soundUri != null) {
-                        channel.setSound(soundUri, new AudioAttributes.Builder()
-                                                       .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                                                       .setUsage(AudioAttributes.USAGE_NOTIFICATION)
-                                                       .build());
+                        final AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                                .build();
+                        channel.setSound(soundUri, audioAttributes);
                     }
                 }
 
