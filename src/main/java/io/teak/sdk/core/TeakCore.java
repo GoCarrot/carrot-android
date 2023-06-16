@@ -148,13 +148,17 @@ public class TeakCore {
                         final boolean shouldSendHealthCheck = isHealthCheckPush || (expectedDisplay != canDisplayNotification);
 
                         if (shouldSendHealthCheck) {
-                            final TeakConfiguration teakConfiguration = TeakConfiguration.get();
-
                             final HashMap<String, Object> payload = new HashMap<>();
+
+                            try {
+                                final TeakConfiguration teakConfiguration = TeakConfiguration.get();
+                                payload.put("device_id", teakConfiguration.deviceConfiguration.deviceId);
+                            } catch (Exception ignored) {
+                            }
+
                             payload.put("app_id", bundle.getString("teakAppId"));
                             payload.put("user_id", bundle.getString("teakUserId"));
                             payload.put("platform_id", bundle.getString("teakNotifId"));
-                            payload.put("device_id", teakConfiguration.deviceConfiguration.deviceId);
                             payload.put("expected_display", expectedDisplay);
                             payload.put("status", ((pushState == null) ? "UnableToDetermine" : (canDisplayNotification ? "Enabled" : "Disabled")));
 
