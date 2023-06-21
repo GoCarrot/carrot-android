@@ -167,9 +167,6 @@ public class MainActivity extends AppCompatActivity {
         serviceIntent.setPackage("com.android.vending");
         bindService(serviceIntent, mServiceConn, Context.BIND_AUTO_CREATE);
 
-        // Set badge count
-        Teak.setApplicationBadgeNumber(42);
-
         // HAX
         Teak.setStringAttribute("automated_test_string", "asdfasdfasdf");
         Teak.trackEvent("Player_Level_Up", null, null);
