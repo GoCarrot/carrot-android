@@ -254,6 +254,9 @@ public class NotificationBuilder {
         builder.setOnlyAlertOnce(true);
         builder.setAutoCancel(true);
 
+        // Assign content text otherwise a badge will not show up
+        builder.setContentText(teakNotificaton.message);
+
         // Rich text message
         Spanned richMessageText = new SpannedString(teakNotificaton.message);
         try {
