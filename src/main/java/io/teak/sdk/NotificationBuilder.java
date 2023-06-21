@@ -54,7 +54,7 @@ import io.teak.sdk.json.JSONObject;
 
 public class NotificationBuilder {
     public static final String DEFAULT_NOTIFICATION_CHANNEL_ID = "teak";
-    private static AtomicInteger pendingIntentRequestCode = new AtomicInteger();
+    private static final AtomicInteger pendingIntentRequestCode = new AtomicInteger();
     public static class AssetLoadException extends Exception {
         AssetLoadException(String assetName, Exception cause) {
             super("Failed to load asset: " + assetName, cause);
