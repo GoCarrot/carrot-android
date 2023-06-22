@@ -104,15 +104,16 @@ public class NotificationBuilder {
                 final int importance = NotificationManager.IMPORTANCE_HIGH;
                 final NotificationChannel channel = new NotificationChannel(category.id, category.name, importance);
 
+                // The following settings can't be changed after a channel is created
                 if (notificationManager.getNotificationChannel(category.id) == null) {
                     channel.enableLights(true);
                     channel.setLightColor(Color.RED);
                     channel.enableVibration(true);
                     channel.setVibrationPattern(new long[] {100L, 300L, 0L, 0L, 100L, 300L});
+                    channel.setShowBadge(category.showBadge);
                 }
                 channel.setName(category.name);
                 channel.setDescription(category.description);
-                channel.setShowBadge(category.showBadge);
 
                 if (category.sound != null) {
                     Uri soundUri = null;
