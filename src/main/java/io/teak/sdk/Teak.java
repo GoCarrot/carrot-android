@@ -13,6 +13,7 @@ import android.os.StrictMode;
 
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,6 +31,7 @@ import java.util.regex.Pattern;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.teak.sdk.configuration.AppConfiguration;
+import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.ChannelStatus;
 import io.teak.sdk.core.Executors;
 import io.teak.sdk.core.InstrumentableReentrantLock;
@@ -37,6 +39,7 @@ import io.teak.sdk.core.TeakCore;
 import io.teak.sdk.event.DeepLinksReadyEvent;
 import io.teak.sdk.event.PushNotificationEvent;
 import io.teak.sdk.io.AndroidResources;
+import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONException;
 import io.teak.sdk.json.JSONObject;
 
@@ -506,6 +509,30 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             }
         }
 
+        public static class Category implements Unobfuscable {
+            public final String id;
+            public final String name;
+            public final String description;
+
+            public Category(final String id, final String name, final String description) {
+                this.id = id;
+                this.name = name;
+                this.description = description;
+            }
+
+            public Category(final RemoteConfiguration.CategoryConfiguration.Category category) {
+                this(category.id, category.name, category.description);
+            }
+
+            public JSONObject toJson() {
+                final JSONObject json = new JSONObject();
+                json.put("id", this.id);
+                json.put("name", this.name);
+                json.put("description", this.description);
+                return json;
+            }
+        }
+
         /**
          * Class used for {@link Teak#setChannelState(String, String)} and {@link Teak#setCategoryState(String, String, String)} replies.
          */
@@ -682,6 +709,42 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             }
 
             return Helpers.futureForValue(Reply.NoInstance);
+        }
+
+        /**
+         * Get a list of the notification channel categories as a JSON string.
+         * @return A Json array of notification categories. This will be null if RemoteConfiguration has not yet happened.
+         */
+        @SuppressWarnings("unused")
+        public static String getCategoriesJson() {
+            final List< Channel.Category> categories = getCategories();
+            if (categories == null) {
+                return null;
+            }
+
+            final JSONArray json = new JSONArray();
+            for (Channel.Category category : categories) {
+                json.put(category.toJson());
+            }
+            return json.toString();
+        }
+
+        /**
+         * Get a list of the notification channel categories.
+         * @return A Json array of notification categories. This will be null if RemoteConfiguration has not yet happened.
+         */
+        @SuppressWarnings("unused")
+        public static List<Channel.Category> getCategories() {
+            try {
+                final List<Channel.Category> categories = new ArrayList<>();
+                for (RemoteConfiguration.CategoryConfiguration.Category category :
+                        TeakConfiguration.get().remoteConfiguration.categoryConfiguration.categories) {
+                    categories.add(new Channel.Category(category));
+                }
+                return categories;
+            } catch (Exception ignored) {
+            }
+            return null;
         }
     }
 
