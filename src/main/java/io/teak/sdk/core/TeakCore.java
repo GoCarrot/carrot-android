@@ -18,6 +18,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import javax.net.ssl.HttpsURLConnection;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.NotificationManagerCompat;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.NotificationBuilder;
@@ -38,7 +39,6 @@ import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.io.DefaultAndroidNotification;
 import io.teak.sdk.io.DefaultAndroidResources;
 import io.teak.sdk.json.JSONObject;
-import io.teak.sdk.push.PushState;
 
 public class TeakCore {
     private static TeakCore Instance = null;
@@ -141,10 +141,10 @@ public class TeakCore {
 
                     // Health check
                     final boolean isHealthCheckPush = Helpers.getBooleanFromBundle(bundle, "teakHealthCheck");
+                    final Context context = ((PushNotificationEvent) event).context;
                     if (isHealthCheckPush || bundle.containsKey("teakExpectedDisplay")) {
                         final boolean expectedDisplay = Helpers.getBooleanFromBundle(bundle, "teakExpectedDisplay");
-                        final PushState pushState = PushState.get();
-                        final boolean canDisplayNotification = (pushState != null && pushState.getNotificationStatus() == Teak.TEAK_NOTIFICATIONS_ENABLED);
+                        final boolean canDisplayNotification = NotificationManagerCompat.from(context).areNotificationsEnabled()
                         final boolean shouldSendHealthCheck = isHealthCheckPush || (expectedDisplay != canDisplayNotification);
 
                         if (shouldSendHealthCheck) {
@@ -161,7 +161,7 @@ public class TeakCore {
                             payload.put("user_id", bundle.getString("teakUserId"));
                             payload.put("platform_id", bundle.getString("teakNotifId"));
                             payload.put("expected_display", expectedDisplay);
-                            payload.put("status", ((pushState == null) ? "UnableToDetermine" : (canDisplayNotification ? "Enabled" : "Disabled")));
+                            payload.put("status", canDisplayNotification ? "Enabled" : "Disabled");
 
                             Request.submit("parsnip.gocarrot.com", "/push_state", payload, Session.NullSession);
                         }
@@ -182,7 +182,7 @@ public class TeakCore {
                     bundle.putString("teakNotificationPlacement", teakNotification.notificationPlacement.name);
 
                     // Create & display native notification asynchronously, image downloads etc
-                    final Context context = ((PushNotificationEvent) event).context;
+
                     asyncExecutor.submit(new RetriableTask<>(3, 2000L, 2, () -> {
                         // Send metric
                         final String teakUserId = bundle.getString("teakUserId", null);
