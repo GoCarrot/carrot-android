@@ -154,6 +154,7 @@ public class TeakCore {
                                 final TeakConfiguration teakConfiguration = TeakConfiguration.get();
                                 payload.put("device_id", teakConfiguration.deviceConfiguration.deviceId);
                             } catch (Exception ignored) {
+                                payload.put("device_id", "unknown");
                             }
 
                             payload.put("app_id", bundle.getString("teakAppId"));
