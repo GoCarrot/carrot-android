@@ -287,7 +287,7 @@ public class Session {
                             // Send server a "nevermind that" message
                             HashMap<String, Object> payload = new HashMap<>();
                             payload.put("session_id", this.serverSessionId);
-                            Request.submit("parsnip.gocarrot.com", "/session_stop", payload, this, null);
+                            Request.submit("parsnip.gocarrot.com", "/session_resume", payload, this, null);
                         }
                     }
                 } break;
