@@ -193,7 +193,7 @@ public class TeakInstance implements Unobfuscable {
                         if (errorsJson != null) {
                             for (Iterator<String> it = errorsJson.keys(); it.hasNext();) {
                                 final String key = it.next();
-                                final JSONArray errorStrings = response.optJSONArray(key);
+                                final JSONArray errorStrings = errorsJson.optJSONArray(key);
                                 if (errorStrings != null) {
                                     final String[] array = new String[errorStrings.length()];
                                     int index = 0;
@@ -252,7 +252,7 @@ public class TeakInstance implements Unobfuscable {
                         if (errorsJson != null) {
                             for (Iterator<String> it = errorsJson.keys(); it.hasNext();) {
                                 final String key = it.next();
-                                final JSONArray errorStrings = response.optJSONArray(key);
+                                final JSONArray errorStrings = errorsJson.optJSONArray(key);
                                 if (errorStrings != null) {
                                     final String[] array = new String[errorStrings.length()];
                                     int index = 0;
@@ -316,7 +316,7 @@ public class TeakInstance implements Unobfuscable {
                         if (errorsJson != null) {
                             for (Iterator<String> it = errorsJson.keys(); it.hasNext();) {
                                 final String key = it.next();
-                                final JSONArray errorStrings = response.optJSONArray(key);
+                                final JSONArray errorStrings = errorsJson.optJSONArray(key);
                                 if (errorStrings != null) {
                                     final String[] array = new String[errorStrings.length()];
                                     int index = 0;
