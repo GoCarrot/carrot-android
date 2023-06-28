@@ -144,7 +144,7 @@ public class TeakCore {
                     final Context context = ((PushNotificationEvent) event).context;
                     if (isHealthCheckPush || bundle.containsKey("teakExpectedDisplay")) {
                         final boolean expectedDisplay = Helpers.getBooleanFromBundle(bundle, "teakExpectedDisplay");
-                        final boolean canDisplayNotification = NotificationManagerCompat.from(context).areNotificationsEnabled()
+                        final boolean canDisplayNotification = NotificationManagerCompat.from(context).areNotificationsEnabled();
                         final boolean shouldSendHealthCheck = isHealthCheckPush || (expectedDisplay != canDisplayNotification);
 
                         if (shouldSendHealthCheck) {
