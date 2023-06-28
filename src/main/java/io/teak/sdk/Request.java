@@ -349,7 +349,7 @@ public class Request implements Runnable {
         BatchedRequest batch = null;
 
         if ("parsnip.gocarrot.com".equals(hostname) &&
-            !"/notification_received".equals(endpoint)) {
+            !("/notification_received".equals(endpoint) || "/session_stop".equals(endpoint) || "/session_resume".equals(endpoint))) {
             batch = BatchedParsnipRequest.getCurrentBatch(hostname, session);
         } else if ("/me/events".equals(endpoint)) {
             batch = BatchedTrackEventRequest.getCurrentBatch(hostname, session);
