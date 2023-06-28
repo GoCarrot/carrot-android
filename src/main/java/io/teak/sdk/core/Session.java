@@ -197,8 +197,8 @@ public class Session {
         if (this.reportDurationFuture != null && !this.reportDurationFuture.isDone()) {
             this.reportDurationFuture.cancel(false);
             this.reportDurationFuture = null;
-            this.reportDurationSent = false;
         }
+        this.reportDurationSent = false;
         return ret;
     }
 
