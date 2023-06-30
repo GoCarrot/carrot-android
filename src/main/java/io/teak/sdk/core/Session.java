@@ -283,12 +283,10 @@ public class Session {
                     // and send the server a "hey nevermind, I'm back" message
                     if (this.state == State.Expiring) {
                         // Reset the future, and if session_stop got sent then send session_resume
-                        if (this.resetReportDurationFuture()) {
-                            // Send server a "nevermind that" message
-                            HashMap<String, Object> payload = new HashMap<>();
-                            payload.put("session_id", this.serverSessionId);
-                            Request.submit("parsnip.gocarrot.com", "/session_resume", payload, this, null);
-                        }
+                        // Send server a "nevermind that" message
+                        HashMap<String, Object> payload = new HashMap<>();
+                        payload.put("session_id", this.serverSessionId);
+                        Request.submit("gocarrot.com", "/session_resume", payload, this, null);
                     }
                 } break;
 
@@ -306,18 +304,12 @@ public class Session {
                         TeakCore.operationQueue.execute(this.userProfile);
                     }
 
-                    // Create a job that will run after 5 seconds
-                    this.resetReportDurationFuture();
-                    this.reportDurationFuture = TeakCore.operationQueue.schedule(() -> {
-                        // This is a message to the server that, in effect, says "If you don't hear
-                        // from me again, consider this session over"
-                        HashMap<String, Object> payload = new HashMap<>();
-                        payload.put("session_id", this.serverSessionId);
-                        payload.put("session_duration_ms", this.endDate.getTime() - this.startDate.getTime());
-
-                        this.reportDurationSent = true;
-                        Request.submit("parsnip.gocarrot.com", "/session_stop", payload, this, null);
-                    }, 5, TimeUnit.SECONDS);
+                    // This is a message to the server that, in effect, says "If you don't hear
+                    // from me again, consider this session over"
+                    HashMap<String, Object> payload = new HashMap<>();
+                    payload.put("session_id", this.serverSessionId);
+                    payload.put("session_duration_ms", this.endDate.getTime() - this.startDate.getTime());
+                    Request.submit("gocarrot.com", "/session_stop", payload, this, null);
                 } break;
 
                 case Expired: {
@@ -399,7 +391,7 @@ public class Session {
                                      "&app_version_name=" + URLEncoder.encode(String.valueOf(teakConfiguration.appConfiguration.appVersionName), "UTF-8") +
                                      (Session.this.countryCode == null ? "" : "&country_code=" + URLEncoder.encode(Session.this.countryCode, "UTF-8")) +
                                      "&buster=" + URLEncoder.encode(buster, "UTF-8");
-                URL url = new URL("https://iroko.gocarrot.com/ping?" + queryString);
+                URL url = new URL("https://gocarrot.com/ping?" + queryString);
                 connection = (HttpsURLConnection) url.openConnection();
                 connection.setRequestProperty("Accept-Charset", "UTF-8");
                 connection.setUseCaches(false);
