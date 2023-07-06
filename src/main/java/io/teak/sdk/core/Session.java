@@ -124,6 +124,7 @@ public class Session {
     public UserProfile userProfile;
 
     private String serverSessionId;
+    private int sessionVectorClock;
 
     // State: Expiring
     private Date endDate;
@@ -157,6 +158,8 @@ public class Session {
         // - deviceConfiguration
         this.startDate = new Date();
         this.sessionId = UUID.randomUUID().toString().replace("-", "");
+        this.serverSessionId = null;
+        this.sessionVectorClock = 0;
         this.launchDataSource = launchDataSource;
         if (session != null) {
             this.userId = session.userId;
@@ -282,10 +285,12 @@ public class Session {
                     // If we are currently expiring, reset the future that will report duration
                     // and send the server a "hey nevermind, I'm back" message
                     if (this.state == State.Expiring) {
+                        this.sessionVectorClock++;
                         // Reset the future, and if session_stop got sent then send session_resume
                         // Send server a "nevermind that" message
                         HashMap<String, Object> payload = new HashMap<>();
                         payload.put("session_id", this.serverSessionId);
+                        payload.put("session_vector_clock", this.sessionVectorClock);
                         Request.submit("gocarrot.com", "/session_resume", payload, this, null);
                     }
                 } break;
@@ -304,11 +309,13 @@ public class Session {
                         TeakCore.operationQueue.execute(this.userProfile);
                     }
 
+                    this.sessionVectorClock++;
                     // This is a message to the server that, in effect, says "If you don't hear
                     // from me again, consider this session over"
                     HashMap<String, Object> payload = new HashMap<>();
                     payload.put("session_id", this.serverSessionId);
                     payload.put("session_duration_ms", this.endDate.getTime() - this.startDate.getTime());
+                    payload.put("session_vector_clock", this.sessionVectorClock);
                     Request.submit("gocarrot.com", "/session_stop", payload, this, null);
                 } break;
 
