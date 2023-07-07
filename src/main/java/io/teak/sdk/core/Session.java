@@ -23,7 +23,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -129,8 +128,6 @@ public class Session {
 
     // State: Expiring
     private long endTimeMillis;
-    private ScheduledFuture<?> reportDurationFuture;
-    private boolean reportDurationSent;
 
     // State Independent
     private LaunchDataSource launchDataSource = null;
@@ -194,16 +191,6 @@ public class Session {
             this.stateLock.unlock();
             Session.currentSessionLock.unlock();
         }
-    }
-
-    private boolean resetReportDurationFuture() {
-        boolean ret = this.reportDurationSent;
-        if (this.reportDurationFuture != null && !this.reportDurationFuture.isDone()) {
-            this.reportDurationFuture.cancel(false);
-            this.reportDurationFuture = null;
-        }
-        this.reportDurationSent = false;
-        return ret;
     }
 
     private boolean setState(@NonNull State newState) {
