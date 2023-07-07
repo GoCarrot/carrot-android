@@ -442,6 +442,7 @@ public class Session {
                 long minutes = TimeUnit.MINUTES.convert(rawTz, TimeUnit.MILLISECONDS);
                 String tzOffset = new DecimalFormat("#0.00").format(minutes / 60.0f);
                 payload.put("timezone", tzOffset);
+                payload.put("timezone_id", tz.getID());
 
                 final String locale = Locale.getDefault().toString();
                 payload.put("locale", locale);
