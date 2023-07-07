@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -100,7 +101,7 @@ public class Session {
     // endregion
 
     // State: Created
-    private final Date startDate;
+    private final long startTimeMillis;
     @SuppressWarnings("UnusedDeclaration")
     private final String sessionId;
 
@@ -127,7 +128,7 @@ public class Session {
     private int sessionVectorClock;
 
     // State: Expiring
-    private Date endDate;
+    private long endTimeMillis;
     private ScheduledFuture<?> reportDurationFuture;
     private boolean reportDurationSent;
 
@@ -142,7 +143,7 @@ public class Session {
 
     // Used specifically for creating the "null session" which is just used for code-intent clarity
     private Session(@NonNull String nullSessionId) {
-        this.startDate = new Date();
+        this.startTimeMillis = SystemClock.elapsedRealtime();
         this.sessionId = nullSessionId;
     }
 
@@ -153,10 +154,10 @@ public class Session {
     private Session(@Nullable Session session, @Nullable LaunchDataSource launchDataSource) {
         // State: Created
         // Valid data:
-        // - startDate
+        // - startTimeMillis
         // - appConfiguration
         // - deviceConfiguration
-        this.startDate = new Date();
+        this.startTimeMillis = SystemClock.elapsedRealtime();
         this.sessionId = UUID.randomUUID().toString().replace("-", "");
         this.serverSessionId = null;
         this.sessionVectorClock = 0;
@@ -175,7 +176,7 @@ public class Session {
         this.stateLock.lock();
         try {
             if (this.state == State.Expiring &&
-                (new Date().getTime() - this.endDate.getTime() > SAME_SESSION_TIME_DELTA)) {
+                (SystemClock.elapsedRealtime() - this.endTimeMillis > SAME_SESSION_TIME_DELTA)) {
                 setState(State.Expired);
             }
             return (this.state == State.Expired);
@@ -224,11 +225,6 @@ public class Session {
             // logic that should occur on transition.
             switch (newState) {
                 case Created: {
-                    if (this.startDate == null) {
-                        invalidValuesForTransition.add(new Object[] {"startDate", "null"});
-                        break;
-                    }
-
                     TeakEvent.addEventListener(this.remoteConfigurationEventListener);
                 } break;
 
@@ -296,7 +292,7 @@ public class Session {
                 } break;
 
                 case Expiring: {
-                    this.endDate = new Date();
+                    this.endTimeMillis = SystemClock.elapsedRealtime();
 
                     // Stop heartbeat, Expiring->Expiring is possible, so no invalid data here
                     if (this.heartbeatService != null) {
@@ -309,14 +305,16 @@ public class Session {
                         TeakCore.operationQueue.execute(this.userProfile);
                     }
 
-                    this.sessionVectorClock++;
-                    // This is a message to the server that, in effect, says "If you don't hear
-                    // from me again, consider this session over"
-                    HashMap<String, Object> payload = new HashMap<>();
-                    payload.put("session_id", this.serverSessionId);
-                    payload.put("session_duration_ms", this.endDate.getTime() - this.startDate.getTime());
-                    payload.put("session_vector_clock", this.sessionVectorClock);
-                    Request.submit("gocarrot.com", "/session_stop", payload, this, null);
+                    if(this.serverSessionId != null) {
+                        this.sessionVectorClock++;
+                        // This is a message to the server that, in effect, says "If you don't hear
+                        // from me again, consider this session over"
+                        HashMap<String, Object> payload = new HashMap<>();
+                        payload.put("session_id", this.serverSessionId);
+                        payload.put("session_duration_ms", this.endTimeMillis - this.startTimeMillis);
+                        payload.put("session_vector_clock", this.sessionVectorClock);
+                        Request.submit("gocarrot.com", "/session_stop", payload, this, null);
+                    }
                 } break;
 
                 case Expired: {
@@ -1116,8 +1114,8 @@ public class Session {
 
     private Map<String, Object> toMap() {
         HashMap<String, Object> map = new HashMap<>();
-        map.put("startDate", this.startDate.getTime() / 1000);
-        map.put("endDate", this.endDate.getTime() / 1000);
+        map.put("startDate", this.startTimeMillis / 1000);
+        map.put("endDate", this.endTimeMillis / 1000);
         return map;
     }
 
