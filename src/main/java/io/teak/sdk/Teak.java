@@ -204,7 +204,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Tell Teak how it should identify the current user.
-     * 
+     *
      * This will also begin tracking and reporting of a session, and track a daily active user.
      *
      * @note This should be the same way you identify the user in your backend.
@@ -220,7 +220,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Tell Teak how it should identify the current user.
-     * 
+     *
      * This will also begin tracking and reporting of a session, and track a daily active user.
      *
      * @note This should be the same way you identify the user in your backend.
@@ -264,7 +264,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Tell Teak how it should identify the current user, with data collection opt-out.
-     * 
+     *
      * This will also begin tracking and reporting of a session, and track a daily active user.
      *
      * @note This should be the same way you identify the user in your backend.
@@ -282,7 +282,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Tell Teak how it should identify the current user, with data collection opt-out and email.
-     * 
+     *
      * This will also begin tracking and reporting of a session, and track a daily active user.
      *
      * @note This should be the same way you identify the user in your backend.
@@ -400,7 +400,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Tell Teak how it should identify the current user, with additional options and configuration.
-     * 
+     *
      * This will also begin tracking and reporting of a session, and track a daily active user.
      *
      * @note This should be the same way you identify the user in your backend.
@@ -833,7 +833,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Open the settings app to the settings for this app.
-     * 
+     *
      * @note This will always return <code>false</code> for any device below API 19.
      * @note Be sure to prompt the user to re-enable notifications for your app before calling this function.
      *
@@ -1028,7 +1028,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     public static abstract class DeepLink implements Unobfuscable {
         /**
          * Method called when a deep link is invoked.
-         * 
+         *
          * @param parameters A dictionary of the path, and url parameters provided to the deep link.
          */
         public abstract void call(Map<String, Object> parameters);
@@ -1642,7 +1642,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     public static abstract class LogListener {
         /**
          * A log event sent by the Teak SDK.
-         * 
+         *
          * @param logEvent The log event type.
          * @param logLevel The severity of the log message.
          * @param logData  Semi-structured log message.
