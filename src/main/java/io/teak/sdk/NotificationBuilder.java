@@ -96,7 +96,7 @@ public class NotificationBuilder {
         return NotificationBuilder.DEFAULT_NOTIFICATION_CHANNEL_ID;
     }
 
-    public static void configureNotificationChannelId(Context context, RemoteConfiguration.CategoryConfiguration.Category category) {
+    public static void configureNotificationChannelId(Context context, Teak.Channel.Category category) {
         // Notification channel, required for running on API 26+
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {

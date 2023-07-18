@@ -85,7 +85,7 @@ public class TeakInstance implements Unobfuscable {
                     }
                 }
 
-                for (RemoteConfiguration.CategoryConfiguration.Category category : remoteConfiguration.categoryConfiguration.categories) {
+                for (Teak.Channel.Category category : remoteConfiguration.categories) {
                     NotificationBuilder.configureNotificationChannelId(TeakInstance.this.context, category);
                 }
             }

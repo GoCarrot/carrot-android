@@ -6,6 +6,10 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+
+import org.greenrobot.eventbus.EventBus;
 
 import java.net.URL;
 import java.net.URLEncoder;
@@ -35,6 +39,7 @@ import io.teak.sdk.event.NotificationDisplayEvent;
 import io.teak.sdk.event.PurchaseEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
 import io.teak.sdk.event.PushNotificationEvent;
+import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.io.DefaultAndroidNotification;
 import io.teak.sdk.io.DefaultAndroidResources;
@@ -101,6 +106,14 @@ public class TeakCore {
                     Teak.log.i("purchase.failed", payload);
 
                     asyncExecutor.execute(() -> Session.whenUserIdIsReadyRun(session -> Request.submit("/me/purchase", payload, session)));
+                    break;
+                }
+                case RemoteConfigurationEvent.Type: {
+                    final RemoteConfiguration configuration = ((RemoteConfigurationEvent) event).remoteConfiguration;
+                    final Teak.ConfigurationDataEvent sdkEvent = new Teak.ConfigurationDataEvent(configuration);
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        EventBus.getDefault().post(sdkEvent);
+                    });
                     break;
                 }
                 case PushNotificationEvent.Received: {

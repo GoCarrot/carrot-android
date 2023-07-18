@@ -450,6 +450,35 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     public static class Channel implements Unobfuscable {
 
         /**
+         * An individual category.
+         */
+        public static class Category {
+            public final String id;
+            public final String name;
+            public final String description;
+            public final String sound;
+            public final boolean showBadge;
+
+            public Category(final String id, final String name, final String description, final String sound, final boolean showBadge) {
+                this.id = id;
+                this.name = name;
+                this.description = description;
+                this.sound = sound;
+                this.showBadge = showBadge;
+            }
+
+            public JSONObject toJSON() {
+                final JSONObject json = new JSONObject();
+                json.put("id", this.id);
+                json.put("name", this.name);
+                json.put("description", this.description);
+                json.put("sound", this.sound);
+                json.put("showBadge", this.showBadge);
+                return json;
+            }
+        }
+
+        /**
          * Marketing channel type
          */
         public enum Type {
@@ -509,28 +538,35 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             }
         }
 
-        public static class Category implements Unobfuscable {
-            public final String id;
-            public final String name;
-            public final String description;
-
-            public Category(final String id, final String name, final String description) {
-                this.id = id;
-                this.name = name;
-                this.description = description;
+        /**
+         * Get a list of the notification channel categories as a JSON string.
+         * @return A Json array of notification categories. This will be null if RemoteConfiguration has not yet happened.
+         */
+        @SuppressWarnings("unused")
+        public static String getCategoriesJson() {
+            final List<Channel.Category> categories = getCategories();
+            if (categories == null) {
+                return null;
             }
 
-            public Category(final RemoteConfiguration.CategoryConfiguration.Category category) {
-                this(category.id, category.name, category.description);
+            final JSONArray json = new JSONArray();
+            for (Channel.Category category : categories) {
+                json.put(category.toJSON());
             }
+            return json.toString();
+        }
 
-            public JSONObject toJson() {
-                final JSONObject json = new JSONObject();
-                json.put("id", this.id);
-                json.put("name", this.name);
-                json.put("description", this.description);
-                return json;
+        /**
+         * Get a list of the notification channel categories.
+         * @return A Json array of notification categories. This will be null if RemoteConfiguration has not yet happened.
+         */
+        @SuppressWarnings("unused")
+        public static List<Channel.Category> getCategories() {
+            try {
+                return TeakConfiguration.get().remoteConfiguration.categories;
+            } catch (Exception ignored) {
             }
+            return null;
         }
 
         /**
@@ -709,42 +745,6 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             }
 
             return Helpers.futureForValue(Reply.NoInstance);
-        }
-
-        /**
-         * Get a list of the notification channel categories as a JSON string.
-         * @return A Json array of notification categories. This will be null if RemoteConfiguration has not yet happened.
-         */
-        @SuppressWarnings("unused")
-        public static String getCategoriesJson() {
-            final List< Channel.Category> categories = getCategories();
-            if (categories == null) {
-                return null;
-            }
-
-            final JSONArray json = new JSONArray();
-            for (Channel.Category category : categories) {
-                json.put(category.toJson());
-            }
-            return json.toString();
-        }
-
-        /**
-         * Get a list of the notification channel categories.
-         * @return A Json array of notification categories. This will be null if RemoteConfiguration has not yet happened.
-         */
-        @SuppressWarnings("unused")
-        public static List<Channel.Category> getCategories() {
-            try {
-                final List<Channel.Category> categories = new ArrayList<>();
-                for (RemoteConfiguration.CategoryConfiguration.Category category :
-                        TeakConfiguration.get().remoteConfiguration.categoryConfiguration.categories) {
-                    categories.add(new Channel.Category(category));
-                }
-                return categories;
-            } catch (Exception ignored) {
-            }
-            return null;
         }
     }
 
@@ -1454,6 +1454,27 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             return new JSONObject(map);
         }
         /// @endcond
+    }
+
+    public static class ConfigurationDataEvent extends Event implements Unobfuscable {
+        private final RemoteConfiguration remoteConfiguration;
+
+        public ConfigurationDataEvent(@NonNull final RemoteConfiguration configuration) {
+            super(null, null);
+            this.remoteConfiguration = configuration;
+        }
+
+        @Override
+        public JSONObject toJSON() {
+            final JSONObject json = new JSONObject();
+            final ArrayList<JSONObject> categories = new ArrayList<JSONObject>();
+            for(Teak.Channel.Category category : this.remoteConfiguration.categories) {
+                categories.add(category.toJSON());
+            }
+
+            json.put("channelCategories", categories);
+            return json;
+        }
     }
 
     /**
