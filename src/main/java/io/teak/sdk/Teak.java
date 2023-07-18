@@ -662,7 +662,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     /**
      * Methods for scheduling and canceling Teak notifications.
      */
-    public static class Notification {
+    public static class Notification implements Unobfuscable {
         /**
          * Class used to communicate replies to:
          * - {@link Notification#schedule(String, long, Map)} ()}
