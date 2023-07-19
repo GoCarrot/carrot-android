@@ -668,37 +668,51 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
          * - {@link Notification#schedule(String, long, Map)} ()}
          */
         public static class Reply implements Unobfuscable {
+            public enum Status {
+                Ok("ok"),
+                Error("error"),
+                UnconfiguredKey("unconfigured_key"),
+                InvalidDevice("invalid_device"),
+                Unknown("unknown");
+
+                public final String name;
+
+                Status(String name) {
+                    this.name = name;
+                }
+
+                public static Status fromString(final String string) {
+                    if (Ok.name.equalsIgnoreCase(string)) return Ok;
+                    if (Error.name.equalsIgnoreCase(string)) return Error;
+                    if (UnconfiguredKey.name.equalsIgnoreCase(string)) return UnconfiguredKey;
+                    if (InvalidDevice.name.equalsIgnoreCase(string)) return InvalidDevice;
+
+                    return Unknown;
+                }
+            }
+
             public final boolean error;
+            public final Status status;
             public final Map<String, String[]> errors;
             public final List<String> scheduleIds;
 
-            public Reply(String notificationId) {
-                this(Collections.singletonList(notificationId));
-            }
-
-            public Reply(List<String> scheduleIds) {
-                this(false, null, scheduleIds);
-            }
-
-            public Reply(boolean error, Map<String, String[]> errors) {
-                this(error, errors, null);
-            }
-
-            public Reply(boolean error, Map<String, String[]> errors, List<String> scheduleIds) {
+            public Reply(boolean error, Status status, Map<String, String[]> errors, List<String> scheduleIds) {
                 this.error = error;
+                this.status = status;
                 this.errors = errors;
                 this.scheduleIds = scheduleIds;
             }
 
             public JSONObject toJSON() {
                 final JSONObject json = new JSONObject();
-                json.put("schedule_ids", this.scheduleIds);
+                json.put("status", this.status.name);
                 json.put("error", this.error);
                 json.put("errors", this.errors);
+                json.put("schedule_ids", this.scheduleIds);
                 return json;
             }
 
-            public static final Reply NoInstance = new Reply(true, Collections.singletonMap("sdk", new String[] {"Instance not ready"}), null);
+            public static final Reply NoInstance = new Reply(true, Status.Error, Collections.singletonMap("sdk", new String[] {"Instance not ready"}), null);
         }
 
         /**
@@ -732,12 +746,12 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
             if (creativeId == null || creativeId.isEmpty()) {
                 Teak.log.e("notification.schedule.error", "creativeId cannot be null or empty");
-                return Helpers.futureForValue(new Reply(true, Collections.singletonMap("parameter", new String[] {"creativeId cannot be null or empty"})));
+                return Helpers.futureForValue(new Reply(true, Reply.Status.Error, Collections.singletonMap("creative_id", new String[] {"creativeId cannot be null or empty"}), null));
             }
 
             if (delayInSeconds > 2630000 /* one month in seconds */ || delayInSeconds < 0) {
                 Teak.log.e("notification.schedule.error", "delayInSeconds can not be negative, or greater than one month");
-                return Helpers.futureForValue(new Reply(true, Collections.singletonMap("parameter", new String[] {"delayInSeconds can not be negative, or greater than one month"})));
+                return Helpers.futureForValue(new Reply(true, Reply.Status.Error, Collections.singletonMap("delay_in_seconds", new String[] {"delayInSeconds can not be negative, or greater than one month"}), null));
             }
 
             if (Instance != null) {

@@ -301,6 +301,7 @@ public class TeakInstance implements Unobfuscable {
                         final JSONObject response = new JSONObject((responseBody == null || responseBody.trim().isEmpty()) ? "{}" : responseBody);
 
                         final boolean error = !"ok".equalsIgnoreCase(response.optString("status", "error"));
+                        final Teak.Notification.Reply.Status status = Teak.Notification.Reply.Status.fromString(response.optString("status", "unknown"));
 
                         List<String> scheduleIds = null;
                         if (response.has("event")) {
@@ -333,10 +334,10 @@ public class TeakInstance implements Unobfuscable {
                         }
 
                         // Offer to queue
-                        q.offer(new Teak.Notification.Reply(error, replyErrors, scheduleIds));
+                        q.offer(new Teak.Notification.Reply(error, status, replyErrors, scheduleIds));
                     } catch (Exception e) {
                         Teak.log.exception(e);
-                        q.offer(new Teak.Notification.Reply(true, Collections.singletonMap("sdk", e.toString().split("\n"))));
+                        q.offer(new Teak.Notification.Reply(true, Teak.Notification.Reply.Status.Error, Collections.singletonMap("sdk", e.toString().split("\n")), null));
                     }
                 });
         });
