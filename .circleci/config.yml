@@ -63,16 +63,14 @@ jobs:
 
   tag_build:
     docker:
-      - image: circleci/android:api-28
-        environment:
-          ANDROID_HOME=/opt/android/sdk
+      - image: cimg/base:current
     steps:
       - checkout
       - teak/tag-promote
 
   deploy_versioned:
     docker:
-      - image: circleci/android:api-28
+      - image: cimg/base:current
         environment:
           ANDROID_HOME=/opt/android/sdk
     steps:
@@ -97,9 +95,7 @@ jobs:
 
   deploy_latest:
     docker:
-      - image: circleci/android:api-28
-        environment:
-          ANDROID_HOME=/opt/android/sdk
+      - image: cimg/base:current
     steps:
       - checkout
       - run: git fetch --tags
