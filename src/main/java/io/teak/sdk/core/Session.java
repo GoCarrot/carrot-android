@@ -1017,7 +1017,11 @@ public class Session {
                     final Intent uriIntent = new Intent(Intent.ACTION_VIEW, attributedLaunchData.deepLink);
                     uriIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     uriIntent.putExtra("teakSessionProcessed", true);
-                    teakConfiguration.appConfiguration.applicationContext.startActivity(uriIntent);
+                    try {
+                        teakConfiguration.appConfiguration.applicationContext.startActivity(uriIntent);
+                    } catch (android.content.ActivityNotFoundException e) {
+                        // Ignored.
+                    }
                 } else {
                     // Otherwise, handle the deep link
                     DeepLink.processUri(attributedLaunchData.deepLink);
