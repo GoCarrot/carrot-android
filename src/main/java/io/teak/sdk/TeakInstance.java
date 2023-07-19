@@ -181,16 +181,17 @@ public class TeakInstance implements Unobfuscable {
                     try {
                         final JSONObject response = new JSONObject((responseBody == null || responseBody.trim().isEmpty()) ? "{}" : responseBody);
 
-                        final boolean error = "ok".equalsIgnoreCase(response.optString("status", "error"));
+                        final boolean error = !"ok".equalsIgnoreCase(response.optString("status", "error"));
                         final Teak.Channel.State replyState = Teak.Channel.State.fromString(response.optString("state", "unknown"));
                         final Teak.Channel.Type replyType = Teak.Channel.Type.fromString(response.optString("channel", "unknown"));
 
                         // May get re-assigned
-                        Map<String, String[]> replyErrors = Collections.emptyMap();
+                        Map<String, String[]> replyErrors = null;
 
                         // If there are errors, marshal them into the correct format
                         final JSONObject errorsJson = response.optJSONObject("errors");
                         if (errorsJson != null) {
+                            replyErrors = new HashMap<String, String[]>();
                             for (Iterator<String> it = errorsJson.keys(); it.hasNext();) {
                                 final String key = it.next();
                                 final JSONArray errorStrings = errorsJson.optJSONArray(key);
@@ -239,17 +240,18 @@ public class TeakInstance implements Unobfuscable {
                     try {
                         final JSONObject response = new JSONObject((responseBody == null || responseBody.trim().isEmpty()) ? "{}" : responseBody);
 
-                        final boolean error = "ok".equalsIgnoreCase(response.optString("status", "error"));
+                        final boolean error = !"ok".equalsIgnoreCase(response.optString("status", "error"));
                         final Teak.Channel.State replyState = Teak.Channel.State.fromString(response.optString("state", "unknown"));
                         final Teak.Channel.Type replyType = Teak.Channel.Type.fromString(response.optString("channel", "unknown"));
                         final String replyCategory = response.optString("category", null);
 
                         // May get re-assigned
-                        Map<String, String[]> replyErrors = Collections.emptyMap();
+                        Map<String, String[]> replyErrors = null;
 
                         // If there are errors, marshal them into the correct format
                         final JSONObject errorsJson = response.optJSONObject("errors");
                         if (errorsJson != null) {
+                            replyErrors = new HashMap<String, String[]>();
                             for (Iterator<String> it = errorsJson.keys(); it.hasNext();) {
                                 final String key = it.next();
                                 final JSONArray errorStrings = errorsJson.optJSONArray(key);
@@ -298,7 +300,7 @@ public class TeakInstance implements Unobfuscable {
                     try {
                         final JSONObject response = new JSONObject((responseBody == null || responseBody.trim().isEmpty()) ? "{}" : responseBody);
 
-                        final boolean error = "ok".equalsIgnoreCase(response.optString("status", "error"));
+                        final boolean error = !"ok".equalsIgnoreCase(response.optString("status", "error"));
 
                         List<String> scheduleIds = null;
                         if (response.has("event")) {
@@ -309,11 +311,12 @@ public class TeakInstance implements Unobfuscable {
                         }
 
                         // May get re-assigned
-                        Map<String, String[]> replyErrors = Collections.emptyMap();
+                        Map<String, String[]> replyErrors = null;
 
                         // If there are errors, marshal them into the correct format
                         final JSONObject errorsJson = response.optJSONObject("errors");
                         if (errorsJson != null) {
+                            replyErrors = new HashMap<String, String[]>();
                             for (Iterator<String> it = errorsJson.keys(); it.hasNext();) {
                                 final String key = it.next();
                                 final JSONArray errorStrings = errorsJson.optJSONArray(key);
