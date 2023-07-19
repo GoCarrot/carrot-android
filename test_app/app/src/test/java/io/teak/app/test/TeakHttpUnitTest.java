@@ -1,5 +1,7 @@
 package io.teak.app.test;
 
+import java.util.ArrayList;
+
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
