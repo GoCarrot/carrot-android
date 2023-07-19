@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.teak.sdk.Request;
+import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.configuration.RemoteConfiguration;
@@ -50,7 +51,7 @@ public class TeakHttpUnitTest extends TeakUnitTest {
                         null,
                         null,
                         600,
-                        new RemoteConfiguration.CategoryConfiguration(new RemoteConfiguration.CategoryConfiguration.Category[] {}),
+                        new ArrayList<Teak.Channel.Category>(),
                         true);
         TeakEvent.postEvent(new RemoteConfigurationEvent(remoteConfiguration));
     }
