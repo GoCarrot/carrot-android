@@ -473,7 +473,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
                 json.put("name", this.name);
                 json.put("description", this.description);
                 json.put("sound", this.sound);
-                json.put("showBadge", this.showBadge);
+                json.put("showBadge", Helpers.stringForBool(this.showBadge));
                 return json;
             }
         }
@@ -596,7 +596,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
                 json.put("state", this.state.name);
                 json.put("channel", this.channel.name);
                 json.put("category", this.category);
-                json.put("error", this.error);
+                json.put("error", Helpers.stringForBool(this.error));
                 json.put("errors", this.errors);
                 return json;
             }
@@ -706,7 +706,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             public JSONObject toJSON() {
                 final JSONObject json = new JSONObject();
                 json.put("status", this.status.name);
-                json.put("error", this.error);
+                json.put("error", Helpers.stringForBool(this.error));
                 json.put("errors", this.errors);
                 json.put("schedule_ids", this.scheduleIds);
                 return json;
