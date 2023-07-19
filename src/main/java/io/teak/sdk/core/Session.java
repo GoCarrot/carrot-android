@@ -697,7 +697,7 @@ public class Session {
         public void onNewEvent(@NonNull TeakEvent event) {
             switch (event.eventType) {
                 case LogoutEvent.Type:
-                    logout(false);
+                    logout();
                     break;
                 case UserIdEvent.Type:
                     final UserIdEvent userIdEvent = (UserIdEvent) event;
@@ -749,7 +749,7 @@ public class Session {
                 Session.pendingFacebookId = facebookId;
             } else {
                 if (currentSession.userId != null && !currentSession.userId.equals(userId)) {
-                    Session.logout(true);
+                    Session.logout();
                 }
 
                 currentSession.stateLock.lock();
@@ -779,7 +779,7 @@ public class Session {
         }
     }
 
-    private static void logout(boolean copyCurrentSession) {
+    private static void logout() {
         currentSessionLock.lock();
         try {
             final Session _lockedSession = currentSession;
@@ -788,7 +788,7 @@ public class Session {
                 // Do *not* copy the launch attribution. Prevent the server from
                 // double-counting attributions, and prevent the client from
                 // double-processing deep links and rewards.
-                Session newSession = new Session(copyCurrentSession ? currentSession : null, null);
+                Session newSession = new Session();
 
                 currentSession.setState(State.Expiring);
                 currentSession.setState(State.Expired);
