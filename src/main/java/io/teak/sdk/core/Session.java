@@ -405,7 +405,7 @@ public class Session {
             try {
                 HashMap<String, Object> payload = new HashMap<>();
 
-                if (Session.this.state == State.UserIdentified || Session.tthis.state == State.IdentifyingUser) {
+                if (Session.this.state == State.UserIdentified || Session.this.state == State.IdentifyingUser) {
                     payload.put("do_not_track_event", Boolean.TRUE);
                 }
 
