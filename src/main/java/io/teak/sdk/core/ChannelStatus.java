@@ -2,6 +2,7 @@ package io.teak.sdk.core;
 
 import java.util.Map;
 
+import io.teak.sdk.Helpers;
 import io.teak.sdk.Teak;
 import io.teak.sdk.json.JSONObject;
 
@@ -32,7 +33,7 @@ public class ChannelStatus {
         final JSONObject json = new JSONObject();
         json.put("state", this.state.name);
         json.put("categories", this.categories);
-        json.put("delivery_fault", this.deliveryFault);
+        json.put("delivery_fault", Helpers.stringForBool(this.deliveryFault));
         return json;
     }
 }
