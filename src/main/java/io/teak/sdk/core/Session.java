@@ -198,7 +198,7 @@ public class Session {
         try {
             if (this.state == newState) {
                 Teak.log.i("session.same_state", Helpers.mm.h("state", this.state, "session_id", this.sessionId));
-                return false;
+                return true;
             }
 
             if (!this.state.canTransitionTo(newState)) {
@@ -403,14 +403,14 @@ public class Session {
         this.executionQueue.execute(() -> {
             Session.this.stateLock.lock();
             try {
-                if (Session.this.state != State.UserIdentified && !Session.this.setState(State.IdentifyingUser)) {
-                    return;
-                }
-
                 HashMap<String, Object> payload = new HashMap<>();
 
-                if (Session.this.state == State.UserIdentified) {
+                if (Session.this.state == State.UserIdentified || Session.tthis.state == State.IdentifyingUser) {
                     payload.put("do_not_track_event", Boolean.TRUE);
+                }
+
+                if (Session.this.state != State.UserIdentified && !Session.this.setState(State.IdentifyingUser)) {
+                    return;
                 }
 
                 if (Session.this.email != null) {
