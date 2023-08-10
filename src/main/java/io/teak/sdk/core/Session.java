@@ -109,7 +109,7 @@ public class Session {
 
     // State: UserIdentified
     private String userId;
-    private String email;
+    public String email;
 
     private ScheduledExecutorService heartbeatService;
     private String countryCode;

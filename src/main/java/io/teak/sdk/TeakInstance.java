@@ -154,6 +154,7 @@ public class TeakInstance implements Unobfuscable {
 
     void deleteEmail() {
         Session.whenUserIdIsReadyRun(session -> {
+            session.email = null;
             Request.submit(null, "DELETE", "/me/email.json", new HashMap<>(), session, null);
         });
     }
