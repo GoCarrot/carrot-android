@@ -81,7 +81,9 @@ jobs:
           command: curl -sL https://sentry.io/get-cli/ | bash
       - run:
           name: Install AWS CLI
-          command: pip install awscli
+          command: |
+            sudo apt-get update
+            sudo apt-get -y -qq install awscli
       - attach_workspace:
           at: .
       - sentry_upload_proguard
