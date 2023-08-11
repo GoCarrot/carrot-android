@@ -132,6 +132,7 @@ public class Session {
     // State Independent
     private LaunchDataSource launchDataSource = null;
     private boolean launchAttributionProcessed = false;
+    private boolean userIdentificationSent = false;
 
     // For cases where setUserId() is called before a Session has been created
     private static String pendingUserId;
@@ -405,13 +406,14 @@ public class Session {
             try {
                 HashMap<String, Object> payload = new HashMap<>();
 
-                if (Session.this.state == State.UserIdentified || Session.this.state == State.IdentifyingUser) {
-                    payload.put("do_not_track_event", Boolean.TRUE);
-                }
-
                 if (Session.this.state != State.UserIdentified && !Session.this.setState(State.IdentifyingUser)) {
                     return;
                 }
+
+                if (Session.this.userIdentificationSent) {
+                    payload.put("do_not_track_event", Boolean.TRUE);
+                }
+                Session.this.userIdentificationSent = true;
 
                 if (Session.this.email != null) {
                     payload.put("email", Session.this.email);
