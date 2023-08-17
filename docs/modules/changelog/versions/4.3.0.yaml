@@ -1,8 +1,8 @@
 breaking:
-  - Deprecated <<TeakNotification#scheduleNotification>>
+  - Deprecated TeakNotification.scheduleNotification
 new:
-  - "<<Teak#setCategoryState>> has been added to let users opt in/out of Teak marketing channel categories"
+  - "Teak#setCategoryState has been added to let users opt in/out of Teak marketing channel categories"
   - Now uses the native notification channel support on Android Oreo and later.
-  - Added <<Teak$Notification>>
+  - Added Teak$Notification
 bug:
   - Fixed ``Missing class com.unity3d.player.UnityPlayerActivity`` warning in non-Unity projects.
