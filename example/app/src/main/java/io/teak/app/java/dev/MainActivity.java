@@ -167,9 +167,6 @@ public class MainActivity extends AppCompatActivity {
         serviceIntent.setPackage("com.android.vending");
         bindService(serviceIntent, mServiceConn, Context.BIND_AUTO_CREATE);
 
-        // Set badge count
-        Teak.setApplicationBadgeNumber(42);
-
         // HAX
         Teak.setStringAttribute("automated_test_string", "asdfasdfasdf");
         Teak.trackEvent("Player_Level_Up", null, null);
@@ -343,7 +340,9 @@ public class MainActivity extends AppCompatActivity {
 //        Teak.incrementEvent("debug_increment", null, null, 5);
 //        android.os.Process.sendSignal(android.os.Process.myPid(), android.os.Process.SIGNAL_QUIT);
 //        Teak.setChannelState(Teak.Channel.Type.PlatformPush, Teak.Channel.State.Available);
-        Teak.openNotificationSettings();
+//        Teak.openNotificationSettings();
+//        Teak.Notification.schedule("test_none", 5);
+        Log.d(LOG_TAG, Teak.Notification.getCategoriesJson());
     }
 
     public void integrationTestTimeout(String timeout) {

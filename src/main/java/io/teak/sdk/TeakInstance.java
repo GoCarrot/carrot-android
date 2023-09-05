@@ -14,6 +14,7 @@ import android.provider.Settings;
 
 import java.net.URLEncoder;
 import java.security.InvalidParameterException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -83,6 +84,10 @@ public class TeakInstance implements Unobfuscable {
                         TeakInstance.this.appRaven.setAsUncaughtExceptionHandler();
                     }
                 }
+
+                for (Teak.Channel.Category category : remoteConfiguration.categories) {
+                    NotificationBuilder.configureNotificationChannelId(TeakInstance.this.context, category);
+                }
             }
         });
 
@@ -149,6 +154,7 @@ public class TeakInstance implements Unobfuscable {
 
     void deleteEmail() {
         Session.whenUserIdIsReadyRun(session -> {
+            session.email = null;
             Request.submit(null, "DELETE", "/me/email.json", new HashMap<>(), session, null);
         });
     }
@@ -176,19 +182,20 @@ public class TeakInstance implements Unobfuscable {
                     try {
                         final JSONObject response = new JSONObject((responseBody == null || responseBody.trim().isEmpty()) ? "{}" : responseBody);
 
-                        final boolean error = "ok".equalsIgnoreCase(response.optString("status", "error"));
+                        final boolean error = !"ok".equalsIgnoreCase(response.optString("status", "error"));
                         final Teak.Channel.State replyState = Teak.Channel.State.fromString(response.optString("state", "unknown"));
                         final Teak.Channel.Type replyType = Teak.Channel.Type.fromString(response.optString("channel", "unknown"));
 
                         // May get re-assigned
-                        Map<String, String[]> replyErrors = Collections.emptyMap();
+                        Map<String, String[]> replyErrors = null;
 
                         // If there are errors, marshal them into the correct format
                         final JSONObject errorsJson = response.optJSONObject("errors");
                         if (errorsJson != null) {
+                            replyErrors = new HashMap<String, String[]>();
                             for (Iterator<String> it = errorsJson.keys(); it.hasNext();) {
                                 final String key = it.next();
-                                final JSONArray errorStrings = response.optJSONArray(key);
+                                final JSONArray errorStrings = errorsJson.optJSONArray(key);
                                 if (errorStrings != null) {
                                     final String[] array = new String[errorStrings.length()];
                                     int index = 0;
@@ -206,6 +213,132 @@ public class TeakInstance implements Unobfuscable {
                     } catch (Exception e) {
                         Teak.log.exception(e);
                         q.offer(new Teak.Channel.Reply(true, Teak.Channel.State.Unknown, channel, Collections.singletonMap("sdk", e.toString().split("\n"))));
+                    }
+                });
+        });
+        return ret;
+    }
+
+    public Future<Teak.Channel.Reply> setCategoryState(final Teak.Channel.Type channel, final String category, final Teak.Channel.State state) {
+        final ArrayBlockingQueue<Teak.Channel.Reply> q = new ArrayBlockingQueue<>(1);
+        final FutureTask<Teak.Channel.Reply> ret = new FutureTask<>(() -> {
+            try {
+                return q.take();
+            } catch (InterruptedException e) {
+                Teak.log.exception(e);
+            }
+            return null;
+        });
+        ThreadFactory.autoStart(ret);
+
+        Session.whenUserIdIsReadyRun((session) -> {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("channel", channel.name);
+            payload.put("category", category);
+            payload.put("state", state.name);
+            Request.submit(null, "POST", "/me/category_state.json", payload,
+                session, (int responseCode, String responseBody) -> {
+                    try {
+                        final JSONObject response = new JSONObject((responseBody == null || responseBody.trim().isEmpty()) ? "{}" : responseBody);
+
+                        final boolean error = !"ok".equalsIgnoreCase(response.optString("status", "error"));
+                        final Teak.Channel.State replyState = Teak.Channel.State.fromString(response.optString("state", "unknown"));
+                        final Teak.Channel.Type replyType = Teak.Channel.Type.fromString(response.optString("channel", "unknown"));
+                        final String replyCategory = response.optString("category", null);
+
+                        // May get re-assigned
+                        Map<String, String[]> replyErrors = null;
+
+                        // If there are errors, marshal them into the correct format
+                        final JSONObject errorsJson = response.optJSONObject("errors");
+                        if (errorsJson != null) {
+                            replyErrors = new HashMap<String, String[]>();
+                            for (Iterator<String> it = errorsJson.keys(); it.hasNext();) {
+                                final String key = it.next();
+                                final JSONArray errorStrings = errorsJson.optJSONArray(key);
+                                if (errorStrings != null) {
+                                    final String[] array = new String[errorStrings.length()];
+                                    int index = 0;
+                                    for (Object value : errorStrings) {
+                                        array[index] = (String) value;
+                                        index++;
+                                    }
+                                    replyErrors.put(key, array);
+                                }
+                            }
+                        }
+
+                        // Offer to queue
+                        q.offer(new Teak.Channel.Reply(error, replyState, replyType, replyCategory, replyErrors));
+                    } catch (Exception e) {
+                        Teak.log.exception(e);
+                        q.offer(new Teak.Channel.Reply(true, Teak.Channel.State.Unknown, channel, Collections.singletonMap("sdk", e.toString().split("\n"))));
+                    }
+                });
+        });
+        return ret;
+    }
+
+    public Future<Teak.Notification.Reply> scheduleNotification(final String creativeId, final long delayInSeconds, final Map<String, Object> personalizationData) {
+        final ArrayBlockingQueue<Teak.Notification.Reply> q = new ArrayBlockingQueue<>(1);
+        final FutureTask<Teak.Notification.Reply> ret = new FutureTask<>(() -> {
+            try {
+                return q.take();
+            } catch (InterruptedException e) {
+                Teak.log.exception(e);
+            }
+            return null;
+        });
+        ThreadFactory.autoStart(ret);
+
+        Session.whenUserIdIsReadyRun((session) -> {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("identifier", creativeId);
+            payload.put("offset", delayInSeconds);
+            payload.put("personalization_data", personalizationData);
+            Request.submit(null, "POST", "/me/local_notify.json", payload,
+                session, (int responseCode, String responseBody) -> {
+                    try {
+                        final JSONObject response = new JSONObject((responseBody == null || responseBody.trim().isEmpty()) ? "{}" : responseBody);
+
+                        final boolean error = !"ok".equalsIgnoreCase(response.optString("status", "error"));
+                        final Teak.Notification.Reply.Status status = Teak.Notification.Reply.Status.fromString(response.optString("status", "unknown"));
+
+                        List<String> scheduleIds = null;
+                        if (response.has("event")) {
+                            final JSONObject event = response.optJSONObject("event");
+                            if (event.has("id")) {
+                                scheduleIds = Collections.singletonList(event.get("id").toString());
+                            }
+                        }
+
+                        // May get re-assigned
+                        Map<String, String[]> replyErrors = null;
+
+                        // If there are errors, marshal them into the correct format
+                        final JSONObject errorsJson = response.optJSONObject("errors");
+                        if (errorsJson != null) {
+                            replyErrors = new HashMap<String, String[]>();
+                            for (Iterator<String> it = errorsJson.keys(); it.hasNext();) {
+                                final String key = it.next();
+                                final JSONArray errorStrings = errorsJson.optJSONArray(key);
+                                if (errorStrings != null) {
+                                    final String[] array = new String[errorStrings.length()];
+                                    int index = 0;
+                                    for (Object value : errorStrings) {
+                                        array[index] = (String) value;
+                                        index++;
+                                    }
+                                    replyErrors.put(key, array);
+                                }
+                            }
+                        }
+
+                        // Offer to queue
+                        q.offer(new Teak.Notification.Reply(error, status, replyErrors, scheduleIds));
+                    } catch (Exception e) {
+                        Teak.log.exception(e);
+                        q.offer(new Teak.Notification.Reply(true, Teak.Notification.Reply.Status.Error, Collections.singletonMap("sdk", e.toString().split("\n")), null));
                     }
                 });
         });
@@ -278,7 +411,7 @@ public class TeakInstance implements Unobfuscable {
             final Intent intent = new Intent();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 intent.setAction(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS);
-                intent.putExtra(Settings.EXTRA_CHANNEL_ID, NotificationBuilder.getNotificationChannelId(context));
+                intent.putExtra(Settings.EXTRA_CHANNEL_ID, NotificationBuilder.DEFAULT_NOTIFICATION_CHANNEL_ID);
                 intent.putExtra(Settings.EXTRA_APP_PACKAGE, context.getPackageName());
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");

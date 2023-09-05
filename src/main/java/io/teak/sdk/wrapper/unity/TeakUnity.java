@@ -57,6 +57,9 @@ public class TeakUnity implements Unobfuscable {
                 case UserData: {
                     eventName = "UserDataEvent";
                 } break;
+                case ConfigurationData: {
+                    eventName = "InConfigurationData";
+                } break;
             }
             unitySendMessage(eventName, eventData);
         });

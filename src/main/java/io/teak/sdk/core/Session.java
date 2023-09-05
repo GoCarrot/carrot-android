@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -99,7 +100,7 @@ public class Session {
     // endregion
 
     // State: Created
-    private final Date startDate;
+    private final long startTimeMillis;
     @SuppressWarnings("UnusedDeclaration")
     private final String sessionId;
 
@@ -108,7 +109,7 @@ public class Session {
 
     // State: UserIdentified
     private String userId;
-    private String email;
+    public String email;
 
     private ScheduledExecutorService heartbeatService;
     private String countryCode;
@@ -122,12 +123,16 @@ public class Session {
 
     public UserProfile userProfile;
 
+    private String serverSessionId;
+    private int sessionVectorClock;
+
     // State: Expiring
-    private Date endDate;
+    private long endTimeMillis;
 
     // State Independent
     private LaunchDataSource launchDataSource = null;
     private boolean launchAttributionProcessed = false;
+    private boolean userIdentificationSent = false;
 
     // For cases where setUserId() is called before a Session has been created
     private static String pendingUserId;
@@ -136,7 +141,7 @@ public class Session {
 
     // Used specifically for creating the "null session" which is just used for code-intent clarity
     private Session(@NonNull String nullSessionId) {
-        this.startDate = new Date();
+        this.startTimeMillis = SystemClock.elapsedRealtime();
         this.sessionId = nullSessionId;
     }
 
@@ -147,11 +152,13 @@ public class Session {
     private Session(@Nullable Session session, @Nullable LaunchDataSource launchDataSource) {
         // State: Created
         // Valid data:
-        // - startDate
+        // - startTimeMillis
         // - appConfiguration
         // - deviceConfiguration
-        this.startDate = new Date();
+        this.startTimeMillis = SystemClock.elapsedRealtime();
         this.sessionId = UUID.randomUUID().toString().replace("-", "");
+        this.serverSessionId = null;
+        this.sessionVectorClock = 0;
         this.launchDataSource = launchDataSource;
         if (session != null) {
             this.userId = session.userId;
@@ -167,7 +174,7 @@ public class Session {
         this.stateLock.lock();
         try {
             if (this.state == State.Expiring &&
-                (new Date().getTime() - this.endDate.getTime() > SAME_SESSION_TIME_DELTA)) {
+                (SystemClock.elapsedRealtime() - this.endTimeMillis > SAME_SESSION_TIME_DELTA)) {
                 setState(State.Expired);
             }
             return (this.state == State.Expired);
@@ -192,7 +199,7 @@ public class Session {
         try {
             if (this.state == newState) {
                 Teak.log.i("session.same_state", Helpers.mm.h("state", this.state, "session_id", this.sessionId));
-                return false;
+                return true;
             }
 
             if (!this.state.canTransitionTo(newState)) {
@@ -206,11 +213,6 @@ public class Session {
             // logic that should occur on transition.
             switch (newState) {
                 case Created: {
-                    if (this.startDate == null) {
-                        invalidValuesForTransition.add(new Object[] {"startDate", "null"});
-                        break;
-                    }
-
                     TeakEvent.addEventListener(this.remoteConfigurationEventListener);
                 } break;
 
@@ -234,10 +236,9 @@ public class Session {
                     // Start heartbeat, heartbeat service should be null right now
                     if (this.heartbeatService != null) {
                         invalidValuesForTransition.add(new Object[] {"heartbeatService", this.heartbeatService});
-                        break;
+                    } else {
+                        startHeartbeat();
                     }
-
-                    startHeartbeat();
 
                     userIdReadyRunnableQueueLock.lock();
                     try {
@@ -264,12 +265,22 @@ public class Session {
 
                     // Process deep link and/or rewards and send out events
                     processAttributionAndDispatchEvents();
+
+                    // If we are currently expiring, reset the future that will report duration
+                    // and send the server a "hey nevermind, I'm back" message
+                    if (this.state == State.Expiring) {
+                        this.sessionVectorClock++;
+                        // Reset the future, and if session_stop got sent then send session_resume
+                        // Send server a "nevermind that" message
+                        HashMap<String, Object> payload = new HashMap<>();
+                        payload.put("session_id", this.serverSessionId);
+                        payload.put("session_vector_clock", this.sessionVectorClock);
+                        Request.submit("gocarrot.com", "/session_resume", payload, this, null);
+                    }
                 } break;
 
                 case Expiring: {
-                    this.endDate = new Date();
-
-                    // TODO: When expiring, punt to background service and say "Hey check the state of this session in N seconds"
+                    this.endTimeMillis = SystemClock.elapsedRealtime();
 
                     // Stop heartbeat, Expiring->Expiring is possible, so no invalid data here
                     if (this.heartbeatService != null) {
@@ -281,12 +292,21 @@ public class Session {
                     if (this.userProfile != null) {
                         TeakCore.operationQueue.execute(this.userProfile);
                     }
+
+                    if(this.serverSessionId != null) {
+                        this.sessionVectorClock++;
+                        // This is a message to the server that, in effect, says "If you don't hear
+                        // from me again, consider this session over"
+                        HashMap<String, Object> payload = new HashMap<>();
+                        payload.put("session_id", this.serverSessionId);
+                        payload.put("session_duration_ms", this.endTimeMillis - this.startTimeMillis);
+                        payload.put("session_vector_clock", this.sessionVectorClock);
+                        Request.submit("gocarrot.com", "/session_stop", payload, this, null);
+                    }
                 } break;
 
                 case Expired: {
                     TeakEvent.removeEventListener(this.teakEventListener);
-
-                    // TODO: Report Session to server, once we collect that info.
                 } break;
             }
 
@@ -364,7 +384,7 @@ public class Session {
                                      "&app_version_name=" + URLEncoder.encode(String.valueOf(teakConfiguration.appConfiguration.appVersionName), "UTF-8") +
                                      (Session.this.countryCode == null ? "" : "&country_code=" + URLEncoder.encode(Session.this.countryCode, "UTF-8")) +
                                      "&buster=" + URLEncoder.encode(buster, "UTF-8");
-                URL url = new URL("https://iroko.gocarrot.com/ping?" + queryString);
+                URL url = new URL("https://gocarrot.com/ping?" + queryString);
                 connection = (HttpsURLConnection) url.openConnection();
                 connection.setRequestProperty("Accept-Charset", "UTF-8");
                 connection.setUseCaches(false);
@@ -384,15 +404,16 @@ public class Session {
         this.executionQueue.execute(() -> {
             Session.this.stateLock.lock();
             try {
+                HashMap<String, Object> payload = new HashMap<>();
+
                 if (Session.this.state != State.UserIdentified && !Session.this.setState(State.IdentifyingUser)) {
                     return;
                 }
 
-                HashMap<String, Object> payload = new HashMap<>();
-
-                if (Session.this.state == State.UserIdentified) {
+                if (Session.this.userIdentificationSent) {
                     payload.put("do_not_track_event", Boolean.TRUE);
                 }
+                Session.this.userIdentificationSent = true;
 
                 if (Session.this.email != null) {
                     payload.put("email", Session.this.email);
@@ -410,8 +431,9 @@ public class Session {
                 long minutes = TimeUnit.MINUTES.convert(rawTz, TimeUnit.MILLISECONDS);
                 String tzOffset = new DecimalFormat("#0.00").format(minutes / 60.0f);
                 payload.put("timezone", tzOffset);
+                payload.put("timezone_id", tz.getID());
 
-                String locale = Locale.getDefault().toString();
+                final String locale = Locale.getDefault().toString();
                 payload.put("locale", locale);
 
                 payload.put("android_limit_ad_tracking", !teakConfiguration.dataCollectionConfiguration.enableIDFA());
@@ -530,6 +552,11 @@ public class Session {
                                 Session.this.channelStatusEmail = ChannelStatus.fromJSON(optOutStates.optJSONObject("email"));
                                 Session.this.channelStatusPush = ChannelStatus.fromJSON(optOutStates.optJSONObject("push"));
                                 Session.this.channelStatusSms = ChannelStatus.fromJSON(optOutStates.optJSONObject("sms"));
+                            }
+
+                            // Server-session id is the id of the underlying Redshift launch event
+                            if (response.has("session_id")) {
+                                Session.this.serverSessionId = response.get("session_id").toString();
                             }
 
                             // Send user data event
@@ -672,7 +699,7 @@ public class Session {
         public void onNewEvent(@NonNull TeakEvent event) {
             switch (event.eventType) {
                 case LogoutEvent.Type:
-                    logout(false);
+                    logout();
                     break;
                 case UserIdEvent.Type:
                     final UserIdEvent userIdEvent = (UserIdEvent) event;
@@ -724,7 +751,7 @@ public class Session {
                 Session.pendingFacebookId = facebookId;
             } else {
                 if (currentSession.userId != null && !currentSession.userId.equals(userId)) {
-                    Session.logout(true);
+                    Session.logout();
                 }
 
                 currentSession.stateLock.lock();
@@ -754,7 +781,7 @@ public class Session {
         }
     }
 
-    private static void logout(boolean copyCurrentSession) {
+    private static void logout() {
         currentSessionLock.lock();
         try {
             final Session _lockedSession = currentSession;
@@ -763,7 +790,7 @@ public class Session {
                 // Do *not* copy the launch attribution. Prevent the server from
                 // double-counting attributions, and prevent the client from
                 // double-processing deep links and rewards.
-                Session newSession = new Session(copyCurrentSession ? currentSession : null, null);
+                Session newSession = new Session();
 
                 currentSession.setState(State.Expiring);
                 currentSession.setState(State.Expired);
@@ -992,7 +1019,11 @@ public class Session {
                     final Intent uriIntent = new Intent(Intent.ACTION_VIEW, attributedLaunchData.deepLink);
                     uriIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     uriIntent.putExtra("teakSessionProcessed", true);
-                    teakConfiguration.appConfiguration.applicationContext.startActivity(uriIntent);
+                    try {
+                        teakConfiguration.appConfiguration.applicationContext.startActivity(uriIntent);
+                    } catch (android.content.ActivityNotFoundException e) {
+                        // Ignored.
+                    }
                 } else {
                     // Otherwise, handle the deep link
                     DeepLink.processUri(attributedLaunchData.deepLink);
@@ -1077,7 +1108,8 @@ public class Session {
 
     private Map<String, Object> toMap() {
         HashMap<String, Object> map = new HashMap<>();
-        map.put("startDate", this.startDate.getTime() / 1000);
+        map.put("startDate", this.startTimeMillis / 1000);
+        map.put("endDate", this.endTimeMillis / 1000);
         return map;
     }
 

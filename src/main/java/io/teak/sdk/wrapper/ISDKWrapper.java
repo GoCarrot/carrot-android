@@ -10,7 +10,8 @@ public interface ISDKWrapper {
         AdditionalData,
         LaunchedFromLink,
         PostLaunchSummary,
-        UserData
+        UserData,
+        ConfigurationData
     }
     void sdkSendMessage(@NonNull EventType eventType, @NonNull String eventData);
 }

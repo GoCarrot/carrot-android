@@ -304,4 +304,8 @@ public class Helpers implements Unobfuscable {
     public static <T> T newIfNotOld(final T oldValue, final T newValue) {
         return oldValue == null ? newValue : oldValue;
     }
+
+    public static String stringForBool(boolean value) {
+        return value ? "true" : "false";
+    }
 }

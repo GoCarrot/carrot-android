@@ -6,6 +6,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -14,6 +15,7 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -31,14 +33,10 @@ import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.ViewFlipper;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -47,15 +45,16 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLException;
 
 import androidx.core.app.NotificationCompat;
+import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.Result;
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONObject;
 
 public class NotificationBuilder {
-    private static AtomicInteger pendingIntentRequestCode = new AtomicInteger();
+    public static final String DEFAULT_NOTIFICATION_CHANNEL_ID = "teak";
+    private static final AtomicInteger pendingIntentRequestCode = new AtomicInteger();
     public static class AssetLoadException extends Exception {
         AssetLoadException(String assetName, Exception cause) {
             super("Failed to load asset: " + assetName, cause);
@@ -83,27 +82,64 @@ public class NotificationBuilder {
         }
     }
 
-    private static String notificationChannelId;
-    public static String getNotificationChannelId(Context context) {
+    private static String channelIdForOptOutId(Context context, String optOutId) {
+        if (Helpers.isNullOrEmpty(optOutId)) {
+            return NotificationBuilder.DEFAULT_NOTIFICATION_CHANNEL_ID;
+        }
+
+        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
+            if (notificationManager.getNotificationChannel(optOutId) != null) {
+                return optOutId;
+            }
+        }
+        return NotificationBuilder.DEFAULT_NOTIFICATION_CHANNEL_ID;
+    }
+
+    public static void configureNotificationChannelId(Context context, Teak.Channel.Category category) {
         // Notification channel, required for running on API 26+
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (notificationChannelId == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
             try {
-                final String channelId = "teak";
-                if (notificationManager.getNotificationChannel(channelId) == null) {
-                    final int importance = NotificationManager.IMPORTANCE_HIGH;
-                    final NotificationChannel channel = new NotificationChannel(channelId, "Notifications", importance);
+                final int importance = NotificationManager.IMPORTANCE_HIGH;
+                final NotificationChannel channel = new NotificationChannel(category.id, category.name, importance);
+
+                // The following settings can't be changed after a channel is created
+                if (notificationManager.getNotificationChannel(category.id) == null) {
                     channel.enableLights(true);
                     channel.setLightColor(Color.RED);
                     channel.enableVibration(true);
                     channel.setVibrationPattern(new long[] {100L, 300L, 0L, 0L, 100L, 300L});
-                    notificationManager.createNotificationChannel(channel);
+                    channel.setShowBadge(category.showBadge);
                 }
-                notificationChannelId = channelId;
+                channel.setName(category.name);
+                channel.setDescription(category.description);
+
+                if (category.sound != null) {
+                    Uri soundUri = null;
+                    try {
+                        final Resources resources = context.getResources();
+                        final String packageName = context.getPackageName();
+                        final int soundId = resources.getIdentifier(category.sound, "raw", packageName);
+                        if (soundId != 0) {
+                            soundUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + packageName + "/" + soundId);
+                        }
+                    } catch (Exception ignored) {
+                    }
+
+                    if (soundUri != null) {
+                        final AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                                .build();
+                        channel.setSound(soundUri, audioAttributes);
+                    }
+                }
+
+                notificationManager.createNotificationChannel(channel);
             } catch (Exception ignored) {
             }
         }
-        return notificationChannelId;
     }
 
     private static String quietNotificationChannelId;
@@ -114,7 +150,7 @@ public class NotificationBuilder {
             try {
                 final String channelId = "teak-no-sound-or-vibrate";
                 final int importance = NotificationManager.IMPORTANCE_HIGH;
-                final NotificationChannel channel = new NotificationChannel(channelId, "Notifications", importance);
+                final NotificationChannel channel = new NotificationChannel(channelId, "Silent Notifications", importance);
                 channel.enableLights(true);
                 channel.setSound(null, null);
                 channel.setLightColor(Color.RED);
@@ -195,7 +231,8 @@ public class NotificationBuilder {
         final boolean serverRequests12PlusStyle = teakNotificaton.useDecoratedCustomView;
         final boolean isAndroid12NotificationStyle = serverRequests12PlusStyle || willAutomaticallyUse12PlusStyle;
 
-        final NotificationCompat.Builder builder = new NotificationCompat.Builder(context, getNotificationChannelId(context));
+        final NotificationCompat.Builder builder = new NotificationCompat.Builder(context,
+            NotificationBuilder.channelIdForOptOutId(context, teakNotificaton.teakOptOutCategory));
         builder.setGroup(UUID.randomUUID().toString());
 
         // Assign DecoratedCustomViewStyle if the server requests the Android 12 style, and it would
@@ -217,6 +254,9 @@ public class NotificationBuilder {
         builder.setDefaults(NotificationCompat.DEFAULT_ALL);
         builder.setOnlyAlertOnce(true);
         builder.setAutoCancel(true);
+
+        // Assign content text otherwise a badge will not show up
+        builder.setContentText(teakNotificaton.message);
 
         // Rich text message
         Spanned richMessageText = new SpannedString(teakNotificaton.message);
@@ -416,6 +456,7 @@ public class NotificationBuilder {
                         remoteViews.setOnClickPendingIntent(viewElementId, pendingIntent.getTrampolineIntent(deepLink));
                     } else if (isUIType(viewElement, TextView.class)) {
                         final String value = viewConfig.getString(key);
+                        remoteViews.setViewVisibility(viewElementId, View.VISIBLE);
                         remoteViews.setTextViewText(viewElementId, fromHtml(value));
                     } else //noinspection StatementWithEmptyBody
                         if (isUIType(viewElement, ImageButton.class)) {

@@ -13,6 +13,7 @@ import android.os.StrictMode;
 
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,6 +31,7 @@ import java.util.regex.Pattern;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.teak.sdk.configuration.AppConfiguration;
+import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.ChannelStatus;
 import io.teak.sdk.core.Executors;
 import io.teak.sdk.core.InstrumentableReentrantLock;
@@ -202,7 +204,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Tell Teak how it should identify the current user.
-     * 
+     *
      * This will also begin tracking and reporting of a session, and track a daily active user.
      *
      * @note This should be the same way you identify the user in your backend.
@@ -218,7 +220,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Tell Teak how it should identify the current user.
-     * 
+     *
      * This will also begin tracking and reporting of a session, and track a daily active user.
      *
      * @note This should be the same way you identify the user in your backend.
@@ -262,7 +264,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Tell Teak how it should identify the current user, with data collection opt-out.
-     * 
+     *
      * This will also begin tracking and reporting of a session, and track a daily active user.
      *
      * @note This should be the same way you identify the user in your backend.
@@ -280,7 +282,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Tell Teak how it should identify the current user, with data collection opt-out and email.
-     * 
+     *
      * This will also begin tracking and reporting of a session, and track a daily active user.
      *
      * @note This should be the same way you identify the user in your backend.
@@ -398,7 +400,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Tell Teak how it should identify the current user, with additional options and configuration.
-     * 
+     *
      * This will also begin tracking and reporting of a session, and track a daily active user.
      *
      * @note This should be the same way you identify the user in your backend.
@@ -446,6 +448,35 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
      * Teak Marketing Channel.
      */
     public static class Channel implements Unobfuscable {
+
+        /**
+         * An individual category.
+         */
+        public static class Category {
+            public final String id;
+            public final String name;
+            public final String description;
+            public final String sound;
+            public final boolean showBadge;
+
+            public Category(final String id, final String name, final String description, final String sound, final boolean showBadge) {
+                this.id = id;
+                this.name = name;
+                this.description = description;
+                this.sound = sound;
+                this.showBadge = showBadge;
+            }
+
+            public JSONObject toJSON() {
+                final JSONObject json = new JSONObject();
+                json.put("id", this.id);
+                json.put("name", this.name);
+                json.put("description", this.description);
+                json.put("sound", this.sound);
+                json.put("showBadge", Helpers.stringForBool(this.showBadge));
+                return json;
+            }
+        }
 
         /**
          * Marketing channel type
@@ -508,18 +539,55 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         }
 
         /**
-         * Class used for {@link Teak#setChannelState(String, String)} replies.
+         * Get a list of the notification channel categories as a JSON string.
+         * @return A Json array of notification categories. This will be null if RemoteConfiguration has not yet happened.
+         */
+        @SuppressWarnings("unused")
+        public static String getCategoriesJson() {
+            final List<Channel.Category> categories = getCategories();
+            if (categories == null) {
+                return null;
+            }
+
+            final JSONArray json = new JSONArray();
+            for (Channel.Category category : categories) {
+                json.put(category.toJSON());
+            }
+            return json.toString();
+        }
+
+        /**
+         * Get a list of the notification channel categories.
+         * @return A Json array of notification categories. This will be null if RemoteConfiguration has not yet happened.
+         */
+        @SuppressWarnings("unused")
+        public static List<Channel.Category> getCategories() {
+            try {
+                return TeakConfiguration.get().remoteConfiguration.categories;
+            } catch (Exception ignored) {
+            }
+            return null;
+        }
+
+        /**
+         * Class used for {@link Teak#setChannelState(String, String)} and {@link Teak#setCategoryState(String, String, String)} replies.
          */
         public static class Reply implements Unobfuscable {
             public final boolean error;
             public final State state;
             public final Type channel;
+            public final String category;
             public final Map<String, String[]> errors;
 
             public Reply(boolean error, State state, Type channel, Map<String, String[]> errors) {
+                this(error, state, channel, null, errors);
+            }
+
+            public Reply(boolean error, State state, Type channel, String category, Map<String, String[]> errors) {
                 this.error = error;
                 this.state = state;
                 this.channel = channel;
+                this.category = category;
                 this.errors = errors;
             }
 
@@ -527,7 +595,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
                 final JSONObject json = new JSONObject();
                 json.put("state", this.state.name);
                 json.put("channel", this.channel.name);
-                json.put("error", this.error);
+                json.put("category", this.category);
+                json.put("error", Helpers.stringForBool(this.error));
                 json.put("errors", this.errors);
                 return json;
             }
@@ -556,17 +625,141 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         return Helpers.futureForValue(Channel.Reply.NoInstance);
     }
 
-    /**
-     * Set the state of a Teak Marketing Channel, string version.
-     *
-     * @note You may only assign the values {@link Channel.State#OptOut} and {@link Channel.State#Available} to Push Channels; {@link Channel.State#OptIn} is not allowed.
-     *
-     * @param channelName The name of the channel being modified.
-     * @param stateName   The name of the state for the channel.
-     */
+    /// @cond hide_from_doxygen
     @SuppressWarnings("unused")
     public static Future<Channel.Reply> setChannelState(final String channelName, final String stateName) {
         return setChannelState(Channel.Type.fromString(channelName), Channel.State.fromString(stateName));
+    }
+    /// @endcond
+
+    /**
+     * Set the state of a Teak Marketing Channel Category
+     *
+     * @note You may only assign the values {@link Channel.State#OptOut} and {@link Channel.State#Available}.
+     *
+     * @param channel The channel being modified.
+     * @param category    The category being modified.
+     * @param state   The state for the channel.
+     */
+    public static Future<Channel.Reply> setCategoryState(final Channel.Type channel, final String category, final Channel.State state) {
+        Teak.log.trace("Teak.setCategoryState", "channel", channel.name, "category", category, "state", state.name);
+
+        if (Instance != null) {
+            // If "PlatformPush" is requested, this is Android; so it's MobilePush
+            return Instance.setCategoryState(channel == Channel.Type.PlatformPush ? Channel.Type.MobilePush : channel, category, state);
+        }
+
+        return Helpers.futureForValue(Channel.Reply.NoInstance);
+    }
+
+    /// @cond hide_from_doxygen
+    @SuppressWarnings("unused")
+    public static Future<Channel.Reply> setCategoryState(final String channelName, final String category, final String stateName) {
+        return setCategoryState(Channel.Type.fromString(channelName), category, Channel.State.fromString(stateName));
+    }
+    /// @endcond
+
+    /**
+     * Methods for scheduling and canceling Teak notifications.
+     */
+    public static class Notification implements Unobfuscable {
+        /**
+         * Class used to communicate replies to:
+         * - {@link Notification#schedule(String, long, Map)} ()}
+         */
+        public static class Reply implements Unobfuscable {
+            public enum Status {
+                Ok("ok"),
+                Error("error"),
+                UnconfiguredKey("unconfigured_key"),
+                InvalidDevice("invalid_device"),
+                Unknown("unknown");
+
+                public final String name;
+
+                Status(String name) {
+                    this.name = name;
+                }
+
+                public static Status fromString(final String string) {
+                    if (Ok.name.equalsIgnoreCase(string)) return Ok;
+                    if (Error.name.equalsIgnoreCase(string)) return Error;
+                    if (UnconfiguredKey.name.equalsIgnoreCase(string)) return UnconfiguredKey;
+                    if (InvalidDevice.name.equalsIgnoreCase(string)) return InvalidDevice;
+
+                    return Unknown;
+                }
+            }
+
+            public final boolean error;
+            public final Status status;
+            public final Map<String, String[]> errors;
+            public final List<String> scheduleIds;
+
+            public Reply(boolean error, Status status, Map<String, String[]> errors, List<String> scheduleIds) {
+                this.error = error;
+                this.status = status;
+                this.errors = errors;
+                this.scheduleIds = scheduleIds;
+            }
+
+            public JSONObject toJSON() {
+                final JSONObject json = new JSONObject();
+                json.put("status", this.status.name);
+                json.put("error", Helpers.stringForBool(this.error));
+                json.put("errors", this.errors);
+                json.put("schedule_ids", this.scheduleIds);
+                return json;
+            }
+
+            public static final Reply NoInstance = new Reply(true, Status.Error, Collections.singletonMap("sdk", new String[] {"Instance not ready"}), null);
+        }
+
+        /**
+         * Schedule a notification to be sent to the current user in the future
+         * @param creativeId     The identifier of the notification creative on the Teak dashboard.
+         * @param delayInSeconds The delay, in seconds, before sending the notification.
+         * @return A {@link Future} for the {@link Reply} to this operation.
+         */
+        @SuppressWarnings("unused")
+        public static Future<Reply> schedule(final String creativeId, final long delayInSeconds) {
+            return schedule(creativeId, delayInSeconds, (Map<String, Object>) null);
+        }
+
+        /// @cond hide_from_doxygen
+        @SuppressWarnings("unused")
+        public static Future<Reply> schedule(final String creativeId, final long delayInSeconds, final String userInfoJson) {
+            return schedule(creativeId, delayInSeconds, userInfoJson == null ? null : new JSONObject(userInfoJson).toMap());
+        }
+        /// @endcond
+
+        /**
+         * Schedule a notification to be sent to the current user in the future
+         * @param creativeId            The identifier of the notification creative on the Teak dashboard.
+         * @param delayInSeconds        The delay, in seconds, before sending the notification.
+         * @param personalizationData   A dictionary containing parameters that the server can use for templating.
+         * @return A {@link Future} for the {@link Reply} to this operation.
+         */
+        @SuppressWarnings("unused")
+        public static Future<Reply> schedule(final String creativeId, final long delayInSeconds, final Map<String, Object> personalizationData) {
+            Teak.log.trace("Teak.Notification.schedule", "creativeId", creativeId, "delayInSeconds", delayInSeconds);
+
+            if (creativeId == null || creativeId.isEmpty()) {
+                Teak.log.e("notification.schedule.error", "creativeId cannot be null or empty");
+                return Helpers.futureForValue(new Reply(true, Reply.Status.Error, Collections.singletonMap("creative_id", new String[] {"creativeId cannot be null or empty"}), null));
+            }
+
+            if (delayInSeconds > 2630000 /* one month in seconds */ || delayInSeconds < 0) {
+                Teak.log.e("notification.schedule.error", "delayInSeconds can not be negative, or greater than one month");
+                return Helpers.futureForValue(new Reply(true, Reply.Status.Error, Collections.singletonMap("delay_in_seconds", new String[] {"delayInSeconds can not be negative, or greater than one month"}), null));
+            }
+
+            if (Instance != null) {
+                return Instance.scheduleNotification(creativeId, delayInSeconds, personalizationData);
+            }
+
+            return Helpers.futureForValue(Reply.NoInstance);
+        }
     }
 
     /**
@@ -654,7 +847,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
     /**
      * Open the settings app to the settings for this app.
-     * 
+     *
      * @note This will always return <code>false</code> for any device below API 19.
      * @note Be sure to prompt the user to re-enable notifications for your app before calling this function.
      *
@@ -849,7 +1042,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     public static abstract class DeepLink implements Unobfuscable {
         /**
          * Method called when a deep link is invoked.
-         * 
+         *
          * @param parameters A dictionary of the path, and url parameters provided to the deep link.
          */
         public abstract void call(Map<String, Object> parameters);
@@ -981,6 +1174,11 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         public final Uri deepLink;
 
         /**
+         * The opt-out category of the marketing channel.
+         */
+        public final String optOutCategory;
+
+        /**
          * Returns true if this was an incentivized launch.
          *
          * @return True if this notification had a reward attached to it.
@@ -1012,6 +1210,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             // so that Session#checkLaunchDataForDeepLinkAndPostEvents will execute the deep link
             // correctly.
             this.deepLink = this.launchLink; // Resolved by call to super()
+
+            this.optOutCategory = bundle.getString("teakOptOutCategory", "teak");
         }
 
         /**
@@ -1044,6 +1244,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
             final String teakDeepLink = deepLink.getQueryParameter("teak_deep_link");
             this.deepLink = (teakDeepLink == null ? deepLink : Uri.parse(teakDeepLink));
+
+            this.optOutCategory = deepLink.getQueryParameter("teak_opt_out_category") != null ? deepLink.getQueryParameter("teak_opt_out_category") : "teak";
         }
 
         /**
@@ -1062,6 +1264,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             this.rewardId = Helpers.newIfNotOld(oldLaunchData.rewardId, newLaunchData.rewardId);
             this.channelName = Helpers.newIfNotOld(oldLaunchData.channelName, newLaunchData.channelName);
             this.deepLink = updatedDeepLink;
+            this.optOutCategory = Helpers.newIfNotOld(oldLaunchData.optOutCategory,
+                updatedDeepLink.getQueryParameter("teak_opt_out_category") != null ? updatedDeepLink.getQueryParameter("teak_opt_out_category") : "teak");
         }
 
         /**
@@ -1076,6 +1280,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         @Override
         public Map<String, Object> toSessionAttributionMap() {
             final Map<String, Object> map = super.toSessionAttributionMap();
+
+            map.put("teak_opt_out_category", this.optOutCategory);
 
             // Put the URI and any query parameters that start with 'teak_' into 'deep_link'
             if (this.deepLink != null) {
@@ -1111,6 +1317,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             map.put("teakRewardId", this.rewardId);
             map.put("teakChannelName", this.channelName);
             map.put("teakDeepLink", io.teak.sdk.core.DeepLink.willProcessUri(this.deepLink) ? this.deepLink.toString() : null);
+            map.put("teakOptOutCategory", this.optOutCategory);
             return map;
         }
         /// @endcond
@@ -1261,6 +1468,27 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             return new JSONObject(map);
         }
         /// @endcond
+    }
+
+    public static class ConfigurationDataEvent extends Event implements Unobfuscable {
+        private final RemoteConfiguration remoteConfiguration;
+
+        public ConfigurationDataEvent(@NonNull final RemoteConfiguration configuration) {
+            super(null, null);
+            this.remoteConfiguration = configuration;
+        }
+
+        @Override
+        public JSONObject toJSON() {
+            final JSONObject json = new JSONObject();
+            final ArrayList<JSONObject> categories = new ArrayList<JSONObject>();
+            for(Teak.Channel.Category category : this.remoteConfiguration.categories) {
+                categories.add(category.toJSON());
+            }
+
+            json.put("channelCategories", categories);
+            return json;
+        }
     }
 
     /**
@@ -1428,7 +1656,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     public static abstract class LogListener {
         /**
          * A log event sent by the Teak SDK.
-         * 
+         *
          * @param logEvent The log event type.
          * @param logLevel The severity of the log message.
          * @param logData  Semi-structured log message.

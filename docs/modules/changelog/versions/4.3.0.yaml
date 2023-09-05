@@ -1,0 +1,20 @@
+upgrade_note:
+  - Deprecated ``TeakNotification.scheduleNotification``. Use ``Teak.Notification.schedule`` instead.
+new:
+- "Local notification personalization: Using `Teak.Notification.Schedule` you can now pass a dictionary of additional data which can be templated into the local notification."
+- "Session time tracking: The Teak SDK now automatically tracks the duration of game sessions and reports this data to the Teak Dashboard and any configured data syncs."
+- "Opt-Out Categories: You can now categorize push notifications and emails into different Opt-Out Categories, and provide players with an in-game communication preferences UI so that your players can manage what kinds of messaging they receive."
+- "Push Opt-Out Tracking: The Teak SDK can now detects and reports when a player has opted out of push notifications through their device settings to the Teak Dashboard for upcoming reports."
+- "Uninstall Tracking: The Teak SDK and Teak Dashboard can now detect and report when a player has uninstalled the game from their device for upcoming reports."
+- "Notification Channels: Opt-Out Categories automatically map to Notification Channels, which provides players with a familiar UI in Settings to manage the kinds of messaging they receive."
+- "Badging: From the Teak Dashboard you can enable an app icon badge when push notifications are delivered. Note that this will only apply to non-default Opt-Out Categories, or the default Opt-Out category on new installs made after integrating Teak SDK 4.3.0."
+- "Image+Text Notification Layout: Teak now supports a new notification layout which places a square image to the right of the text content of the notification."
+enhancement:
+- "Improved notification display on Samsung devices running Android 12+."
+bug:
+- Fixed ``Missing class com.unity3d.player.UnityPlayerActivity`` warning in non-Unity projects.
+- Resolved several potential race conditions that could prevent updated player contact information from being submitted to the Teak Dashboard
+- "Resolved issue when setting a player's email address back to original value after calling `Teak.Instance.deleteEmail()`"
+- "Resolved potential failure to initialize the Teak SDK when launching from a link or push notification that deep links to an unknown custom URL scheme"
+- "Resolved race condition that could result in an extra 'play' event when updating player contact information while the game is being backgrounded"
+- "Fixed bug that could result in an extra 'play' event when changing game assigned player id through a new call to `Teak.Instance.identifyUser()`."

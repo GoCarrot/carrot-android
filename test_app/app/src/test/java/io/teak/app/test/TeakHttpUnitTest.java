@@ -1,5 +1,7 @@
 package io.teak.app.test;
 
+import java.util.ArrayList;
+
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
@@ -14,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.teak.sdk.Request;
+import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.configuration.AppConfiguration;
 import io.teak.sdk.configuration.RemoteConfiguration;
@@ -50,6 +53,7 @@ public class TeakHttpUnitTest extends TeakUnitTest {
                         null,
                         null,
                         600,
+                        new ArrayList<Teak.Channel.Category>(),
                         true);
         TeakEvent.postEvent(new RemoteConfigurationEvent(remoteConfiguration));
     }

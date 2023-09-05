@@ -6,21 +6,30 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 
+import org.greenrobot.eventbus.EventBus;
+
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 
+import javax.net.ssl.HttpsURLConnection;
+
 import androidx.annotation.NonNull;
+import androidx.core.app.NotificationManagerCompat;
 import io.teak.sdk.Helpers;
 import io.teak.sdk.IntegrationChecker;
 import io.teak.sdk.NotificationBuilder;
 import io.teak.sdk.Request;
 import io.teak.sdk.RetriableTask;
 import io.teak.sdk.Teak;
+import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
 import io.teak.sdk.configuration.AppConfiguration;
@@ -30,6 +39,7 @@ import io.teak.sdk.event.NotificationDisplayEvent;
 import io.teak.sdk.event.PurchaseEvent;
 import io.teak.sdk.event.PurchaseFailedEvent;
 import io.teak.sdk.event.PushNotificationEvent;
+import io.teak.sdk.event.RemoteConfigurationEvent;
 import io.teak.sdk.event.TrackEventEvent;
 import io.teak.sdk.io.DefaultAndroidNotification;
 import io.teak.sdk.io.DefaultAndroidResources;
@@ -98,6 +108,14 @@ public class TeakCore {
                     asyncExecutor.execute(() -> Session.whenUserIdIsReadyRun(session -> Request.submit("/me/purchase", payload, session)));
                     break;
                 }
+                case RemoteConfigurationEvent.Type: {
+                    final RemoteConfiguration configuration = ((RemoteConfigurationEvent) event).remoteConfiguration;
+                    final Teak.ConfigurationDataEvent sdkEvent = new Teak.ConfigurationDataEvent(configuration);
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        EventBus.getDefault().post(sdkEvent);
+                    });
+                    break;
+                }
                 case PushNotificationEvent.Received: {
                     final Intent intent = ((PushNotificationEvent) event).intent;
                     if (intent == null) break;
@@ -134,6 +152,39 @@ public class TeakCore {
                         Session.whenUserIdIsReadyPost(new Teak.NotificationEvent(new Teak.NotificationLaunchData(bundle), true));
                     }
 
+                    // Health check
+                    final boolean isHealthCheckPush = Helpers.getBooleanFromBundle(bundle, "teakHealthCheck");
+                    final Context context = ((PushNotificationEvent) event).context;
+                    if (isHealthCheckPush || bundle.containsKey("teakExpectedDisplay")) {
+                        final boolean expectedDisplay = Helpers.getBooleanFromBundle(bundle, "teakExpectedDisplay");
+                        final boolean canDisplayNotification = NotificationManagerCompat.from(context).areNotificationsEnabled();
+                        final boolean shouldSendHealthCheck = isHealthCheckPush || (expectedDisplay != canDisplayNotification);
+
+                        if (shouldSendHealthCheck) {
+                            final HashMap<String, Object> payload = new HashMap<>();
+
+                            try {
+                                final TeakConfiguration teakConfiguration = TeakConfiguration.get();
+                                payload.put("device_id", teakConfiguration.deviceConfiguration.deviceId);
+                            } catch (Exception ignored) {
+                                payload.put("device_id", "unknown");
+                            }
+
+                            payload.put("app_id", bundle.getString("teakAppId"));
+                            payload.put("user_id", bundle.getString("teakUserId"));
+                            payload.put("platform_id", bundle.getString("teakNotifId"));
+                            payload.put("expected_display", expectedDisplay);
+                            payload.put("status", canDisplayNotification ? "Enabled" : "Disabled");
+
+                            Request.submit("parsnip.gocarrot.com", "/push_state", payload, Session.NullSession);
+                        }
+                    }
+
+                    // If this was a health check, do nothing further
+                    if (isHealthCheckPush) {
+                        return;
+                    }
+
                     // Create Teak Notification
                     final TeakNotification teakNotification = new TeakNotification(bundle, gameIsInForeground);
 
@@ -144,7 +195,7 @@ public class TeakCore {
                     bundle.putString("teakNotificationPlacement", teakNotification.notificationPlacement.name);
 
                     // Create & display native notification asynchronously, image downloads etc
-                    final Context context = ((PushNotificationEvent) event).context;
+
                     asyncExecutor.submit(new RetriableTask<>(3, 2000L, 2, () -> {
                         // Send metric
                         final String teakUserId = bundle.getString("teakUserId", null);

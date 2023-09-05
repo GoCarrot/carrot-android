@@ -349,7 +349,7 @@ public class Request implements Runnable {
         BatchedRequest batch = null;
 
         if ("parsnip.gocarrot.com".equals(hostname) &&
-            !"/notification_received".equals(endpoint)) {
+            !("/notification_received".equals(endpoint))) {
             batch = BatchedParsnipRequest.getCurrentBatch(hostname, session);
         } else if ("/me/events".equals(endpoint)) {
             batch = BatchedTrackEventRequest.getCurrentBatch(hostname, session);
@@ -372,7 +372,7 @@ public class Request implements Runnable {
 
     public Request(@Nullable String hostname, @NonNull String method, @NonNull String endpoint, @NonNull Map<String, Object> payload, @NonNull Session session, @Nullable Callback callback, boolean addStandardAttributes) {
         if (!endpoint.startsWith("/")) {
-            throw new IllegalArgumentException("Parameter 'endpoint' must start with '/' or things will break, and you will lose an hour of your life debugging.");
+            throw new IllegalArgumentException("Parameter 'endpoint' must start with '/' or things will break, and you will lose an hour of your life debugging. Number of times this exception has saved an ass: 1.");
         }
 
         this.hostname = hostname;

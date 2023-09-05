@@ -233,16 +233,17 @@ private StateChainEntry determineStateFromSystem(@NonNull Context context) {
     boolean canShowOnLockscreen = true;
     boolean canShowBadge = true;
 
-    final String notificationChannelId = NotificationBuilder.getNotificationChannelId(context);
     final NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationChannelId != null && notificationManager != null) {
-        final NotificationChannel channel = notificationManager.getNotificationChannel(notificationChannelId);
-        final int channelImportance = channel.getImportance();
-        canBypassDnd = channel.canBypassDnd();
-        // Future-Pat: The name of the settings does not line up with the constant names.
-        //             'Low' in settings == IMPORTANCE_MIN
-        canShowOnLockscreen = (channelImportance > NotificationManager.IMPORTANCE_MIN);
-        canShowBadge = channel.canShowBadge();
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
+        final NotificationChannel channel = notificationManager.getNotificationChannel(NotificationBuilder.DEFAULT_NOTIFICATION_CHANNEL_ID);
+        if (channel != null) {
+            final int channelImportance = channel.getImportance();
+            canBypassDnd = channel.canBypassDnd();
+            // Future-Pat: The name of the settings does not line up with the constant names.
+            //             'Low' in settings == IMPORTANCE_MIN
+            canShowOnLockscreen = (channelImportance > NotificationManager.IMPORTANCE_MIN);
+            canShowBadge = channel.canShowBadge();
+        }
     }
     return new StateChainEntry(newState, canBypassDnd, canShowOnLockscreen, canShowBadge);
 }
