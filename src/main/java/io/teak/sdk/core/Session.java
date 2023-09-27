@@ -479,7 +479,8 @@ public class Session {
                         if (tempLaunchData != null) {
                             payload.putAll(tempLaunchData.toSessionAttributionMap());
                         }
-                    } catch (Exception ignored) {
+                    } catch (Exception e) {
+                        Teak.log.exception(e);
                     }
                 }
                 final Teak.LaunchData launchData = tempLaunchData;
