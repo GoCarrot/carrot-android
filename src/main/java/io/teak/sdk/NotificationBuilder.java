@@ -578,8 +578,8 @@ public class NotificationBuilder {
                 final AnimationConfiguration ret = new AnimationConfiguration();
                 final JSONObject initialAnimationConfig = viewConfig.getJSONObject("view_animator");
                 try {
-                    final Result<Bitmap> loadBitmapResult = loadBitmapFromUriString(ret.spriteSheetUrl);
                     ret.spriteSheetUrl = initialAnimationConfig.getString("sprite_sheet");
+                    final Result<Bitmap> loadBitmapResult = loadBitmapFromUriString(ret.spriteSheetUrl);
                     ret.spriteSheet = loadBitmapResult.value;
                     ret.width = initialAnimationConfig.getInt("width");
                     ret.height = initialAnimationConfig.getInt("height");
@@ -593,8 +593,8 @@ public class NotificationBuilder {
                         for (int i = 0; i < oomFallbacks.length(); i++) {
                             final JSONObject fallbackAnimationConfig = oomFallbacks.getJSONObject(i);
                             try {
-                                final Result<Bitmap> loadBitmapResult = loadBitmapFromUriString(ret.spriteSheetUrl);
                                 ret.spriteSheetUrl = fallbackAnimationConfig.getString("sprite_sheet");
+                                final Result<Bitmap> loadBitmapResult = loadBitmapFromUriString(ret.spriteSheetUrl);
                                 ret.spriteSheet = loadBitmapResult.value;
                                 ret.width = fallbackAnimationConfig.getInt("width");
                                 ret.height = fallbackAnimationConfig.getInt("height");
