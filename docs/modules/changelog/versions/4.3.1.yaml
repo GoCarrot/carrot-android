@@ -1,0 +1,4 @@
+bug:
+  - Fixed player interactions with buttons on notifications on Android >= 11
+  - Resolved issue that could result in an extra unattributed 'play' event when returning to the game from a push notification or link after two minutes of backgrounding
+  - "Resolved issue which could result in failing to track clicks in sessions starting from a notification or link with a non-hierarchical out of game link, such as mailto:example@example.com"
