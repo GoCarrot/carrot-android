@@ -793,8 +793,7 @@ public class Session {
                 // double-processing deep links and rewards.
                 Session newSession = new Session();
 
-                currentSession.setState(State.Expiring);
-                currentSession.setState(State.Expired);
+                currentSession.forceExpire();
 
                 currentSession = newSession;
             } finally {
@@ -936,55 +935,64 @@ public class Session {
         }
     }
 
+    private void forceExpire() {
+        stateLock.lock();
+        try {
+            if(state != State.Expired) {
+                setState(State.Expiring);
+                setState(State.Expired);
+            }
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    private static void resetCurrentSessionToPreviousState() {
+        // It's safe to potentially create a new session here, since otherwise
+        // all we would do is reset the state on the session.
+        getCurrentSession();
+        // Reset state on current session, if it is expiring
+        final Session _lockedSession = currentSession;
+        _lockedSession.stateLock.lock();
+        try {
+            if (currentSession.state == State.Expiring) {
+                currentSession.setState(currentSession.previousState);
+            }
+        } finally {
+            _lockedSession.stateLock.unlock();
+        }
+    }
+
     private static void onActivityResumed(final Intent intent) {
         // Call getCurrentSession() so the null || Expired logic stays in one place
         currentSessionLock.lock();
         try {
-            getCurrentSession();
-
             // If this intent has already been processed by Teak, just reset the state and we are done.
             // Otherwise, out-of-app deep links can cause a back-stack loop
             if (intent.getBooleanExtra("teakSessionProcessed", false)) {
-                // Reset state on current session, if it is expiring
-                final Session _lockedSession = currentSession;
-                _lockedSession.stateLock.lock();
-                try {
-                    if (currentSession.state == State.Expiring) {
-                        currentSession.setState(currentSession.previousState);
-                    }
-                } finally {
-                    _lockedSession.stateLock.unlock();
-                }
+                resetCurrentSessionToPreviousState();
                 return;
             }
             intent.putExtra("teakSessionProcessed", true);
 
             final LaunchDataSource launchDataSource = LaunchDataSource.sourceFromIntent(intent);
 
-            // If the current session has a launch different attribution, it's a new session
-            if (currentSession.state == State.Allocated || currentSession.state == State.Created) {
+            // We explicitly avoid calling getCurrentSession() in this path.
+            // getCurrentSession() will create a new session if the previous session has expired. That
+            // new session will get through to identifying the user while at the same time we may be
+            // creating our own new session due to the presence of an attributed launch data source.
+            // If the current session has a launch different attribution, it's a new session.
+            if (currentSession != null && (currentSession.state == State.Allocated || currentSession.state == State.Created)) {
                 currentSession.launchDataSource = launchDataSource;
             } else if (launchDataSource != LaunchDataSource.Unattributed) {
                 Session oldSession = currentSession;
                 currentSession = new Session(oldSession, launchDataSource);
-                oldSession.stateLock.lock();
-                try {
-                    oldSession.setState(State.Expiring);
-                    oldSession.setState(State.Expired);
-                } finally {
-                    oldSession.stateLock.unlock();
+                if(oldSession != null) {
+                    oldSession.forceExpire();
                 }
             } else {
                 // Reset state on current session, if it is expiring
-                final Session _lockedSession = currentSession;
-                _lockedSession.stateLock.lock();
-                try {
-                    if (currentSession.state == State.Expiring) {
-                        currentSession.setState(currentSession.previousState);
-                    }
-                } finally {
-                    _lockedSession.stateLock.unlock();
-                }
+                resetCurrentSessionToPreviousState();
             }
         } finally {
             currentSessionLock.unlock();
