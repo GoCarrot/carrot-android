@@ -350,13 +350,16 @@ public class NotificationBuilder {
                 return PendingIntent.getBroadcast(context, pendingIntentRequestCode.getAndIncrement(), deleteIntent, flags);
             }
 
-            PendingIntent getLaunchIntent() {
+            PendingIntent getLaunchIntent(String deepLink) {
                 final Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
                 if (launchIntent == null) {
                     return null;
                 }
 
                 final Bundle bundleCopy = new Bundle(bundle);
+                if (deepLink != null) {
+                    bundleCopy.putString("teakDeepLink", deepLink);
+                }
                 bundleCopy.putBoolean("closeSystemDialogs", true);
                 launchIntent.putExtras(bundleCopy);
 
@@ -380,7 +383,7 @@ public class NotificationBuilder {
 
             // If this is Android 11 or 12, direct-launch the app
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                builder.setContentIntent(pendingIntent.getLaunchIntent());
+                builder.setContentIntent(pendingIntent.getLaunchIntent(null));
             } else {
                 // Create intent to fire if/when notification is opened, attach bundle info
                 builder.setContentIntent(pendingIntent.getTrampolineIntent(null));
@@ -453,7 +456,11 @@ public class NotificationBuilder {
                         final JSONObject buttonConfig = viewConfig.getJSONObject(key);
                         remoteViews.setTextViewText(viewElementId, buttonConfig.getString("text"));
                         String deepLink = buttonConfig.has("deepLink") ? buttonConfig.getString("deepLink") : null;
-                        remoteViews.setOnClickPendingIntent(viewElementId, pendingIntent.getTrampolineIntent(deepLink));
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            remoteViews.setOnClickPendingIntent(viewElementId, pendingIntent.getLaunchIntent(deepLink));
+                        } else {
+                            remoteViews.setOnClickPendingIntent(viewElementId, pendingIntent.getTrampolineIntent(deepLink));
+                        }
                     } else if (isUIType(viewElement, TextView.class)) {
                         final String value = viewConfig.getString(key);
                         remoteViews.setViewVisibility(viewElementId, View.VISIBLE);
