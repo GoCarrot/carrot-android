@@ -1,0 +1,2 @@
+bug:
+  - Resolved bug which could prevent ``Teak.Notification.schedule`` from correctly scheduling notifications while an app is being backgrounded.
