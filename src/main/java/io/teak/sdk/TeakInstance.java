@@ -291,7 +291,7 @@ public class TeakInstance implements Unobfuscable {
         });
         ThreadFactory.autoStart(ret);
 
-        Session.whenUserIdIsReadyRun((session) -> {
+        Session.whenUserIdIsOrWasReadyRun((session) -> {
             Map<String, Object> payload = new HashMap<>();
             payload.put("identifier", creativeId);
             payload.put("offset", delayInSeconds);
