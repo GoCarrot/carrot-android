@@ -42,7 +42,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -54,7 +53,6 @@ import io.teak.sdk.json.JSONObject;
 
 public class NotificationBuilder {
     public static final String DEFAULT_NOTIFICATION_CHANNEL_ID = "teak";
-    private static final AtomicInteger pendingIntentRequestCode = new AtomicInteger();
     public static class AssetLoadException extends Exception {
         AssetLoadException(String assetName, Exception cause) {
             super("Failed to load asset: " + assetName, cause);
@@ -334,7 +332,7 @@ public class NotificationBuilder {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     flags |= PendingIntent.FLAG_IMMUTABLE;
                 }
-                return PendingIntent.getBroadcast(context, pendingIntentRequestCode.getAndIncrement(), pushOpenedIntent, flags);
+                return PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, flags);
             }
 
             PendingIntent getDeleteIntent() {
@@ -347,7 +345,7 @@ public class NotificationBuilder {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     flags |= PendingIntent.FLAG_IMMUTABLE;
                 }
-                return PendingIntent.getBroadcast(context, pendingIntentRequestCode.getAndIncrement(), deleteIntent, flags);
+                return PendingIntent.getBroadcast(context, rng.nextInt(), deleteIntent, flags);
             }
 
             PendingIntent getLaunchIntent(String deepLink) {
