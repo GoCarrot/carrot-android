@@ -137,6 +137,8 @@ workflows:
   un-tagged-build:
     jobs:
       - build:
+          context:
+            - Sentry
           filters:
             tags:
               ignore: /.*/
@@ -150,6 +152,8 @@ workflows:
   tagged-build:
     jobs:
       - build:
+          context:
+            - Sentry
           filters:
             branches:
               ignore: /.*/
