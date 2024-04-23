@@ -1,0 +1,2 @@
+bug:
+  - Resolved issue which could result in some previously received notifications being treated as though they were copies of the more recently received notifications on Android 4-10 devices.
