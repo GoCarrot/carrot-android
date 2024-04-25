@@ -132,7 +132,9 @@ workflows:
               only:
                 - develop
     jobs:
-      - build
+      - build:
+          context:
+            - Sentry
 
   un-tagged-build:
     jobs:
