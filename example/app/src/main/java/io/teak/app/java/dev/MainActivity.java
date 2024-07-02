@@ -384,7 +384,7 @@ public class MainActivity extends AppCompatActivity {
 //        Teak.setChannelState(Teak.Channel.Type.PlatformPush, Teak.Channel.State.Available);
 //        Teak.openNotificationSettings();
 //        Teak.Notification.schedule("test_none", 5);
-        Log.d(LOG_TAG, Teak.Notification.getCategoriesJson());
+        Log.d(LOG_TAG, Teak.Channel.getCategoriesJson());
     }
 
     public void integrationTestTimeout(String timeout) {
