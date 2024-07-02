@@ -40,7 +40,13 @@ import java.util.Map;
 
 import javax.net.ssl.SSLException;
 
+import android.content.pm.PackageManager;
+import android.Manifest;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts.RequestPermission;
+import androidx.core.content.ContextCompat;
 import io.teak.sdk.Teak;
 import io.teak.sdk.TeakEvent;
 import io.teak.sdk.TeakNotification;
@@ -95,6 +101,25 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Register the permissions callback, which handles the user's response to the
+    // system permissions dialog. Save the return value, an instance of
+    // ActivityResultLauncher, as an instance variable.
+    private ActivityResultLauncher<String> requestPermissionLauncher =
+        registerForActivityResult(new RequestPermission(), isGranted -> {
+            if (isGranted) {
+                Log.d("MainActivity", "permission granted");
+                // Permission is granted. Continue the action or workflow in your
+                // app.
+            } else {
+                Log.d("MainActivity", "permission denied");
+                // Explain to the user that the feature is unavailable because the
+                // feature requires a permission that the user has denied. At the
+                // same time, respect the user's decision. Don't link to system
+                // settings in an effort to convince the user to change their
+                // decision.
+            }
+        });
+
     // If this is not overridden, it will destroy the activity when the Back button is pressed.
     //
     // Unity: When back is pressed, nothing happens
@@ -121,6 +146,23 @@ public class MainActivity extends AppCompatActivity {
 
         // Register with EventBus
         EventBus.getDefault().register(this);
+
+        int permissionInfo = ContextCompat.checkSelfPermission(
+                getApplicationContext(), Manifest.permission.POST_NOTIFICATIONS
+        );
+
+        if (permissionInfo == PackageManager.PERMISSION_GRANTED) {
+                Log.d("MainActivity", "permission already granted");
+            } else {
+                Log.d("MainActivity", String.format("permissionInfo: %s; shouldShowRequestPermissionRationale %b", permissionInfo, shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)));
+                // You can directly ask for the permission.
+                // The registered ActivityResultCallback gets the result of this request.
+                requestPermissionLauncher.launch(
+                    Manifest.permission.POST_NOTIFICATIONS
+                );
+        }
+
+
 
         // Create a deep link route that opens the Google Play store to a specific SKU in your game
         Teak.registerDeepLink("/store/:sku", "Store", "Link directly to purchase an item", new Teak.DeepLink() {
