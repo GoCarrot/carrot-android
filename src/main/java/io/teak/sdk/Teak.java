@@ -198,6 +198,8 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             } catch (Exception e) {
                 android.util.Log.e(LOG_TAG, android.util.Log.getStackTraceString(e));
             }
+        } else {
+            Instance.setMainActivity(activity);
         }
     }
     /// @endcond

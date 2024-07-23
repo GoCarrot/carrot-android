@@ -112,6 +112,10 @@ public class TeakInstance implements Unobfuscable {
         }
     }
 
+    void setMainActivity(Activity activity) {
+        this.activityHashCode = activity.hashCode();
+    }
+
     private void cleanup(Activity activity) {
         if (this.appStore != null) {
             this.appStore = null;
@@ -536,7 +540,7 @@ public class TeakInstance implements Unobfuscable {
 
     ///// Activity Lifecycle
 
-    private final int activityHashCode;
+    private int activityHashCode;
 
     // Needs to be public for TeakInitProvider
     @SuppressWarnings("WeakerAccess")
