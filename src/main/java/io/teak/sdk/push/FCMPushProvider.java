@@ -70,7 +70,7 @@ public class FCMPushProvider extends FirebaseMessagingService implements IPushPr
     }
 
     public void postEvent(final Context context, final Intent intent) {
-        final TeakCore teakCore = TeakCore.getWithoutThrow(context);
+        final TeakCore teakCore = TeakCore.getWithoutThrow();
         if (teakCore == null) {
             Teak.log.e("google.fcm.null_teak_core", "TeakCore.getWithoutThrow returned null.");
         }

@@ -1701,7 +1701,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         if (action == null) return;
 
         // If Instance is null, make sure TeakCore is around. If it's not null, make sure it's enabled.
-        if ((Instance == null && TeakCore.getWithoutThrow(context) == null) || (Instance != null && !Instance.isEnabled())) {
+        if ((Instance == null && TeakCore.getWithoutThrow() == null) || (Instance != null && !Instance.isEnabled())) {
             return;
         }
 

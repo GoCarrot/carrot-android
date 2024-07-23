@@ -47,22 +47,22 @@ import io.teak.sdk.json.JSONObject;
 
 public class TeakCore {
     private static TeakCore Instance = null;
-    public static TeakCore get(@NonNull Context context) {
+    public static TeakCore get() {
         if (Instance == null) {
-            Instance = new TeakCore(context);
+            Instance = new TeakCore();
         }
         return Instance;
     }
 
-    public static TeakCore getWithoutThrow(@NonNull Context context) {
+    public static TeakCore getWithoutThrow() {
         try {
-            return TeakCore.get(context);
+            return TeakCore.get();
         } catch (Exception ignored) {
         }
         return null;
     }
 
-    public TeakCore(@NonNull Context context) {
+    public TeakCore() {
         TeakEvent.addEventListener(this.teakEventListener);
 
         registerStaticTeakEventListeners();

@@ -94,7 +94,7 @@ public class ADMPushProvider implements IPushProvider, Unobfuscable {
     ///// Functionality
 
     private static void onMessage(Context context, Intent intent) {
-        final TeakCore teakCore = TeakCore.getWithoutThrow(context);
+        final TeakCore teakCore = TeakCore.getWithoutThrow();
         if (teakCore == null) {
             Teak.log.e("amazon.adm.null_teak_core", "TeakCore.getWithoutThrow returned null.");
         }
