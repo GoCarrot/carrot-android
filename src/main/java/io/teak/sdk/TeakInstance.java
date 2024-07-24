@@ -491,7 +491,7 @@ public class TeakInstance implements Unobfuscable {
             {State.Active},
             {State.Paused},
             {State.Destroyed, State.Active},
-            {}};
+            {State.Created}};
 
         public final String name;
 
