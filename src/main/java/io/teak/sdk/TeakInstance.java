@@ -113,7 +113,11 @@ public class TeakInstance implements Unobfuscable {
     }
 
     void setMainActivity(Activity activity) {
-        this.activityHashCode = activity.hashCode();
+        int newHashCode = activity.hashCode();
+        Teak.log.i("setMainActivity", Helpers.mm(
+            "oldHashCode", activityHashCode, "newHashCode", newHashCode, "name", activity.getComponentName().flattenToString()
+        ));
+        this.activityHashCode = newHashCode;
     }
 
     private void cleanup(Activity activity) {
