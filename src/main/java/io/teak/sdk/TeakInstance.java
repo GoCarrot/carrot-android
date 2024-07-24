@@ -542,11 +542,19 @@ public class TeakInstance implements Unobfuscable {
 
     private int activityHashCode;
 
+    private void lifecycleTrace(String method, Activity activity) {
+        Teak.log.i("lifecycle_trace", Helpers.mm.h(
+            "callback", method, "name", activity.getComponentName().flattenToString(),
+            "ourHashCode", activityHashCode, "theirHashCode", activity.hashCode()
+        ));
+    }
+
     // Needs to be public for TeakInitProvider
     @SuppressWarnings("WeakerAccess")
     public final Application.ActivityLifecycleCallbacks lifecycleCallbacks = new Application.ActivityLifecycleCallbacks() {
         @Override
         public void onActivityCreated(Activity activity, Bundle bundle) {
+            lifecycleTrace("onActivityCreated", activity);
             if (activity.hashCode() == activityHashCode && setState(State.Created)) {
                 Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityCreated"));
 
@@ -583,6 +591,7 @@ public class TeakInstance implements Unobfuscable {
 
         @Override
         public void onActivityResumed(Activity activity) {
+            lifecycleTrace("onActivityResumed", activity);
             if (activity.hashCode() == activityHashCode && setState(State.Active)) {
                 Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityResumed"));
                 Intent intent = activity.getIntent();
@@ -617,6 +626,7 @@ public class TeakInstance implements Unobfuscable {
 
         @Override
         public void onActivityPaused(Activity activity) {
+            lifecycleTrace("onActivityPaused", activity);
             if (activity.hashCode() == activityHashCode && setState(State.Paused)) {
                 Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityPaused"));
                 Intent intent = activity.getIntent();
@@ -629,6 +639,7 @@ public class TeakInstance implements Unobfuscable {
 
         @Override
         public void onActivityDestroyed(Activity activity) {
+            lifecycleTrace("onActivityDestroyed", activity);
             if (activity.hashCode() == activityHashCode && setState(State.Destroyed)) {
                 Teak.log.i("lifecycle", Helpers.mm.h("callback", "onActivityDestroyed"));
 
@@ -640,12 +651,12 @@ public class TeakInstance implements Unobfuscable {
 
         @Override
         public void onActivityStarted(Activity activity) {
-            // None
+            lifecycleTrace("onActivityStarted", activity);
         }
 
         @Override
         public void onActivityStopped(Activity activity) {
-            // None
+            lifecycleTrace("onActivityStopped", activity);
         }
 
         @Override
