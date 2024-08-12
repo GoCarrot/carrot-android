@@ -1,12 +1,13 @@
 version: 2.1
 
 orbs:
-  teak: teak/sdk-utils@0.0.10
+  teak: teak/sdk-utils@1
+  buildomat: teak/buildomat@0.1
 
 jobs:
   build:
     docker:
-      - image: circleci/android:api-28
+      - image: cimg/android:2023.07
         environment:
           ANDROID_HOME=/opt/android/sdk
     steps:
@@ -62,16 +63,14 @@ jobs:
 
   tag_build:
     docker:
-      - image: circleci/android:api-28
-        environment:
-          ANDROID_HOME=/opt/android/sdk
+      - image: cimg/base:current
     steps:
       - checkout
       - teak/tag-promote
 
   deploy_versioned:
     docker:
-      - image: circleci/android:api-28
+      - image: cimg/base:current
         environment:
           ANDROID_HOME=/opt/android/sdk
     steps:
@@ -82,10 +81,13 @@ jobs:
           command: curl -sL https://sentry.io/get-cli/ | bash
       - run:
           name: Install AWS CLI
-          command: pip install awscli
+          command: |
+            sudo apt-get update
+            sudo apt-get -y -qq install awscli
       - attach_workspace:
           at: .
       - sentry_upload_proguard
+      - buildomat/aws-oidc-assume
       - run:
           name: Upload SDK to S3
           command: |
@@ -95,9 +97,7 @@ jobs:
 
   deploy_latest:
     docker:
-      - image: circleci/android:api-28
-        environment:
-          ANDROID_HOME=/opt/android/sdk
+      - image: cimg/base:current
     steps:
       - checkout
       - run: git fetch --tags
@@ -106,10 +106,13 @@ jobs:
           command: curl -sL https://sentry.io/get-cli/ | bash
       - run:
           name: Install AWS CLI
-          command: pip install awscli
+          command: |
+            sudo apt-get update
+            sudo apt-get -y -qq install awscli
       - attach_workspace:
           at: .
       - sentry_upload_proguard
+      - buildomat/aws-oidc-assume
       - run:
           name: Upload SDK to S3
           command: |
@@ -123,17 +126,21 @@ workflows:
   nightly:
     triggers:
       - schedule:
-          cron: "0 0 * * 1-5"
+          cron: "0 0 * * 2-6"
           filters:
             branches:
               only:
                 - develop
     jobs:
-      - build
+      - build:
+          context:
+            - Sentry
 
   un-tagged-build:
     jobs:
       - build:
+          context:
+            - Sentry
           filters:
             tags:
               ignore: /.*/
@@ -147,12 +154,17 @@ workflows:
   tagged-build:
     jobs:
       - build:
+          context:
+            - Sentry
           filters:
             branches:
               ignore: /.*/
             tags:
               only: /.*/
       - deploy_versioned:
+          context:
+            - AWS-OIDC-Role
+            - Sentry
           requires:
             - build
           filters:
@@ -170,6 +182,9 @@ workflows:
             tags:
               only: /.*/
       - deploy_latest:
+          context:
+            - AWS-OIDC-Role
+            - Sentry
           requires:
             - hold
           filters:
@@ -213,4 +228,4 @@ commands:
           name: Upload ProGuard Mappings to Sentry
           command: |
             sentry-cli --version
-            sentry-cli upload-proguard --require-one << parameters.proguard_mapping >> << parameters.sentry_cli_args >>
+            sentry-cli upload-proguard -p "${CIRCLE_PROJECT_REPONAME}-sdk" --require-one << parameters.proguard_mapping >> << parameters.sentry_cli_args >>
