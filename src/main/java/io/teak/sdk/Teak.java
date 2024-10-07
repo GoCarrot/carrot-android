@@ -55,6 +55,11 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
     public static final int JOB_ID = 1946157056;
 
     /**
+     * The push notifications permission identifier.
+     */
+    public static final String NOTIFICATION_PERMISSION = "android.permission.POST_NOTIFICATIONS";
+
+    /**
      * Version of the Teak SDK.
      *
      * @deprecated Use the {@link Teak#Version} member instead.
@@ -419,6 +424,14 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
 
         if (Instance != null) {
             asyncExecutor.submit(() -> Instance.identifyUser(userIdentifier, userConfiguration));
+        }
+    }
+
+    public static void requestNotificationPermissions() {
+        Teak.log.i("Teak.requestNotificationPermissions", "Hello");
+
+        if(Instance != null) {
+            asyncExecutor.submit(() -> Instance.requestNotificationPermissions());
         }
     }
 

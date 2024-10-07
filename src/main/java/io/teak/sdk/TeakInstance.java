@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ResolveInfo;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -26,6 +27,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.Session;
 import io.teak.sdk.core.TeakCore;
@@ -42,10 +44,12 @@ import io.teak.sdk.push.PushState;
 import io.teak.sdk.raven.Raven;
 import io.teak.sdk.shortcutbadger.ShortcutBadger;
 import io.teak.sdk.store.IStore;
+import io.teak.sdk.activity.PermissionRequest;
 
 public class TeakInstance implements Unobfuscable {
     public final IObjectFactory objectFactory;
-    private final Context context;
+    public final Context context;
+    private Activity mainActivity;
     private final TeakCore teakCore;
     private AccessTokenTracker facebookAccessTokenTracker;
 
@@ -117,6 +121,7 @@ public class TeakInstance implements Unobfuscable {
         Teak.log.i("setMainActivity", Helpers.mm.h(
             "oldHashCode", activityHashCode, "newHashCode", newHashCode, "name", activity.getComponentName().flattenToString()
         ));
+        this.mainActivity = activity;
         this.activityHashCode = newHashCode;
     }
 
@@ -668,6 +673,34 @@ public class TeakInstance implements Unobfuscable {
             // None
         }
     };
+
+    public void requestNotificationPermissions() {
+        Teak.log.i("instance.requestNotificationPermissions", "trace");
+        // Android pre 13 has no notification permissions.
+        if(Build.VERSION.SDK_INT < 33) {
+            Teak.log.i("instance.requestNotificationPermissions", "Android < 13");
+            return;
+        }
+
+        int permissionInfo = ContextCompat.checkSelfPermission(
+            this.context, Teak.NOTIFICATION_PERMISSION
+        );
+
+        if (permissionInfo == PackageManager.PERMISSION_GRANTED) {
+            Teak.log.i("instance.requestNotificationPermissions", "Permission  granted");
+            return;
+        }
+
+        Teak.log.i("instance.requestNotificationPermissions", "requesting intent");
+        Intent intent = new Intent(this.context, PermissionRequest.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+        this.mainActivity.startActivity(intent);
+    }
+
+    ///// Permissions handling
+    public void onNotificationPermissionResult(boolean result) {
+
+    }
 
     ///// Built-in deep links
 
