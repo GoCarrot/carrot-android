@@ -82,6 +82,10 @@
             </intent-filter>
         </service>
 
+        <activity android:name="io.teak.sdk.activity.PermissionRequest"
+                  android:theme="@android:style/Theme.Translucent.NoTitleBar"
+                  android:exported="false" />
+
         <!-- ADM -->
         <amazon:enable-feature
             android:name="com.amazon.device.messaging"
