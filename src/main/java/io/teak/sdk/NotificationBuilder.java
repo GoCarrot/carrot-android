@@ -59,6 +59,46 @@ public class NotificationBuilder {
         }
     }
 
+    static class IdHelper {
+        private final Context context;
+
+        public IdHelper(@NonNull final Context context) {
+            this.context = context;
+        }
+
+        public int id(String identifier) {
+            int ret = context.getResources().getIdentifier(identifier, "id", context.getPackageName());
+            if (ret == 0) {
+                throw new Resources.NotFoundException("Could not find R.id." + identifier);
+            }
+            return ret;
+        }
+
+        public int layout(String identifier) {
+            int ret = context.getResources().getIdentifier(identifier, "layout", context.getPackageName());
+            if (ret == 0) {
+                throw new Resources.NotFoundException("Could not find R.layout." + identifier);
+            }
+            return ret;
+        }
+
+        public int integer(String identifier) {
+            int ret = context.getResources().getIdentifier(identifier, "integer", context.getPackageName());
+            if (ret == 0) {
+                throw new Resources.NotFoundException("Could not find R.integer." + identifier);
+            }
+            return context.getResources().getInteger(ret);
+        }
+
+        public int drawable(String identifier) {
+            int ret = context.getResources().getIdentifier(identifier, "drawable", context.getPackageName());
+            if (ret == 0) {
+                throw new Resources.NotFoundException("Could not find R.drawable." + identifier);
+            }
+            return ret;
+        }
+    }
+
     public static Notification createNativeNotification(Context context, Bundle bundle, TeakNotification teakNotificaton) throws AssetLoadException {
         if (teakNotificaton.notificationVersion == TeakNotification.TEAK_NOTIFICATION_V0) {
             return null;
@@ -181,41 +221,7 @@ public class NotificationBuilder {
 
         // Because we can't be certain that the R class will line up with what is at SDK build time
         // like in the case of Unity et. al.
-        class IdHelper {
-            public int id(String identifier) {
-                int ret = context.getResources().getIdentifier(identifier, "id", context.getPackageName());
-                if (ret == 0) {
-                    throw new Resources.NotFoundException("Could not find R.id." + identifier);
-                }
-                return ret;
-            }
-
-            public int layout(String identifier) {
-                int ret = context.getResources().getIdentifier(identifier, "layout", context.getPackageName());
-                if (ret == 0) {
-                    throw new Resources.NotFoundException("Could not find R.layout." + identifier);
-                }
-                return ret;
-            }
-
-            public int integer(String identifier) {
-                int ret = context.getResources().getIdentifier(identifier, "integer", context.getPackageName());
-                if (ret == 0) {
-                    throw new Resources.NotFoundException("Could not find R.integer." + identifier);
-                }
-                return context.getResources().getInteger(ret);
-            }
-
-            public int drawable(String identifier) {
-                int ret = context.getResources().getIdentifier(identifier, "drawable", context.getPackageName());
-                if (ret == 0) {
-                    throw new Resources.NotFoundException("Could not find R.drawable." + identifier);
-                }
-                return ret;
-            }
-        }
-        final IdHelper R = new IdHelper(); // Declaring local as 'R' ensures we don't accidentally use the other R
-
+        final IdHelper R = new IdHelper(context); // Declaring local as 'R' ensures we don't accidentally use the other R
         // Logic for the Android 12 notification style
         int targetSdkVersion = 0; // Do not use TeakConfiguration.get()
         try {
