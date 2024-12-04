@@ -670,6 +670,8 @@ public class TeakNotification implements Unobfuscable {
     public final String groupKey;
     public final int minGroupSize;
     public final int groupSummaryId;
+    public final String groupTitle;
+    public final String groupMessage;
 
     // Animation
     public boolean isAnimated;
@@ -700,6 +702,8 @@ public class TeakNotification implements Unobfuscable {
         this.groupKey = bundle.getString("teakGroupKey", "teak");
         this.minGroupSize = bundle.getInt("teakGroupMinSize", 2);
         this.groupSummaryId = bundle.getInt("groupSummaryId", 0);
+        this.groupTitle = bundle.getString("teakGroupTitle");
+        this.groupMessage = bundle.getString("teakGroupMessage", "{{notification_count}} new messages");
         this.isAnimated = false;
         this.bundle = bundle;
         this.notificationPlacement = appInForeground ? NotificationPlacement.Foreground : NotificationPlacement.Background;
