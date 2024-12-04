@@ -199,10 +199,11 @@ public class DefaultAndroidNotification implements IAndroidNotification {
                     if(groupSummary != null) {
                         summaryId = groupSummary.getId();
                     }
+
                     DefaultAndroidNotification.this.notificationManager.notify(
                         NOTIFICATION_TAG,
                         summaryId,
-                        NotificationBuilder.createSummaryNotification(context, groupKey, ourNotifications)
+                        NotificationBuilder.createSummaryNotification(context, groupKey, ourNotifications, teakNotification)
                     );
                 }
 

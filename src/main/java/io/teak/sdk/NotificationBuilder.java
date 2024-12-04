@@ -103,7 +103,76 @@ public class NotificationBuilder {
         }
     }
 
-    public static Notification createSummaryNotification(Context context, String groupKey, ArrayList<StatusBarNotification> notifications) {
+    static class PendingIntentHelper {
+        private final Context context;
+        private final SecureRandom rng;
+        private final ComponentName cn;
+        private final Bundle bundle;
+
+        PendingIntentHelper(Context context, Bundle bundle) {
+            this.context = context;
+            this.bundle = bundle;
+            this.rng = new SecureRandom();
+            this.cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
+        }
+
+        PendingIntent getTrampolineIntent(String deepLink) {
+            final String action = context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX;
+            final Bundle bundleCopy = new Bundle(bundle);
+            if (deepLink != null) {
+                bundleCopy.putString("teakDeepLink", deepLink);
+                bundleCopy.putBoolean("closeSystemDialogs", true);
+            }
+            final Intent pushOpenedIntent = new Intent(action);
+            pushOpenedIntent.putExtras(bundleCopy);
+            pushOpenedIntent.setComponent(cn);
+            int flags = PendingIntent.FLAG_ONE_SHOT;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                flags |= PendingIntent.FLAG_IMMUTABLE;
+            }
+            return PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, flags);
+        }
+
+        PendingIntent getDeleteIntent() {
+            final String action = context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX;
+            final Bundle bundleCopy = new Bundle(bundle);
+            final Intent deleteIntent = new Intent(action);
+            deleteIntent.putExtras(bundleCopy);
+            deleteIntent.setComponent(cn);
+            int flags = PendingIntent.FLAG_ONE_SHOT;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                flags |= PendingIntent.FLAG_IMMUTABLE;
+            }
+            return PendingIntent.getBroadcast(context, rng.nextInt(), deleteIntent, flags);
+        }
+
+        PendingIntent getLaunchIntent(String deepLink) {
+            final Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+            if (launchIntent == null) {
+                return null;
+            }
+
+            final Bundle bundleCopy = new Bundle(bundle);
+            if (deepLink != null) {
+                bundleCopy.putString("teakDeepLink", deepLink);
+            }
+            bundleCopy.putBoolean("closeSystemDialogs", true);
+            launchIntent.putExtras(bundleCopy);
+
+            // https://stackoverflow.com/questions/5502427/resume-application-and-stack-from-notification/5502950#5502950
+            launchIntent.setPackage(null);
+            launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+
+            int flags = PendingIntent.FLAG_ONE_SHOT;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                flags |= PendingIntent.FLAG_IMMUTABLE;
+            }
+
+            return PendingIntent.getActivity(context, rng.nextInt(), launchIntent, flags);
+        }
+    }
+
+    private static int addDefaultIcons(Context context, IdHelper R, NotificationCompat.Builder builder) {
         // Get app icon
         int tempAppIconResourceId;
         try {
@@ -116,8 +185,6 @@ public class NotificationBuilder {
         }
         final int appIconResourceId = tempAppIconResourceId;
 
-
-        final IdHelper R = new IdHelper(context);
         int smallNotificationIcon = appIconResourceId;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             try {
@@ -126,25 +193,52 @@ public class NotificationBuilder {
             }
         }
 
-        return new NotificationCompat.Builder(context, NotificationCompat.getChannelId(notifications.get(0).getNotification()))
-                .setGroup(groupKey)
+        Bitmap largeNotificationIcon = null;
+        try {
+            largeNotificationIcon = BitmapFactory.decodeResource(context.getResources(),
+                R.drawable("io_teak_large_notification_icon"));
+        } catch (Exception ignored) {
+        }
+
+        builder.setSmallIcon(smallNotificationIcon);
+        if (largeNotificationIcon != null) {
+            builder.setLargeIcon(largeNotificationIcon);
+        }
+
+        // Icon accent color (added in API 21 version of Notification builder, so use reflection)
+        try {
+            Method setColor = builder.getClass().getMethod("setColor", int.class);
+            setColor.invoke(builder, R.integer("io_teak_notification_accent_color"));
+        } catch (Exception ignored) {
+        }
+
+        return appIconResourceId;
+    }
+
+    public static Notification createSummaryNotification(Context context, String groupKey, ArrayList<StatusBarNotification> notifications, TeakNotification requestingNotification) {
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, NotificationCompat.getChannelId(notifications.get(0).getNotification()));
+
+        final IdHelper R = new IdHelper(context);
+        addDefaultIcons(context, R, builder);
+
+        return builder.setGroup(groupKey)
                 .setGroupSummary(true)
                 .setOnlyAlertOnce(true)
                 .setAutoCancel(false)
-                .setSmallIcon(smallNotificationIcon)
                 .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
                 .setContentText("Content Text")
                 .setStyle(new NotificationCompat.InboxStyle().addLine("Test").addLine("Other Test").setBigContentTitle("Big content title"))
                 .build();
     }
 
-    public static Notification createNativeNotification(Context context, Bundle bundle, TeakNotification teakNotificaton) throws AssetLoadException {
+    public static Notification createNativeNotification(Context context, TeakNotification teakNotificaton) throws AssetLoadException {
         if (teakNotificaton.notificationVersion == TeakNotification.TEAK_NOTIFICATION_V0) {
             return null;
         }
 
         try {
-            return createNativeNotificationV1Plus(context, bundle, teakNotificaton);
+            return createNativeNotificationV1Plus(context, teakNotificaton);
         } catch (AssetLoadException e) {
             throw e;
         } catch (Exception e) {
@@ -246,7 +340,8 @@ public class NotificationBuilder {
         return Html.fromHtml(string);
     }
 
-    private static Notification createNativeNotificationV1Plus(final Context context, final Bundle bundle, final TeakNotification teakNotificaton) throws Exception {
+    private static Notification createNativeNotificationV1Plus(final Context context, final TeakNotification teakNotificaton) throws Exception {
+        final Bundle bundle = teakNotificaton.bundle;
         // Get the memory class here, don't rely on TeakConfiguration
         final ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         final int deviceMemoryClass = am == null ? 0 : am.getMemoryClass();
@@ -321,106 +416,10 @@ public class NotificationBuilder {
             }
         }
 
-        // Icon accent color (added in API 21 version of Notification builder, so use reflection)
-        try {
-            Method setColor = builder.getClass().getMethod("setColor", int.class);
-            setColor.invoke(builder, R.integer("io_teak_notification_accent_color"));
-        } catch (Exception ignored) {
-        }
-
-        // Get app icon
-        int tempAppIconResourceId;
-        try {
-            PackageManager pm = context.getPackageManager();
-            ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
-            tempAppIconResourceId = ai.icon;
-        } catch (Exception e) {
-            Teak.log.e("notification_builder", "Unable to load app icon resource for Notification.");
-            return null;
-        }
-        final int appIconResourceId = tempAppIconResourceId;
-
-        // Assign notification icons
-        int smallNotificationIcon = appIconResourceId;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            try {
-                smallNotificationIcon = R.drawable("io_teak_small_notification_icon");
-            } catch (Exception ignored) {
-            }
-        }
-
-        Bitmap largeNotificationIcon = null;
-        try {
-            largeNotificationIcon = BitmapFactory.decodeResource(context.getResources(),
-                R.drawable("io_teak_large_notification_icon"));
-        } catch (Exception ignored) {
-        }
-
-        builder.setSmallIcon(smallNotificationIcon);
-        if (largeNotificationIcon != null) {
-            builder.setLargeIcon(largeNotificationIcon);
-        }
+        final int appIconResourceId = addDefaultIcons(context, R, builder);
 
         // Intent creation helper
-        final SecureRandom rng = new SecureRandom();
-        final ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
-        class PendingIntentHelper {
-            PendingIntent getTrampolineIntent(String deepLink) {
-                final String action = context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX;
-                final Bundle bundleCopy = new Bundle(bundle);
-                if (deepLink != null) {
-                    bundleCopy.putString("teakDeepLink", deepLink);
-                    bundleCopy.putBoolean("closeSystemDialogs", true);
-                }
-                final Intent pushOpenedIntent = new Intent(action);
-                pushOpenedIntent.putExtras(bundleCopy);
-                pushOpenedIntent.setComponent(cn);
-                int flags = PendingIntent.FLAG_ONE_SHOT;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    flags |= PendingIntent.FLAG_IMMUTABLE;
-                }
-                return PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, flags);
-            }
-
-            PendingIntent getDeleteIntent() {
-                final String action = context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX;
-                final Bundle bundleCopy = new Bundle(bundle);
-                final Intent deleteIntent = new Intent(action);
-                deleteIntent.putExtras(bundleCopy);
-                deleteIntent.setComponent(cn);
-                int flags = PendingIntent.FLAG_ONE_SHOT;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    flags |= PendingIntent.FLAG_IMMUTABLE;
-                }
-                return PendingIntent.getBroadcast(context, rng.nextInt(), deleteIntent, flags);
-            }
-
-            PendingIntent getLaunchIntent(String deepLink) {
-                final Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
-                if (launchIntent == null) {
-                    return null;
-                }
-
-                final Bundle bundleCopy = new Bundle(bundle);
-                if (deepLink != null) {
-                    bundleCopy.putString("teakDeepLink", deepLink);
-                }
-                bundleCopy.putBoolean("closeSystemDialogs", true);
-                launchIntent.putExtras(bundleCopy);
-
-                // https://stackoverflow.com/questions/5502427/resume-application-and-stack-from-notification/5502950#5502950
-                launchIntent.setPackage(null);
-                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
-
-                int flags = PendingIntent.FLAG_ONE_SHOT;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    flags |= PendingIntent.FLAG_IMMUTABLE;
-                }
-
-                return PendingIntent.getActivity(context, rng.nextInt(), launchIntent, flags);
-            }
-        }
-        final PendingIntentHelper pendingIntent = new PendingIntentHelper();
+        final PendingIntentHelper pendingIntent = new PendingIntentHelper(context, bundle);
 
         try {
             // Create intent to fire if/when notification is cleared

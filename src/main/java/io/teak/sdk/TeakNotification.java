@@ -771,6 +771,10 @@ public class TeakNotification implements Unobfuscable {
         this.useDecoratedCustomView = Helpers.getBooleanFromBundle(bundle, "useDecoratedCustomView");
 
         this.platformId = new Random().nextInt();
+
+        // Update our bundle with calculated information.
+        bundle.putInt("platformId", platformId);
+        bundle.putString("teakNotificationPlacement", notificationPlacement.name);
     }
 
     private int compareMajorMinorRevision(int[] version, int[] otherVersion) {

@@ -188,14 +188,7 @@ public class TeakCore {
                     // Create Teak Notification
                     final TeakNotification teakNotification = new TeakNotification(bundle, gameIsInForeground);
 
-                    // Add platformId to bundle
-                    bundle.putInt("platformId", teakNotification.platformId);
-
-                    // Add notification placement to bundle
-                    bundle.putString("teakNotificationPlacement", teakNotification.notificationPlacement.name);
-
                     // Create & display native notification asynchronously, image downloads etc
-
                     asyncExecutor.submit(new RetriableTask<>(3, 2000L, 2, () -> {
                         // Send metric
                         final String teakUserId = bundle.getString("teakUserId", null);
@@ -230,7 +223,7 @@ public class TeakCore {
                         // If the game is backgrounded, or we can show in foreground, display notification
                         if (!gameIsInForeground || showInForeground) {
                             // Create native notification
-                            final Notification nativeNotification = NotificationBuilder.createNativeNotification(context, bundle, teakNotification);
+                            final Notification nativeNotification = NotificationBuilder.createNativeNotification(context, teakNotification);
                             if (nativeNotification == null) return null;
 
                             // Ensure that DefaultAndroidNotification instance exists.
