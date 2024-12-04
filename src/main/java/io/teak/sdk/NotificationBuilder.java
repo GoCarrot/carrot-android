@@ -299,6 +299,7 @@ public class NotificationBuilder {
         builder.setOnlyAlertOnce(true);
         builder.setAutoCancel(true);
 
+        builder.setContentTitle(teakNotificaton.title);
         // Assign content text otherwise a badge will not show up
         builder.setContentText(teakNotificaton.message);
 

@@ -647,6 +647,7 @@ public class TeakNotification implements Unobfuscable {
     public int platformId;
     public final long teakNotifId;
 
+    final String title;
     final String message;
     final String longText;
     final String imageAssetA;
@@ -689,6 +690,7 @@ public class TeakNotification implements Unobfuscable {
 
     public TeakNotification(Bundle bundle, boolean appInForeground) {
         this.message = bundle.getString("message");
+        this.title = bundle.getString("title");
         this.longText = bundle.getString("longText");
         this.teakRewardId = bundle.getString("teakRewardId");
         this.imageAssetA = bundle.getString("imageAssetA");
