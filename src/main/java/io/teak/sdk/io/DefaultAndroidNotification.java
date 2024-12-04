@@ -17,6 +17,7 @@ import org.greenrobot.eventbus.Subscribe;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Objects;
 
 import androidx.annotation.NonNull;
 import androidx.work.Data;
@@ -29,6 +30,9 @@ import io.teak.sdk.core.DeviceScreenState;
 import io.teak.sdk.event.NotificationDisplayEvent;
 import io.teak.sdk.event.NotificationReDisplayEvent;
 import io.teak.sdk.event.PushNotificationEvent;
+
+import androidx.core.app.NotificationCompat;
+import android.service.notification.StatusBarNotification;
 
 public class DefaultAndroidNotification implements IAndroidNotification {
     private final NotificationManager notificationManager;
@@ -102,6 +106,39 @@ public class DefaultAndroidNotification implements IAndroidNotification {
         }
     }
 
+    private class NotificationGroup {
+        final public ArrayList<StatusBarNotification> children;
+        final public StatusBarNotification summary;
+
+        NotificationGroup(ArrayList<StatusBarNotification> children, StatusBarNotification summary) {
+            this.children = children;
+            this.summary = summary;
+        }
+    }
+
+    private NotificationGroup getActiveNotificationsForGroup(String groupKey) {
+        ArrayList<StatusBarNotification> children = new ArrayList<StatusBarNotification>();
+        StatusBarNotification summary = null;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            StatusBarNotification[] notifications = notificationManager.getActiveNotifications();
+            if(notifications != null) {
+                for(StatusBarNotification sbn : notifications) {
+                    final Notification notification = sbn.getNotification();
+                    if(Objects.equals(groupKey, NotificationCompat.getGroup(notification))) {
+                        if(NotificationCompat.isGroupSummary(notification)) {
+                            summary = sbn;
+                        } else {
+                            children.add(sbn);
+                        }
+                    }
+                }
+            }
+        }
+
+        return new NotificationGroup(children, summary);
+    }
+
     @Override
     public void cancelNotification(@NonNull Context context, int platformId) {
         Teak.log.i("notification.cancel", Helpers.mm.h("platformId", platformId));
@@ -136,7 +173,32 @@ public class DefaultAndroidNotification implements IAndroidNotification {
             Helpers.runAndLogGC("display_notification.gc");
 
             try {
+                final String groupKey = NotificationCompat.getGroup(nativeNotification);
+                final NotificationGroup groupInfo = DefaultAndroidNotification.this.getActiveNotificationsForGroup(groupKey);
+
+                final StatusBarNotification groupSummary = groupInfo.summary;
+                final ArrayList<StatusBarNotification> ourNotifications = groupInfo.children;
+
+                final int notificationCount = ourNotifications.size() + 1;
+
+                Teak.log.i(
+                    "default_android_notification.display_notification.summary_info",
+                    Helpers.mm.h("liveCount", notificationCount, "hasSummary", groupSummary != null)
+                );
+
                 DefaultAndroidNotification.this.notificationManager.notify(NOTIFICATION_TAG, teakNotification.platformId, nativeNotification);
+
+                if(notificationCount >= teakNotification.minGroupSize) {
+                    int summaryId = teakNotification.groupSummaryId;
+                    if(groupSummary != null) {
+                        summaryId = groupSummary.getId();
+                    }
+                    DefaultAndroidNotification.this.notificationManager.notify(
+                        NOTIFICATION_TAG,
+                        summaryId,
+                        NotificationBuilder.createSummaryNotification(context, groupKey, ourNotifications)
+                    );
+                }
 
                 if (teakNotification.isAnimated) {
                     synchronized (DefaultAndroidNotification.this.animatedNotifications) {

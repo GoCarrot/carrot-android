@@ -42,14 +42,18 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.FutureTask;
+import java.util.ArrayList;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.Result;
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONObject;
+
+import android.service.notification.StatusBarNotification;
 
 public class NotificationBuilder {
     public static final String DEFAULT_NOTIFICATION_CHANNEL_ID = "teak";
@@ -97,6 +101,41 @@ public class NotificationBuilder {
             }
             return ret;
         }
+    }
+
+    public static Notification createSummaryNotification(Context context, String groupKey, ArrayList<StatusBarNotification> notifications) {
+        // Get app icon
+        int tempAppIconResourceId;
+        try {
+            PackageManager pm = context.getPackageManager();
+            ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
+            tempAppIconResourceId = ai.icon;
+        } catch (Exception e) {
+            Teak.log.e("notification_builder", "Unable to load app icon resource for Notification.");
+            tempAppIconResourceId = -1;
+        }
+        final int appIconResourceId = tempAppIconResourceId;
+
+
+        final IdHelper R = new IdHelper(context);
+        int smallNotificationIcon = appIconResourceId;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            try {
+                smallNotificationIcon = R.drawable("io_teak_small_notification_icon");
+            } catch (Exception ignored) {
+            }
+        }
+
+        return new NotificationCompat.Builder(context, NotificationCompat.getChannelId(notifications.get(0).getNotification()))
+                .setGroup(groupKey)
+                .setGroupSummary(true)
+                .setOnlyAlertOnce(true)
+                .setAutoCancel(false)
+                .setSmallIcon(smallNotificationIcon)
+                .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
+                .setContentText("Content Text")
+                .setStyle(new NotificationCompat.InboxStyle().addLine("Test").addLine("Other Test").setBigContentTitle("Big content title"))
+                .build();
     }
 
     public static Notification createNativeNotification(Context context, Bundle bundle, TeakNotification teakNotificaton) throws AssetLoadException {
@@ -234,10 +273,11 @@ public class NotificationBuilder {
         final boolean willAutomaticallyUse12PlusStyle = isRunningOn12Plus && isTargeting12Plus;
         final boolean serverRequests12PlusStyle = teakNotificaton.useDecoratedCustomView;
         final boolean isAndroid12NotificationStyle = serverRequests12PlusStyle || willAutomaticallyUse12PlusStyle;
+        final String notificationChannelId = NotificationBuilder.channelIdForOptOutId(context, teakNotificaton.teakOptOutCategory);
+        final String groupKey = teakNotificaton.groupKey;
 
-        final NotificationCompat.Builder builder = new NotificationCompat.Builder(context,
-            NotificationBuilder.channelIdForOptOutId(context, teakNotificaton.teakOptOutCategory));
-        builder.setGroup(UUID.randomUUID().toString());
+        final NotificationCompat.Builder builder = new NotificationCompat.Builder(context, notificationChannelId);
+        builder.setGroup(groupKey);
 
         // Assign DecoratedCustomViewStyle if the server requests the Android 12 style, and it would
         // not automatically assign that style
