@@ -116,10 +116,16 @@ public class DefaultAndroidNotification implements IAndroidNotification {
         }
     }
 
+    // Only supports Android 6+, which means notification grouping only works on Android 6+
+    // Based on our latest data, less than 0.5% of sessions are on Android < 6, and Unity 2023.2+
+    // require Android 6+ so this seems acceptable.
     private NotificationGroup getActiveNotificationsForGroup(String groupKey) {
         ArrayList<StatusBarNotification> children = new ArrayList<StatusBarNotification>();
         StatusBarNotification summary = null;
 
+        // This behavior is largely aped from NotificationManagerCompat.
+        // NotificationManagerCompat didn't add this method until sometime after 1.11.x, and
+        // I'd rather not force an update. This is simple enough.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             StatusBarNotification[] notifications = notificationManager.getActiveNotifications();
             if(notifications != null) {
