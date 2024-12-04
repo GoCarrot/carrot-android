@@ -226,7 +226,7 @@ public class NotificationBuilder {
         if (quietNotificationChannelId == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
             try {
                 final String channelId = "teak-no-sound-or-vibrate";
-                final int importance = NotificationManager.IMPORTANCE_HIGH;
+                final int importance = NotificationManager.IMPORTANCE_DEFAULT;
                 final NotificationChannel channel = new NotificationChannel(channelId, "Silent Notifications", importance);
                 channel.enableLights(true);
                 channel.setSound(null, null);
