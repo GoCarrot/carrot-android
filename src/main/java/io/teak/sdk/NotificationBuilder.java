@@ -128,23 +128,6 @@ public class NotificationBuilder {
             this.cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
         }
 
-        PendingIntent getTrampolineIntent(String deepLink) {
-            final String action = context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX;
-            final Bundle bundleCopy = new Bundle(bundle);
-            if (deepLink != null) {
-                bundleCopy.putString("teakDeepLink", deepLink);
-                bundleCopy.putBoolean("closeSystemDialogs", true);
-            }
-            final Intent pushOpenedIntent = new Intent(action);
-            pushOpenedIntent.putExtras(bundleCopy);
-            pushOpenedIntent.setComponent(cn);
-            int flags = PendingIntent.FLAG_ONE_SHOT;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                flags |= PendingIntent.FLAG_IMMUTABLE;
-            }
-            return PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, flags);
-        }
-
         PendingIntent getDeleteIntent() {
             final String action = context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX;
             final Bundle bundleCopy = new Bundle(bundle);
@@ -159,6 +142,15 @@ public class NotificationBuilder {
         }
 
         PendingIntent getLaunchIntent(String deepLink) {
+            // If this is Android 11 or 12, direct-launch the app
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                return getLaunchIntentInternal(deepLink);
+            } else {
+                return getTrampolineIntent(deepLink);
+            }
+        }
+
+        private PendingIntent getLaunchIntentInternal(String deepLink) {
             final Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
             if (launchIntent == null) {
                 return null;
@@ -181,6 +173,23 @@ public class NotificationBuilder {
             }
 
             return PendingIntent.getActivity(context, rng.nextInt(), launchIntent, flags);
+        }
+
+        private PendingIntent getTrampolineIntent(String deepLink) {
+            final String action = context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX;
+            final Bundle bundleCopy = new Bundle(bundle);
+            if (deepLink != null) {
+                bundleCopy.putString("teakDeepLink", deepLink);
+                bundleCopy.putBoolean("closeSystemDialogs", true);
+            }
+            final Intent pushOpenedIntent = new Intent(action);
+            pushOpenedIntent.putExtras(bundleCopy);
+            pushOpenedIntent.setComponent(cn);
+            int flags = PendingIntent.FLAG_ONE_SHOT;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                flags |= PendingIntent.FLAG_IMMUTABLE;
+            }
+            return PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, flags);
         }
     }
 
@@ -422,14 +431,7 @@ public class NotificationBuilder {
         try {
             // Create intent to fire if/when notification is cleared
             builder.setDeleteIntent(pendingIntent.getDeleteIntent());
-
-            // If this is Android 11 or 12, direct-launch the app
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                builder.setContentIntent(pendingIntent.getLaunchIntent(null));
-            } else {
-                // Create intent to fire if/when notification is opened, attach bundle info
-                builder.setContentIntent(pendingIntent.getTrampolineIntent(null));
-            }
+            builder.setContentIntent(pendingIntent.getLaunchIntent(null));
         } catch (Exception e) {
             if (!bundle.getBoolean("teakUnitTest")) {
                 throw e;
@@ -498,11 +500,7 @@ public class NotificationBuilder {
                         final JSONObject buttonConfig = viewConfig.getJSONObject(key);
                         remoteViews.setTextViewText(viewElementId, buttonConfig.getString("text"));
                         String deepLink = buttonConfig.has("deepLink") ? buttonConfig.getString("deepLink") : null;
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                            remoteViews.setOnClickPendingIntent(viewElementId, pendingIntent.getLaunchIntent(deepLink));
-                        } else {
-                            remoteViews.setOnClickPendingIntent(viewElementId, pendingIntent.getTrampolineIntent(deepLink));
-                        }
+                        remoteViews.setOnClickPendingIntent(viewElementId, pendingIntent.getLaunchIntent(deepLink));
                     } else if (isUIType(viewElement, TextView.class)) {
                         final String value = viewConfig.getString(key);
                         remoteViews.setViewVisibility(viewElementId, View.VISIBLE);
