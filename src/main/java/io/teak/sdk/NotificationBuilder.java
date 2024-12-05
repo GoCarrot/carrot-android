@@ -63,11 +63,23 @@ public class NotificationBuilder {
         }
     }
 
-    static class IdHelper {
+    static class ResourceHelper {
         private final Context context;
+        public final int appIconResourceId;
 
-        public IdHelper(@NonNull final Context context) {
+        public ResourceHelper(@NonNull final Context context) {
             this.context = context;
+            // Get app icon
+            int tempAppIconResourceId;
+            try {
+                PackageManager pm = context.getPackageManager();
+                ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
+                tempAppIconResourceId = ai.icon;
+            } catch (Exception e) {
+                Teak.log.e("notification_builder", "Unable to load app icon resource for Notification.");
+                tempAppIconResourceId = -1;
+            }
+            this.appIconResourceId = tempAppIconResourceId;
         }
 
         public int id(String identifier) {
@@ -172,20 +184,8 @@ public class NotificationBuilder {
         }
     }
 
-    private static int addDefaultIcons(Context context, IdHelper R, NotificationCompat.Builder builder) {
-        // Get app icon
-        int tempAppIconResourceId;
-        try {
-            PackageManager pm = context.getPackageManager();
-            ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
-            tempAppIconResourceId = ai.icon;
-        } catch (Exception e) {
-            Teak.log.e("notification_builder", "Unable to load app icon resource for Notification.");
-            tempAppIconResourceId = -1;
-        }
-        final int appIconResourceId = tempAppIconResourceId;
-
-        int smallNotificationIcon = appIconResourceId;
+    private static void addDefaultIcons(Context context, ResourceHelper R, NotificationCompat.Builder builder) {
+        int smallNotificationIcon = R.appIconResourceId;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             try {
                 smallNotificationIcon = R.drawable("io_teak_small_notification_icon");
@@ -211,15 +211,13 @@ public class NotificationBuilder {
             setColor.invoke(builder, R.integer("io_teak_notification_accent_color"));
         } catch (Exception ignored) {
         }
-
-        return appIconResourceId;
     }
 
     public static Notification createSummaryNotification(Context context, String groupKey, ArrayList<StatusBarNotification> notifications, TeakNotification requestingNotification) {
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, NotificationCompat.getChannelId(notifications.get(0).getNotification()));
 
-        final IdHelper R = new IdHelper(context);
+        final ResourceHelper R = new ResourceHelper(context);
         addDefaultIcons(context, R, builder);
 
         return builder.setGroup(groupKey)
@@ -355,7 +353,7 @@ public class NotificationBuilder {
 
         // Because we can't be certain that the R class will line up with what is at SDK build time
         // like in the case of Unity et. al.
-        final IdHelper R = new IdHelper(context); // Declaring local as 'R' ensures we don't accidentally use the other R
+        final ResourceHelper R = new ResourceHelper(context); // Declaring local as 'R' ensures we don't accidentally use the other R
         // Logic for the Android 12 notification style
         int targetSdkVersion = 0; // Do not use TeakConfiguration.get()
         try {
@@ -416,7 +414,7 @@ public class NotificationBuilder {
             }
         }
 
-        final int appIconResourceId = addDefaultIcons(context, R, builder);
+        addDefaultIcons(context, R, builder);
 
         // Intent creation helper
         final PendingIntentHelper pendingIntent = new PendingIntentHelper(context, bundle);
@@ -515,7 +513,7 @@ public class NotificationBuilder {
                     } else if (isUIType(viewElement, ImageView.class)) {
                         final String value = viewConfig.getString(key);
                         if (value.equalsIgnoreCase("BUILTIN_APP_ICON")) {
-                            remoteViews.setImageViewResource(viewElementId, appIconResourceId);
+                            remoteViews.setImageViewResource(viewElementId, R.appIconResourceId);
                         } else if (value.equalsIgnoreCase("NONE")) {
                             remoteViews.setViewVisibility(viewElementId, View.GONE);
                         } else {
