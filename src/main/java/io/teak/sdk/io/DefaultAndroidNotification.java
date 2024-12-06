@@ -82,7 +82,7 @@ public class DefaultAndroidNotification implements IAndroidNotification {
                     final Intent intent = ((PushNotificationEvent) event).intent;
                     if (intent != null && intent.getExtras() != null) {
                         final Bundle bundle = intent.getExtras();
-                        cancelNotification(context, bundle.getInt("platformId"));
+                        cancelNotification(bundle.getInt("platformId"), context, bundle.getString("teakGroupKey", "teak"));
                     }
                 } break;
                 case NotificationDisplayEvent.Type: {
@@ -107,10 +107,10 @@ public class DefaultAndroidNotification implements IAndroidNotification {
     }
 
     private class NotificationGroup {
-        final public ArrayList<StatusBarNotification> children;
+        final public ArrayList<Notification> children;
         final public StatusBarNotification summary;
 
-        NotificationGroup(ArrayList<StatusBarNotification> children, StatusBarNotification summary) {
+        NotificationGroup(ArrayList<Notification> children, StatusBarNotification summary) {
             this.children = children;
             this.summary = summary;
         }
@@ -120,7 +120,7 @@ public class DefaultAndroidNotification implements IAndroidNotification {
     // Based on our latest data, less than 0.5% of sessions are on Android < 6, and Unity 2023.2+
     // require Android 6+ so this seems acceptable.
     private NotificationGroup getActiveNotificationsForGroup(String groupKey) {
-        ArrayList<StatusBarNotification> children = new ArrayList<StatusBarNotification>();
+        ArrayList<Notification> children = new ArrayList<Notification>();
         StatusBarNotification summary = null;
 
         // This behavior is largely aped from NotificationManagerCompat.
@@ -135,7 +135,7 @@ public class DefaultAndroidNotification implements IAndroidNotification {
                         if(NotificationCompat.isGroupSummary(notification)) {
                             summary = sbn;
                         } else {
-                            children.add(sbn);
+                            children.add(notification);
                         }
                     }
                 }
@@ -146,10 +146,43 @@ public class DefaultAndroidNotification implements IAndroidNotification {
     }
 
     @Override
-    public void cancelNotification(@NonNull Context context, int platformId) {
+    public void cancelNotification(int platformId, final @NonNull Context context, final String groupKey) {
         Teak.log.i("notification.cancel", Helpers.mm.h("platformId", platformId));
 
         this.notificationManager.cancel(NOTIFICATION_TAG, platformId);
+
+        if(groupKey != null) {
+            final NotificationGroup groupInfo = DefaultAndroidNotification.this.getActiveNotificationsForGroup(groupKey);
+
+            final StatusBarNotification groupSummary = groupInfo.summary;
+            final ArrayList<Notification> ourNotifications = groupInfo.children;
+
+            Teak.log.i(
+                "default_android_notification.cancel_notification.summary_info",
+                Helpers.mm.h("liveCount", ourNotifications.size(), "hasSummary", groupSummary != null)
+            );
+
+            if(groupSummary != null && ourNotifications.size() > 0) {
+                this.handler.post(() -> {
+                    try {
+                        DefaultAndroidNotification.this.notificationManager.notify(
+                            NOTIFICATION_TAG,
+                            groupSummary.getId(),
+                            NotificationBuilder.createSummaryNotification(context, groupKey, ourNotifications)
+                        );
+                    } catch (SecurityException ignored) {
+                        // This likely means that they need the VIBRATE permission on old versions of Android
+                        Teak.log.e("notification.permission_needed.vibrate", "Please add this to your AndroidManifest.xml: <uses-permission android:name=\"android.permission.VIBRATE\" />");
+                    } catch (OutOfMemoryError e) {
+                        Teak.log.exception(e);
+                    } catch (Exception e) {
+                        Teak.log.exception(e);
+                        throw e;
+                    }
+
+                });
+            }
+        }
 
         synchronized (this.animatedNotifications) {
             ArrayList<AnimationEntry> removeList = new ArrayList<>();
@@ -183,9 +216,14 @@ public class DefaultAndroidNotification implements IAndroidNotification {
                 final NotificationGroup groupInfo = DefaultAndroidNotification.this.getActiveNotificationsForGroup(groupKey);
 
                 final StatusBarNotification groupSummary = groupInfo.summary;
-                final ArrayList<StatusBarNotification> ourNotifications = groupInfo.children;
+                final ArrayList<Notification> extantNotifications = groupInfo.children;
+                final ArrayList<Notification> ourNotifications = new ArrayList<Notification>();
+                ourNotifications.add(nativeNotification);
+                for(Notification n : extantNotifications) {
+                    ourNotifications.add(n);
+                }
 
-                final int notificationCount = ourNotifications.size() + 1;
+                final int notificationCount = ourNotifications.size();
 
                 Teak.log.i(
                     "default_android_notification.display_notification.summary_info",
@@ -203,7 +241,7 @@ public class DefaultAndroidNotification implements IAndroidNotification {
                     DefaultAndroidNotification.this.notificationManager.notify(
                         NOTIFICATION_TAG,
                         summaryId,
-                        NotificationBuilder.createSummaryNotification(context, groupKey, ourNotifications, teakNotification)
+                        NotificationBuilder.createSummaryNotification(context, groupKey, ourNotifications)
                     );
                 }
 

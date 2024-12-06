@@ -1714,6 +1714,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX)) {
             TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Interaction, context, intent));
         } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX)) {
+            Teak.log.i("notification.cleared", "notification.cleared");
             TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Cleared, context, intent));
         }
     }

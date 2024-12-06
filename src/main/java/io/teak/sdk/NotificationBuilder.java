@@ -15,6 +15,7 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
@@ -22,8 +23,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Html;
+import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.SpannedString;
+import android.text.style.StyleSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -222,21 +225,63 @@ public class NotificationBuilder {
         }
     }
 
-    public static Notification createSummaryNotification(Context context, String groupKey, ArrayList<StatusBarNotification> notifications, TeakNotification requestingNotification) {
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, NotificationCompat.getChannelId(notifications.get(0).getNotification()));
-
+    public static Notification createSummaryNotification(Context context, String groupKey, ArrayList<Notification> notifications) {
+        final Notification mostRecentNotif = notifications.get(0);
+        final String notificationChannelId = NotificationCompat.getChannelId(mostRecentNotif);
         final ResourceHelper R = new ResourceHelper(context);
+        final int notificationCount = notifications.size();
+        final PackageManager pm = context.getPackageManager();
+        String applicationName = "";
+        try {
+            final ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
+            applicationName = pm.getApplicationLabel(ai).toString();
+        } catch (PackageManager.NameNotFoundException e) {
+            Teak.log.exception(e);
+        }
+
+        final String contentTitleTemplate = null;
+        final String contentTextTemplate = "{{ notification_count }} new messages";
+
+        String contentTitle = null;
+        if(contentTitleTemplate != null) {
+            contentTitle = contentTitleTemplate.replaceAll("\\{\\{\\h*notification_count\\h*\\}\\}", Integer.toString(notificationCount));
+        } else {
+            contentTitle = applicationName;
+        }
+
+        final String contentText = contentTextTemplate.replaceAll("\\{\\{\\h*notification_count\\h*\\}\\}", Integer.toString(notificationCount));
+        final NotificationCompat.InboxStyle style = new NotificationCompat.InboxStyle().setBigContentTitle(contentText);
+
+        for(Notification notification : notifications) {
+            final Bundle extras = notification.extras;
+            final String notifTitle = extras.getString(NotificationCompat.EXTRA_TITLE);
+            final String notifText = extras.getString(NotificationCompat.EXTRA_TEXT);
+            final String title = notifTitle == null ? "" : notifTitle;
+            final String text = notifText == null ? "" : notifText;
+            if(title.length() > 0 || text.length() > 0) {
+                final SpannableString line = new SpannableString(title + text);
+                if(title.length() > 0) {
+                    line.setSpan(new StyleSpan(Typeface.BOLD), 0, title.length(), 0);
+                }
+                style.addLine(line);
+            }
+        }
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, notificationChannelId);
         addDefaultIcons(context, R, builder);
+        builder.setDeleteIntent(mostRecentNotif.deleteIntent);
+        builder.setContentIntent(mostRecentNotif.contentIntent);
 
         return builder.setGroup(groupKey)
                 .setGroupSummary(true)
                 .setOnlyAlertOnce(true)
                 .setAutoCancel(false)
                 .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
-                .setContentText("Content Text")
-                .setStyle(new NotificationCompat.InboxStyle().addLine("Test").addLine("Other Test").setBigContentTitle("Big content title"))
+                .setContentText(contentText)
+                .setContentTitle(contentTitle)
+                .setStyle(style)
                 .build();
+
     }
 
     public static Notification createNativeNotification(Context context, TeakNotification teakNotificaton) throws AssetLoadException {
