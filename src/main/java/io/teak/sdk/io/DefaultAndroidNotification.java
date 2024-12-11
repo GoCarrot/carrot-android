@@ -142,6 +142,18 @@ public class DefaultAndroidNotification implements IAndroidNotification {
             }
         }
 
+        children.sort((a, b) -> {
+            long diff = b.when - a.when;
+            // Bit of absurdity to deal with converting long to int.
+            if(diff < 0) {
+                return -1;
+            } else if (diff == 0) {
+                return 0;
+            } else {
+                return 1;
+            }
+        });
+
         return new NotificationGroup(children, summary);
     }
 
