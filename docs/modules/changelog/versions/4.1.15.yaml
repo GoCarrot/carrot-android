@@ -1,0 +1,2 @@
+bug:
+  - Resolved crash when initial launch of app is with an intent containing a non-hierarchical URI scheme.
