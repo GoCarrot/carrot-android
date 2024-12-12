@@ -172,7 +172,7 @@ public class DefaultAndroidNotification implements IAndroidNotification {
 
         this.notificationManager.cancel(NOTIFICATION_TAG, platformId);
 
-        if(groupKey != null) {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && groupKey != null) {
             final NotificationGroup groupInfo = DefaultAndroidNotification.this.getActiveNotificationsForGroup(groupKey);
 
             final StatusBarNotification groupSummary = groupInfo.summary;
@@ -233,38 +233,7 @@ public class DefaultAndroidNotification implements IAndroidNotification {
             Helpers.runAndLogGC("display_notification.gc");
 
             try {
-                final String groupKey = NotificationCompat.getGroup(nativeNotification);
-                final NotificationGroup groupInfo = DefaultAndroidNotification.this.getActiveNotificationsForGroup(groupKey);
-
-                final StatusBarNotification groupSummary = groupInfo.summary;
-                final Notification[] extantNotifications = groupInfo.children;
-                final ArrayList<Notification> ourNotifications = new ArrayList<Notification>();
-                ourNotifications.add(nativeNotification);
-                for(Notification n : extantNotifications) {
-                    ourNotifications.add(n);
-                }
-
-                final int notificationCount = ourNotifications.size();
-
-                Teak.log.i(
-                    "default_android_notification.display_notification.summary_info",
-                    Helpers.mm.h("liveCount", notificationCount, "hasSummary", groupSummary != null)
-                );
-
                 DefaultAndroidNotification.this.notificationManager.notify(NOTIFICATION_TAG, teakNotification.platformId, nativeNotification);
-
-                if(notificationCount >= teakNotification.minGroupSize) {
-                    int summaryId = teakNotification.groupSummaryId;
-                    if(groupSummary != null) {
-                        summaryId = groupSummary.getId();
-                    }
-
-                    DefaultAndroidNotification.this.notificationManager.notify(
-                        NOTIFICATION_TAG,
-                        summaryId,
-                        NotificationBuilder.createSummaryNotification(context, groupKey, ourNotifications)
-                    );
-                }
 
                 if (teakNotification.isAnimated) {
                     synchronized (DefaultAndroidNotification.this.animatedNotifications) {
@@ -272,6 +241,41 @@ public class DefaultAndroidNotification implements IAndroidNotification {
                         DefaultAndroidNotification.this.scheduleScreenStateWork();
                     }
                 }
+
+                final String groupKey = NotificationCompat.getGroup(nativeNotification);
+
+                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && groupKey != null) {
+                    final NotificationGroup groupInfo = DefaultAndroidNotification.this.getActiveNotificationsForGroup(groupKey);
+
+                    final StatusBarNotification groupSummary = groupInfo.summary;
+                    final Notification[] extantNotifications = groupInfo.children;
+                    final ArrayList<Notification> ourNotifications = new ArrayList<Notification>();
+                    ourNotifications.add(nativeNotification);
+                    for(Notification n : extantNotifications) {
+                        ourNotifications.add(n);
+                    }
+
+                    final int notificationCount = ourNotifications.size();
+
+                    Teak.log.i(
+                        "default_android_notification.display_notification.summary_info",
+                        Helpers.mm.h("liveCount", notificationCount, "hasSummary", groupSummary != null)
+                    );
+
+                    if(notificationCount >= teakNotification.minGroupSize) {
+                        int summaryId = teakNotification.groupSummaryId;
+                        if(groupSummary != null) {
+                            summaryId = groupSummary.getId();
+                        }
+
+                        DefaultAndroidNotification.this.notificationManager.notify(
+                            NOTIFICATION_TAG,
+                            summaryId,
+                            NotificationBuilder.createSummaryNotification(context, groupKey, ourNotifications)
+                        );
+                    }
+                }
+
             } catch (SecurityException ignored) {
                 // This likely means that they need the VIBRATE permission on old versions of Android
                 Teak.log.e("notification.permission_needed.vibrate", "Please add this to your AndroidManifest.xml: <uses-permission android:name=\"android.permission.VIBRATE\" />");
