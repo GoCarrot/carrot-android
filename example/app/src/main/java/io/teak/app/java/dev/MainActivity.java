@@ -147,21 +147,22 @@ public class MainActivity extends AppCompatActivity {
         // Register with EventBus
         EventBus.getDefault().register(this);
 
-        int permissionInfo = ContextCompat.checkSelfPermission(
-                getApplicationContext(), Manifest.permission.POST_NOTIFICATIONS
-        );
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            int permissionInfo = ContextCompat.checkSelfPermission(
+                    getApplicationContext(), Manifest.permission.POST_NOTIFICATIONS
+            );
 
-        if (permissionInfo == PackageManager.PERMISSION_GRANTED) {
-                Log.d("MainActivity", "permission already granted");
-            } else {
-                Log.d("MainActivity", String.format("permissionInfo: %s; shouldShowRequestPermissionRationale %b", permissionInfo, shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)));
-                // You can directly ask for the permission.
-                // The registered ActivityResultCallback gets the result of this request.
-                requestPermissionLauncher.launch(
-                    Manifest.permission.POST_NOTIFICATIONS
-                );
+            if (permissionInfo == PackageManager.PERMISSION_GRANTED) {
+                    Log.d("MainActivity", "permission already granted");
+                } else {
+                    Log.d("MainActivity", String.format("permissionInfo: %s; shouldShowRequestPermissionRationale %b", permissionInfo, shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)));
+                    // You can directly ask for the permission.
+                    // The registered ActivityResultCallback gets the result of this request.
+                    requestPermissionLauncher.launch(
+                        Manifest.permission.POST_NOTIFICATIONS
+                    );
+            }
         }
-
 
 
         // Create a deep link route that opens the Google Play store to a specific SKU in your game
