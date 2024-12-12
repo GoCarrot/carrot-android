@@ -108,10 +108,10 @@ public class DefaultAndroidNotification implements IAndroidNotification {
     }
 
     private class NotificationGroup {
-        final public Notification[] children;
+        final public StatusBarNotification[] children;
         final public StatusBarNotification summary;
 
-        NotificationGroup(Notification[] children, StatusBarNotification summary) {
+        NotificationGroup(StatusBarNotification[] children, StatusBarNotification summary) {
             this.children = children;
             this.summary = summary;
         }
@@ -124,7 +124,7 @@ public class DefaultAndroidNotification implements IAndroidNotification {
     // in the presence of a summary notification it only returns the summary. This breaks a
     // bunch of downstream logic.
     private NotificationGroup getActiveNotificationsForGroup(String groupKey) {
-        ArrayList<Notification> children = new ArrayList<Notification>();
+        ArrayList<StatusBarNotification> children = new ArrayList<StatusBarNotification>();
         StatusBarNotification summary = null;
 
         // This behavior is largely aped from NotificationManagerCompat.
@@ -142,17 +142,17 @@ public class DefaultAndroidNotification implements IAndroidNotification {
                         if(NotificationCompat.isGroupSummary(notification)) {
                             summary = sbn;
                         } else {
-                            children.add(notification);
+                            children.add(sbn);
                         }
                     }
                 }
             }
         }
 
-        Notification[] childrenArr = new Notification[children.size()];
+        StatusBarNotification[] childrenArr = new StatusBarNotification[children.size()];
         childrenArr = children.toArray(childrenArr);
         Arrays.sort(childrenArr, (a, b) -> {
-            long diff = b.when - a.when;
+            long diff = b.getNotification().when - a.getNotification().when;
             // Bit of absurdity to deal with converting long to int.
             if(diff < 0) {
                 return -1;
@@ -176,7 +176,16 @@ public class DefaultAndroidNotification implements IAndroidNotification {
             final NotificationGroup groupInfo = DefaultAndroidNotification.this.getActiveNotificationsForGroup(groupKey);
 
             final StatusBarNotification groupSummary = groupInfo.summary;
-            final ArrayList<Notification> ourNotifications = new ArrayList<Notification>(Arrays.asList(groupInfo.children));
+            final ArrayList<Notification> ourNotifications = new ArrayList<Notification>();
+            // I thought that we were having an issue where cancelling notifications wasn't synchronous. As it turns
+            // out, that was not the issue, but at this point I don't trust Android so I'm going to leave this
+            // check in, in case there are devices where getting active notifications immediately after cancelling
+            // one still returns the cancelled one.
+            for(StatusBarNotification sbn : groupInfo.children) {
+                if(sbn.getId() != platformId) {
+                    ourNotifications.add(sbn.getNotification());
+                }
+            }
 
             Teak.log.i(
                 "default_android_notification.cancel_notification.summary_info",
@@ -202,6 +211,11 @@ public class DefaultAndroidNotification implements IAndroidNotification {
                     }
 
                 });
+            } else if(groupSummary != null && ourNotifications.size() == 0) {
+                // This came up in the Android 7.1 test -- if the group summary was not explicitly cancelled then
+                // it would show up as a notification using the inbox style and already issued intents so it
+                // couldn't launch the game.
+                this.notificationManager.cancel(NOTIFICATION_TAG, groupSummary.getId());
             }
         }
 
@@ -248,11 +262,11 @@ public class DefaultAndroidNotification implements IAndroidNotification {
                     final NotificationGroup groupInfo = DefaultAndroidNotification.this.getActiveNotificationsForGroup(groupKey);
 
                     final StatusBarNotification groupSummary = groupInfo.summary;
-                    final Notification[] extantNotifications = groupInfo.children;
+                    final StatusBarNotification[] extantNotifications = groupInfo.children;
                     final ArrayList<Notification> ourNotifications = new ArrayList<Notification>();
                     ourNotifications.add(nativeNotification);
-                    for(Notification n : extantNotifications) {
-                        ourNotifications.add(n);
+                    for(StatusBarNotification n : extantNotifications) {
+                        ourNotifications.add(n.getNotification());
                     }
 
                     final int notificationCount = ourNotifications.size();
