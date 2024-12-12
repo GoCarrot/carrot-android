@@ -18,6 +18,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Objects;
+import java.util.Arrays;
 
 import androidx.annotation.NonNull;
 import androidx.work.Data;
@@ -107,18 +108,21 @@ public class DefaultAndroidNotification implements IAndroidNotification {
     }
 
     private class NotificationGroup {
-        final public ArrayList<Notification> children;
+        final public Notification[] children;
         final public StatusBarNotification summary;
 
-        NotificationGroup(ArrayList<Notification> children, StatusBarNotification summary) {
+        NotificationGroup(Notification[] children, StatusBarNotification summary) {
             this.children = children;
             this.summary = summary;
         }
     }
 
-    // Only supports Android 6+, which means notification grouping only works on Android 6+
-    // Based on our latest data, less than 0.5% of sessions are on Android < 6, and Unity 2023.2+
-    // require Android 6+ so this seems acceptable.
+    // Only supports Android 7+, which means notification grouping only works on Android 7+
+    // Based on our latest data, less than 0.5% of sessions are on Android < 7
+    //
+    // The underlying method call (getActiveNotifications()) is available on Android 6, but
+    // in the presence of a summary notification it only returns the summary. This breaks a
+    // bunch of downstream logic.
     private NotificationGroup getActiveNotificationsForGroup(String groupKey) {
         ArrayList<Notification> children = new ArrayList<Notification>();
         StatusBarNotification summary = null;
@@ -126,7 +130,10 @@ public class DefaultAndroidNotification implements IAndroidNotification {
         // This behavior is largely aped from NotificationManagerCompat.
         // NotificationManagerCompat didn't add this method until sometime after 1.11.x, and
         // I'd rather not force an update. This is simple enough.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        //
+        // I'm restricting this to Android 7+ for the reason given above -- Android 6 will only
+        // return the summary notification, which breaks our downstream logic.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             StatusBarNotification[] notifications = notificationManager.getActiveNotifications();
             if(notifications != null) {
                 for(StatusBarNotification sbn : notifications) {
@@ -142,7 +149,9 @@ public class DefaultAndroidNotification implements IAndroidNotification {
             }
         }
 
-        children.sort((a, b) -> {
+        Notification[] childrenArr = new Notification[children.size()];
+        childrenArr = children.toArray(childrenArr);
+        Arrays.sort(childrenArr, (a, b) -> {
             long diff = b.when - a.when;
             // Bit of absurdity to deal with converting long to int.
             if(diff < 0) {
@@ -154,7 +163,7 @@ public class DefaultAndroidNotification implements IAndroidNotification {
             }
         });
 
-        return new NotificationGroup(children, summary);
+        return new NotificationGroup(childrenArr, summary);
     }
 
     @Override
@@ -167,7 +176,7 @@ public class DefaultAndroidNotification implements IAndroidNotification {
             final NotificationGroup groupInfo = DefaultAndroidNotification.this.getActiveNotificationsForGroup(groupKey);
 
             final StatusBarNotification groupSummary = groupInfo.summary;
-            final ArrayList<Notification> ourNotifications = groupInfo.children;
+            final ArrayList<Notification> ourNotifications = new ArrayList<Notification>(Arrays.asList(groupInfo.children));
 
             Teak.log.i(
                 "default_android_notification.cancel_notification.summary_info",
@@ -228,7 +237,7 @@ public class DefaultAndroidNotification implements IAndroidNotification {
                 final NotificationGroup groupInfo = DefaultAndroidNotification.this.getActiveNotificationsForGroup(groupKey);
 
                 final StatusBarNotification groupSummary = groupInfo.summary;
-                final ArrayList<Notification> extantNotifications = groupInfo.children;
+                final Notification[] extantNotifications = groupInfo.children;
                 final ArrayList<Notification> ourNotifications = new ArrayList<Notification>();
                 ourNotifications.add(nativeNotification);
                 for(Notification n : extantNotifications) {
