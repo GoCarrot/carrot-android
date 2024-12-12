@@ -15,6 +15,7 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
@@ -22,8 +23,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Html;
+import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.SpannedString;
+import android.text.style.StyleSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -42,14 +45,18 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.FutureTask;
+import java.util.ArrayList;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import io.teak.sdk.configuration.RemoteConfiguration;
 import io.teak.sdk.core.Result;
 import io.teak.sdk.json.JSONArray;
 import io.teak.sdk.json.JSONObject;
+
+import android.service.notification.StatusBarNotification;
 
 public class NotificationBuilder {
     public static final String DEFAULT_NOTIFICATION_CHANNEL_ID = "teak";
@@ -59,13 +66,231 @@ public class NotificationBuilder {
         }
     }
 
-    public static Notification createNativeNotification(Context context, Bundle bundle, TeakNotification teakNotificaton) throws AssetLoadException {
+    static class ResourceHelper {
+        private final Context context;
+        public final int appIconResourceId;
+
+        public ResourceHelper(@NonNull final Context context) {
+            this.context = context;
+            // Get app icon
+            int tempAppIconResourceId;
+            try {
+                PackageManager pm = context.getPackageManager();
+                ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
+                tempAppIconResourceId = ai.icon;
+            } catch (Exception e) {
+                Teak.log.e("notification_builder", "Unable to load app icon resource for Notification.");
+                tempAppIconResourceId = -1;
+            }
+            this.appIconResourceId = tempAppIconResourceId;
+        }
+
+        public int id(String identifier) {
+            int ret = context.getResources().getIdentifier(identifier, "id", context.getPackageName());
+            if (ret == 0) {
+                throw new Resources.NotFoundException("Could not find R.id." + identifier);
+            }
+            return ret;
+        }
+
+        public int layout(String identifier) {
+            int ret = context.getResources().getIdentifier(identifier, "layout", context.getPackageName());
+            if (ret == 0) {
+                throw new Resources.NotFoundException("Could not find R.layout." + identifier);
+            }
+            return ret;
+        }
+
+        public int integer(String identifier) {
+            int ret = context.getResources().getIdentifier(identifier, "integer", context.getPackageName());
+            if (ret == 0) {
+                throw new Resources.NotFoundException("Could not find R.integer." + identifier);
+            }
+            return context.getResources().getInteger(ret);
+        }
+
+        public int drawable(String identifier) {
+            int ret = context.getResources().getIdentifier(identifier, "drawable", context.getPackageName());
+            if (ret == 0) {
+                throw new Resources.NotFoundException("Could not find R.drawable." + identifier);
+            }
+            return ret;
+        }
+    }
+
+    static class PendingIntentHelper {
+        private final Context context;
+        private final SecureRandom rng;
+        private final ComponentName cn;
+        private final Bundle bundle;
+
+        PendingIntentHelper(Context context, Bundle bundle) {
+            this.context = context;
+            this.bundle = bundle;
+            this.rng = new SecureRandom();
+            this.cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
+        }
+
+        PendingIntent getDeleteIntent() {
+            final String action = context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX;
+            final Bundle bundleCopy = new Bundle(bundle);
+            final Intent deleteIntent = new Intent(action);
+            deleteIntent.putExtras(bundleCopy);
+            deleteIntent.setComponent(cn);
+            int flags = PendingIntent.FLAG_ONE_SHOT;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                flags |= PendingIntent.FLAG_IMMUTABLE;
+            }
+            return PendingIntent.getBroadcast(context, rng.nextInt(), deleteIntent, flags);
+        }
+
+        PendingIntent getLaunchIntent(String deepLink) {
+            // If this is Android 11 or 12, direct-launch the app
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                return getLaunchIntentInternal(deepLink);
+            } else {
+                return getTrampolineIntent(deepLink);
+            }
+        }
+
+        private PendingIntent getLaunchIntentInternal(String deepLink) {
+            final Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+            if (launchIntent == null) {
+                return null;
+            }
+
+            final Bundle bundleCopy = new Bundle(bundle);
+            if (deepLink != null) {
+                bundleCopy.putString("teakDeepLink", deepLink);
+            }
+            bundleCopy.putBoolean("closeSystemDialogs", true);
+            launchIntent.putExtras(bundleCopy);
+
+            // https://stackoverflow.com/questions/5502427/resume-application-and-stack-from-notification/5502950#5502950
+            launchIntent.setPackage(null);
+            launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+
+            int flags = PendingIntent.FLAG_ONE_SHOT;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                flags |= PendingIntent.FLAG_IMMUTABLE;
+            }
+
+            return PendingIntent.getActivity(context, rng.nextInt(), launchIntent, flags);
+        }
+
+        private PendingIntent getTrampolineIntent(String deepLink) {
+            final String action = context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX;
+            final Bundle bundleCopy = new Bundle(bundle);
+            if (deepLink != null) {
+                bundleCopy.putString("teakDeepLink", deepLink);
+                bundleCopy.putBoolean("closeSystemDialogs", true);
+            }
+            final Intent pushOpenedIntent = new Intent(action);
+            pushOpenedIntent.putExtras(bundleCopy);
+            pushOpenedIntent.setComponent(cn);
+            int flags = PendingIntent.FLAG_ONE_SHOT;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                flags |= PendingIntent.FLAG_IMMUTABLE;
+            }
+            return PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, flags);
+        }
+    }
+
+    private static void addDefaultIcons(Context context, ResourceHelper R, NotificationCompat.Builder builder) {
+        int smallNotificationIcon = R.appIconResourceId;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            try {
+                smallNotificationIcon = R.drawable("io_teak_small_notification_icon");
+            } catch (Exception ignored) {
+            }
+        }
+
+        Bitmap largeNotificationIcon = null;
+        try {
+            largeNotificationIcon = BitmapFactory.decodeResource(context.getResources(),
+                R.drawable("io_teak_large_notification_icon"));
+        } catch (Exception ignored) {
+        }
+
+        builder.setSmallIcon(smallNotificationIcon);
+        if (largeNotificationIcon != null) {
+            builder.setLargeIcon(largeNotificationIcon);
+        }
+
+        // Icon accent color (added in API 21 version of Notification builder, so use reflection)
+        try {
+            Method setColor = builder.getClass().getMethod("setColor", int.class);
+            setColor.invoke(builder, R.integer("io_teak_notification_accent_color"));
+        } catch (Exception ignored) {
+        }
+    }
+
+    public static Notification createSummaryNotification(Context context, String groupKey, ArrayList<Notification> notifications) {
+        final Notification mostRecentNotif = notifications.get(0);
+        final String notificationChannelId = NotificationCompat.getChannelId(mostRecentNotif);
+        final ResourceHelper R = new ResourceHelper(context);
+        final int notificationCount = notifications.size();
+        final PackageManager pm = context.getPackageManager();
+        String applicationName = "";
+        try {
+            final ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
+            applicationName = pm.getApplicationLabel(ai).toString();
+        } catch (PackageManager.NameNotFoundException e) {
+            Teak.log.exception(e);
+        }
+
+        final String contentTitleTemplate = null;
+        final String contentTextTemplate = "{{ notification_count }} new messages";
+
+        String contentTitle = null;
+        if(contentTitleTemplate != null) {
+            contentTitle = contentTitleTemplate.replaceAll("\\{\\{\\h*notification_count\\h*\\}\\}", Integer.toString(notificationCount));
+        } else {
+            contentTitle = applicationName;
+        }
+
+        final String contentText = contentTextTemplate.replaceAll("\\{\\{\\h*notification_count\\h*\\}\\}", Integer.toString(notificationCount));
+        final NotificationCompat.InboxStyle style = new NotificationCompat.InboxStyle().setBigContentTitle(contentText);
+
+        for(Notification notification : notifications) {
+            final Bundle extras = notification.extras;
+            final String notifTitle = extras.getString(NotificationCompat.EXTRA_TITLE);
+            final String notifText = extras.getString(NotificationCompat.EXTRA_TEXT);
+            final String title = notifTitle == null ? "" : notifTitle;
+            final String text = notifText == null ? "" : notifText;
+            if(title.length() > 0 || text.length() > 0) {
+                final SpannableString line = new SpannableString(title + text);
+                if(title.length() > 0) {
+                    line.setSpan(new StyleSpan(Typeface.BOLD), 0, title.length(), 0);
+                }
+                style.addLine(line);
+            }
+        }
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, notificationChannelId);
+        addDefaultIcons(context, R, builder);
+        builder.setDeleteIntent(mostRecentNotif.deleteIntent);
+        builder.setContentIntent(mostRecentNotif.contentIntent);
+
+        return builder.setGroup(groupKey)
+                .setGroupSummary(true)
+                .setOnlyAlertOnce(true)
+                .setAutoCancel(false)
+                .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
+                .setContentText(contentText)
+                .setContentTitle(contentTitle)
+                .setStyle(style)
+                .build();
+
+    }
+
+    public static Notification createNativeNotification(Context context, TeakNotification teakNotificaton) throws AssetLoadException {
         if (teakNotificaton.notificationVersion == TeakNotification.TEAK_NOTIFICATION_V0) {
             return null;
         }
 
         try {
-            return createNativeNotificationV1Plus(context, bundle, teakNotificaton);
+            return createNativeNotificationV1Plus(context, teakNotificaton);
         } catch (AssetLoadException e) {
             throw e;
         } catch (Exception e) {
@@ -147,7 +372,7 @@ public class NotificationBuilder {
         if (quietNotificationChannelId == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && notificationManager != null) {
             try {
                 final String channelId = "teak-no-sound-or-vibrate";
-                final int importance = NotificationManager.IMPORTANCE_HIGH;
+                final int importance = NotificationManager.IMPORTANCE_DEFAULT;
                 final NotificationChannel channel = new NotificationChannel(channelId, "Silent Notifications", importance);
                 channel.enableLights(true);
                 channel.setSound(null, null);
@@ -167,7 +392,8 @@ public class NotificationBuilder {
         return Html.fromHtml(string);
     }
 
-    private static Notification createNativeNotificationV1Plus(final Context context, final Bundle bundle, final TeakNotification teakNotificaton) throws Exception {
+    private static Notification createNativeNotificationV1Plus(final Context context, final TeakNotification teakNotificaton) throws Exception {
+        final Bundle bundle = teakNotificaton.bundle;
         // Get the memory class here, don't rely on TeakConfiguration
         final ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         final int deviceMemoryClass = am == null ? 0 : am.getMemoryClass();
@@ -181,41 +407,7 @@ public class NotificationBuilder {
 
         // Because we can't be certain that the R class will line up with what is at SDK build time
         // like in the case of Unity et. al.
-        class IdHelper {
-            public int id(String identifier) {
-                int ret = context.getResources().getIdentifier(identifier, "id", context.getPackageName());
-                if (ret == 0) {
-                    throw new Resources.NotFoundException("Could not find R.id." + identifier);
-                }
-                return ret;
-            }
-
-            public int layout(String identifier) {
-                int ret = context.getResources().getIdentifier(identifier, "layout", context.getPackageName());
-                if (ret == 0) {
-                    throw new Resources.NotFoundException("Could not find R.layout." + identifier);
-                }
-                return ret;
-            }
-
-            public int integer(String identifier) {
-                int ret = context.getResources().getIdentifier(identifier, "integer", context.getPackageName());
-                if (ret == 0) {
-                    throw new Resources.NotFoundException("Could not find R.integer." + identifier);
-                }
-                return context.getResources().getInteger(ret);
-            }
-
-            public int drawable(String identifier) {
-                int ret = context.getResources().getIdentifier(identifier, "drawable", context.getPackageName());
-                if (ret == 0) {
-                    throw new Resources.NotFoundException("Could not find R.drawable." + identifier);
-                }
-                return ret;
-            }
-        }
-        final IdHelper R = new IdHelper(); // Declaring local as 'R' ensures we don't accidentally use the other R
-
+        final ResourceHelper R = new ResourceHelper(context); // Declaring local as 'R' ensures we don't accidentally use the other R
         // Logic for the Android 12 notification style
         int targetSdkVersion = 0; // Do not use TeakConfiguration.get()
         try {
@@ -228,10 +420,11 @@ public class NotificationBuilder {
         final boolean willAutomaticallyUse12PlusStyle = isRunningOn12Plus && isTargeting12Plus;
         final boolean serverRequests12PlusStyle = teakNotificaton.useDecoratedCustomView;
         final boolean isAndroid12NotificationStyle = serverRequests12PlusStyle || willAutomaticallyUse12PlusStyle;
+        final String notificationChannelId = NotificationBuilder.channelIdForOptOutId(context, teakNotificaton.teakOptOutCategory);
+        final String groupKey = teakNotificaton.groupKey;
 
-        final NotificationCompat.Builder builder = new NotificationCompat.Builder(context,
-            NotificationBuilder.channelIdForOptOutId(context, teakNotificaton.teakOptOutCategory));
-        builder.setGroup(UUID.randomUUID().toString());
+        final NotificationCompat.Builder builder = new NotificationCompat.Builder(context, notificationChannelId);
+        builder.setGroup(groupKey);
 
         // Assign DecoratedCustomViewStyle if the server requests the Android 12 style, and it would
         // not automatically assign that style
@@ -253,6 +446,7 @@ public class NotificationBuilder {
         builder.setOnlyAlertOnce(true);
         builder.setAutoCancel(true);
 
+        builder.setContentTitle(teakNotificaton.title);
         // Assign content text otherwise a badge will not show up
         builder.setContentText(teakNotificaton.message);
 
@@ -274,118 +468,15 @@ public class NotificationBuilder {
             }
         }
 
-        // Icon accent color (added in API 21 version of Notification builder, so use reflection)
-        try {
-            Method setColor = builder.getClass().getMethod("setColor", int.class);
-            setColor.invoke(builder, R.integer("io_teak_notification_accent_color"));
-        } catch (Exception ignored) {
-        }
-
-        // Get app icon
-        int tempAppIconResourceId;
-        try {
-            PackageManager pm = context.getPackageManager();
-            ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 0);
-            tempAppIconResourceId = ai.icon;
-        } catch (Exception e) {
-            Teak.log.e("notification_builder", "Unable to load app icon resource for Notification.");
-            return null;
-        }
-        final int appIconResourceId = tempAppIconResourceId;
-
-        // Assign notification icons
-        int smallNotificationIcon = appIconResourceId;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            try {
-                smallNotificationIcon = R.drawable("io_teak_small_notification_icon");
-            } catch (Exception ignored) {
-            }
-        }
-
-        Bitmap largeNotificationIcon = null;
-        try {
-            largeNotificationIcon = BitmapFactory.decodeResource(context.getResources(),
-                R.drawable("io_teak_large_notification_icon"));
-        } catch (Exception ignored) {
-        }
-
-        builder.setSmallIcon(smallNotificationIcon);
-        if (largeNotificationIcon != null) {
-            builder.setLargeIcon(largeNotificationIcon);
-        }
+        addDefaultIcons(context, R, builder);
 
         // Intent creation helper
-        final SecureRandom rng = new SecureRandom();
-        final ComponentName cn = new ComponentName(context.getPackageName(), "io.teak.sdk.Teak");
-        class PendingIntentHelper {
-            PendingIntent getTrampolineIntent(String deepLink) {
-                final String action = context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX;
-                final Bundle bundleCopy = new Bundle(bundle);
-                if (deepLink != null) {
-                    bundleCopy.putString("teakDeepLink", deepLink);
-                    bundleCopy.putBoolean("closeSystemDialogs", true);
-                }
-                final Intent pushOpenedIntent = new Intent(action);
-                pushOpenedIntent.putExtras(bundleCopy);
-                pushOpenedIntent.setComponent(cn);
-                int flags = PendingIntent.FLAG_ONE_SHOT;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    flags |= PendingIntent.FLAG_IMMUTABLE;
-                }
-                return PendingIntent.getBroadcast(context, rng.nextInt(), pushOpenedIntent, flags);
-            }
-
-            PendingIntent getDeleteIntent() {
-                final String action = context.getPackageName() + TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX;
-                final Bundle bundleCopy = new Bundle(bundle);
-                final Intent deleteIntent = new Intent(action);
-                deleteIntent.putExtras(bundleCopy);
-                deleteIntent.setComponent(cn);
-                int flags = PendingIntent.FLAG_ONE_SHOT;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    flags |= PendingIntent.FLAG_IMMUTABLE;
-                }
-                return PendingIntent.getBroadcast(context, rng.nextInt(), deleteIntent, flags);
-            }
-
-            PendingIntent getLaunchIntent(String deepLink) {
-                final Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
-                if (launchIntent == null) {
-                    return null;
-                }
-
-                final Bundle bundleCopy = new Bundle(bundle);
-                if (deepLink != null) {
-                    bundleCopy.putString("teakDeepLink", deepLink);
-                }
-                bundleCopy.putBoolean("closeSystemDialogs", true);
-                launchIntent.putExtras(bundleCopy);
-
-                // https://stackoverflow.com/questions/5502427/resume-application-and-stack-from-notification/5502950#5502950
-                launchIntent.setPackage(null);
-                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
-
-                int flags = PendingIntent.FLAG_ONE_SHOT;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    flags |= PendingIntent.FLAG_IMMUTABLE;
-                }
-
-                return PendingIntent.getActivity(context, rng.nextInt(), launchIntent, flags);
-            }
-        }
-        final PendingIntentHelper pendingIntent = new PendingIntentHelper();
+        final PendingIntentHelper pendingIntent = new PendingIntentHelper(context, bundle);
 
         try {
             // Create intent to fire if/when notification is cleared
             builder.setDeleteIntent(pendingIntent.getDeleteIntent());
-
-            // If this is Android 11 or 12, direct-launch the app
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                builder.setContentIntent(pendingIntent.getLaunchIntent(null));
-            } else {
-                // Create intent to fire if/when notification is opened, attach bundle info
-                builder.setContentIntent(pendingIntent.getTrampolineIntent(null));
-            }
+            builder.setContentIntent(pendingIntent.getLaunchIntent(null));
         } catch (Exception e) {
             if (!bundle.getBoolean("teakUnitTest")) {
                 throw e;
@@ -454,11 +545,7 @@ public class NotificationBuilder {
                         final JSONObject buttonConfig = viewConfig.getJSONObject(key);
                         remoteViews.setTextViewText(viewElementId, buttonConfig.getString("text"));
                         String deepLink = buttonConfig.has("deepLink") ? buttonConfig.getString("deepLink") : null;
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                            remoteViews.setOnClickPendingIntent(viewElementId, pendingIntent.getLaunchIntent(deepLink));
-                        } else {
-                            remoteViews.setOnClickPendingIntent(viewElementId, pendingIntent.getTrampolineIntent(deepLink));
-                        }
+                        remoteViews.setOnClickPendingIntent(viewElementId, pendingIntent.getLaunchIntent(deepLink));
                     } else if (isUIType(viewElement, TextView.class)) {
                         final String value = viewConfig.getString(key);
                         remoteViews.setViewVisibility(viewElementId, View.VISIBLE);
@@ -469,7 +556,7 @@ public class NotificationBuilder {
                     } else if (isUIType(viewElement, ImageView.class)) {
                         final String value = viewConfig.getString(key);
                         if (value.equalsIgnoreCase("BUILTIN_APP_ICON")) {
-                            remoteViews.setImageViewResource(viewElementId, appIconResourceId);
+                            remoteViews.setImageViewResource(viewElementId, R.appIconResourceId);
                         } else if (value.equalsIgnoreCase("NONE")) {
                             remoteViews.setViewVisibility(viewElementId, View.GONE);
                         } else {
