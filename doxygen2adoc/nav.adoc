@@ -1,4 +1,4 @@
-* API Reference
+* Android Native SDK Reference
 {{#each items}}
 ** xref:api:page${{id}}.adoc[{{cut name 'io.teak.sdk.'}}]
 {{/each}}
