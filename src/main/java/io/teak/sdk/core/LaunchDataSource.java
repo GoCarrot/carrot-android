@@ -1,7 +1,9 @@
 package io.teak.sdk.core;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Bundle;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -25,6 +27,7 @@ import io.teak.sdk.Teak;
 import io.teak.sdk.TeakConfiguration;
 import io.teak.sdk.json.JSONObject;
 import io.teak.sdk.referrer.InstallReferrerFuture;
+import io.teak.sdk.io.DefaultAndroidNotification;
 
 public class LaunchDataSource implements Future<Teak.LaunchData> {
     public static final LaunchDataSource Unattributed = new LaunchDataSource(Helpers.futureForValue(Teak.LaunchData.Unattributed));
@@ -46,14 +49,20 @@ public class LaunchDataSource implements Future<Teak.LaunchData> {
         return new LaunchDataSource(Helpers.futureForValue(launchDataFromUriPair(deepLink, launchLink)));
     }
 
-    public static LaunchDataSource sourceFromIntent(@NonNull final Intent intent) {
+    public static LaunchDataSource sourceFromIntent(@NonNull final Intent intent, @NonNull final Context context) {
         // If there is a teakNotifId, then we do not need to wait for the resolution of a link.
         final String teakNotifId = Helpers.getStringOrNullFromIntentExtra(intent, "teakNotifId");
 
         if (teakNotifId != null) {
             // This is the fast and easy path. There is a teakNotifId, meaning we launched via a push
             // notification.
-            return new LaunchDataSource(Helpers.futureForValue(new Teak.NotificationLaunchData(intent.getExtras())));
+            final Bundle extras = intent.getExtras();
+            final int platformId = extras.getInt("platformId");
+            if(platformId != 0) {
+                final String groupKey = extras.getString("teakGroupKey", "teak");
+                DefaultAndroidNotification.get(context).cancelNotification(platformId, context, groupKey);
+            }
+            return new LaunchDataSource(Helpers.futureForValue(new Teak.NotificationLaunchData(extras)));
         } else {
             // Not a notification launch, so check for a launch url
             final String intentDataString = intent.getDataString();

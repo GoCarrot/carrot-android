@@ -135,30 +135,35 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         // Provide a way to wait for debugger to connect via a data param
         final Intent intent = activity.getIntent();
 
-        if (intent != null && intent.getData() != null) {
-            final Uri intentData = intent.getData();
+        try {
+            if (intent != null && intent.getData() != null) {
+                final Uri intentData = intent.getData();
+                if(intentData.isHierarchical()) {
+                    if (intentData.getBooleanQueryParameter("teak_log", false)) {
+                        Teak.forceDebug = true;
+                    }
 
-            if (intentData.getBooleanQueryParameter("teak_log", false)) {
-                Teak.forceDebug = true;
-            }
+                    if (intentData.getBooleanQueryParameter("teak_debug", false) &&
+                        (activity.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+                        Debug.waitForDebugger();
+                    }
 
-            if (intentData.getBooleanQueryParameter("teak_debug", false) &&
-                (activity.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
-                Debug.waitForDebugger();
-            }
+                    if (intentData.getBooleanQueryParameter("teak_mutex_report", false)) {
+                        InstrumentableReentrantLock.interruptLongLocksAndReport = true;
+                    }
 
-            if (intentData.getBooleanQueryParameter("teak_mutex_report", false)) {
-                InstrumentableReentrantLock.interruptLongLocksAndReport = true;
-            }
-
-            if (intentData.getBooleanQueryParameter("teak_strict_mode", false)) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
-                                               .detectNonSdkApiUsage()
-                                               .penaltyLog()
-                                               .build());
+                    if (intentData.getBooleanQueryParameter("teak_strict_mode", false)) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+                                                       .detectNonSdkApiUsage()
+                                                       .penaltyLog()
+                                                       .build());
+                        }
+                    }
                 }
             }
+        } catch(Exception e) {
+            android.util.Log.e(LOG_TAG, android.util.Log.getStackTraceString(e));
         }
 
         // Init integration checks, we decide later if they report or not
@@ -171,6 +176,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
             try {
                 objectFactory = new DefaultObjectFactory(activity.getApplicationContext());
             } catch (Exception e) {
+                android.util.Log.e(LOG_TAG, android.util.Log.getStackTraceString(e));
                 return;
             }
         }
@@ -1723,6 +1729,7 @@ public class Teak extends BroadcastReceiver implements Unobfuscable {
         if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_OPENED_INTENT_ACTION_SUFFIX)) {
             TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Interaction, context, intent));
         } else if (action.endsWith(TeakNotification.TEAK_NOTIFICATION_CLEARED_INTENT_ACTION_SUFFIX)) {
+            Teak.log.i("notification.cleared", "notification.cleared");
             TeakEvent.postEvent(new PushNotificationEvent(PushNotificationEvent.Cleared, context, intent));
         }
     }

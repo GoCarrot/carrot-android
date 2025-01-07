@@ -647,6 +647,7 @@ public class TeakNotification implements Unobfuscable {
     public int platformId;
     public final long teakNotifId;
 
+    final String title;
     final String message;
     final String longText;
     final String imageAssetA;
@@ -665,6 +666,12 @@ public class TeakNotification implements Unobfuscable {
     // v2023
     @SuppressWarnings("WeakerAccess")
     final String teakOptOutCategory;
+
+    public final String groupKey;
+    public final int minGroupSize;
+    public final int groupSummaryId;
+    public final String groupTitle;
+    public final String groupMessage;
 
     // Animation
     public boolean isAnimated;
@@ -685,12 +692,18 @@ public class TeakNotification implements Unobfuscable {
 
     public TeakNotification(Bundle bundle, boolean appInForeground) {
         this.message = bundle.getString("message");
+        this.title = bundle.getString("title");
         this.longText = bundle.getString("longText");
         this.teakRewardId = bundle.getString("teakRewardId");
         this.imageAssetA = bundle.getString("imageAssetA");
         this.teakDeepLink = bundle.getString("teakDeepLink");
         this.teakCreativeName = bundle.getString("teakCreativeName");
         this.teakOptOutCategory = bundle.getString("teakOptOutCategory", "teak");
+        this.groupKey = bundle.getString("teakGroupKey", "teak");
+        this.minGroupSize = bundle.getInt("teakGroupMinSize", 2);
+        this.groupSummaryId = bundle.getInt("groupSummaryId", 0);
+        this.groupTitle = bundle.getString("teakGroupTitle");
+        this.groupMessage = bundle.getString("teakGroupMessage", "{{notification_count}} new messages");
         this.isAnimated = false;
         this.bundle = bundle;
         this.notificationPlacement = appInForeground ? NotificationPlacement.Foreground : NotificationPlacement.Background;
@@ -762,6 +775,10 @@ public class TeakNotification implements Unobfuscable {
         this.useDecoratedCustomView = Helpers.getBooleanFromBundle(bundle, "useDecoratedCustomView");
 
         this.platformId = new Random().nextInt();
+
+        // Update our bundle with calculated information.
+        bundle.putInt("platformId", platformId);
+        bundle.putString("teakNotificationPlacement", notificationPlacement.name);
     }
 
     private int compareMajorMinorRevision(int[] version, int[] otherVersion) {

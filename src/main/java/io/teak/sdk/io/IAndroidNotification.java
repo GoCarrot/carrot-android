@@ -8,7 +8,7 @@ import io.teak.sdk.TeakNotification;
 public interface IAndroidNotification {
     String ANIMATED_NOTIFICATION_COUNT_KEY = "ActiveNotifications";
 
-    void cancelNotification(@NonNull Context context, int platformId);
+    void cancelNotification(int platformId, @NonNull Context context, String groupKey);
 
     void displayNotification(@NonNull Context context, @NonNull TeakNotification teakNotification, @NonNull Notification nativeNotification);
 }

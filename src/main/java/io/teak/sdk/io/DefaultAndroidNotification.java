@@ -17,6 +17,8 @@ import org.greenrobot.eventbus.Subscribe;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Objects;
+import java.util.Arrays;
 
 import androidx.annotation.NonNull;
 import androidx.work.Data;
@@ -29,6 +31,9 @@ import io.teak.sdk.core.DeviceScreenState;
 import io.teak.sdk.event.NotificationDisplayEvent;
 import io.teak.sdk.event.NotificationReDisplayEvent;
 import io.teak.sdk.event.PushNotificationEvent;
+
+import androidx.core.app.NotificationCompat;
+import android.service.notification.StatusBarNotification;
 
 public class DefaultAndroidNotification implements IAndroidNotification {
     private final NotificationManager notificationManager;
@@ -78,7 +83,7 @@ public class DefaultAndroidNotification implements IAndroidNotification {
                     final Intent intent = ((PushNotificationEvent) event).intent;
                     if (intent != null && intent.getExtras() != null) {
                         final Bundle bundle = intent.getExtras();
-                        cancelNotification(context, bundle.getInt("platformId"));
+                        cancelNotification(bundle.getInt("platformId"), context, bundle.getString("teakGroupKey", "teak"));
                     }
                 } break;
                 case NotificationDisplayEvent.Type: {
@@ -102,11 +107,117 @@ public class DefaultAndroidNotification implements IAndroidNotification {
         }
     }
 
+    private class NotificationGroup {
+        final public StatusBarNotification[] children;
+        final public StatusBarNotification summary;
+
+        NotificationGroup(StatusBarNotification[] children, StatusBarNotification summary) {
+            this.children = children;
+            this.summary = summary;
+        }
+    }
+
+    // Only supports Android 7+, which means notification grouping only works on Android 7+
+    // Based on our latest data, less than 0.5% of sessions are on Android < 7
+    //
+    // The underlying method call (getActiveNotifications()) is available on Android 6, but
+    // in the presence of a summary notification it only returns the summary. This breaks a
+    // bunch of downstream logic.
+    private NotificationGroup getActiveNotificationsForGroup(String groupKey) {
+        ArrayList<StatusBarNotification> children = new ArrayList<StatusBarNotification>();
+        StatusBarNotification summary = null;
+
+        // This behavior is largely aped from NotificationManagerCompat.
+        // NotificationManagerCompat didn't add this method until sometime after 1.11.x, and
+        // I'd rather not force an update. This is simple enough.
+        //
+        // I'm restricting this to Android 7+ for the reason given above -- Android 6 will only
+        // return the summary notification, which breaks our downstream logic.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            StatusBarNotification[] notifications = notificationManager.getActiveNotifications();
+            if(notifications != null) {
+                for(StatusBarNotification sbn : notifications) {
+                    final Notification notification = sbn.getNotification();
+                    if(Objects.equals(groupKey, NotificationCompat.getGroup(notification))) {
+                        if(NotificationCompat.isGroupSummary(notification)) {
+                            summary = sbn;
+                        } else {
+                            children.add(sbn);
+                        }
+                    }
+                }
+            }
+        }
+
+        StatusBarNotification[] childrenArr = new StatusBarNotification[children.size()];
+        childrenArr = children.toArray(childrenArr);
+        Arrays.sort(childrenArr, (a, b) -> {
+            long diff = b.getNotification().when - a.getNotification().when;
+            // Bit of absurdity to deal with converting long to int.
+            if(diff < 0) {
+                return -1;
+            } else if (diff == 0) {
+                return 0;
+            } else {
+                return 1;
+            }
+        });
+
+        return new NotificationGroup(childrenArr, summary);
+    }
+
     @Override
-    public void cancelNotification(@NonNull Context context, int platformId) {
+    public void cancelNotification(int platformId, final @NonNull Context context, final String groupKey) {
         Teak.log.i("notification.cancel", Helpers.mm.h("platformId", platformId));
 
         this.notificationManager.cancel(NOTIFICATION_TAG, platformId);
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && groupKey != null) {
+            final NotificationGroup groupInfo = DefaultAndroidNotification.this.getActiveNotificationsForGroup(groupKey);
+
+            final StatusBarNotification groupSummary = groupInfo.summary;
+            final ArrayList<Notification> ourNotifications = new ArrayList<Notification>();
+            // I thought that we were having an issue where cancelling notifications wasn't synchronous. As it turns
+            // out, that was not the issue, but at this point I don't trust Android so I'm going to leave this
+            // check in, in case there are devices where getting active notifications immediately after cancelling
+            // one still returns the cancelled one.
+            for(StatusBarNotification sbn : groupInfo.children) {
+                if(sbn.getId() != platformId) {
+                    ourNotifications.add(sbn.getNotification());
+                }
+            }
+
+            Teak.log.i(
+                "default_android_notification.cancel_notification.summary_info",
+                Helpers.mm.h("liveCount", ourNotifications.size(), "hasSummary", groupSummary != null)
+            );
+
+            if(groupSummary != null && ourNotifications.size() > 0) {
+                this.handler.post(() -> {
+                    try {
+                        DefaultAndroidNotification.this.notificationManager.notify(
+                            NOTIFICATION_TAG,
+                            groupSummary.getId(),
+                            NotificationBuilder.createSummaryNotification(context, groupKey, ourNotifications)
+                        );
+                    } catch (SecurityException ignored) {
+                        // This likely means that they need the VIBRATE permission on old versions of Android
+                        Teak.log.e("notification.permission_needed.vibrate", "Please add this to your AndroidManifest.xml: <uses-permission android:name=\"android.permission.VIBRATE\" />");
+                    } catch (OutOfMemoryError e) {
+                        Teak.log.exception(e);
+                    } catch (Exception e) {
+                        Teak.log.exception(e);
+                        throw e;
+                    }
+
+                });
+            } else if(groupSummary != null && ourNotifications.size() == 0) {
+                // This came up in the Android 7.1 test -- if the group summary was not explicitly cancelled then
+                // it would show up as a notification using the inbox style and already issued intents so it
+                // couldn't launch the game.
+                this.notificationManager.cancel(NOTIFICATION_TAG, groupSummary.getId());
+            }
+        }
 
         synchronized (this.animatedNotifications) {
             ArrayList<AnimationEntry> removeList = new ArrayList<>();
@@ -144,6 +255,41 @@ public class DefaultAndroidNotification implements IAndroidNotification {
                         DefaultAndroidNotification.this.scheduleScreenStateWork();
                     }
                 }
+
+                final String groupKey = NotificationCompat.getGroup(nativeNotification);
+
+                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && groupKey != null) {
+                    final NotificationGroup groupInfo = DefaultAndroidNotification.this.getActiveNotificationsForGroup(groupKey);
+
+                    final StatusBarNotification groupSummary = groupInfo.summary;
+                    final StatusBarNotification[] extantNotifications = groupInfo.children;
+                    final ArrayList<Notification> ourNotifications = new ArrayList<Notification>();
+                    ourNotifications.add(nativeNotification);
+                    for(StatusBarNotification n : extantNotifications) {
+                        ourNotifications.add(n.getNotification());
+                    }
+
+                    final int notificationCount = ourNotifications.size();
+
+                    Teak.log.i(
+                        "default_android_notification.display_notification.summary_info",
+                        Helpers.mm.h("liveCount", notificationCount, "hasSummary", groupSummary != null)
+                    );
+
+                    if(notificationCount >= teakNotification.minGroupSize) {
+                        int summaryId = teakNotification.groupSummaryId;
+                        if(groupSummary != null) {
+                            summaryId = groupSummary.getId();
+                        }
+
+                        DefaultAndroidNotification.this.notificationManager.notify(
+                            NOTIFICATION_TAG,
+                            summaryId,
+                            NotificationBuilder.createSummaryNotification(context, groupKey, ourNotifications)
+                        );
+                    }
+                }
+
             } catch (SecurityException ignored) {
                 // This likely means that they need the VIBRATE permission on old versions of Android
                 Teak.log.e("notification.permission_needed.vibrate", "Please add this to your AndroidManifest.xml: <uses-permission android:name=\"android.permission.VIBRATE\" />");

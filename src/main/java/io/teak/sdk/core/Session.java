@@ -1,5 +1,6 @@
 package io.teak.sdk.core;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
@@ -721,8 +722,8 @@ public class Session {
                     }
                     break;
                 case LifecycleEvent.Resumed:
-                    Intent resumeIntent = ((LifecycleEvent) event).intent;
-                    onActivityResumed(resumeIntent);
+                    LifecycleEvent lEvent = (LifecycleEvent)event;
+                    onActivityResumed(lEvent.intent, lEvent.context);
                     break;
             }
         }
@@ -963,7 +964,7 @@ public class Session {
         }
     }
 
-    private static void onActivityResumed(final Intent intent) {
+    private static void onActivityResumed(final Intent intent, final Context context) {
         // Call getCurrentSession() so the null || Expired logic stays in one place
         currentSessionLock.lock();
         try {
@@ -975,7 +976,7 @@ public class Session {
             }
             intent.putExtra("teakSessionProcessed", true);
 
-            final LaunchDataSource launchDataSource = LaunchDataSource.sourceFromIntent(intent);
+            final LaunchDataSource launchDataSource = LaunchDataSource.sourceFromIntent(intent, context);
 
             // We explicitly avoid calling getCurrentSession() in this path.
             // getCurrentSession() will create a new session if the previous session has expired. That
