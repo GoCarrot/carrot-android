@@ -8,6 +8,9 @@ XML_PROGRAMLISTING     = NO
 # First line of comment should be the 'brief'
 JAVADOC_AUTOBRIEF      = YES
 
+# Let's say we're never case sensitive
+CASE_SENSE_NAMES = NO
+
 # Stop the automatic ref generation (for the word Teak for example)
 AUTOLINK_SUPPORT       = NO
 
