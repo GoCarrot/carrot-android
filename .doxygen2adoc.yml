@@ -6,6 +6,7 @@ template:
 
 partial:
   structTitle: doxygen2adoc/structTitle.adoc
+  enumTitle: doxygen2adoc/enumTitle.adoc
 
 antora:
   _config: docs/antora.yml
